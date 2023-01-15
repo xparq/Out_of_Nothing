@@ -41,21 +41,20 @@ class World
 //!! This already has SFML dependencies!
 {
 	sf::Clock clock;
-/*
-	float friction = 1; 
+
+	float FRICTION = 0.008;
+	float V_NUDGE = 0.5;
+
+	float dt; // inter-frame increment of the world model time
 	sf::Vector2f v = {0, 0};
-	float V_SCALE = 0.000001;
-*/
+	float _SCALE = 500;
+
 public: // Just give access for now...:
 	vector< shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
 	vector< shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 
 public:
 // Input params
-
-	float dt; // inter-frame increment of the world model time
-
-	float dx = 0, dy = 0;
 
 // Ops
 	auto recalc_for_next_frame(const Visual_Params& visuals) // ++world
@@ -64,14 +63,14 @@ public:
 		dt = clock.getElapsedTime().asSeconds();
 		clock.restart();
 
-/*		// Apply some momentum calc.:
-		float decel = - v * friction;
-		float dv = a * dt;
-		float dx = 0, dy = 0;
+		// Inertia & friction:
+		sf::Vector2f friction_decel(-v.x * FRICTION, -v.y * FRICTION);
+		sf::Vector2f dv = friction_decel * dt * _SCALE;
+		v += dv;
+		sf::Vector2f ds(v.x * dt, v.y * dt);
 
-		v.x * V_SCALE * dt; dy = v.y * V_SCALE * dt;
-		dx = v.x * V_SCALE * dt; dy = v.y * V_SCALE * dt;
-*/
+cerr << "v = ("<<v.x<<","<<v.y<<"), " << " dx = "<<ds.x << ", dy ="<<ds.y << ", dt = "<<dt << endl;
+
 		// Here we just know this circle was explicitly created at [0]:
 		auto circle = dynamic_pointer_cast<sf::CircleShape>(shapes_to_change[0]);
 		circle->setFillColor(sf::Color(120, 12, 0, visuals.p_alpha));
@@ -79,33 +78,22 @@ public:
 		//! Only generic functions here -- shape[x] is abstract!
 		for (auto& shape : shapes_to_change) {
 			auto& tshape = dynamic_cast<sf::Transformable&>(*shape);
-			tshape.setPosition(tshape.getPosition() + sf::Vector2f(dx, dy));
+			tshape.setPosition(tshape.getPosition() + sf::Vector2f(ds.x, ds.y) * _SCALE);
 		}
 
-		dx = 0; dy = 0;  
-/*
-		if (dx < 1) v.x = 0;
-		if (dy < 1) v.y = 0;
-*/
 		return *this;
 	}
 
-	auto move_up()    { dy = -10; }
-	auto move_down()  { dy =  10; }
-	auto move_left()  { dx = -10; }
-	auto move_right() { dx =  10; }
-/*
-	auto move_up()    { v.y = -10; }
-	auto move_down()  { v.y =  10; }
-	auto move_left()  { v.x = -10; }
-	auto move_right() { v.x =  10; }
-*/
+	auto move_up()    { v.y -= V_NUDGE; }
+	auto move_down()  { v.y += V_NUDGE; }
+	auto move_left()  { v.x -= V_NUDGE; }
+	auto move_right() { v.x += V_NUDGE; }
 
 // Housekeeping
 	World()
 	{
 		//! Well, we're gonna know this circle by name ([0]), see recalc_for_next_frame:
-		auto circle = make_shared<sf::CircleShape>(100.f);
+		auto circle = make_shared<sf::CircleShape>(50.f);
 		shapes_to_draw.push_back(circle);
 		//! Not all the drawables are also transformables! (E.g. vertex arrays.)
 		// (But our little fkn' ugly circle is.)
@@ -156,7 +144,7 @@ public:
 //============================================================================
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode({200, 200}), "SFML (OpenGL)");
+	sf::RenderWindow window(sf::VideoMode({800, 600}), "SFML (OpenGL)");
 //!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 //!!??	glEnable(GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
 //!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
