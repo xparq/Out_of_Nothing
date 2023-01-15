@@ -2,6 +2,7 @@
 #include <SFML/OpenGL.hpp>       //! -> https://www.sfml-dev.org/tutorials/2.5/window-opengl.php
 //using namespace sf;
 
+#include <cmath>
 #include <memory> // shared_ptr
 #include <vector>
 #include <iostream> // cerr
@@ -10,10 +11,13 @@ using namespace std;
 
 //----------------------------------------------------------------------------
 // "View"
-class Visual_Params //!!?? Is this the UI? Or rendering cfg + params? Or both?
+class Render
 //!! This already has SFML dependencies!
 {
 public:
+	static const auto VIEW_WIDTH  = 800;
+	static const auto VIEW_HEIGHT = 600;
+
 	static const auto ALPHA_ACTIVE = 255;
 	static const auto ALPHA_INACTIVE = 127;
 
@@ -28,7 +32,7 @@ public:
 	}
 
 // Housekeeping
-	Visual_Params()
+	Render()
 	      :	p_alpha(ALPHA_ACTIVE)
 	{
 	}
@@ -37,19 +41,36 @@ public:
 
 //----------------------------------------------------------------------------
 // "Model"
+struct Body
+{
+	float r{0};
+	sf::Vector2f p{0, 0};
+	sf::Vector2f v{0, 0};
+
+	// computed:
+	float mass{0};
+};
+
 class World
 //!! This already has SFML dependencies!
 {
-	sf::Clock clock;
+// Physics constants:
+	float G = 6.673e-6; //! 6.673e-11
+	float DENSITY_ROCK = 2000; // kg/m3
+	float FRICTION = 0.4;
+	float V_NUDGE = 100;
+	float _SCALE = 0.1;
 
-	float FRICTION = 0.008;
-	float V_NUDGE = 0.5;
+	float GLOBE_RADIUS = 500;
 
+// Internal state:
 	float dt; // inter-frame increment of the world model time
 	sf::Vector2f v = {0, 0};
-	float _SCALE = 500;
 
 public: // Just give access for now...:
+	vector< shared_ptr<Body> > bodies;
+
+	//!! Move to the renderer!
 	vector< shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
 	vector< shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 
@@ -57,48 +78,92 @@ public:
 // Input params
 
 // Ops
-	auto recalc_for_next_frame(const Visual_Params& visuals) // ++world
+	auto add_body(const Body& obj)
+	{
+		bodies.push_back(make_shared<Body>(obj));
+
+		// For rendering...
+
+		//! Not all the drawables are also transformables! (E.g. vertex arrays.)
+		// (But our little ugly circles are, for now.)
+		auto shape = make_shared<sf::CircleShape>(obj.r * _SCALE);
+		shapes_to_draw.push_back(shape);
+		shapes_to_change.push_back(shape);
+	}
+
+	auto recalc_for_next_frame(const Render& visuals) // ++world
 	// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 	{
 		dt = clock.getElapsedTime().asSeconds();
 		clock.restart();
 
-		// Inertia & friction:
-		sf::Vector2f friction_decel(-v.x * FRICTION, -v.y * FRICTION);
-		sf::Vector2f dv = friction_decel * dt * _SCALE;
-		v += dv;
-		sf::Vector2f ds(v.x * dt, v.y * dt);
+		for (size_t i = 0; i < bodies.size(); ++i)
+		{
+			auto& body = bodies[i];
 
-cerr << "v = ("<<v.x<<","<<v.y<<"), " << " dx = "<<ds.x << ", dy ="<<ds.y << ", dt = "<<dt << endl;
+			// Gravity - only apply to the moon(s), ignore the moon's effect on the globe!
+			if (i >= 1) {
+				auto& globe = bodies[0];
+				float distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
+				if (distance < globe->r) distance = globe->r; //!... avoid 0 -> infinity
+				float g = G * globe->mass / pow(distance, 2);
+				sf::Vector2f gvect((globe->p.x - body->p.x) * g, (globe->p.y - body->p.y) * g);
+				sf::Vector2f dv = gvect * (dt);
+				body->v += dv;
+				sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
+				body->p += ds;
 
-		// Here we just know this circle was explicitly created at [0]:
-		auto circle = dynamic_pointer_cast<sf::CircleShape>(shapes_to_change[0]);
-		circle->setFillColor(sf::Color(120, 12, 0, visuals.p_alpha));
+cerr << " - gravity: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << endl;
+			}
+
+			// Friction:
+			sf::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+			sf::Vector2f dv = friction_decel * (dt);
+			body->v += dv;
+			sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
+			body->p += ds;
+cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
+//!!		}
 
 		//! Only generic functions here -- shape[x] is abstract!
-		for (auto& shape : shapes_to_change) {
+//!!		for (auto& shape : shapes_to_change)
+//!!		{
+			auto shape = dynamic_pointer_cast<sf::CircleShape>(shapes_to_change[i]);
+
+			shape->setFillColor(sf::Color(70 + body->r, 12, 50 - body->r, visuals.p_alpha));
+
 			auto& tshape = dynamic_cast<sf::Transformable&>(*shape);
-			tshape.setPosition(tshape.getPosition() + sf::Vector2f(ds.x, ds.y) * _SCALE);
+			tshape.setPosition(sf::Vector2f(
+				Render::VIEW_WIDTH/2  + (body->p.x - body->r) * _SCALE, 
+				Render::VIEW_HEIGHT/2 + (body->p.y - body->r) * _SCALE));
 		}
 
 		return *this;
 	}
 
-	auto move_up()    { v.y -= V_NUDGE; }
-	auto move_down()  { v.y += V_NUDGE; }
-	auto move_left()  { v.x -= V_NUDGE; }
-	auto move_right() { v.x += V_NUDGE; }
+	auto move_up()    { bodies[0]->v.y -= V_NUDGE; }
+	auto move_down()  { bodies[0]->v.y += V_NUDGE; }
+	auto move_left()  { bodies[0]->v.x -= V_NUDGE; }
+	auto move_right() { bodies[0]->v.x += V_NUDGE; }
+
+	auto setup()
+	{
+		//!! Well, we're gonna know these objects by name (index) for now, see recalc():
+		// globe:
+		add_body({ .r = GLOBE_RADIUS,    .p = {0,0}, .v = {0,0}, .mass = powf(GLOBE_RADIUS, 3) * DENSITY_ROCK});
+		// moon 1:
+		add_body({ .r = GLOBE_RADIUS/10, .p = {-GLOBE_RADIUS * 1.2f, -GLOBE_RADIUS * 1.2f}, .v = {0, 0}, .mass = 0 });
+		// moon 2:
+		add_body({ .r = GLOBE_RADIUS/7,  .p = {-GLOBE_RADIUS * 1.6f, +GLOBE_RADIUS * 1.2f}, .v = {10, 0}, .mass = 0 });
+	}
 
 // Housekeeping
 	World()
 	{
-		//! Well, we're gonna know this circle by name ([0]), see recalc_for_next_frame:
-		auto circle = make_shared<sf::CircleShape>(50.f);
-		shapes_to_draw.push_back(circle);
-		//! Not all the drawables are also transformables! (E.g. vertex arrays.)
-		// (But our little fkn' ugly circle is.)
-		shapes_to_change.push_back(circle);
+		setup();
 	}
+
+	sf::Clock clock;
 };
 
 
@@ -108,7 +173,7 @@ class SFML_Engine
 {
 public: // Just give access for now...:
 	World world;
-	Visual_Params visuals;
+	Render visuals;
 
 	sf::RenderWindow& window;
 public:
@@ -144,7 +209,7 @@ public:
 //============================================================================
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode({800, 600}), "SFML (OpenGL)");
+	sf::RenderWindow window(sf::VideoMode({Render::VIEW_WIDTH, Render::VIEW_HEIGHT}), "SFML (OpenGL)");
 //!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 //!!??	glEnable(GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
 //!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
@@ -181,11 +246,11 @@ int main()
 				break;
 
 			case sf::Event::LostFocus:
-				engine.visuals.p_alpha = Visual_Params::ALPHA_INACTIVE;
+				engine.visuals.p_alpha = Render::ALPHA_INACTIVE;
 				break;
 
 			case sf::Event::GainedFocus:
-				engine.visuals.p_alpha = Visual_Params::ALPHA_ACTIVE;
+				engine.visuals.p_alpha = Render::ALPHA_ACTIVE;
 				break;
 
 			case sf::Event::Closed:
