@@ -71,7 +71,8 @@ class World
 // Physics constants -- !!MOVE TO Physics! --:
 	float GLOBE_RADIUS = 50000000; //m
 
-	float G = 6.673e-11;
+	float G = 6.673e-11; //!! No point keeping this real and all the others stretched, 
+	                     //!! unless a real orbital simulation is the goal (which isn't)!...
 	float DENSITY_ROCK = 2000; // kg/m3
 	float FRICTION = 0.3;
 	float V_NUDGE = 12000000; // m/s

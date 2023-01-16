@@ -1,3 +1,3 @@
 ﻿@call _setenv.cmd
 
-%sz_sfml_test_out%/hello-sfml.exe
+%sz_sfml_test_out%/%sz_appname%.exe
