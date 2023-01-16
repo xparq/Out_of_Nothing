@@ -41,27 +41,41 @@ public:
 
 //----------------------------------------------------------------------------
 // "Model"
+struct Physics
+{
+//	...
+};
+
 struct Body
+//!!Requires the physics (e.g. constants) of the world!...
 {
 	float r{0};
 	sf::Vector2f p{0, 0};
 	sf::Vector2f v{0, 0};
 
+	float density{1000}; //!!World::DENSITY_ROCK or something...
+	float color{0};
+
 	// computed:
 	float mass{0};
+
+	//!!not yet possible with designater init:
+	//!!Body() : mass(powf(r, 3) * density) {}
+	//!!So... (see add_body()):
+		void precalc() { mass = powf(r, 3) * density; }
 };
 
 class World
 //!! This already has SFML dependencies!
 {
-// Physics constants:
-	float G = 6.673e-6; //! 6.673e-11
-	float DENSITY_ROCK = 2000; // kg/m3
-	float FRICTION = 0.4;
-	float V_NUDGE = 100;
-	float _SCALE = 0.1;
+// Physics constants -- !!MOVE TO Physics! --:
+	float GLOBE_RADIUS = 50000000; //m
 
-	float GLOBE_RADIUS = 500;
+	float G = 6.673e-11;
+	float DENSITY_ROCK = 2000; // kg/m3
+	float FRICTION = 0.3;
+	float V_NUDGE = 12000000; // m/s
+	float _SCALE = 0.000001;
 
 // Internal state:
 	float dt; // inter-frame increment of the world model time
@@ -78,8 +92,9 @@ public:
 // Input params
 
 // Ops
-	auto add_body(const Body& obj)
+	auto add_body(Body&& obj)
 	{
+		obj.precalc();
 		bodies.push_back(make_shared<Body>(obj));
 
 		// For rendering...
@@ -130,7 +145,7 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 //!!		{
 			auto shape = dynamic_pointer_cast<sf::CircleShape>(shapes_to_change[i]);
 
-			shape->setFillColor(sf::Color(70 + body->r, 12, 50 - body->r, visuals.p_alpha));
+			shape->setFillColor(sf::Color(70 + body->color, 12, 50 - body->color, visuals.p_alpha));
 
 			auto& tshape = dynamic_cast<sf::Transformable&>(*shape);
 			tshape.setPosition(sf::Vector2f(
@@ -150,11 +165,10 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 	{
 		//!! Well, we're gonna know these objects by name (index) for now, see recalc():
 		// globe:
-		add_body({ .r = GLOBE_RADIUS,    .p = {0,0}, .v = {0,0}, .mass = powf(GLOBE_RADIUS, 3) * DENSITY_ROCK});
-		// moon 1:
-		add_body({ .r = GLOBE_RADIUS/10, .p = {-GLOBE_RADIUS * 1.2f, -GLOBE_RADIUS * 1.2f}, .v = {0, 0}, .mass = 0 });
-		// moon 2:
-		add_body({ .r = GLOBE_RADIUS/7,  .p = {-GLOBE_RADIUS * 1.6f, +GLOBE_RADIUS * 1.2f}, .v = {10, 0}, .mass = 0 });
+		add_body({ .r = GLOBE_RADIUS,    .p = {0,0}, .v = {0,0}, .density = DENSITY_ROCK, .color = 10});
+		// moons:
+		add_body({ .r = GLOBE_RADIUS/10, .p = {-GLOBE_RADIUS * 1.2f, -GLOBE_RADIUS * 1.2f}, .v = {0, 0}, .color = 100});
+		add_body({ .r = GLOBE_RADIUS/7,  .p = {-GLOBE_RADIUS * 1.6f, +GLOBE_RADIUS * 1.2f}, .v = {150000, 200000}, .color = 160});
 	}
 
 // Housekeeping
