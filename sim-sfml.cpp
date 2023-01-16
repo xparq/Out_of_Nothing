@@ -159,7 +159,27 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 	auto move_left()  { bodies[0]->v.x -= V_NUDGE; }
 	auto move_right() { bodies[0]->v.x += V_NUDGE; }
 
-	auto setup()
+	auto zoom_in()  { auto factor = 1.25; _SCALE *= factor; _resize_objects(factor); }
+	auto zoom_out() { auto factor = 0.80; _SCALE *= factor; _resize_objects(factor); }
+
+	void _resize_objects(float factor)
+	{
+		_transform_objects([factor](sf::Transformable& shape) {
+				shape.setScale(shape.getScale() * factor);
+		});
+	}
+
+	void _transform_objects(const auto& op) // c++20 auto lambda ref (but why the `const` required by MSVC?); https://stackoverflow.com/a/67718838/1479945
+	// op = [](Transformable& shape);
+	{
+		//! Only generic functions here -- Transformable is abstract!
+		for (auto& shape : shapes_to_change) {
+			auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
+			op(trshape);
+		}
+	}
+
+	auto _setup()
 	{
 		//!! Well, we're gonna know these objects by name (index) for now, see recalc():
 		// globe:
@@ -172,7 +192,7 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 // Housekeeping
 	World_SFML()
 	{
-		setup();
+		_setup();
 	}
 
 	sf::Clock clock;
@@ -255,8 +275,8 @@ int main()
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
-//				case '+': engine.zoom_in(); break;
-//				case '-': engine.zoom_out(); break;
+				case '+': engine.world.zoom_in(); break;
+				case '-': engine.world.zoom_out(); break;
 				}
 				break;
 
