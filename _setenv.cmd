@@ -8,6 +8,6 @@ set LIB=%_libroot_%/lib;%LIB%
 set PATH=%_libroot_%/bin;%PATH%
 
 set sz_sfml_test_out=%~dp0out
-md %sz_sfml_test_out%
+if not exist "%sz_sfml_test_out%" md "%sz_sfml_test_out%"
 
 set _libroot_=

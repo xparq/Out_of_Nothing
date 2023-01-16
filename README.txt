@@ -1,12 +1,13 @@
-﻿Deps.: MSVC (-std:c++20), Windows, SFML, 2.6 probably.
+﻿Deps.: MSVC (-std:c++20), SFML >= 2.5
 
 ?? How the hell is the static-built exe a) so small, b) EVEN SMALLER THAN THE DLL BUILD?!
-   (Yes, it really is static: renamed sfml/bin and it still ran fine.)
+   Obviously the C++ runtime still comes from a DLL, but still.
+   (Yes, the SFML bits are really static: renamed sfml/bin and it still ran fine.)
 
 TODO:
 
 - Remove SFML dependencies from the World!
-  It still has SFML sf::Vector*, at the very least.
+  It still has SFML sf::Vector2, at the very least.
   A light vector adapter ("native generic" <-> SFML) class could isolate them.
 - Rename "Engine" to sg. less like a generic type but more like a (more specific)
   app "value"... (Game could be fine, but... what if this isn't gonna be a game?)
