@@ -3,13 +3,16 @@
 
 TODO:
 
+- Add ref. center pos. to bodies!
+- Fix zoom to be relative to the view coords., not the world! (So an offset view
+  won't shift away sideways unexpectedly...)
+  Or at least change it to the middle of them by default!
 - Don't update location (by adding ds) in the middle of the phys. calc., only v!
 - Limit (object) v to a) prevent extreme shootoffs, and b) to allow more precise
   collision detection.
 - Collisions...
 - FPS HUD
 	+ debug console log on/off, and check how it affects the fps!
-- view panning, home in (center) on objects, o for origin(al pos)
 - separate UI thread + check if window drag/resize would still block...
 - measure FPS without full screen clear + redraw
 - text on T400 + Win7

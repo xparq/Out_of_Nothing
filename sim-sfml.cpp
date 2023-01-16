@@ -73,7 +73,10 @@ struct Body
 	static constexpr float FRICTION = 0.3;
 
 	float V_NUDGE = 12000000; // m/s
+
 	float _SCALE = 0.000001;
+	float _OFFSET_X, _OFFSET_Y;
+	static constexpr float _PAN_STEP = 10;
 
 // Internal state:
 	float dt; // inter-frame increment of the world model time
@@ -147,8 +150,8 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 
 			auto& tshape = dynamic_cast<sf::Transformable&>(*shape);
 			tshape.setPosition(sf::Vector2f(
-				Render_SFML::VIEW_WIDTH/2  + (body->p.x - body->r) * _SCALE,
-				Render_SFML::VIEW_HEIGHT/2 + (body->p.y - body->r) * _SCALE));
+				Render_SFML::VIEW_WIDTH/2  + (body->p.x - body->r) * _SCALE + _OFFSET_X,
+				Render_SFML::VIEW_HEIGHT/2 + (body->p.y - body->r) * _SCALE + _OFFSET_Y));
 		}
 
 		return *this;
@@ -158,6 +161,17 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 	auto move_down()  { bodies[0]->v.y += V_NUDGE; }
 	auto move_left()  { bodies[0]->v.x -= V_NUDGE; }
 	auto move_right() { bodies[0]->v.x += V_NUDGE; }
+
+	auto pan_up()     { _OFFSET_Y -= _PAN_STEP; }
+	auto pan_down()   { _OFFSET_Y += _PAN_STEP; }
+	auto pan_left()   { _OFFSET_X -= _PAN_STEP; }
+	auto pan_right()  { _OFFSET_X += _PAN_STEP; }
+	auto pan_reset()  { _OFFSET_X = _OFFSET_Y = 0; }
+	auto pan_center_body(auto body_id) {
+		const auto& body = bodies[body_id];
+		_OFFSET_X = - body->p.x * _SCALE;
+		_OFFSET_Y = - body->p.y * _SCALE;
+	}
 
 	auto zoom_in()  { auto factor = 1.25; _SCALE *= factor; _resize_objects(factor); }
 	auto zoom_out() { auto factor = 0.80; _SCALE *= factor; _resize_objects(factor); }
@@ -256,14 +270,23 @@ int main()
 				switch (event.key.code) {
 				case sf::Keyboard::Escape:
 					window.close(); break;
+
 				case sf::Keyboard::Up:
-					engine.world.move_up(); break;
+					if (event.key.shift) engine.world.pan_up();
+					else                 engine.world.move_up();
+					break;
 				case sf::Keyboard::Down:
-					engine.world.move_down(); break;
+					if (event.key.shift) engine.world.pan_down();
+					else                 engine.world.move_down();
+					break;
 				case sf::Keyboard::Left:
-					engine.world.move_left(); break;
+					if (event.key.shift) engine.world.pan_left();
+					else                 engine.world.move_left();
+					break;
 				case sf::Keyboard::Right:
-					engine.world.move_right(); break;
+					if (event.key.shift) engine.world.pan_right();
+					else                 engine.world.move_right();
+					break;
 				}
 				break;
 
@@ -277,6 +300,8 @@ int main()
 				switch (static_cast<char>(event.text.unicode)) {
 				case '+': engine.world.zoom_in(); break;
 				case '-': engine.world.zoom_out(); break;
+				case 'o': engine.world.pan_reset(); break;
+				case 'h': engine.world.pan_center_body(0); break;
 				}
 				break;
 
