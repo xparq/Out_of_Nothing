@@ -10,9 +10,7 @@ using namespace std;
 
 
 //----------------------------------------------------------------------------
-// "View"
-class Render
-//!! This already has SFML dependencies!
+class Render_SFML // "View"
 {
 public:
 	static const auto VIEW_WIDTH  = 800;
@@ -32,7 +30,7 @@ public:
 	}
 
 // Housekeeping
-	Render()
+	Render_SFML()
 	      :	p_alpha(ALPHA_ACTIVE)
 	{
 	}
@@ -40,7 +38,8 @@ public:
 
 
 //----------------------------------------------------------------------------
-// "Model"
+class World_SFML // "Model"
+{
 struct Physics
 {
 //	...
@@ -53,7 +52,7 @@ struct Body
 	sf::Vector2f p{0, 0};
 	sf::Vector2f v{0, 0};
 
-	float density{1000}; //!!World::DENSITY_ROCK or something...
+	float density{World_SFML::DENSITY_ROCK / 2};
 	float color{0};
 
 	// computed:
@@ -65,16 +64,14 @@ struct Body
 		void precalc() { mass = powf(r, 3) * density; }
 };
 
-class World
-//!! This already has SFML dependencies!
-{
 // Physics constants -- !!MOVE TO Physics! --:
-	float GLOBE_RADIUS = 50000000; //m
+	//! `const` can't do non-integral statics! :-/
+	static constexpr float GLOBE_RADIUS = 50000000; // m
+	static constexpr float G = 6.673e-11; //!! No point keeping this real and all the others stretched, 
+	               //!! const unless a real orbital simulation is the goal (which isn't)!...
+	static constexpr float DENSITY_ROCK = 2000; // kg/m3
+	static constexpr float FRICTION = 0.3;
 
-	float G = 6.673e-11; //!! No point keeping this real and all the others stretched, 
-	                     //!! unless a real orbital simulation is the goal (which isn't)!...
-	float DENSITY_ROCK = 2000; // kg/m3
-	float FRICTION = 0.3;
 	float V_NUDGE = 12000000; // m/s
 	float _SCALE = 0.000001;
 
@@ -107,7 +104,7 @@ public:
 		shapes_to_change.push_back(shape);
 	}
 
-	auto recalc_for_next_frame(const Render& visuals) // ++world
+	auto recalc_for_next_frame(const Render_SFML& visuals) // ++world
 	// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 	{
 		dt = clock.getElapsedTime().asSeconds();
@@ -150,8 +147,8 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 
 			auto& tshape = dynamic_cast<sf::Transformable&>(*shape);
 			tshape.setPosition(sf::Vector2f(
-				Render::VIEW_WIDTH/2  + (body->p.x - body->r) * _SCALE, 
-				Render::VIEW_HEIGHT/2 + (body->p.y - body->r) * _SCALE));
+				Render_SFML::VIEW_WIDTH/2  + (body->p.x - body->r) * _SCALE,
+				Render_SFML::VIEW_HEIGHT/2 + (body->p.y - body->r) * _SCALE));
 		}
 
 		return *this;
@@ -173,7 +170,7 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 	}
 
 // Housekeeping
-	World()
+	World_SFML()
 	{
 		setup();
 	}
@@ -183,12 +180,11 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 
 
 //----------------------------------------------------------------------------
-// "Controller"
-class SFML_Engine
+class Engine_SFML // "Controller"
 {
 public: // Just give access for now...:
-	World world;
-	Render visuals;
+	World_SFML world;
+	Render_SFML visuals;
 
 	sf::RenderWindow& window;
 public:
@@ -214,7 +210,7 @@ public:
 	}
 
 // Housekeeping
-	SFML_Engine(sf::RenderWindow& _window)
+	Engine_SFML(sf::RenderWindow& _window)
 	      : window(_window)
 	{
 	}
@@ -224,24 +220,20 @@ public:
 //============================================================================
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode({Render::VIEW_WIDTH, Render::VIEW_HEIGHT}), "SFML (OpenGL)");
+	sf::RenderWindow window(sf::VideoMode({Render_SFML::VIEW_WIDTH, Render_SFML::VIEW_HEIGHT}),
+		"SFML (OpenGL) Test Drive"); //!, sf::Style::Fullscreen);
 //!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 //!!??	glEnable(GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
 //!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
 
-	SFML_Engine engine(window);
+	Engine_SFML engine(window);
 
-	while (window.isOpen())
-	{
-	        sf::Event event;
-        	while (window.pollEvent(event))
-	        {
-			//https://www.sfml-dev.org/tutorials/2.5/window-events.php
+	while (window.isOpen()) {
+		for (sf::Event event; window.pollEvent(event);) {
 			switch (event.type)
 			{
 			case sf::Event::KeyPressed:
-				switch (event.key.code)
-				{
+				switch (event.key.code) {
 				case sf::Keyboard::Escape:
 					window.close(); break;
 				case sf::Keyboard::Up:
@@ -256,23 +248,31 @@ int main()
 				break;
 
 			case sf::Event::MouseWheelScrolled:
-//				cerr << event.mouseWheelScroll.delta << endl;
+	//				cerr << event.mouseWheelScroll.delta << endl;
 				engine.visuals.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; // seems to always be 1 or -1
 				break;
 
+			case sf::Event::TextEntered:
+				if (event.text.unicode > 128) break; // non-ASCII!
+				switch (static_cast<char>(event.text.unicode)) {
+//				case '+': engine.zoom_in(); break;
+//				case '-': engine.zoom_out(); break;
+				}
+				break;
+
 			case sf::Event::LostFocus:
-				engine.visuals.p_alpha = Render::ALPHA_INACTIVE;
+				engine.visuals.p_alpha = Render_SFML::ALPHA_INACTIVE;
 				break;
 
 			case sf::Event::GainedFocus:
-				engine.visuals.p_alpha = Render::ALPHA_ACTIVE;
+				engine.visuals.p_alpha = Render_SFML::ALPHA_ACTIVE;
 				break;
 
 			case sf::Event::Closed:
 				window.close();
 				break;
 			}
-	        }
+		}
 
 		engine.recalc_for_next_frame();
 		engine.draw();
