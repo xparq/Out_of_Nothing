@@ -409,16 +409,21 @@ void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
 		if (i >= 1) {
 			auto& globe = bodies[0];
 			float distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
-			if (distance < globe->r) distance = globe->r; //!... avoid 0 -> infinity
-			float g = G * globe->mass / (distance * distance);
-			sf::Vector2f gvect((globe->p.x - body->p.x) * g, (globe->p.y - body->p.y) * g);
-//!!should be:	sf::Vector2f gvect((globe->p.x - body->p.x) / distance * g, (globe->p.y - body->p.y) / distance * g);
-			sf::Vector2f dv = gvect * dt;
-			body->v += dv;
-			sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
-			body->p += ds;
-
-cerr << " - gravity: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << endl;
+			// Crude collision detection
+			//! Done before actually reaching the body (so we can avoid a frame shoing the penetration :) )!
+			//! Collision det. is crucial also for preventing 0 distance to divide by...
+			if (distance < globe->r + body->r) {
+				body->v = {0, 0}; // or bounce, or stick to the other body and take its v!
+				// The body is already inside the other, so it needs to be bounced back out:
+				//!!...body->p -= ds;
+			} else {
+				float g = G * globe->mass / (distance * distance);
+				sf::Vector2f gvect((globe->p.x - body->p.x) * g, (globe->p.y - body->p.y) * g);
+	//!!should be:	sf::Vector2f gvect((globe->p.x - body->p.x) / distance * g, (globe->p.y - body->p.y) / distance * g);
+				sf::Vector2f dv = gvect * dt;
+				body->v += dv;
+cerr << " - gravity: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
+			}
 		}
 
 		// Friction:
@@ -426,6 +431,7 @@ cerr << " - gravity: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<
 		sf::Vector2f dv = friction_decel * (dt);
 		body->v += dv;
 		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
+
 		body->p += ds;
 cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
 	}

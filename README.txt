@@ -13,6 +13,7 @@ Threading caveats:
 ------------------------------------------------------------------------------
 TODO:
 
+- Fix: SFML window.setActive errors on termination.
 - Remove SFML dependencies from the World!
   It still has SFML sf::Vector2, at the very least.
   A light vector adapter ("native generic" <-> SFML) class could isolate them.
@@ -30,10 +31,9 @@ TODO:
   + Or at least change it to the middle of them by default!
     (The centering offset is handled by a hardcoded hack in the rendering loop now!)
 - Fix: zoom makes an offset (panned) view shift sideways unexpectedly.
-- Don't update location (by adding ds) in the middle of the phys. calc., only v!
 - Limit (object) v to a) prevent extreme shootoffs, and b) to allow more precise
   collision detection.
-- Collisions...
+  - Also clip minuscule v-s (to 0) allowing to optimize out redundant calc.
 - FPS HUD
 	+ debug console log on/off, and check how it affects the fps!
 - Measure FPS without /full/ screen clear & redraw.
