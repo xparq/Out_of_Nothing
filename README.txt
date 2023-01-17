@@ -13,9 +13,9 @@ Threading caveats:
 ------------------------------------------------------------------------------
 TODO:
 
-? Is there a bounce off the surface, when the globe is moving away while colliding,
-  or it's just an optical illusion?! (It shoud be, as there's no bouncing sim! :-o :) )
 - Fix: SFML window.setActive errors on termination.
+? Is there a bounce off the surface, when the globe is moving away while colliding,
+  or it's just an optical illusion?! (Shoud be, as there's no bouncing sim! :-o :) )
 - Rename "Engine" to sg. less like a generic type but more like a (more specific)
   app "value"... (Game could be fine, but... what if this isn't gonna be a game?)
   -> engine.world is a stupid name, game.world would be perfect, but only for games,
@@ -35,7 +35,7 @@ TODO:
   - Also clip minuscule v-s (to 0) allowing to optimize out redundant calc.
 - FPS HUD
 	+ debug console log on/off, and check how it affects the fps!
-- Measure FPS without /full/ screen clear & redraw.
+- Measure FPS with partial (vs. the "mandatory" full) screen clear & redraw.
 - Test on T400 + Win7!
 - Better (de)coupling between SFML and the World!
   The generic World should also be able to use vectors, and time, without

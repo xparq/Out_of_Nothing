@@ -145,12 +145,33 @@ public:
 	//! The depencendies should be formalized e.g. via using virtual units
 	//! provided by the physics there!
 	static constexpr float CFG_GLOBE_RADIUS = 50000000; // m
-	static constexpr float CFG_V_NUDGE = 12000000; // m/s
-
+	static constexpr float CFG_THRUST_FORCE = 6e34; // N (kg*m/s^2)
+	
 	static constexpr float CFG_DEFAULT_SCALE = 0.000001; //! This one also depends very much on the physics!
 
 	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
 
+// Player-controls (state)
+public:
+	struct Thruster {
+		float _throttle = 0;
+		//!! :) static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
+		float throttle(float new_throttle)
+		{
+			auto prev_throttle = _throttle;
+			_throttle = new_throttle;
+			return prev_throttle;
+		}
+		float throttle() const { return _throttle; }
+	};
+	//!!Thtusters should have vectorized throttles relative to the body orientation,
+	//!!which is currently fixed to be identical to the world coordinate system...
+	Thruster thrust_up;
+	Thruster thrust_down;
+	Thruster thrust_left;
+	Thruster thrust_right;
+
+public:
 	enum EventState { IDLE, BUSY, EVENT_READY } event_state = EventState::BUSY;
 
 protected:
@@ -180,10 +201,16 @@ public: //!!Currently used by the global standalone fn event_loop() directly!
 //!!was:	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
 public:
 // Ops
-	auto move_up()    { world.bodies[0]->v.y -= CFG_V_NUDGE; }
-	auto move_down()  { world.bodies[0]->v.y += CFG_V_NUDGE; }
-	auto move_left()  { world.bodies[0]->v.x -= CFG_V_NUDGE; }
-	auto move_right() { world.bodies[0]->v.x += CFG_V_NUDGE; }
+	//! Should be idempotent to tolerate keyboard repeats (which could be disabled, but better be robust)!
+	auto up_thruster_start()    { thrust_up.throttle(CFG_THRUST_FORCE); }
+	auto down_thruster_start()  { thrust_down.throttle(CFG_THRUST_FORCE); }
+	auto left_thruster_start()  { thrust_left.throttle(CFG_THRUST_FORCE); }
+	auto right_thruster_start() { thrust_right.throttle(CFG_THRUST_FORCE); }
+
+	auto up_thruster_stop()     { thrust_up.throttle(0); }
+	auto down_thruster_stop()   { thrust_down.throttle(0); }
+	auto left_thruster_stop()   { thrust_left.throttle(0); }
+	auto right_thruster_stop()  { thrust_right.throttle(0); }
 
 	auto pan_up()     { _OFFSET_Y -= CFG_PAN_STEP; }
 	auto pan_down()   { _OFFSET_Y += CFG_PAN_STEP; }
@@ -281,6 +308,15 @@ public:
 
 				switch (event.type)
 				{
+				case sf::Event::KeyReleased:
+					switch (event.key.code) {
+					case sf::Keyboard::Up:    up_thruster_stop(); break;
+					case sf::Keyboard::Down:  down_thruster_stop(); break;
+					case sf::Keyboard::Left:  left_thruster_stop(); break;
+					case sf::Keyboard::Right: right_thruster_stop(); break;
+					}
+					break;
+
 				case sf::Event::KeyPressed:
 					switch (event.key.code) {
 					case sf::Keyboard::Escape: //!!Merge with Closed!
@@ -290,19 +326,19 @@ public:
 
 					case sf::Keyboard::Up:
 						if (event.key.shift) pan_up();
-						else                 move_up();
+						else                 up_thruster_start();
 						break;
 					case sf::Keyboard::Down:
 						if (event.key.shift) pan_down();
-						else                 move_down();
+						else                 down_thruster_start();
 						break;
 					case sf::Keyboard::Left:
 						if (event.key.shift) pan_left();
-						else                 move_left();
+						else                 left_thruster_start();
 						break;
 					case sf::Keyboard::Right:
 						if (event.key.shift) pan_right();
-						else                 move_right();
+						else                 right_thruster_start();
 						break;
 					}
 					break;
@@ -369,7 +405,7 @@ public:
 	{
 		//!! Well, we're gonna know these objects by name (index) for now, see recalc():
 		// globe:
-		add_body({ .r = CFG_GLOBE_RADIUS,    .p = {0,0}, .v = {0,0}, .density = world.DENSITY_ROCK, .color = 10});
+		add_body({ .r = CFG_GLOBE_RADIUS,    .p = {0,0}, .v = {0,0}, .density = world.DENSITY_ROCK, .color = 20});
 		// moons:
 		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 100});
 		add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5}, .color = 160});
@@ -433,6 +469,13 @@ void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
 	{
 		auto& body = bodies[i];
 
+		// Thrust:
+		if (i == 0) {
+			sf::Vector2f F_thr( (-game.thrust_left.throttle() + game.thrust_right.throttle()) * dt,
+							    (-game.thrust_up.throttle() + game.thrust_down.throttle()) *dt);
+			body->v += (F_thr / body->mass);
+		}
+
 		// Gravity - only apply to the moon(s), ignore the moon's effect on the globe!
 		if (i >= 1) {
 			auto& globe = bodies[0];
@@ -472,7 +515,7 @@ void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
 				//!!should rather be: sf::Vector2f gvect(dx / distance * g, dy / distance * g);
 				sf::Vector2f dv = gvect * dt;
 				body->v += dv;
-cerr << " - gravity: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
+cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
 			}
 		}
 
@@ -483,7 +526,7 @@ cerr << " - gravity: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<
 		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
 
 		body->p += ds;
-cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
+cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
 	}
 }
 
