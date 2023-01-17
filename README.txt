@@ -13,10 +13,9 @@ Threading caveats:
 ------------------------------------------------------------------------------
 TODO:
 
+? Is there a bounce off the surface, when the globe is moving away while colliding,
+  or it's just an optical illusion?! (It shoud be, as there's no bouncing sim! :-o :) )
 - Fix: SFML window.setActive errors on termination.
-- Remove SFML dependencies from the World!
-  It still has SFML sf::Vector2, at the very least.
-  A light vector adapter ("native generic" <-> SFML) class could isolate them.
 - Rename "Engine" to sg. less like a generic type but more like a (more specific)
   app "value"... (Game could be fine, but... what if this isn't gonna be a game?)
   -> engine.world is a stupid name, game.world would be perfect, but only for games,
@@ -38,6 +37,10 @@ TODO:
 	+ debug console log on/off, and check how it affects the fps!
 - Measure FPS without /full/ screen clear & redraw.
 - Test on T400 + Win7!
+- Better (de)coupling between SFML and the World!
+  The generic World should also be able to use vectors, and time, without
+  sf::Vector2 and sf::Clock.
+  - Some light adapter ("native generic" <-> SFML) classes could do.
 ? If performance doesn't mind, move to a less cumbersome design where shapes
   aren't kept persistently all the time, but recreated for each frame anew,
   as needed, and *the way they are needed* (rather than modifying them, e.g.

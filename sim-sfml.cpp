@@ -43,13 +43,19 @@ public:
 
 
 //----------------------------------------------------------------------------
-class World_SFML // "Model"
+class World // "Model"
 {
 public:
 struct Physics
 {
 //	...
 };
+// Physics constants -- !!MOVE INTO Physics! --:
+	//! `const` can't do non-integral statics! :-/
+	static constexpr float G = 6.673e-11; //!! No point keeping this real and all the others stretched,
+	               //!! const unless a real orbital simulation is the goal (which isn't)!...
+	static constexpr float DENSITY_ROCK = 2000; // kg/m3
+	static constexpr float FRICTION = 0.3;
 
 public:
 struct Body
@@ -59,7 +65,7 @@ struct Body
 	sf::Vector2f p{0, 0};
 	sf::Vector2f v{0, 0};
 
-	float density{World_SFML::DENSITY_ROCK / 2};
+	float density{World::DENSITY_ROCK / 2};
 	float color{0};
 
 	// computed:
@@ -71,23 +77,11 @@ struct Body
 		void precalc() { mass = powf(r, 3) * density; }
 };
 
-// Physics constants -- !!MOVE TO Physics! --:
-	//! `const` can't do non-integral statics! :-/
-	static constexpr float G = 6.673e-11; //!! No point keeping this real and all the others stretched, 
-	               //!! const unless a real orbital simulation is the goal (which isn't)!...
-	static constexpr float DENSITY_ROCK = 2000; // kg/m3
-	static constexpr float FRICTION = 0.3;
-
-protected:
-// Internal state:
-	float dt; // inter-frame increment of the world model time
-	sf::Vector2f v = {0, 0};
+public:
+	enum Event { None, Collision };
 
 public: // Just allow access for now...:
 	vector< shared_ptr<Body> > bodies;
-
-public:
-// Input params
 
 // Ops
 	auto add_body(Body&& obj)
@@ -96,19 +90,53 @@ public:
 		bodies.push_back(make_shared<Body>(obj));
 	}
 
+	bool is_colliding(const Body* obj1, const Body* obj2)
+	// Takes the body shape into account.
+	// Note: a real coll. calc. (e.g. bounding box intersect.) may not need to the distance to be calculated.
+	{
+		//auto distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
+
+		return false;
+	}
+
+	bool is_colliding(const Body* obj1, const Body* obj2, float distance)
+	// Only for circles yet!
+	{
+		return distance <= obj1->r + obj2->r;
+	}
+
+	auto collide(Body* obj1, Body* obj2)
+	{
+		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
+		obj1->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
+		//!!...body->p -= ds...;
+	}
+
+	auto notify(Event event, Body* obj1, Body* obj2, ...)
+	{
+		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
+		obj1->color += 100;
+	}
+};
+
+class World_SFML : public World
+{
+protected:
+// Internal state:
+	float dt; // inter-frame increment of the world model time
+	sf::Vector2f v = {0, 0};
+
+public:
+
 	void recalc_for_next_frame(const Engine_SFML& game); // ++world
 
 // Housekeeping
-	World_SFML()
-	{
-	}
-
 	sf::Clock clock;
 };
 
 
 //----------------------------------------------------------------------------
-class Engine
+class Engine // "Controller"
 {
 // Config
 public:
@@ -134,7 +162,7 @@ public:
 
 };
 
-class Engine_SFML : public Engine // "Controller"
+class Engine_SFML : public Engine
 {
 friend class Render_SFML;
 
@@ -408,18 +436,40 @@ void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
 		// Gravity - only apply to the moon(s), ignore the moon's effect on the globe!
 		if (i >= 1) {
 			auto& globe = bodies[0];
-			float distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
-			// Crude collision detection
-			//! Done before actually reaching the body (so we can avoid a frame shoing the penetration :) )!
-			//! Collision det. is crucial also for preventing 0 distance to divide by...
-			if (distance < globe->r + body->r) {
-				body->v = {0, 0}; // or bounce, or stick to the other body and take its v!
-				// The body is already inside the other, so it needs to be bounced back out:
-				//!!...body->p -= ds;
+			//float distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
+			float dx = globe->p.x - body->p.x,
+			      dy = globe->p.y - body->p.y;
+			float distance = sqrt(dx*dx + dy*dy);
+
+			//! Collision det. is crucial also for preventing 0 distance to divide by!
+			//!!Collision and "distance = 0" are not the samne things!
+			//!!Collision concerns the surfaces, but "distance" here for gravity
+			//!!is measured from the center (of mass) of the body!
+			//!!But d = 0 is a "subset" of collisions, so if there would be a "safe"
+			//!!adjustment for any collision to guarantee distance != 0, that would be
+			//!!enough...
+
+			//!!Also, obviously, "almost 0" could be just as bad as 0 (which is not
+			//!!even quite real in float, and would anyway just yield a NaN), so
+			//!!the real solution would be smarter modeling of the high-speed case
+			//!!to do what nature does... Dunno, create a black hole, if you must! :)
+
+			if (/*physics.*/is_colliding(body.get(), globe.get(), distance)) {
+			//! Done before actually reaching the body (so we can avoid the occasional frame showing the penetration :) )!
+			//  (Opting for the perhaps even less natural "but didn't even touch!" issue...)
+
+				// If the collision results in a well-defined fixed position/velocity etc.,
+				// they may need special treatment, because at this point the checked body may not
+				// yet have reached (or crossed the boundary of) the other, so it needs to be adjusted
+				// to the expected collision end-state!
+				/*physics.*/collide(body.get(), globe.get());
+
+				//! Also call a high-level, "predefined emergent" interaction "hook":
+				notify(Event::Collision, body.get(), globe.get());
 			} else {
-				float g = G * globe->mass / (distance * distance);
-				sf::Vector2f gvect((globe->p.x - body->p.x) * g, (globe->p.y - body->p.y) * g);
-	//!!should be:	sf::Vector2f gvect((globe->p.x - body->p.x) / distance * g, (globe->p.y - body->p.y) / distance * g);
+ 				float g = G * globe->mass / (distance * distance);
+				sf::Vector2f gvect(dx * g, dy * g);
+				//!!should rather be: sf::Vector2f gvect(dx / distance * g, dy / distance * g);
 				sf::Vector2f dv = gvect * dt;
 				body->v += dv;
 cerr << " - gravity: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
