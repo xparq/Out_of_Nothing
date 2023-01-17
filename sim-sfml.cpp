@@ -148,7 +148,8 @@ protected:
 	float _OFFSET_X, _OFFSET_Y;
 
 public: //!!Currently used by the global standalone fn event_loop() directly!
-	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
+	sf::RenderWindow& window;
+//!!was:	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
 public:
 // Ops
 	auto move_up()    { world.bodies[0]->v.y -= CFG_V_NUDGE; }
@@ -196,6 +197,7 @@ public:
 		}
 	}
 
+
 	auto updates_for_next_frame()
 	// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 	{
@@ -205,16 +207,120 @@ public:
 
 	auto draw()
 	{
-        window->clear();
+        window.clear();
 		for (const auto& entity : renderer.shapes_to_draw) {
-	        window->draw(*entity);
+	        window.draw(*entity);
 		}
-        window->display();
+        window.display();
 
-		if (!window->setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+		if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 			cerr << "\n- [draw] sf::setActive(false) failed!\n";
 			terminate();
 			return;
+		}
+	}
+
+	//------------------------------------------------------------------------
+	void update_thread_main_loop()
+	{
+		while (!terminated()) {
+			switch (event_state) {
+			case EventState::BUSY:
+	//cerr << " [[[...BUSY...]]] ";
+				break;
+			case EventState::IDLE:
+			case EventState::EVENT_READY:
+				updates_for_next_frame();
+				draw();
+				break;
+			default:
+	cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
+			}
+		}
+	}
+
+	//------------------------------------------------------------------------
+	void event_loop()
+	{
+		while (window.isOpen() && !terminated()) {
+				sf::Event event;
+				if (!window.waitEvent(event)) {
+					cerr << "- Event processing failed.\n";
+					exit(-1);
+				}
+
+				event_state = EventState::BUSY;
+
+				switch (event.type)
+				{
+				case sf::Event::KeyPressed:
+					switch (event.key.code) {
+					case sf::Keyboard::Escape: //!!Merge with Closed!
+						terminate();
+						window.close();
+						break;
+
+					case sf::Keyboard::Up:
+						if (event.key.shift) pan_up();
+						else                 move_up();
+						break;
+					case sf::Keyboard::Down:
+						if (event.key.shift) pan_down();
+						else                 move_down();
+						break;
+					case sf::Keyboard::Left:
+						if (event.key.shift) pan_left();
+						else                 move_left();
+						break;
+					case sf::Keyboard::Right:
+						if (event.key.shift) pan_right();
+						else                 move_right();
+						break;
+					}
+					break;
+
+				case sf::Event::MouseWheelScrolled:
+		//				cerr << event.mouseWheelScroll.delta << endl;
+					renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; // seems to always be 1 or -1
+					break;
+
+				case sf::Event::TextEntered:
+					if (event.text.unicode > 128) break; // non-ASCII!
+					switch (static_cast<char>(event.text.unicode)) {
+					case '+': zoom_in(); break;
+					case '-': zoom_out(); break;
+					case 'o': pan_reset(); break;
+					case 'h': pan_center_body(0); break;
+					}
+					break;
+
+				case sf::Event::LostFocus:
+					renderer.p_alpha = Render_SFML::ALPHA_INACTIVE;
+					break;
+
+				case sf::Event::GainedFocus:
+					renderer.p_alpha = Render_SFML::ALPHA_ACTIVE;
+					break;
+
+				case sf::Event::Closed: //!!Merge with key:Esc!
+					terminate();
+					window.close();
+					break;
+
+				default:
+
+					event_state = EventState::IDLE;
+
+					break;
+				}
+
+			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
+				terminate();
+				return;
+			}
+
+			event_state = EventState::EVENT_READY;
 		}
 	}
 
@@ -242,12 +348,7 @@ public:
 	}
 
 // Housekeeping
-	Engine_SFML()
-	{
-		_setup();
-	}
-
-	Engine_SFML(sf::RenderWindow* _window)
+	Engine_SFML(sf::RenderWindow& _window)
 	      : window(_window)
 	{
 		_setup();
@@ -255,116 +356,9 @@ public:
 	
 };
 
-
-//============================================================================
-void event_loop(Engine_SFML& engine)
-{
-	while (engine.window->isOpen() && !engine.terminated()) {
-			sf::Event event;
-			if (!engine.window->waitEvent(event)) {
-				cerr << "- Event processing failed.\n";
-				exit(-1);
-			}
-
-			engine.event_state = Engine::EventState::BUSY;
-
-			switch (event.type)
-			{
-			case sf::Event::KeyPressed:
-				switch (event.key.code) {
-				case sf::Keyboard::Escape: //!!Merge with Closed!
-					engine.terminate();
-					engine.window->close();
-					break;
-
-				case sf::Keyboard::Up:
-					if (event.key.shift) engine.pan_up();
-					else                 engine.move_up();
-					break;
-				case sf::Keyboard::Down:
-					if (event.key.shift) engine.pan_down();
-					else                 engine.move_down();
-					break;
-				case sf::Keyboard::Left:
-					if (event.key.shift) engine.pan_left();
-					else                 engine.move_left();
-					break;
-				case sf::Keyboard::Right:
-					if (event.key.shift) engine.pan_right();
-					else                 engine.move_right();
-					break;
-				}
-				break;
-
-			case sf::Event::MouseWheelScrolled:
-	//				cerr << event.mouseWheelScroll.delta << endl;
-				engine.renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; // seems to always be 1 or -1
-				break;
-
-			case sf::Event::TextEntered:
-				if (event.text.unicode > 128) break; // non-ASCII!
-				switch (static_cast<char>(event.text.unicode)) {
-				case '+': engine.zoom_in(); break;
-				case '-': engine.zoom_out(); break;
-				case 'o': engine.pan_reset(); break;
-				case 'h': engine.pan_center_body(0); break;
-				}
-				break;
-
-			case sf::Event::LostFocus:
-				engine.renderer.p_alpha = Render_SFML::ALPHA_INACTIVE;
-				break;
-
-			case sf::Event::GainedFocus:
-				engine.renderer.p_alpha = Render_SFML::ALPHA_ACTIVE;
-				break;
-
-			case sf::Event::Closed: //!!Merge with key:Esc!
-				engine.terminate();
-				engine.window->close();
-				break;
-
-			default:
-
-				engine.event_state = Engine::EventState::IDLE;
-
-				break;
-			}
-
-		if (!engine.window->setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-			cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
-			engine.terminate();
-			return;
-		}
-
-		engine.event_state = Engine::EventState::EVENT_READY;
-	}
-}
-
-//void update_loop(Engine_SFML& engine) //!! Hack to workaround a strange thread-related compilation error :-/
-void update_loop(Engine_SFML* engine_ptr)
-{
-	Engine_SFML& engine(*engine_ptr);
-	while (!engine.terminated()) {
-		switch (engine.event_state) {
-		case Engine::EventState::BUSY:
-//cerr << " [[[...BUSY...]]] ";
-			break;
-		case Engine::EventState::IDLE:
-		case Engine::EventState::EVENT_READY:
-
-			engine.updates_for_next_frame();
-			engine.draw();
-
-			break;
-		default:
-cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
-		}
-	}
-}
-
 //============================================================================
 int main(/*int argc char* argv[]*/)
+//============================================================================
 {
 	auto window = sf::RenderWindow(
 		sf::VideoMode({Render_SFML::VIEW_WIDTH, Render_SFML::VIEW_HEIGHT}),
@@ -375,27 +369,31 @@ int main(/*int argc char* argv[]*/)
 	//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
 	//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
 
-	Engine_SFML engine(&window);
+	Engine_SFML engine(window);
 
 	//! The event loop will block and sleep.
 	//! The update thread is safe to start before the event loop, but we should also draw something
 	//! already before the first event comes, so we need to release the SFML (OpenGL) Window and unfreeze
 	//! the update thread (which would wait on the first event by default).
-	if (!engine.window->setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+	if (!engine.window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 		cerr << "\n- [main] sf::setActive(false) failed!\n";
 		return -1;
 	}
 	engine.event_state = Engine::EventState::IDLE;
 
-	std::thread engine_updates(update_loop, &engine);
+	std::thread engine_updates(&Engine_SFML::update_thread_main_loop, &engine);
+			// &engine a) for `this`, b) when this wasn't a member fn, the value form vs ref was ambiguous and failed to compile,
+			// and c) the thread ctor would copy the params (by default), and that would be really wonky for the entire engine! :)
 
-	event_loop(engine);
+	engine.event_loop();
 
 	engine_updates.join();
 
 	return 0;
 }
 
+//============================================================================
+// Memeber fn. implementations...
 //============================================================================
 void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
@@ -433,7 +431,7 @@ cerr << "v = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "
 	}
 }
 
-
+//============================================================================
 void Render_SFML::render_next_frame(const Engine_SFML& game)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {

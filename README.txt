@@ -36,7 +36,7 @@ TODO:
 - Collisions...
 - FPS HUD
 	+ debug console log on/off, and check how it affects the fps!
-- measure FPS without full screen clear + redraw
+- Measure FPS without /full/ screen clear & redraw.
 - Test on T400 + Win7!
 ? If performance doesn't mind, move to a less cumbersome design where shapes
   aren't kept persistently all the time, but recreated for each frame anew,
