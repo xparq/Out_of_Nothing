@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <memory> // shared_ptr
+#include <thread>
 #include <vector>
 #include <iostream> // cerr
 using namespace std;
@@ -107,10 +108,8 @@ public:
 
 
 //----------------------------------------------------------------------------
-class Engine_SFML // "Controller"
+class Engine
 {
-friend class Render_SFML;
-
 // Config
 public:
 	//! See also: World physics! The specific values here depend on the laws there,
@@ -124,6 +123,21 @@ public:
 
 	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
 
+	enum EventState { IDLE, BUSY, EVENT_READY } event_state = EventState::BUSY;
+
+protected:
+	bool _terminated = false;
+
+public:
+	auto terminate()  { _terminated = true; }
+	auto terminated()  { return _terminated; }
+
+};
+
+class Engine_SFML : public Engine // "Controller"
+{
+friend class Render_SFML;
+
 // Internals... -- not quite yet; just allow access for now:
 public:
 	World_SFML world;
@@ -133,8 +147,8 @@ protected:
 	float _SCALE = CFG_DEFAULT_SCALE;
 	float _OFFSET_X, _OFFSET_Y;
 
-	sf::RenderWindow& window;
-
+public: //!!Currently used by the global standalone fn event_loop() directly!
+	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
 public:
 // Ops
 	auto move_up()    { world.bodies[0]->v.y -= CFG_V_NUDGE; }
@@ -191,11 +205,17 @@ public:
 
 	auto draw()
 	{
-	        window.clear();
+        window->clear();
 		for (const auto& entity : renderer.shapes_to_draw) {
-		        window.draw(*entity);
+	        window->draw(*entity);
 		}
-	        window.display();
+        window->display();
+
+		if (!window->setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+			cerr << "\n- [draw] sf::setActive(false) failed!\n";
+			terminate();
+			return;
+		}
 	}
 
 	auto add_body(World_SFML::Body&& obj)
@@ -222,33 +242,40 @@ public:
 	}
 
 // Housekeeping
-	Engine_SFML(sf::RenderWindow& _window)
+	Engine_SFML()
+	{
+		_setup();
+	}
+
+	Engine_SFML(sf::RenderWindow* _window)
 	      : window(_window)
 	{
 		_setup();
 	}
+	
 };
 
 
 //============================================================================
-int main()
+void event_loop(Engine_SFML& engine)
 {
-	sf::RenderWindow window(sf::VideoMode({Render_SFML::VIEW_WIDTH, Render_SFML::VIEW_HEIGHT}),
-		"SFML (OpenGL) Test Drive"); //!, sf::Style::Fullscreen);
-//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
-//!!??	glEnable(GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
-//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
+	while (engine.window->isOpen() && !engine.terminated()) {
+			sf::Event event;
+			if (!engine.window->waitEvent(event)) {
+				cerr << "- Event processing failed.\n";
+				exit(-1);
+			}
 
-	Engine_SFML engine(window);
+			engine.event_state = Engine::EventState::BUSY;
 
-	while (window.isOpen()) {
-		for (sf::Event event; window.pollEvent(event);) {
 			switch (event.type)
 			{
 			case sf::Event::KeyPressed:
 				switch (event.key.code) {
-				case sf::Keyboard::Escape:
-					window.close(); break;
+				case sf::Keyboard::Escape: //!!Merge with Closed!
+					engine.terminate();
+					engine.window->close();
+					break;
 
 				case sf::Keyboard::Up:
 					if (event.key.shift) engine.pan_up();
@@ -292,15 +319,79 @@ int main()
 				engine.renderer.p_alpha = Render_SFML::ALPHA_ACTIVE;
 				break;
 
-			case sf::Event::Closed:
-				window.close();
+			case sf::Event::Closed: //!!Merge with key:Esc!
+				engine.terminate();
+				engine.window->close();
+				break;
+
+			default:
+
+				engine.event_state = Engine::EventState::IDLE;
+
 				break;
 			}
+
+		if (!engine.window->setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+			cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
+			engine.terminate();
+			return;
 		}
 
-		engine.updates_for_next_frame();
-		engine.draw();
+		engine.event_state = Engine::EventState::EVENT_READY;
 	}
+}
+
+//void update_loop(Engine_SFML& engine) //!! Hack to workaround a strange thread-related compilation error :-/
+void update_loop(Engine_SFML* engine_ptr)
+{
+	Engine_SFML& engine(*engine_ptr);
+	while (!engine.terminated()) {
+		switch (engine.event_state) {
+		case Engine::EventState::BUSY:
+//cerr << " [[[...BUSY...]]] ";
+			break;
+		case Engine::EventState::IDLE:
+		case Engine::EventState::EVENT_READY:
+
+			engine.updates_for_next_frame();
+			engine.draw();
+
+			break;
+		default:
+cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
+		}
+	}
+}
+
+//============================================================================
+int main(/*int argc char* argv[]*/)
+{
+	auto window = sf::RenderWindow(
+		sf::VideoMode({Render_SFML::VIEW_WIDTH, Render_SFML::VIEW_HEIGHT}),
+		"SFML (OpenGL) Test Drive"
+	); //!, sf::Style::Fullscreen);
+	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
+	//!!??
+	//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
+	//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
+
+	Engine_SFML engine(&window);
+
+	//! The event loop will block and sleep.
+	//! The update thread is safe to start before the event loop, but we should also draw something
+	//! already before the first event comes, so we need to release the SFML (OpenGL) Window and unfreeze
+	//! the update thread (which would wait on the first event by default).
+	if (!engine.window->setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+		cerr << "\n- [main] sf::setActive(false) failed!\n";
+		return -1;
+	}
+	engine.event_state = Engine::EventState::IDLE;
+
+	std::thread engine_updates(update_loop, &engine);
+
+	event_loop(engine);
+
+	engine_updates.join();
 
 	return 0;
 }

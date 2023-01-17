@@ -1,9 +1,16 @@
-﻿Deps.: MSVC (-std:c++20), SFML >= 2.5
+﻿Deps..: MSVC (-std:c++20), SFML >= 2.5
 
-?? How the hell is the static-built exe a) so small, b) EVEN SMALLER THAN THE DLL BUILD?!
-   Obviously the C++ runtime still comes from a DLL, but still.
-   (Yes, the SFML bits are really static: renamed sfml/bin and it still ran fine.)
+??  How the hell is the static-built exe a) so small, b) EVEN SMALLER THAN THE DLL BUILD?!
+    Obviously the C++ runtime still comes from a DLL, but still.
+    (Yes, the SFML bits are really static: renamed sfml/bin and it still ran fine.)
 
+
+Threading caveats:
+
+	https://stackoverflow.com/a/23921645/1479945
+	https://en.sfml-dev.org/forums/index.php?topic=14120.0
+
+------------------------------------------------------------------------------
 TODO:
 
 - Remove SFML dependencies from the World!
@@ -29,7 +36,6 @@ TODO:
 - Collisions...
 - FPS HUD
 	+ debug console log on/off, and check how it affects the fps!
-- separate UI thread + check if window drag/resize would still block...
 - measure FPS without full screen clear + redraw
 - Test on T400 + Win7!
 ? If performance doesn't mind, move to a less cumbersome design where shapes
