@@ -11,6 +11,7 @@ set sz_src_dir=%~dp0src
 set sz_out_dir=%~dp0out
 if not exist "%sz_out_dir%" md "%sz_out_dir%"
 
-set sz_CL_FLAGS=-Zi -std:c++latest -MD -EHsc 
+set sz_CL_FLAGS=-Zi -W1 -std:c++latest -MD -EHsc 
+rem set sz_CL_FLAGS=    -W1 -std:c++20 -MD -EHsc 
 
 set _sfml_libroot_=

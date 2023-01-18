@@ -1,8 +1,10 @@
 #ifndef __HUD_SFML__
 #define __HUD_SFML__
 
+#include "cfg.h"
+
 #include <SFML/Graphics.hpp>
-//!!#include "Engine_SFML.hpp"
+
 #include <vector>
 #include <typeinfo>
 #include <any>
@@ -165,10 +167,6 @@ struct HUD_SFML : public HUD
 
 	void draw(sf::RenderWindow& window)
 	{
-//!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
-		
-//		_setup(window);
-
 		clear();
 
 		std::stringstream ss; render_to(ss);
@@ -193,8 +191,6 @@ public:
 	
 	void _setup(sf::RenderWindow& window)
 	{
-//!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
-
 		if (!font.loadFromFile(CFG_HUD_FONT_PATH))
 		{
 			// error...

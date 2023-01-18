@@ -1,4 +1,8 @@
-﻿TODO:
+﻿------------------------------------------------------------------------------
+  TODO
+------------------------------------------------------------------------------
+
+! vx/vy in the HUD is inconsistent with how the globe actually moves! :-o
 
 ! Proper colors for bodies finally...
 
@@ -6,6 +10,7 @@
 
 ! [fix-gl-ctx] "Failed to activate OpenGL context: The requested resource is in use."...
   -> Possibly unrelated: [fix-random-no-shapes], [fix-setactive-fail]
+  ! Only with THREADS_ENABLED...
   ! OK, [fix-setactive-fail] isn't completely unrelated after all, because after fixing
     it (by removing Esc -> window.close() from the event loop) the error changed to:
     	"Failed to activate OpenGL context: Error 3221688541"
@@ -17,6 +22,7 @@
 
 ! [fix-setactive-fail] SFML window.setActive errors on termination.
   -> [fix-gl-ctx] (but doesn't seem to clearly correlate)
+  ! Only with THREADS_ENABLED...
   - The one for event_loop happens quite consistently, on exit, even if the gfx thread isn't
     created at all, so no drawing happens whatsoever -- only the HUD ctor loads its font...
     -> ... and, actually, even if it doesn't (do ain'no SFML)!
@@ -24,6 +30,11 @@
   + OK, when I removed the premature window.close() from the event loop, at the
     Esc -> terminate() case, the "resource busy" error of [fix-gl-ctx] changed to:
     	"Failed to activate OpenGL context: Error 3221688541"
+
+! [body-center-offset] Add ref. center pos. to bodies (and explicitly use it as center of mass)!
+  + Or at least change it to the middle of them by default!
+    -> Transformable::setOrigin?
+    (The centering offset is handled by a hardcoded hack in the rendering loop now!)
 
 ? Is there a bounce off the surface, when the globe is moving away while colliding,
   or it's just an optical illusion?! (Shoud be, as there's no bouncing sim! :-o :) )
@@ -33,10 +44,7 @@
   -> engine.world is a stupid name, game.world would be perfect, but only for games,
      sim.world, same...
      ? What can be both a game and a sim, and not quite just "app"?...
-- Add ref. center pos. to bodies (and explicitly use it as center of mass)!
-  + Or at least change it to the middle of them by default!
-    -> Transformable::setOrigin?
-    (The centering offset is handled by a hardcoded hack in the rendering loop now!)
+
 - A little less grossly wrong gravity pull: scale the vector by distance!
   ! It really doesn't work that way: I mean it may work too well: the distances are
     so vast and the gravity so weak that the moons just don't move at all...
@@ -62,7 +70,46 @@
 
 
 ------------------------------------------------------------------------------
-DONE:
+  DONE
+------------------------------------------------------------------------------
+
++ [fix-zoom-collide-off] Colliding bodiies don't touch properly when zoomed away from the default...
+  -> [body-center-offset]
+  + Disappeared after [fix-hud-mystery]...
+
++ [fix-hud-mystery] Enabling the HUD -- even if empty! -- causes really mysterious
+  problems with inconsistent memory states etc., similar to [fix-random-no-shapes]!
+  Without threading, too.
+  (No shapes, no movement, totally botched _SCALE value -- despite being fine in a
+  prev. call frame -- etc...)
+  ? Is it something about font loading?
+
+  ->  OK, eliminating even #including the HUD, but replacing it with a dummy, mock data 
+    member also triggers the same shit! :-o So it's unlikley that it comes from SFML.
+    -> Wow, even if the replacement is an empty struct, the error is still there! :-o
+       Like just adding `struct X {} dummy;`! :-ooo
+
+	-> WOW! Even better! With `#define HUD_ENABLED`, this fails (reproducibly):
+
+		#ifdef HUD_ENABLED
+		int dummy;
+		#endif
+
+	But this runs just fine:
+
+		#ifdef HUD_ENABLED
+		#endif
+		int dummy;
+
+	...with both static and dll-based builds, and both debug and non-debug...
+	Again, with threading disabled, too.
+	Also backed down from c++latest to c++20 -- same thing!
+
+	:-o Fascinating!...
+
+  + Mmm... Well, Solved it!... :-o The solution was... umm... not forgetting to include the
+    config #defines consistently in all the compilation units! :-o :D Well... It was fun
+    while it lasted...
 
 + [fix-random-no-shapes] Sometimes (also apparently depending on supposedly unrelated code changes),
   nothing is drawn from the model world, only the HUD! :-o
