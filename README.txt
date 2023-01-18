@@ -13,28 +13,55 @@ Threading caveats:
 ------------------------------------------------------------------------------
 TODO:
 
-- Fix: SFML window.setActive errors on termination.
+! Proper colors for bodies finally...
+
+! [fix-gl-ctx] "Failed to activate OpenGL context" errors...
+  -> Possibly unrelated: [fix-random-no-shapes], [fix-setactive-fail]
+
+- [fix-random-no-shapes] Sometimes (also apparently depending on supposedly unrelated code changes),
+  nothing is drawn from the model world, only the HUD! :-o
+  -> If the hud instance is not created, the error disappears...
+     But if just nothing is called from the HUD, but the ctor, it still happens...
+
+  ! Its obscure randomness feels like a threading error, or nullref / access violation.
+     ! AFAICR it DID NOT start with threading!
+     ! It started when adding the HUD. Already happened with NO data bindings whatsoever
+       in the HUD, just by calling some SFML Text APIs -- and not calling them seemed to have
+       "fixed" it for a while...
+     ! But now, even if HUD drawing & data is disabled, black screens still happen (even more often?)!
+     - (One early suspect was clipped overflow text at the right window edge, but it
+       soon happened sporadically without that, too.)
+  -> Don't seem to clearly correlate neither with [fix-setactive-fail] nor [fix-gl-ctx].
+
+- [fix-setactive-fail] SFML window.setActive errors on termination.
+  - The one for event_loop happens quite consistently, on exit, even if the gfx thread isn't
+    created at all, so no drawing happens whatsoever -- only the HUD ctor loads its font...
+    -> ... and, actually, even if it doesn't (do ain'no SFML)!
+  - the one for draw is nore sporadic.
+  -> Don't seem to clearly correlate neither with [fix-random-no-shapes] nor [fix-gl-ctx].
+
 ? Is there a bounce off the surface, when the globe is moving away while colliding,
   or it's just an optical illusion?! (Shoud be, as there's no bouncing sim! :-o :) )
+
 - Rename "Engine" to sg. less like a generic type but more like a (more specific)
   app "value"... (Game could be fine, but... what if this isn't gonna be a game?)
   -> engine.world is a stupid name, game.world would be perfect, but only for games,
      sim.world, same...
      ? What can be both a game and a sim, and not quite just "app"?...
+- Add ref. center pos. to bodies (and explicitly use it as center of mass)!
+  + Or at least change it to the middle of them by default!
+    -> Transformable::setOrigin?
+    (The centering offset is handled by a hardcoded hack in the rendering loop now!)
 - A little less grossly wrong gravity pull: scale the vector by distance!
   ! It really doesn't work that way: I mean it may work too well: the distances are
     so vast and the gravity so weak that the moons just don't move at all...
     ? Quite like in the real world, I guess? Should be calculated to check...
 - Many-body grav. calc.! (Degrading the algo. from linear to quadratic?... :-/ )
-- Add ref. center pos. to bodies!
-  + Or at least change it to the middle of them by default!
-    (The centering offset is handled by a hardcoded hack in the rendering loop now!)
 - Fix: zoom makes an offset (panned) view shift sideways unexpectedly.
 - Limit (object) v to a) prevent extreme shootoffs, and b) to allow more precise
   collision detection.
   - Also clip minuscule v-s (to 0) allowing to optimize out redundant calc.
-- FPS HUD
-	+ debug console log on/off, and check how it affects the fps!
+- Switch the debug console log on/off, and check (on the HUD) how it affects the fps!
 - Measure FPS with partial (vs. the "mandatory" full) screen clear & redraw.
 - Test on T400 + Win7!
 - Better (de)coupling between SFML and the World!

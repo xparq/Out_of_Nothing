@@ -2,6 +2,8 @@
 //! For mixing native OpenGL context with SFML -> https://www.sfml-dev.org/tutorials/2.5/window-opengl.php:
 //#include <SFML/OpenGL.hpp>
 
+#include "hud_sfml.hpp"
+
 #include <cmath>
 #include <memory> // shared_ptr
 #include <thread>
@@ -10,10 +12,12 @@
 using namespace std;
 
 
-//----------------------------------------------------------------------------
 class Engine_SFML;
+
+//----------------------------------------------------------------------------
 class Render_SFML // "View"
 {
+//----------------------------------------------------------------------------
 public:
 	static const auto VIEW_WIDTH  = 800;
 	static const auto VIEW_HEIGHT = 600;
@@ -44,6 +48,7 @@ public:
 
 //----------------------------------------------------------------------------
 class World // "Model"
+//----------------------------------------------------------------------------
 {
 public:
 struct Physics
@@ -119,6 +124,8 @@ public: // Just allow access for now...:
 	}
 };
 
+class Engine_SFML;
+//----------------------------------------------------------------------------
 class World_SFML : public World
 {
 protected:
@@ -137,6 +144,7 @@ public:
 
 //----------------------------------------------------------------------------
 class Engine // "Controller"
+//----------------------------------------------------------------------------
 {
 // Config
 public:
@@ -183,14 +191,16 @@ public:
 
 };
 
+//----------------------------------------------------------------------------
 class Engine_SFML : public Engine
 {
 friend class Render_SFML;
 
 // Internals... -- not quite yet; just allow access for now:
 public:
-	World_SFML world;
+	World_SFML  world;
 	Render_SFML renderer;
+	HUD_SFML    hud;
 
 protected:
 	float _SCALE = CFG_DEFAULT_SCALE;
@@ -263,9 +273,14 @@ public:
 	auto draw()
 	{
         window.clear();
+
 		for (const auto& entity : renderer.shapes_to_draw) {
 	        window.draw(*entity);
 		}
+
+		//!!??If done before the other draws, no shapes would appear, only the text! :-o
+		hud.draw(window);
+
         window.display();
 
 		if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
@@ -409,11 +424,15 @@ public:
 		// moons:
 		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 100});
 		add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5}, .color = 160});
+
+		hud.add("FPS: ?");
+		hud.add("globe mass", &world.bodies[0]->mass);
+	//!!	hud.add([this]()->string { return to_string(this->world.clock.getElapsedTime().asSeconds()); });
 	}
 
 // Housekeeping
 	Engine_SFML(sf::RenderWindow& _window)
-	      : window(_window)
+	      : window(_window), hud(_window)
 	{
 		_setup();
 	}
@@ -515,7 +534,7 @@ void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
 				//!!should rather be: sf::Vector2f gvect(dx / distance * g, dy / distance * g);
 				sf::Vector2f dv = gvect * dt;
 				body->v += dv;
-cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
+//cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
 			}
 		}
 
@@ -526,7 +545,7 @@ cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv =
 		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
 
 		body->p += ds;
-cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
+//cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
 	}
 }
 
