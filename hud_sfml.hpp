@@ -140,6 +140,7 @@ public:
 	}
 };
 
+//----------------------------------------------------------------------------
 struct HUD_SFML : public HUD
 {
 //!!void draw(const Engine_SFML* engine);
@@ -162,6 +163,10 @@ struct HUD_SFML : public HUD
 
 	void draw(sf::RenderWindow& window)
 	{
+//!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
+		
+//		_setup(window);
+
 		clear();
 
 		std::stringstream ss; render_to(ss);
@@ -181,6 +186,13 @@ public:
 
 	HUD_SFML(sf::RenderWindow& window)
 	{
+		_setup(window);
+	}
+	
+	void _setup(sf::RenderWindow& window)
+	{
+//!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
+
 		if (!font.loadFromFile("rsc/fira.ttf"))
 		{
 			// error...

@@ -15,30 +15,26 @@ TODO:
 
 ! Proper colors for bodies finally...
 
-! [fix-gl-ctx] "Failed to activate OpenGL context" errors...
+! [fix-gl-ctx] "Failed to activate OpenGL context: The requested resource is in use."...
   -> Possibly unrelated: [fix-random-no-shapes], [fix-setactive-fail]
+  ! OK, [fix-setactive-fail] isn't completely unrelated after all, because after fixing
+    it (by removing Esc -> window.close() from the event loop) the error changed to:
+    	"Failed to activate OpenGL context: Error 3221688541"
+    which is just a generic Win32 INVALID OPERATION error... :-/
+  ! Also, Esc doesn't trigger the sf::Close event, so why exactly is the Window still 
+    closing after all?
+  ! Also: if closing the window with its close button, the original error is
+    showing yet again.
 
-- [fix-random-no-shapes] Sometimes (also apparently depending on supposedly unrelated code changes),
-  nothing is drawn from the model world, only the HUD! :-o
-  -> If the hud instance is not created, the error disappears...
-     But if just nothing is called from the HUD, but the ctor, it still happens...
-
-  ! Its obscure randomness feels like a threading error, or nullref / access violation.
-     ! AFAICR it DID NOT start with threading!
-     ! It started when adding the HUD. Already happened with NO data bindings whatsoever
-       in the HUD, just by calling some SFML Text APIs -- and not calling them seemed to have
-       "fixed" it for a while...
-     ! But now, even if HUD drawing & data is disabled, black screens still happen (even more often?)!
-     - (One early suspect was clipped overflow text at the right window edge, but it
-       soon happened sporadically without that, too.)
-  -> Don't seem to clearly correlate neither with [fix-setactive-fail] nor [fix-gl-ctx].
-
-- [fix-setactive-fail] SFML window.setActive errors on termination.
+! [fix-setactive-fail] SFML window.setActive errors on termination.
+  -> [fix-gl-ctx] (but doesn't seem to clearly correlate)
   - The one for event_loop happens quite consistently, on exit, even if the gfx thread isn't
     created at all, so no drawing happens whatsoever -- only the HUD ctor loads its font...
     -> ... and, actually, even if it doesn't (do ain'no SFML)!
   - the one for draw is nore sporadic.
-  -> Don't seem to clearly correlate neither with [fix-random-no-shapes] nor [fix-gl-ctx].
+  + OK, when I removed the premature window.close() from the event loop, at the
+    Esc -> terminate() case, the "resource busy" error of [fix-gl-ctx] changed to:
+    	"Failed to activate OpenGL context: Error 3221688541"
 
 ? Is there a bounce off the surface, when the globe is moving away while colliding,
   or it's just an optical illusion?! (Shoud be, as there's no bouncing sim! :-o :) )
@@ -74,3 +70,24 @@ TODO:
   by zoom -- a generic Transformable iterator loop might not even have a
   uniform scaling op (e.g. Circles have setRadius())! But setScale() seems OK.).
   BUT: they are likely dynamically allocated, so...
+
+
+------------------------------------------------------------------------------
+DONE:
+
++ [fix-random-no-shapes] Sometimes (also apparently depending on supposedly unrelated code changes),
+  nothing is drawn from the model world, only the HUD! :-o
+  -> If the hud instance is not created, the error disappears...
+     But if just nothing is called from the HUD, but the ctor, it still happens...
+
+  . Its obscure randomness feels like a threading error, or nullref / access violation.
+     . AFAICR it DID NOT start with threading!
+     . It started when adding the HUD. Already happened with NO data bindings whatsoever
+       in the HUD, just by calling some SFML Text APIs -- and not calling them seemed to have
+       "fixed" it for a while...
+     . But now, even if HUD drawing & data is disabled, black screens still happen (even more often?)!
+     - (One early suspect was clipped overflow text at the right window edge, but it
+       soon happened sporadically without that, too.)
+  -> Don't seem to clearly correlate neither with [fix-setactive-fail] nor [fix-gl-ctx].
+  + Phew! Despite earlier attempts to press 'h' for centering the globe did nothing, the black
+    screen was indeed a result of the missing init of OFFSET_*! :-o :-/

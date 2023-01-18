@@ -7,6 +7,7 @@
 #include <cmath>
 #include <memory> // shared_ptr
 #include <thread>
+#include <atomic>
 #include <vector>
 #include <iostream> // cerr
 using namespace std;
@@ -180,7 +181,8 @@ public:
 	Thruster thrust_right;
 
 public:
-	enum EventState { IDLE, BUSY, EVENT_READY } event_state = EventState::BUSY;
+	enum UIEventState { IDLE, BUSY, EVENT_READY };
+	atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
 
 protected:
 	bool _terminated = false;
@@ -200,11 +202,14 @@ friend class Render_SFML;
 public:
 	World_SFML  world;
 	Render_SFML renderer;
+#ifdef HUD_ENABLED
 	HUD_SFML    hud;
+#endif
+
 
 protected:
 	float _SCALE = CFG_DEFAULT_SCALE;
-	float _OFFSET_X, _OFFSET_Y;
+	float _OFFSET_X = 0, _OFFSET_Y = 0;
 
 public: //!!Currently used by the global standalone fn event_loop() directly!
 	sf::RenderWindow& window;
@@ -272,6 +277,8 @@ public:
 
 	auto draw()
 	{
+//!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
+
         window.clear();
 
 		for (const auto& entity : renderer.shapes_to_draw) {
@@ -279,7 +286,9 @@ public:
 		}
 
 		//!!??If done before the other draws, no shapes would appear, only the text! :-o
+#ifdef HUD_ENABLED
 		hud.draw(window);
+#endif
 
         window.display();
 
@@ -293,13 +302,15 @@ public:
 	//------------------------------------------------------------------------
 	void update_thread_main_loop()
 	{
+//!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
+
 		while (!terminated()) {
-			switch (event_state) {
-			case EventState::BUSY:
+			switch (ui_event_state) {
+			case UIEventState::BUSY:
 	//cerr << " [[[...BUSY...]]] ";
 				break;
-			case EventState::IDLE:
-			case EventState::EVENT_READY:
+			case UIEventState::IDLE:
+			case UIEventState::EVENT_READY:
 				updates_for_next_frame();
 				draw();
 				break;
@@ -307,19 +318,30 @@ public:
 	cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
 			}
 		}
+
+		if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
+			cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+			terminate();
+			return;
+		}
+
+		//if there's still time:
+		//sf::sleep(sf::milliseconds(remaining_time_ms));
 	}
 
 	//------------------------------------------------------------------------
 	void event_loop()
 	{
+//!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
+
 		while (window.isOpen() && !terminated()) {
 				sf::Event event;
 				if (!window.waitEvent(event)) {
-					cerr << "- Event processing failed.\n";
+					cerr << "- Event processing failed. WTF?! Terminating.\n";
 					exit(-1);
 				}
 
-				event_state = EventState::BUSY;
+				ui_event_state = UIEventState::BUSY;
 
 				switch (event.type)
 				{
@@ -336,7 +358,7 @@ public:
 					switch (event.key.code) {
 					case sf::Keyboard::Escape: //!!Merge with Closed!
 						terminate();
-						window.close();
+						// [fix-setactive-fail] -> DON'T: window.close();
 						break;
 
 					case sf::Keyboard::Up:
@@ -359,8 +381,7 @@ public:
 					break;
 
 				case sf::Event::MouseWheelScrolled:
-		//				cerr << event.mouseWheelScroll.delta << endl;
-					renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; // seems to always be 1 or -1
+					renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
 					break;
 
 				case sf::Event::TextEntered:
@@ -383,23 +404,30 @@ public:
 
 				case sf::Event::Closed: //!!Merge with key:Esc!
 					terminate();
+cerr << "BEGIN sf::Event::Closed\n";
 					window.close();
+cerr << "END sf::Event::Closed\n";
 					break;
 
 				default:
 
-					event_state = EventState::IDLE;
+					ui_event_state = UIEventState::IDLE;
 
 					break;
 				}
 
+//			sf::sleep(sf::milliseconds(1000));
+//			cerr << "- CYCLE TAIL of while (window.isOpen && !terminated)..." <<endl;
+
+/* This seems to be redundant here, but anyway: not doing window.close on Esc solved [fix-setactive-fail]
+   at least for this particular case:
 			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
 				terminate();
 				return;
 			}
-
-			event_state = EventState::EVENT_READY;
+*/
+			ui_event_state = UIEventState::EVENT_READY;
 		}
 	}
 
@@ -425,14 +453,26 @@ public:
 		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 100});
 		add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5}, .color = 160});
 
+#ifdef HUD_ENABLED
+		_setup_huds();
+#endif	
+	}
+
+#ifdef HUD_ENABLED	
+	void _setup_huds()
+	{
 		hud.add("FPS: ?");
 		hud.add("globe mass", &world.bodies[0]->mass);
 	//!!	hud.add([this]()->string { return to_string(this->world.clock.getElapsedTime().asSeconds()); });
 	}
+#endif
 
 // Housekeeping
 	Engine_SFML(sf::RenderWindow& _window)
-	      : window(_window), hud(_window)
+	      : window(_window)
+#ifdef HUD_ENABLED	
+		  , hud(_window)
+#endif
 	{
 		_setup();
 	}
@@ -443,9 +483,11 @@ public:
 int main(/*int argc char* argv[]*/)
 //============================================================================
 {
+//!!	sf::Context; // seems 2 b redundant also here; -> the other instances commented out!
+
 	auto window = sf::RenderWindow(
 		sf::VideoMode({Render_SFML::VIEW_WIDTH, Render_SFML::VIEW_HEIGHT}),
-		"SFML (OpenGL) Test Drive"
+		"SFML (OpenGL) Test"
 	); //!, sf::Style::Fullscreen);
 	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 	//!!??
@@ -456,13 +498,14 @@ int main(/*int argc char* argv[]*/)
 
 	//! The event loop will block and sleep.
 	//! The update thread is safe to start before the event loop, but we should also draw something
-	//! already before the first event comes, so we need to release the SFML (OpenGL) Window and unfreeze
-	//! the update thread (which would wait on the first event by default).
+	//! already before the first event, so we have to release the SFML (OpenGL) Window (crucial!),
+	//! and unfreeze the update thread (which would wait on the first event by default).
 	if (!engine.window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-		cerr << "\n- [main] sf::setActive(false) failed!\n";
+		cerr << "\n- [main] sf::setActive(false) failed, WTF?! Terminating.\n";
 		return -1;
 	}
-	engine.event_state = Engine::EventState::IDLE;
+
+	engine.ui_event_state = Engine::UIEventState::IDLE;
 
 	std::thread engine_updates(&Engine_SFML::update_thread_main_loop, &engine);
 			// &engine a) for `this`, b) when this wasn't a member fn, the value form vs ref was ambiguous and failed to compile,
@@ -470,8 +513,14 @@ int main(/*int argc char* argv[]*/)
 
 	engine.event_loop();
 
+cerr << "TRACE - before threads join\n";
+
 	engine_updates.join();
 
+	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
+		cerr << "\n- [main] sf::setActive(true) failed right before exit - ignoring.\n";
+		return -1;
+	}
 	return 0;
 }
 
