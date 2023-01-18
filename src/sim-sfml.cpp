@@ -13,6 +13,8 @@
 using namespace std;
 
 
+#define HUD_ENABLED
+
 class Engine_SFML;
 
 //----------------------------------------------------------------------------

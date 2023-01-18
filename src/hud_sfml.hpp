@@ -145,6 +145,8 @@ struct HUD_SFML : public HUD
 {
 //!!void draw(const Engine_SFML* engine);
 
+	static constexpr auto CFG_HUD_FONT_PATH = "resource/fira.ttf";
+
 	void clear() { lines_to_draw.clear(); }
 	auto line_count() const { return lines_to_draw.size(); }
 
@@ -193,7 +195,7 @@ public:
 	{
 //!!		sf::Context context; //!! doesn't help with [fix-gl-ctx] & [fix-random-no-shapes]
 
-		if (!font.loadFromFile("rsc/fira.ttf"))
+		if (!font.loadFromFile(CFG_HUD_FONT_PATH))
 		{
 			// error...
 		}

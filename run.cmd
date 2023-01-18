@@ -2,4 +2,4 @@
 
 call _setenv.cmd
 
-%sz_sfml_test_out%/%sz_appname%.exe %*
+%sz_out_dir%/%sz_appname%.exe %*

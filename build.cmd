@@ -2,6 +2,8 @@
 
 call _setenv.cmd
 
-cl -std:c++latest -EHsc %sz_appname%.cpp -Fo%sz_sfml_test_out%/ -Fe%sz_sfml_test_out%/ -Fd%sz_sfml_test_out%/ ^
+@echo on
+cl %sz_CL_FLAGS% %* %sz_src_dir%/%sz_appname%.cpp -Fo%sz_out_dir%/ -Fe%sz_out_dir%/ -Fd%sz_out_dir%/ ^
 	sfml-graphics.lib sfml-window.lib sfml-system.lib ^
 	opengl32.lib
+@echo off
