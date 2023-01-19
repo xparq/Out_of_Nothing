@@ -127,7 +127,12 @@ public:
 #ifdef HUD_ENABLED
 	HUD_SFML    hud;
 #endif
+
+#ifdef AUDIO_ENABLE
 	Audio_SFML audio;
+#else
+	Audio_Stub audio;
+#endif
 
 	void pause(bool state = true)  override { _paused = state; world.pause(state); }
 

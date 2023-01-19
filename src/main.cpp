@@ -50,9 +50,5 @@ cerr << "TRACE - before threads join\n";
 	engine_updates.join();
 #endif	
 
-	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-		cerr << "\n- [main] sf::setActive(true) failed right before exit - ignoring.\n";
-		return -1;
-	}
 	return 0;
 }

@@ -1,3 +1,17 @@
+#ifndef __AUDIO_SFML_
+#define __AUDIO_SFML_
+
+class Audio_Stub
+{
+public:
+	virtual size_t add_sound(const char* filename)  { return 0; }
+	virtual void   play_sound(size_t ndx)  {}
+	virtual bool   play_music(const char* filename) { return false; }
+	virtual void   toggle_music()  {}
+};
+
+#ifdef AUDIO_ENABLE // If disabled, only the stub class will be available!
+
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Audio/Music.hpp>
@@ -5,7 +19,7 @@
 #include <vector>
 using namespace std;
 
-class Audio_SFML
+class Audio_SFML : public Audio_Stub
 {
 	struct SndBuf_NoCopy_Wrapper_thanks_std_vector : public sf::SoundBuffer {
 		SndBuf_NoCopy_Wrapper_thanks_std_vector(int) {}
@@ -15,7 +29,7 @@ class Audio_SFML
 	vector<SndBuf_NoCopy_Wrapper_thanks_std_vector> sounds;
 
 public:
-	size_t add_sound(const char* filename)
+	size_t add_sound(const char* filename) override
 	{
 //!!	sounds.emplace_back(); //! Emplace would *STILL* call a copy ctor, if no args! :-o So fkn' stupid! :(
 //!!!!	sounds.resize(sounds.size() + 1); //! Oh, wow, *EVEN* this will want to copy! :-o WTF?! :(
@@ -30,7 +44,7 @@ cerr << "- Error loading sound: " << filename << endl;
 		return sounds.size() - 1;
 	}
 
-	void play_sound(size_t ndx)
+	void play_sound(size_t ndx) override
 	{
 		static sf::Sound sound; //!! only this one player yet!
 
@@ -41,7 +55,7 @@ cerr << "- Error loading sound: " << filename << endl;
 		sound.play();
 	}
 
-	bool play_music(const char* filename)
+	bool play_music(const char* filename) override
 	{
 		if (!_music.openFromFile(filename)) {
 cerr << "- Error loading music: " << filename << endl;
@@ -52,7 +66,7 @@ cerr << "- Error loading music: " << filename << endl;
 		return true;
 	}
 
-	void toggle_music()
+	void toggle_music() override
 	{
 		if (_music.getStatus() == sf::Music::Playing) {
 			_music.pause();
@@ -73,3 +87,6 @@ private:
 
 	sf::Music _music; //!! only this one player yet!
 };
+#endif // AUDIO_ENABLED
+
+#endif // __AUDIO_SFML_

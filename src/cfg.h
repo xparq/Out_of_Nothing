@@ -3,5 +3,6 @@
 
 #define HUD_ENABLED
 #define THREADS_ENABLED
+#define AUDIO_ENABLE
 
 #endif
