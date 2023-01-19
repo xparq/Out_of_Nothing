@@ -6,7 +6,7 @@
 using namespace std;
 
 
-void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
+void World_SFML::recalc_for_next_frame(const Engine_SFML& engine)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	dt = clock.getElapsedTime().asSeconds();
@@ -17,15 +17,15 @@ void World_SFML::recalc_for_next_frame(const Engine_SFML& game) // ++world
 		auto& body = bodies[i];
 
 		// Thrust:
-		if (i == 0) {
-			sf::Vector2f F_thr( (-game.thrust_left.throttle() + game.thrust_right.throttle()) * dt,
-							    (-game.thrust_up.throttle() + game.thrust_down.throttle()) *dt);
+		if (i == engine.globe_ndx) {
+			sf::Vector2f F_thr( (-engine.thrust_left.throttle() + engine.thrust_right.throttle()) * dt,
+							    (-engine.thrust_up.throttle() + engine.thrust_down.throttle()) *dt);
 			body->v += (F_thr / body->mass);
 		}
 
 		// Gravity - only apply to the moon(s), ignore the moon's effect on the globe!
-		if (i >= 1) {
-			auto& globe = bodies[0];
+		if (i > engine.globe_ndx) {
+			auto& globe = bodies[engine.globe_ndx];
 			//float distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
 			float dx = globe->p.x - body->p.x,
 			      dy = globe->p.y - body->p.y;

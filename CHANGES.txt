@@ -2,9 +2,16 @@
   TODO
 ------------------------------------------------------------------------------
 
-! vx/vy in the HUD is inconsistent with how the globe actually moves! :-o
+! HUD: data binding: add() -> handle; update(handle, ... but what here? new values
+  can't just easily replace the ref, and it would be inconsistent with the logic
+  too; replacing the ref seems not to be a real case either...)
+  ! Probably fine on the "whole line" level tho: replacing the entire item
+    would make some sense.
+  ! And especially removing it, so remove(handle) would also be fine.
 
-! Proper colors for bodies finally...
+! HUD: move the loop-time type lookup string conversions to setup (add) time!
+
+! globe.v in the HUD is inconsistent with how the globe actually moves! :-o
 
 ! Mouse wheel should zoom, not "fade" (now that I know how both (wheel & alpha) work).
 
@@ -70,7 +77,7 @@
 
 
 ------------------------------------------------------------------------------
-  DONE
+  DONE                (See the Git log! These are just supplementary details.)
 ------------------------------------------------------------------------------
 
 + [fix-zoom-collide-off] Colliding bodiies don't touch properly when zoomed away from the default...

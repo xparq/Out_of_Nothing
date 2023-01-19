@@ -35,6 +35,9 @@ public:
 
 // Player-controls (state)
 public:
+
+	size_t globe_ndx = 0; // just a paranoid safety init (see _setup() tho!)
+
 	struct Thruster {
 		float _throttle = 0;
 		//!! :) static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
@@ -304,7 +307,7 @@ cerr << "END sf::Event::Closed\n";
 
 	auto add_body(World_SFML::Body&& obj)
 	{
-		world.add_body(std::forward<decltype(obj)>(obj));
+		auto ndx = world.add_body(std::forward<decltype(obj)>(obj));
 
 		// For rendering...
 
@@ -313,22 +316,18 @@ cerr << "END sf::Event::Closed\n";
 		auto shape = make_shared<sf::CircleShape>(obj.r * _SCALE);
 		renderer.shapes_to_draw.push_back(shape);
 		renderer.shapes_to_change.push_back(shape); // "to transform"
+
+		return ndx;
 	}
 
 	auto _setup()
 	{
-		_OFFSET_X = 0, _OFFSET_Y = 0;
-		_SCALE = CFG_DEFAULT_SCALE;
-cerr << "_SCALE = " << _SCALE << endl;
-
-		//!! Well, we're gonna know these objects by name (index) for now, see recalc():
 		// globe:
-		add_body({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK,
-		                                     .p = {0,0}, .v = {0,0}, .color = 20});
+		globe_ndx = add_body({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0x702000});
 		// moons:
-		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 100});
+		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 0x1440c0});
 		add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5},
-		           .color = 160});
+		           .color = 0xa0f000});
 
 #ifdef HUD_ENABLED
 		_setup_huds();
@@ -342,17 +341,16 @@ cerr << "_SCALE = " << _SCALE << endl;
 		static auto& s_OFFSET_Y = _OFFSET_Y;
 		static auto& s_SCALE = _SCALE;
 		static auto& s_G = world.G;
-		static auto& s_globe_x = world.bodies[0]->p.x;
-		static auto& s_globe_y = world.bodies[0]->p.y;
-		static auto& s_globe_vx = world.bodies[0]->v.x;
-		static auto& s_globe_vy = world.bodies[0]->v.y;
+		static auto& s_globe_x = world.bodies[globe_ndx]->p.x;
+		static auto& s_globe_y = world.bodies[globe_ndx]->p.y;
+		static auto& s_globe_vx = world.bodies[globe_ndx]->v.x;
+		static auto& s_globe_vy = world.bodies[globe_ndx]->v.y;
 
 //		hud.add("FPS: ?");
 		hud.add("pan X", &s_OFFSET_X);
 		hud.add("pan Y", &s_OFFSET_Y);
 		hud.add("SCALE", &s_SCALE);
-//		hud.add("G", &s_G);
-		hud.add("globe mass", &world.bodies[0]->mass);
+		hud.add("globe mass", &world.bodies[globe_ndx]->mass);
 		hud.add("globe x", &s_globe_x);
 		hud.add("globe y", &s_globe_y);
 		hud.add("globe vx", &s_globe_x);

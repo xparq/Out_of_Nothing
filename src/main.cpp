@@ -5,10 +5,9 @@
 #include <iostream> // cerr
 using namespace std;
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 //! For mixing native OpenGL context with SFML -> https://www.sfml-dev.org/tutorials/2.5/window-opengl.php:
 //#include <SFML/OpenGL.hpp>
-
 
 //============================================================================
 int main(/*int argc char* argv[]*/)
@@ -56,13 +55,3 @@ cerr << "TRACE - before threads join\n";
 	}
 	return 0;
 }
-
-
-//============================================================================
-//============================================================================
-/*
-constexpr float Engine::CFG_GLOBE_RADIUS = 50000000; // m
-constexpr float Engine::CFG_THRUST_FORCE = 6e34; // N (kg*m/s^2)
-constexpr float Engine::CFG_DEFAULT_SCALE = 0.000001; //! This one also depends very much on the physics!
-constexpr float Engine::CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
-*/

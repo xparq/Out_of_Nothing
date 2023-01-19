@@ -30,7 +30,7 @@ struct Physics
 
 public:
 struct Body
-//! Inner class of World, as it depends on the physics (e.g. constants).
+//! Inner class of World, because it depends on the physics (e.g. constants).
 {
 	// preset:
 	float r = 0;
@@ -39,7 +39,8 @@ struct Body
 	// preset + updated:
 	sf::Vector2f p{0, 0};
 	sf::Vector2f v{0, 0};
-	float color = 0;
+	uint32_t color = 0; // RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
+	                    // The reason is easier add_body() calls here.)
 
 	// computed only:
 	float mass;
@@ -60,6 +61,8 @@ public: // Just allow access for now...:
 	{
 		obj.precalc();
 		bodies.push_back(make_shared<Body>(obj));
+
+		return bodies.size() - 1;
 	}
 
 	bool is_colliding(const Body* obj1, const Body* obj2)
@@ -87,7 +90,7 @@ public: // Just allow access for now...:
 	auto notify(Event event, Body* obj1, Body* obj2, ...)
 	{
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
-		obj1->color += 100;
+		obj1->color += 0x0888c8;
 	}
 };
 

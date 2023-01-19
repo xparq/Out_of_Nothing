@@ -11,7 +11,7 @@ void Render_SFML::render_next_frame(const Engine_SFML& game) //! Can't stay in t
 
 		//!!Sigh, this will break as soon as not just circles would be there...
 		auto shape = dynamic_pointer_cast<sf::Shape>(shapes_to_change[i]);
-		shape->setFillColor(sf::Color(70 + body->color, 12, 50 - body->color, p_alpha));
+		shape->setFillColor(sf::Color( (body->color << 8) | (p_alpha & 0xff) ));
 
 		auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
 

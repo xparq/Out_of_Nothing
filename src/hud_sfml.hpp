@@ -148,6 +148,7 @@ struct HUD_SFML : public HUD
 //!!void draw(const Engine_SFML* engine);
 
 	static constexpr auto CFG_HUD_FONT_PATH = "resource/fira.ttf";
+	static constexpr uint32_t CFG_DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
 
 	void clear() { lines_to_draw.clear(); }
 	auto line_count() const { return lines_to_draw.size(); }
@@ -158,11 +159,8 @@ struct HUD_SFML : public HUD
 		auto& line = lines_to_draw[line_count()-1];
 		line.setPosition(sf::Vector2f(_panel_left, _panel_top + line_count() * cfg_hud_line_height));
 
-//!!Wow, this would kill the completely unrelated shape drawings! :-o
 //		line.setStyle(sf::Text::Bold | sf::Text::Underlined);
-//!!And in some (a bit fewer?) cases also this:
-//		line.setFillColor(sf::Color(200, 200, 200, 127));
-		line.setFillColor(sf::Color(200, 200, 200));
+		line.setFillColor(sf::Color(CFG_DEFAULT_TEXT_COLOR));
 	}
 
 	void draw(sf::RenderWindow& window)
