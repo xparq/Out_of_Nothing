@@ -3,14 +3,16 @@
 
 #include "cfg.h"
 
-#include "world-sfml.hpp"
-#include "renderer-sfml.hpp"
+#include "world_sfml.hpp"
+#include "renderer_sfml.hpp"
 #include "hud_sfml.hpp"
+#include "audio_sfml.hpp"
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
 //!!move to rendering:
 #include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/System/Sleep.hpp>
 
 #include <memory> // shared_ptr
 #include <atomic>
@@ -39,7 +41,8 @@ public:
 // Player-controls (state)
 public:
 
-	size_t globe_ndx = 0; // just a paranoid safety init (see _setup() tho!)
+	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
+	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
 
 	struct Thruster {
 		float _throttle = 0;
@@ -76,23 +79,59 @@ public:
 	auto terminated()  { return _terminated; }
 
 	auto toggle_huds()  { _show_huds = !_show_huds; }
+
+// callbacks supported by the World:
+public:
+
+	virtual void collide_hook(World* world, World::Body* obj1, World::Body* obj2)
+	{
+		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
+		obj1->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
+		//!!...body->p -= ds...;
+	}
+
+	virtual void collide_hook(World* world, World::Body* obj1, World::Body* obj2, float distance)
+	{
+		return collide_hook(world, obj1, obj2);
+	}
+
+	virtual void touch_hook(World* world, World::Body* obj1, World::Body* obj2)
+	{
+	}
+
+	//! High-level, abstract (not just "generic"!) hook for n-body interactions:
+	virtual void interaction_hook(World* world, World::Event event, World::Body* obj1, World::Body* obj2, ...)
+	{
+		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
+		obj1->color += 0x3363c3;
+	}
 };
+
 
 //----------------------------------------------------------------------------
 class Engine_SFML : public Engine
 {
 friend class Renderer_SFML;
 
+public:
+// SFML-specific World-event hooks:
+	void touch_hook(World* world, World::Body* obj1, World::Body* obj2) override
+	{
+		audio.play_sound(clack_sound);
+	}
+
 // Internals... -- not quite yet; just allow access for now:
 public:
 	World_SFML  world;
 	Renderer_SFML renderer;
-
-	void pause(bool state = true)  override { _paused = state; world.pause(state); }
-
 #ifdef HUD_ENABLED
 	HUD_SFML    hud;
 #endif
+	Audio_SFML audio;
+
+	void pause(bool state = true)  override { _paused = state; world.pause(state); }
+
+	void toggle_music() { audio.toggle_music(); }
 
 protected:
 	float _SCALE = CFG_DEFAULT_SCALE;
@@ -186,8 +225,10 @@ public:
 			return;
 		}
 
-		//if there's still time:
-		//sf::sleep(sf::milliseconds(remaining_time_ms));
+		//! If there's still time left from the frame slice:
+		sf::sleep(sf::milliseconds(100)); //!! (remaining_time_ms)
+			//!!This doesn't seem to have any effect on the CPU load! :-o
+			//!!Nor does it ruin the smooth rendering! :-o WTF?!
 	}
 
 	//------------------------------------------------------------------------
@@ -268,6 +309,7 @@ public:
 					case 'o': pan_reset(); break;
 					case 'h': pan_center_body(0); break;
 					case ' ': toggle_pause(); break;
+					case 'm': toggle_music(); break;
 					}
 					break;
 
@@ -330,6 +372,10 @@ cerr << "END sf::Event::Closed\n";
 		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 0x14b0c0});
 		add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5},
 		           .color = 0xa0f000});
+
+		clack_sound = audio.add_sound("resource/sound/clack.wav");
+
+		audio.play_music("resource/music/default.ogg");
 
 #ifdef HUD_ENABLED
 		_setup_huds();

@@ -14,10 +14,12 @@
 using namespace std;
 
 
+class Engine; // for callbacks
 //----------------------------------------------------------------------------
 class World // "Model"
 //----------------------------------------------------------------------------
 {
+
 public:
 //!!:) static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
 struct Physics
@@ -89,18 +91,6 @@ public: // Just allow access for now...:
 		return distance <= obj1->r + obj2->r;
 	}
 
-	auto collide(Body* obj1, Body* obj2)
-	{
-		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
-		obj1->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
-		//!!...body->p -= ds...;
-	}
-
-	auto notify(Event event, Body* obj1, Body* obj2, ...)
-	{
-		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
-		obj1->color += 0x3363c3;
-	}
 };
 
 class Engine_SFML;
@@ -113,7 +103,7 @@ protected:
 
 public:
 
-	void recalc_for_next_frame(const Engine_SFML& game); // ++world
+	void recalc_for_next_frame(Engine_SFML& engine); // ++world
 
 	void pause(bool state = true) override
 	{

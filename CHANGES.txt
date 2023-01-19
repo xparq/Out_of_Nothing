@@ -2,6 +2,14 @@
   TODO
 ------------------------------------------------------------------------------
 
+! Proper debug logging (not plog, but something lighter, e.g. my own old DBG?)
+
+! Body orientation handling, not just center offset.
+  ! And then steering could also be relative to that.
+
+! Steering options: relative to selected ref.: body orientation or "absolute".
+  (Can't think of any other sensible reference right now.)
+
 ! HUD: data binding: add() -> handle; update(handle, ... but what here? new values
   can't just easily replace the ref, and it would be inconsistent with the logic
   too; replacing the ref seems not to be a real case either...)
@@ -10,6 +18,9 @@
   ! And especially removing it, so remove(handle) would also be fine.
 
 ! HUD: move the loop-time type lookup string conversions to setup (add) time!
+
+! Space grid, distant stars, z-depth...
+  ! And perhaps real 3D one day, with turning around in space etc.
 
 ! globe.v in the HUD is inconsistent with how the globe actually moves! :-o
 

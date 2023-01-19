@@ -1,12 +1,12 @@
-﻿#include "world-sfml.hpp"
-#include "engine-sfml.hpp"
+﻿#include "world_sfml.hpp"
+#include "engine_sfml.hpp"
 
 #include <cmath>
 #include <iostream> // cerr
 using namespace std;
 
 
-void World_SFML::recalc_for_next_frame(const Engine_SFML& engine)
+void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	if (paused()) return;
@@ -54,10 +54,17 @@ void World_SFML::recalc_for_next_frame(const Engine_SFML& engine)
 				// they may need special treatment, because at this point the checked body may not
 				// yet have reached (or crossed the boundary of) the other, so it needs to be adjusted
 				// to the expected collision end-state!
-				/*physics.*/collide(body.get(), globe.get());
+				//!!/*physics.*/collide_hook(body.get(), globe.get(), distance);
+				//! Call God, too:
+				engine.collide_hook(this, body.get(), globe.get(), distance);
 
-				//! Also call a high-level, "predefined emergent" interaction "hook":
-				notify(Event::Collision, body.get(), globe.get());
+				auto EPS_COLLISION = 100000; //!! experimental guesstimate; should depend on relative speed acautlly!
+				if (abs(distance - (body->r + globe->r)) < EPS_COLLISION ) {
+					engine.touch_hook(this, body.get(), globe.get());
+				}
+
+				//! Also call a high-level, "predefined emergent interaction" hook:
+				engine.interaction_hook(this, Event::Collision, body.get(), globe.get());
 			} else {
  				float g = G * globe->mass / (distance * distance);
 				sf::Vector2f gvect(dx * g, dy * g);
