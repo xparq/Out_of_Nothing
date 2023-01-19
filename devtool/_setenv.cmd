@@ -1,17 +1,18 @@
 ﻿@echo off
 
 set sz_appname=sim-sfml
+set sz_prjdir=%~dp0..
 
-set _sfml_libroot_=%~dp0../current
+set _sfml_libroot_=%sz_prjdir%/../../sfml/current
+
 set INCLUDE=%_sfml_libroot_%/include;%INCLUDE%
 set LIB=%_sfml_libroot_%/lib;%LIB%
 set PATH=%_sfml_libroot_%/bin;%PATH%
 
-set sz_src_dir=%~dp0src
-set sz_out_dir=%~dp0out
+set sz_src_dir=%sz_prjdir%/src
+set sz_out_dir=%sz_prjdir%/out
 if not exist "%sz_out_dir%" md "%sz_out_dir%"
 
-set sz_CL_FLAGS=-Zi -W1 -std:c++latest -MD -EHsc 
-rem set sz_CL_FLAGS=    -W1 -std:c++20 -MD -EHsc 
+set sz_CL_FLAGS=-W1 -std:c++latest -MD -EHsc 
 
 set _sfml_libroot_=

@@ -2,6 +2,9 @@
   TODO
 ------------------------------------------------------------------------------
 
+! Try repositioning the music dynamically (to see if there's anything interesting 
+  to do with that.)
+
 ! Proper debug logging (not plog, but something lighter, e.g. my own old DBG?)
 
 ! Body orientation handling, not just center offset.

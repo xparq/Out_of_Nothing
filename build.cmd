@@ -1,10 +1,5 @@
 ﻿@echo off
+call %~dp0devtool/_setenv.cmd
 
-call _setenv.cmd
-
-@echo on
-cl %sz_CL_FLAGS% %* %sz_src_dir%/*.cpp ^
-	-Fo%sz_out_dir%/ -Fe%sz_out_dir%/%sz_appname%.exe -Fd%sz_out_dir%/ ^
-	sfml-graphics.lib sfml-window.lib sfml-system.lib sfml-audio.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib ^
-	opengl32.lib
-@echo off
+::rem -- Why the hell aren't the env vars propagated automatically?!
+nmake /nologo %* "prjdir=%sz_prjdir%" "src_dir=%sz_src_dir%" "out_dir=%sz_out_dir%" "appname=%sz_appname%" "CL_FLAGS=%sz_CL_FLAGS%" "INCLUDE=%INCLUDE%" "LIB=%LIB%"
