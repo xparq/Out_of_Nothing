@@ -1,20 +1,20 @@
-﻿#ifndef __RENDER_SFML__
-#define __RENDER_SFML__
+﻿#ifndef __RENDERER_SFML__
+#define __RENDERER_SFML__
 
 #include "cfg.h"
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Transformable.hpp>
+#include <SFML/Graphics/Drawable.hpp>
 
-#include <memory> // shared_ptr
 #include <vector>
-#include <iostream> // cerr
+#include <memory> // shared_ptr
 using namespace std;
 
 
 class Engine_SFML;
 
 //----------------------------------------------------------------------------
-class Render_SFML // "View"
+class Renderer_SFML // "View"
 {
 //----------------------------------------------------------------------------
 public:
@@ -35,13 +35,31 @@ public:
 	vector< shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 
 // Ops
-	void render_next_frame(const Engine_SFML& game); // can't keep it inline here: uses the Engine!
+	void render(const Engine_SFML& game); // can't keep it inline here: uses the Engine!
+	void draw(const Engine_SFML& game); // can't keep it inline here: uses the Engine!
+
+	void resize_objects(float factor)
+	{
+		transform_objects([factor](sf::Transformable& shape) {
+				shape.setScale(shape.getScale() * factor);
+		});
+	}
+
+	void transform_objects(const auto& op) // c++20 auto lambda ref (but why the `const` required by MSVC?); https://stackoverflow.com/a/67718838/1479945
+	// op = [](Transformable& shape);
+	{
+		for (auto& shape : shapes_to_change) {
+			auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
+			op(trshape);
+		}
+	}
+
 
 // Housekeeping
-	Render_SFML()
+	Renderer_SFML()
 	      :	p_alpha(ALPHA_ACTIVE)
 	{
 	}
 };
 
-#endif // __RENDER_SFML__
+#endif // __RENDERER_SFML__

@@ -9,6 +9,8 @@ using namespace std;
 void World_SFML::recalc_for_next_frame(const Engine_SFML& engine)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
+	if (paused()) return;
+
 	dt = clock.getElapsedTime().asSeconds();
 	clock.restart();
 

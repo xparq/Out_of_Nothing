@@ -3,17 +3,19 @@
 
 #include "cfg.h"
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/Text.hpp>
 
 #include <vector>
 #include <typeinfo>
 #include <any>
 #include <functional> // function
 #include <string> // getline
+#include <sstream> // istringstream, getline
+#include <limits> // digit # for precise output
 //#include <format>
 #include <iostream>
-#include <limits> // digit # for precise output
-#include <sstream> // istringstream, getline
 using namespace std;
 
 

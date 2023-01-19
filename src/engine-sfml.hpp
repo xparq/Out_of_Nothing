@@ -4,10 +4,13 @@
 #include "cfg.h"
 
 #include "world-sfml.hpp"
-#include "render-sfml.hpp"
+#include "renderer-sfml.hpp"
 #include "hud_sfml.hpp"
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Window/Event.hpp>
+//!!move to rendering:
+#include <SFML/Graphics/CircleShape.hpp>
 
 #include <memory> // shared_ptr
 #include <atomic>
@@ -40,7 +43,6 @@ public:
 
 	struct Thruster {
 		float _throttle = 0;
-		//!! :) static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
 		float throttle(float new_throttle)
 		{
 			auto prev_throttle = _throttle;
@@ -62,22 +64,31 @@ public:
 
 protected:
 	bool _terminated = false;
+	bool _paused = false;
+	bool _show_huds = true;
 
 public:
+	auto toggle_pause()  { _paused = !_paused; pause(_paused); }
+	auto paused()  { return _paused; }
+	virtual void pause(bool state = true) = 0; //!! dumb way to depend on the actual World type...
+
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
 
+	auto toggle_huds()  { _show_huds = !_show_huds; }
 };
 
 //----------------------------------------------------------------------------
 class Engine_SFML : public Engine
 {
-friend class Render_SFML;
+friend class Renderer_SFML;
 
 // Internals... -- not quite yet; just allow access for now:
 public:
 	World_SFML  world;
-	Render_SFML renderer;
+	Renderer_SFML renderer;
+
+	void pause(bool state = true)  override { _paused = state; world.pause(state); }
 
 #ifdef HUD_ENABLED
 	HUD_SFML    hud;
@@ -118,51 +129,36 @@ public:
 	}
 
 	auto zoom_in()  { auto factor = 1.25; _SCALE *= factor;
-		_resize_objects(factor);
+		renderer.resize_objects(factor);
 		_pan_adjust_after_zoom();
 	}
 	auto zoom_out () { auto factor = 0.80; _SCALE *= factor;
-		_resize_objects(factor);
+		renderer.resize_objects(factor);
 		_pan_adjust_after_zoom();
 	}
-
-	void _resize_objects(float factor)
-	{
-		_transform_objects([factor](sf::Transformable& shape) {
-				shape.setScale(shape.getScale() * factor);
-		});
-	}
-
-	void _transform_objects(const auto& op) // c++20 auto lambda ref (but why the `const` required by MSVC?); https://stackoverflow.com/a/67718838/1479945
-	// op = [](Transformable& shape);
-	{
-		//! Only generic functions here -- Transformable is abstract!
-		for (auto& shape : renderer.shapes_to_change) {
-			auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
-			op(trshape);
-		}
-	}
-
 
 	auto updates_for_next_frame()
 	// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 	{
+		if (paused()) return;
+
 		world.recalc_for_next_frame(*this);
-		renderer.render_next_frame(*this);
 	}
 
 	auto draw()
 	{
+		renderer.render(*this);
+			// Was in updates_for_next_frame(), but pause should not stop UI updates.
+			//!!...raising the question: at which point should UI rendering be separated from world rendering?
+
         window.clear();
 
-		for (const auto& entity : renderer.shapes_to_draw) {
-	        window.draw(*entity);
-		}
-
+		renderer.draw(*this);
 #ifdef HUD_ENABLED
-		hud.draw(window);
+		if (_show_huds) {
+			hud.draw(window);
+		}
 #endif
-
         window.display();
 	}
 
@@ -255,6 +251,8 @@ public:
 						if (event.key.shift) pan_right();
 						else                 right_thruster_start();
 						break;
+
+					case sf::Keyboard::F12: toggle_huds(); break;
 					}
 					break;
 
@@ -269,15 +267,16 @@ public:
 					case '-': zoom_out(); break;
 					case 'o': pan_reset(); break;
 					case 'h': pan_center_body(0); break;
+					case ' ': toggle_pause(); break;
 					}
 					break;
 
 				case sf::Event::LostFocus:
-					renderer.p_alpha = Render_SFML::ALPHA_INACTIVE;
+					renderer.p_alpha = Renderer_SFML::ALPHA_INACTIVE;
 					break;
 
 				case sf::Event::GainedFocus:
-					renderer.p_alpha = Render_SFML::ALPHA_ACTIVE;
+					renderer.p_alpha = Renderer_SFML::ALPHA_ACTIVE;
 					break;
 
 				case sf::Event::Closed: //!!Merge with key:Esc!
@@ -300,7 +299,10 @@ cerr << "END sf::Event::Closed\n";
 			} // for
 
 			updates_for_next_frame();
+
 			draw();
+//!!test idempotency:
+//!!			draw();
 #endif			
 		} // while
 	}
@@ -323,9 +325,9 @@ cerr << "END sf::Event::Closed\n";
 	auto _setup()
 	{
 		// globe:
-		globe_ndx = add_body({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0x702000});
+		globe_ndx = add_body({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
 		// moons:
-		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 0x1440c0});
+		add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 0x14b0c0});
 		add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5},
 		           .color = 0xa0f000});
 
@@ -346,7 +348,7 @@ cerr << "END sf::Event::Closed\n";
 		static auto& s_globe_vx = world.bodies[globe_ndx]->v.x;
 		static auto& s_globe_vy = world.bodies[globe_ndx]->v.y;
 
-//		hud.add("FPS: ?");
+//		hud.add("FPS", [this]()->string { return to_string(1000 / this->world.dt); });
 		hud.add("pan X", &s_OFFSET_X);
 		hud.add("pan Y", &s_OFFSET_Y);
 		hud.add("SCALE", &s_SCALE);
@@ -355,7 +357,6 @@ cerr << "END sf::Event::Closed\n";
 		hud.add("globe y", &s_globe_y);
 		hud.add("globe vx", &s_globe_x);
 		hud.add("globe vy", &s_globe_y);
-	//!!	hud.add([this]()->string { return to_string(this->world.clock.getElapsedTime().asSeconds()); });
 	}
 #endif
 

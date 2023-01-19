@@ -5,6 +5,7 @@
 #include <iostream> // cerr
 using namespace std;
 
+#include <SFML/Window/VideoMode.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 //! For mixing native OpenGL context with SFML -> https://www.sfml-dev.org/tutorials/2.5/window-opengl.php:
 //#include <SFML/OpenGL.hpp>
@@ -14,7 +15,7 @@ int main(/*int argc char* argv[]*/)
 //============================================================================
 {
 	auto window = sf::RenderWindow(
-		sf::VideoMode({Render_SFML::VIEW_WIDTH, Render_SFML::VIEW_HEIGHT}),
+		sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),
 		"SFML (OpenGL) Test"
 	); //!, sf::Style::Fullscreen);
 	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):

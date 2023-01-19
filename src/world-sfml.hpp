@@ -3,7 +3,9 @@
 
 #include "cfg.h"
 
-#include <SFML/Graphics.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <SFML/System/Clock.hpp>
+#include <SFML/System/Time.hpp>
 
 #include <cmath>
 #include <memory> // shared_ptr
@@ -17,6 +19,7 @@ class World // "Model"
 //----------------------------------------------------------------------------
 {
 public:
+//!!:) static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
 struct Physics
 {
 //	...
@@ -27,6 +30,12 @@ struct Physics
 	               //!! const unless a real orbital simulation is the goal (which isn't)!...
 	static constexpr float DENSITY_ROCK = 2000; // kg/m3
 	static constexpr float FRICTION = 0.3;
+
+// Internal state:
+	float dt; // inter-frame increment of the world model time
+	bool _paused = false;
+	auto paused() { return _paused; }
+	virtual void pause(bool state = true) = 0;
 
 public:
 struct Body
@@ -90,7 +99,7 @@ public: // Just allow access for now...:
 	auto notify(Event event, Body* obj1, Body* obj2, ...)
 	{
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
-		obj1->color += 0x0888c8;
+		obj1->color += 0x3363c3;
 	}
 };
 
@@ -100,12 +109,19 @@ class World_SFML : public World
 {
 protected:
 // Internal state:
-	float dt; // inter-frame increment of the world model time
 	sf::Vector2f v = {0, 0};
 
 public:
 
 	void recalc_for_next_frame(const Engine_SFML& game); // ++world
+
+	void pause(bool state = true) override
+	{
+		_paused = state;
+		//! Need to start from 0 when unpausing.
+		//! (The other reset, on pausing, is just redundant, for simplicity.)
+		clock.restart();
+	}
 
 // Housekeeping
 	sf::Clock clock;

@@ -80,6 +80,9 @@
   DONE                (See the Git log! These are just supplementary details.)
 ------------------------------------------------------------------------------
 
++ Pause - time itself, too (because the sim time only shares scale with real time,
+  not any long-term alignment).
+
 + [fix-zoom-collide-off] Colliding bodiies don't touch properly when zoomed away from the default...
   -> [body-center-offset]
   + Disappeared after [fix-hud-mystery]...
