@@ -6,7 +6,9 @@ EXE=$(out_dir)/$(appname).exe
 MODULES=$(out_dir)/main.obj \
 	$(out_dir)/world_sfml.obj \
 	$(out_dir)/renderer_sfml.obj \
-	$(out_dir)/engine_sfml.obj
+	$(out_dir)/engine_sfml.obj \
+	$(out_dir)/hud_sfml.obj \
+	$(out_dir)/audio_sfml.obj \
 
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h
 

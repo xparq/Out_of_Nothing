@@ -62,6 +62,7 @@ protected:
 	bool _terminated = false;
 	bool _paused = false;
 	bool _show_huds = true;
+	bool _show_help = false;
 
 public:
 	auto toggle_pause()  { _paused = !_paused; pause(_paused); }
@@ -72,7 +73,9 @@ public:
 	auto terminated()  { return _terminated; }
 
 	auto toggle_huds()  { _show_huds = !_show_huds; }
+	auto toggle_help()  { _show_help = !_show_help; }
 
+//----------------------------------------------------------------------------
 // callbacks supported by the World:
 public:
 
@@ -118,7 +121,8 @@ public:
 	World_SFML  world;
 	Renderer_SFML renderer;
 #ifdef HUD_ENABLED
-	HUD_SFML    hud;
+	HUD_SFML    debug_hud;
+	HUD_SFML    help_hud;
 #endif
 
 #ifdef AUDIO_ENABLE
@@ -127,6 +131,7 @@ public:
 	Audio_Stub audio;
 #endif
 
+	//------------------------------------------------------------------------
 	void pause(bool state = true)  override { _paused = state; world.pause(state); }
 
 	void toggle_music() { audio.toggle_music(); }
@@ -174,35 +179,27 @@ public:
 		_pan_adjust_after_zoom();
 	}
 
-	auto updates_for_next_frame()
-	// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
-	{
-		if (paused()) return;
-
-		world.recalc_for_next_frame(*this);
-	}
-
+	//------------------------------------------------------------------------
+	void event_loop();
+	void update_thread_main_loop();
+	void updates_for_next_frame();
 	void draw();
 
 	//------------------------------------------------------------------------
-	void update_thread_main_loop();
-	//------------------------------------------------------------------------
-	
-	void event_loop();
-
 	auto add_body(World_SFML::Body&& obj);
-
 	void _setup();
-
 #ifdef HUD_ENABLED	
 	void _setup_huds();
 #endif
 
+//------------------------------------------------------------------------
 // Housekeeping
+public:
 	Engine_SFML(sf::RenderWindow& _window)
 	      : window(_window)
 #ifdef HUD_ENABLED	
-			, hud(_window)
+			, debug_hud(_window)
+			, help_hud(_window, 10) // left = 10 
 #endif
 	{
 		_setup();

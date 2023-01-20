@@ -51,11 +51,22 @@ void Engine_SFML::draw()
 	renderer.draw(*this);
 #ifdef HUD_ENABLED
 	if (_show_huds) {
-		hud.draw(window);
+		debug_hud.draw(window);
+		if (_show_help) help_hud.draw(window);
 	}
 #endif
 	window.display();
 }
+
+//----------------------------------------------------------------------------
+void Engine_SFML::updates_for_next_frame()
+// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
+{
+	if (paused()) return;
+
+	world.recalc_for_next_frame(*this);
+}
+
 
 //----------------------------------------------------------------------------
 void Engine_SFML::event_loop()
@@ -136,6 +147,7 @@ void Engine_SFML::event_loop()
 				case 'h': pan_center_body(0); break;
 				case ' ': toggle_pause(); break;
 				case 'm': toggle_music(); break;
+				case '?': toggle_help(); break;
 				}
 				break;
 
@@ -223,14 +235,25 @@ void Engine_SFML::_setup_huds()
 	static auto& s_globe_vx = world.bodies[globe_ndx]->v.x;
 	static auto& s_globe_vy = world.bodies[globe_ndx]->v.y;
 
-//		hud.add("FPS", [this]()->string { return to_string(1000 / this->world.dt); });
-	hud.add("pan X", &s_OFFSET_X);
-	hud.add("pan Y", &s_OFFSET_Y);
-	hud.add("SCALE", &s_SCALE);
-	hud.add("globe mass", &world.bodies[globe_ndx]->mass);
-	hud.add("globe x", &s_globe_x);
-	hud.add("globe y", &s_globe_y);
-	hud.add("globe vx", &s_globe_x);
-	hud.add("globe vy", &s_globe_y);
+//		debug_hud.add("FPS", [this]()->string { return to_string(1000 / this->world.dt); });
+	debug_hud.add("Press ? for help...");
+	debug_hud.add("pan X", &s_OFFSET_X);
+	debug_hud.add("pan Y", &s_OFFSET_Y);
+	debug_hud.add("SCALE", &s_SCALE);
+	debug_hud.add("globe mass", &world.bodies[globe_ndx]->mass);
+	debug_hud.add("globe x", &s_globe_x);
+	debug_hud.add("globe y", &s_globe_y);
+	debug_hud.add("globe vx", &s_globe_x);
+	debug_hud.add("globe vy", &s_globe_y);
+
+	help_hud.add("F12: toggle HUDs");
+	help_hud.add("arrows: thrust");
+	help_hud.add("+/-: zoom");
+	help_hud.add("shift+arrows: pan");
+	help_hud.add("space: pause (physics)");
+	help_hud.add("h: home in on the globe");
+	help_hud.add("o: reset pan offset");
+	help_hud.add("m: toggle music");
+	help_hud.add("Esc: quit");
 }
 #endif
