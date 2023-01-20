@@ -17,7 +17,6 @@ public:
 #include <SFML/Audio/Music.hpp>
 
 #include <vector>
-using namespace std;
 
 class Audio_SFML : public Audio_Stub
 {
@@ -26,7 +25,7 @@ class Audio_SFML : public Audio_Stub
 		SndBuf_NoCopy_Wrapper_thanks_std_vector() {}
 		SndBuf_NoCopy_Wrapper_thanks_std_vector(const SndBuf_NoCopy_Wrapper_thanks_std_vector&) { /* cerr << "SFML SndBuf wrapper WAS COPIED!\n"; */ }
 	};
-	vector<SndBuf_NoCopy_Wrapper_thanks_std_vector> sounds;
+	std::vector<SndBuf_NoCopy_Wrapper_thanks_std_vector> sounds;
 
 public:
 	size_t add_sound(const char* filename) override

@@ -8,10 +8,8 @@
 #include <SFML/System/Time.hpp>
 
 #include <cmath>
-#include <memory> // shared_ptr
+#include <memory> // shared_ptr, make_shared
 #include <vector>
-#include <iostream> // cerr
-using namespace std;
 
 
 class Engine; // for callbacks
@@ -65,13 +63,13 @@ public:
 	enum Event { None, Collision };
 
 public: // Just allow access for now...:
-	vector< shared_ptr<Body> > bodies;
+	std::vector< std::shared_ptr<Body> > bodies;
 
 // Ops
 	auto add_body(Body&& obj)
 	{
 		obj.precalc();
-		bodies.push_back(make_shared<Body>(obj));
+		bodies.push_back(std::make_shared<Body>(obj));
 
 		return bodies.size() - 1;
 	}

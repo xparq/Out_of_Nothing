@@ -8,7 +8,6 @@
 
 #include <vector>
 #include <memory> // shared_ptr
-using namespace std;
 
 
 class Engine_SFML;
@@ -30,9 +29,9 @@ public:
 // Internals:
 //!!...not quite yet -- just allow access:
 public:
-	vector< shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
+	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
 	//!!misnomer alert below! should be sg. like "body_images" (as they are not just any Transformables!!! -- these are linked to physical bodies!):
-	vector< shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
+	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 
 // Ops
 	void render(const Engine_SFML& game); // can't keep it inline here: uses the Engine!

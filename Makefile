@@ -2,7 +2,12 @@
 ## (At least the .exe needed to precede the .obj blocks; I vaguely remember the docs hinting it doesn't matter!)
 
 EXE=$(out_dir)/$(appname).exe
-MODULES=$(out_dir)/main.obj $(out_dir)/world_sfml.obj $(out_dir)/renderer_sfml.obj
+
+MODULES=$(out_dir)/main.obj \
+	$(out_dir)/world_sfml.obj \
+	$(out_dir)/renderer_sfml.obj \
+	$(out_dir)/engine_sfml.obj
+
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h
 
 
