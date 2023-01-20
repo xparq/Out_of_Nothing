@@ -1,31 +1,41 @@
-﻿EXE=$(out_dir)/$(appname).exe
+﻿## Order matters: inference rules first! Also, critically: higher-level ("root") targets first! :-o (?!)
+## (At least the .exe needed to precede the .obj blocks; I vaguely remember the docs hinting it doesn't matter!)
+
+EXE=$(out_dir)/$(appname).exe
+MODULES=$(out_dir)/main.obj $(out_dir)/world_sfml.obj $(out_dir)/renderer_sfml.obj
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h
-CL_CMD=cl -c $(CL_FLAGS) -Fo$@ -Fd$(out_dir)/
-LINK_CMD=link
+
+
+# NOTE: -showIncludes kinda implies stdout being redirected to capture the list,
+#       which also means losing the normal comp. output! :-/
+CL_FLAGS=$(CL_FLAGS) -W1 -std:c++latest -MD -EHsc
+CL_CMD=cl -nologo -c $(CL_FLAGS) -Fo$(out_dir)/ -Fd$(out_dir)/
+LINK_CMD=link -nologo
 #!!?? Why does this not do anything useful:
 # LINK_CMD=link /LTCG:INCREMENTAL
 
+BUILD_OPT_LABEL=BUILD OPTION:
+
 !if defined(DEBUG)
-!MESSAGE 
-!MESSAGE Preparing DEBUG build...
-!MESSAGE 
+!MESSAGE
+!MESSAGE $(BUILD_OPT_LABEL) DEBUG
 CL_CMD=$(CL_CMD) -Zi
 !else
-#!MESSAGE Preparing release build...
+!MESSAGE 
+!MESSAGE $(BUILD_OPT_LABEL) RELEASE (optimized)
+CL_CMD=$(CL_CMD) -O2
 !endif
 
 MAKEFILE=$(prjdir)/Makefile
 
 !if defined(SFML_DLL)
-!MESSAGE 
-!MESSAGE Building with SFML DLLs...
+!MESSAGE $(BUILD_OPT_LABEL) Linking SFML DLLs
 !MESSAGE 
 LIBS=	sfml-graphics.lib sfml-window.lib sfml-system.lib \
 	sfml-audio.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
 	opengl32.lib
 !else
-!MESSAGE 
-!MESSAGE Preparing static linking with SFML...
+!MESSAGE $(BUILD_OPT_LABEL) Static SFML linkage
 !MESSAGE 
 CL_CMD=$(CL_CMD) -DSFML_STATIC
 LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
@@ -35,16 +45,21 @@ LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 !endif
 
 
-$(EXE):	$(out_dir)/main.obj $(out_dir)/world_sfml.obj $(out_dir)/renderer_sfml.obj
+{$(src_dir)/}.cpp{$(out_dir)/}.obj::
+	$(CL_CMD) $<
 
-$(out_dir)/main.obj: $(src_dir)/main.cpp $(INCLUDES) $(MAKEFILE)
-	$(CL_CMD) $(src_dir)/main.cpp
+## This non-batch alternative for attempting to generate .h* deps is futile...
+## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
+## illegal in batch rules!)
+## Even if the list was massaged into makefile syntax, the MSVC output is still unusable
+## for redirection: both the includes AND comp. errors/warnings go to stdout!... :-(
+## {$(src_dir)/}.cpp{$(out_dir)/}.obj:
+##	$(CL_CMD) $<        -showIncludes > $(out_dir)/$*.hdep
 
-$(out_dir)/world_sfml.obj: $(src_dir)/world_sfml.cpp $(INCLUDES) $(MAKEFILE)
-	$(CL_CMD) $(src_dir)/world_sfml.cpp
 
-$(out_dir)/renderer_sfml.obj: $(src_dir)/renderer_sfml.cpp $(INCLUDES) $(MAKEFILE)
-	$(CL_CMD) $(src_dir)/renderer_sfml.cpp
+$(EXE):	$(MODULES)
+	$(LINK_CMD) /out:$(EXE) $(MODULES) $(LIBS)
 
-$(EXE): $(out_dir)/*.obj
-	$(LINK_CMD) /out:$(EXE) $(out_dir)/*.obj $(LIBS)
+
+## Sorry, no autodep. yet...
+$(MODULES): $(INCLUDES) $(MAKEFILE)
