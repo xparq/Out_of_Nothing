@@ -2,16 +2,21 @@
   TODO
 ------------------------------------------------------------------------------
 
-! Try repositioning the music dynamically (to see if there's anything interesting 
-  to do with that.)
+! dt -> FPS display (requires functor support for HUds)
+
+! Try repositioning (in 3D) the music dynamically, to see if there's anything
+  interesting to do with that.
 
 ! Proper debug logging (not plog, but something lighter, e.g. my own old DBG?)
 
 ! Body orientation handling, not just center offset.
   ! And then steering could also be relative to that.
 
-! Steering options: relative to selected ref.: body orientation or "absolute".
+! Steering options: relative to selected ref.: body orientation or viewer.
   (Can't think of any other sensible reference right now.)
+  -> View ref means implicit dependency for the model on the view! :-o
+    ? Hard-align the "absolute world coords." with the view oriantation?
+      (Physics calculations need a more-or-less fixed coord. sys. anyway.)
 
 ! HUD: data binding: add() -> handle; update(handle, ... but what here? new values
   can't just easily replace the ref, and it would be inconsistent with the logic

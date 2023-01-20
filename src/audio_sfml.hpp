@@ -12,21 +12,23 @@ public:
 	virtual void   toggle_music()  {}
 };
 
-#ifdef AUDIO_ENABLE // If disabled, only the stub class will be available!
+#ifdef AUDIO_ENABLE // If disabled, only the stub class will be available.
 
 #include <SFML/Audio/SoundBuffer.hpp>
+#include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/Music.hpp>
 
 #include <vector>
 
 class Audio_SFML : public Audio_Stub
 {
-	struct SndBuf_NoCopy_Wrapper_thanks_std_vector : public sf::SoundBuffer {
-		SndBuf_NoCopy_Wrapper_thanks_std_vector(int) {}
-		SndBuf_NoCopy_Wrapper_thanks_std_vector() {}
-		SndBuf_NoCopy_Wrapper_thanks_std_vector(const SndBuf_NoCopy_Wrapper_thanks_std_vector&) { /* cerr << "SFML SndBuf wrapper WAS COPIED!\n"; */ }
+	struct SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector : public sf::SoundBuffer {
+		   SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector(int) {}
+		   SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector() {}
+		   SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector(const SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector&)
+			   { /* cerr << "SFML SndBuf wrapper BEING COPIED!\n"; */ }
 	};
-	std::vector<SndBuf_NoCopy_Wrapper_thanks_std_vector> sounds;
+	std::vector<SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector> sounds;
 
 public:
 	size_t add_sound(const char* filename) override;
@@ -41,10 +43,8 @@ public:
 		sounds.resize(1); //! Remember the implicit copy ctor call here (no matter what)! :-o (-> also: add_sound!)
 	}
 private:
-//!! If a default-constructed item works as expected, then no need for this:
-//!!	sf::SoundBuffer default_dummy_no_sound;
-
-	sf::Music _music; //!! only this one player yet!
+	sf::Sound _sound; //!! only this one single player object yet!
+	sf::Music _music; //!! only this one single player object yet!
 };
 
 #endif // AUDIO_ENABLED

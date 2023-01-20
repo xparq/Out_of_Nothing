@@ -25,18 +25,19 @@ void Engine_SFML::update_thread_main_loop()
 		default:
 cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
 		}
-	}
 
+	//! If there's still time left from the frame slice:
+	sf::sleep(sf::milliseconds(30)); //!! (remaining_time_ms)
+		//!!This doesn't seem to have any effect on the CPU load! :-o
+		//!!Nor does it ruin the smooth rendering! :-o WTF?!
+	}
+/*
 	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
 		cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 		terminate();
 		return;
 	}
-
-	//! If there's still time left from the frame slice:
-	sf::sleep(sf::milliseconds(100)); //!! (remaining_time_ms)
-		//!!This doesn't seem to have any effect on the CPU load! :-o
-		//!!Nor does it ruin the smooth rendering! :-o WTF?!
+*/
 }
 
 //----------------------------------------------------------------------------
@@ -80,7 +81,7 @@ void Engine_SFML::event_loop()
 			exit(-1);
 		}
 #else
-/*!!?? Why does this one (always) fail?!
+/*!!?? Why did this (always?) fail?!
 		if (!window.pollEvent(event)) {
 			cerr << "- Event processing failed. WTF?! Terminating.\n";
 			exit(-1);
@@ -88,10 +89,18 @@ void Engine_SFML::event_loop()
 ??!!*/			
 		for (; window.pollEvent(event);) {
 #endif					
-
-			//!! The update thread may be busy calculating, so we can't just go ahead and change things!...
-			//!!while (busy_calculating())
+			//!! The update thread may still be busy calculating, so we can't just go ahead and change things!
+			//!! But... then again, how come this thing still works at all?! :-o
+			//!! Clearly there must be cases when processing the new event here overlaps with an ongoing update
+			//!! cycle before they notice our "BUSY" state change here, and stop! :-o
+			//!! So... a semaphore from their end must be provided to this point of this thread, too!
+			//!! And it may not be just as easy as sg. like:
+			//!!while (engine.busy_updating())
 			//!!	;
+			//!! A much cleaner way would be pushing the events received here
+			//!! into a queue in the update/processing thread, like:
+			//!! engine.inputs.push(event);
+			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
 
 			ui_event_state = UIEventState::BUSY;
 
@@ -161,7 +170,7 @@ void Engine_SFML::event_loop()
 
 			case sf::Event::Closed: //!!Merge with key:Esc!
 				terminate();
-cerr << "BEGIN sf::Event::Closed\n";
+cerr << "BEGIN sf::Event::Closed\n"; //!!this frame is to trace an error from the lib/OpenGL
 				window.close();
 cerr << "END sf::Event::Closed\n";
 				break;
@@ -182,7 +191,7 @@ cerr << "END sf::Event::Closed\n";
 
 		draw();
 //!!test idempotency:
-//!!			draw();
+//!!	draw();
 #endif			
 	} // while
 }
@@ -192,13 +201,12 @@ auto Engine_SFML::add_body(World_SFML::Body&& obj)
 {
 	auto ndx = world.add_body(std::forward<decltype(obj)>(obj));
 
-	// For rendering...
-
-	//! Not all the Drawables are also Transformables! (E.g. vertex arrays.)
+	// Pre-cache shapes for rendering... (!! Likely pointless, but this is just what I started with...)
+	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now.)
 	auto shape = make_shared<sf::CircleShape>(obj.r * _SCALE);
 	renderer.shapes_to_draw.push_back(shape);
-	renderer.shapes_to_change.push_back(shape); // "to transform"
+	renderer.shapes_to_change.push_back(shape); // "... to transform"
 
 	return ndx;
 }
@@ -226,31 +234,28 @@ void Engine_SFML::_setup()
 #ifdef HUD_ENABLED	
 void Engine_SFML::_setup_huds()
 {
-	static auto& s_OFFSET_X = _OFFSET_X;
-	static auto& s_OFFSET_Y = _OFFSET_Y;
-	static auto& s_SCALE = _SCALE;
-	static auto& s_G = world.G;
-	static auto& s_globe_x = world.bodies[globe_ndx]->p.x;
-	static auto& s_globe_y = world.bodies[globe_ndx]->p.y;
-	static auto& s_globe_vx = world.bodies[globe_ndx]->v.x;
-	static auto& s_globe_vy = world.bodies[globe_ndx]->v.y;
-
-//		debug_hud.add("FPS", [this]()->string { return to_string(1000 / this->world.dt); });
+	//!!?? Why do all these member pointers just work, also without so much as a warning,
+	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
-	debug_hud.add("pan X", &s_OFFSET_X);
-	debug_hud.add("pan Y", &s_OFFSET_Y);
-	debug_hud.add("SCALE", &s_SCALE);
+	debug_hud.add("frame delay (s)", &world.dt);
+//!!debug_hud.add("FPS", [this]()->string { return to_string(1000 / this->world.dt); });
+	debug_hud.add("pan X", &_OFFSET_X);
+	debug_hud.add("pan Y", &_OFFSET_Y);
+	debug_hud.add("SCALE", &_SCALE);
 	debug_hud.add("globe mass", &world.bodies[globe_ndx]->mass);
-	debug_hud.add("globe x", &s_globe_x);
-	debug_hud.add("globe y", &s_globe_y);
-	debug_hud.add("globe vx", &s_globe_x);
-	debug_hud.add("globe vy", &s_globe_y);
+	debug_hud.add("globe x",    &world.bodies[globe_ndx]->p.x);
+	debug_hud.add("globe y",    &world.bodies[globe_ndx]->p.y);
+	debug_hud.add("globe vx",   &world.bodies[globe_ndx]->v.x);
+	debug_hud.add("globe vy",   &world.bodies[globe_ndx]->v.y);
 
+	help_hud.add("THIS IS NOT A TOY. DO NOT SWALLOW.");
+	help_hud.add("");
 	help_hud.add("F12: toggle HUDs");
 	help_hud.add("arrows: thrust");
 	help_hud.add("+/-: zoom");
-	help_hud.add("shift+arrows: pan");
-	help_hud.add("space: pause (physics)");
+	help_hud.add("mouse wheel: alpha fading");
+	help_hud.add("Shift+arrows: pan");
+	help_hud.add("Space: pause (physics)");
 	help_hud.add("h: home in on the globe");
 	help_hud.add("o: reset pan offset");
 	help_hud.add("m: toggle music");

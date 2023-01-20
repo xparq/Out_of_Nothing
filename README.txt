@@ -45,7 +45,13 @@ BUILD:
 	when built with a single CL command, and when built from separate .obj
 	modules?! (Using the same CL options.)
 
-MISC.:
+CODE:
+
+I'm sorry, it's still a mess, mostly (still not cleaned up all the initial SFML
+test-driving hackery)!
+
+Unresolved threading-related(?) SFML + OpenGL window/context misery:
+[fix-gl-ctx], [fix-setactive-fail] (-> CHANGES.txt)
 
 - SFML-related threading caveats:
 
@@ -53,8 +59,6 @@ MISC.:
 	https://en.sfml-dev.org/forums/index.php?topic=14120.0
 	https://en.sfml-dev.org/forums/index.php?topic=24091.0
 
-	Unresolved threading-related(?) SFML + OpenGL window/context misery:
-	[fix-gl-ctx], [fix-setactive-fail] (-> CHANGES.txt)
 
 ------------------------------------------------------------------------------
 READ/LEARN/TRY/USE:
