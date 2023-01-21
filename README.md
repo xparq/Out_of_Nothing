@@ -3,6 +3,8 @@ a simple framework/toolkit for developing apps that need this sort of "game-like
 2D platform, c) even more vaguely: perhaps actually developing something interesting
 out of it.
 
+![screenshot](https://github.com/lunakid/sfml-test/blob/main/asset/image/screenshot_2500.png)
+
 ...Still not clear, what the hell these steerable giant planets should do to each other. :)
 Should it be a game (e.g. multiplayer, slingshotting moons at each other, placing balls
 into pockets, billiard-like; etc. etc.)? 
@@ -17,6 +19,7 @@ DEPS.:
 	  will still be loaded (just like the MSVC runtime DLLs -- see below)!
 
 BUILD:
+
 	Set `sfml_libroot=` in `tooling/_setenv.cmd` to match your setup!
 	Make sure the MSVC CLI tools (CL, LINK, NMAKE etc.) are on the path!
 
@@ -88,10 +91,11 @@ Unresolved threading-related(?) SFML + OpenGL window/context misery:
 ------------------------------------------------------------------------------
 READ/LEARN/TRY/USE:
 
-	Jan Haller ("Nexus" on the SFML forum) is a seasoned pro, whose stuff is worth checking out:
-		Thor lib: https://en.sfml-dev.org/forums/?topic=7329 -> https://bromeon.ch/libraries/thor/, https://github.com/Bromeon/Thor (ARCHIVED!)
-			-> https://en.sfml-dev.org/forums/index.php?topic=7329.480
-		Aurora C++ helper lib: https://github.com/Bromeon/Aurora (ARCHIVED!)
-		SFML book (co-author): https://github.com/SFML/SFML-Game-Development-Book (VERY OLD tho!)
+Jan Haller ("Nexus" on the SFML forum) is a formidable master, whose stuff is worth checking out:
+- Thor lib: https://en.sfml-dev.org/forums/?topic=7329 -> https://bromeon.ch/libraries/thor/, https://github.com/Bromeon/Thor (ARCHIVED!)
+  -> https://en.sfml-dev.org/forums/index.php?topic=7329.480
+- Aurora C++ helper lib: https://github.com/Bromeon/Aurora (ARCHIVED!)
+- SFML book (co-author): https://github.com/SFML/SFML-Game-Development-Book (VERY OLD tho!)
 
-	https://nero-games.com/about/, https://github.com/NeroGames/nero-game-engine (using ImGUI)
+Nero Games:
+- their engine: https://nero-games.com/about/, https://github.com/NeroGames/nero-game-engine (using ImGUI)
