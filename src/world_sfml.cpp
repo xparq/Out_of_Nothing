@@ -1,11 +1,30 @@
 ﻿#include "world_sfml.hpp"
 #include "engine_sfml.hpp"
 
-#include <cmath>
+#include <cmath> // pow?, sqrt
 #include <iostream> // cerr
+#include <cassert>
+
 using namespace std;
 
+//----------------------------------------------------------------------------
+size_t World::add_body(Body&& obj)
+{
+	obj.precalc();
+	bodies.push_back(std::make_shared<Body>(obj));
 
+	return bodies.size() - 1;
+}
+
+void World::remove_body(size_t ndx)
+{
+	assert(bodies.size() > 0);
+	assert(ndx != (size_t)-1);
+	bodies.erase(bodies.begin() + ndx);
+}
+
+
+//----------------------------------------------------------------------------
 void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {

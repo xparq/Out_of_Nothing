@@ -3,6 +3,8 @@
 
 #include "cfg.h"
 
+#include "world_sfml.hpp"
+
 #include <SFML/Graphics/Transformable.hpp>
 #include <SFML/Graphics/Drawable.hpp>
 
@@ -37,6 +39,12 @@ public:
 	void render(const Engine_SFML& game); // can't keep it inline here: uses the Engine!
 	void draw(const Engine_SFML& game); // can't keep it inline here: uses the Engine!
 
+	void create_cached_body_shape(const Engine_SFML& game, const World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
+	void delete_cached_body_shape(const Engine_SFML& game, size_t body_ndx);
+
+// Internals
+//!!protected: //!!STILL USED DIRECTLY BY THE ENGINE! :-/
+public:
 	void resize_objects(float factor)
 	{
 		transform_objects([factor](sf::Transformable& shape) {

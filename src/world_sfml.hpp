@@ -66,13 +66,8 @@ public: // Just allow access for now...:
 	std::vector< std::shared_ptr<Body> > bodies;
 
 // Ops
-	auto add_body(Body&& obj)
-	{
-		obj.precalc();
-		bodies.push_back(std::make_shared<Body>(obj));
-
-		return bodies.size() - 1;
-	}
+	size_t add_body(Body&& obj);
+	void remove_body(size_t ndx);
 
 	bool is_colliding(const Body* obj1, const Body* obj2)
 	// Takes the body shape into account.

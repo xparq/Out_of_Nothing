@@ -27,7 +27,7 @@ public:
 	static constexpr float CFG_GLOBE_RADIUS = 50000000; // m
 	static constexpr float CFG_THRUST_FORCE = 6e34; // N (kg*m/s^2)
 	
-	static constexpr float CFG_DEFAULT_SCALE = 0.000001; //! This one also depends very much on the physics!
+	static constexpr float CFG_DEFAULT_SCALE = 0.0000008; //! This one also depends very much on the physics!
 
 	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
 
@@ -186,7 +186,12 @@ public:
 	void draw();
 
 	//------------------------------------------------------------------------
-	auto add_body(World_SFML::Body&& obj);
+	size_t add_body(World_SFML::Body&& obj);
+	size_t add_body(); // add a random one
+	void   remove_body(size_t ndx);
+	void   remove_body(); // delete a random one
+
+	//------------------------------------------------------------------------
 	void _setup();
 #ifdef HUD_ENABLED	
 	void _setup_huds();
