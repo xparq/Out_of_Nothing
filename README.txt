@@ -17,7 +17,7 @@ DEPS.:
 	  will still be loaded (just like the MSVC runtime DLLs -- see below)!
 
 BUILD:
-	Set `_sfml_libroot_=` in `tooling/_setenv.cmd` to match your setup!
+	Set `sfml_libroot=` in `tooling/_setenv.cmd` to match your setup!
 	Make sure the MSVC CLI tools (CL, LINK, NMAKE etc.) are on the path!
 
 	Build with statically linked SFML libs:
@@ -54,11 +54,21 @@ BUILD:
 	when built with a single CL command, and when built from separate .obj
 	modules?! (Using the same CL options.)
 
+
 TEST:
 
-- Put a default.ogg file into the asset dir for bgnd. music.
-- Run `run.cmd` (trivial wrapper for finding the DLLs).
+	1. Put a default.ogg file into the asset dir for bgnd. music.
+	2. Run `run.cmd` (trivial wrapper for finding the DLLs).
 
+
+RELEASE:
+
+	release.cmd will create a .zip file in a local(ly created) tmp dir.
+
+	That package should be self-containing, ready to run anywhere --
+	well, provided that the usual MSVC runtime DLLs and opengl32.dll
+	are available on the PATH (which should be the case for any sane
+	Windows installation).	
 
 CODE:
 
