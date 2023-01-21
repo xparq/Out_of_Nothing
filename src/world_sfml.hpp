@@ -7,9 +7,19 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>
 
-#include <cmath>
-#include <memory> // shared_ptr, make_shared
+#include <cmath> // sqrt
+#include <memory>
+	// using std::shared_ptr;
 #include <vector>
+
+
+//!!Put these into some generic geometry helper thing:
+template <typename T> T distance_2d(T dx, T dy)  { return sqrt(dx*dx + dy*dy); }
+template <typename T> T distance_2d(T x1, T y1, T x2, T y2)
+{
+	T dx = x2 - x1, dy = y2 - y1;
+	return distance_2d(dx*dx, dy*dy);
+}
 
 
 class Engine; // for callbacks

@@ -25,6 +25,8 @@ cerr << "- Error loading sound: " << filename << endl;
 
 void Audio_SFML::play_sound(size_t ndx)
 {
+	assert(ndx < sounds.size());
+	// Also check run-time, to be absolutely sure:
 	if (ndx >= sounds.size()) {
 		return;
 	}

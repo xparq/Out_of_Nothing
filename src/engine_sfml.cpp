@@ -1,8 +1,6 @@
 #include "engine_sfml.hpp"
 
 #include <SFML/System/Sleep.hpp>
-//!!Move any drawing stuff to rendering:
-#include <SFML/Graphics/CircleShape.hpp>
 
 #include <memory>
 	using std::make_shared;

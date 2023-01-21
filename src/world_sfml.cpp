@@ -44,13 +44,15 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 			body->v += (F_thr / body->mass);
 		}
 
-		// Gravity - only apply to the moon(s), ignore the moon's effect on the globe!
+		// Gravity - only apply to the moons, ignore the moons' effect on the globe!
 		if (i > engine.globe_ndx) {
-			auto& globe = bodies[engine.globe_ndx];
-			//float distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
-			float dx = globe->p.x - body->p.x,
-			      dy = globe->p.y - body->p.y;
-			float distance = sqrt(dx*dx + dy*dy);
+			auto& other = bodies[engine.globe_ndx];
+
+			auto dx = other->p.x - body->p.x,
+			     dy = other->p.y - body->p.y;
+
+//			auto distance = distance_2d(body->p.x, body->p.y, other->p.x, other->p.y);
+			auto distance = distance_2d(dx, dy);
 
 			//! Collision det. is crucial also for preventing 0 distance to divide by!
 			//!!Collision and "distance = 0" are not the samne things!
@@ -65,7 +67,7 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 			//!!the real solution would be smarter modeling of the high-speed case
 			//!!to do what nature does... Dunno, create a black hole, if you must! :)
 
-			if (/*physics.*/is_colliding(body.get(), globe.get(), distance)) {
+			if (/*physics.*/is_colliding(body.get(), other.get(), distance)) {
 			//! Done before actually reaching the body (so we can avoid the occasional frame showing the penetration :) )!
 			//  (Opting for the perhaps even less natural "but didn't even touch!" issue...)
 
@@ -73,19 +75,33 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 				// they may need special treatment, because at this point the checked body may not
 				// yet have reached (or crossed the boundary of) the other, so it needs to be adjusted
 				// to the expected collision end-state!
-				//!!/*physics.*/collide_hook(body.get(), globe.get(), distance);
+				//!!/*physics.*/collide_hook(body.get(), other.get(), distance);
 				//! Call God, too:
-				engine.collide_hook(this, body.get(), globe.get(), distance);
 
-				auto EPS_COLLISION = 100000; //!! experimental guesstimate; should depend on relative speed acautlly!
-				if (abs(distance - (body->r + globe->r)) < EPS_COLLISION ) {
-					engine.touch_hook(this, body.get(), globe.get());
+				// Call this before processing the collision-induced speed changes,
+				// so that the calc. can take into consideration the relative speed!
+//!!			auto rel_dv = distance_2d(body->v.x, body->v.y, other->v.x, other->v.y);
+				static constexpr float EPS_COLLISION = engine.CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
+				if (abs(distance - (body->r + other->r)) < EPS_COLLISION ) {
+//cerr << "Touch!\n";
+					if (!engine.touch_hook(this, body.get(), other.get())) {
+						;
+					}
+				} else {
+//cerr << " - Collided, but NO TOUCH. d = " << distance << ", delta = "<<abs(distance - (body->r + other->r)) << " (epsilon = "<<EPS_COLLISION<<")\n";
+				}
+
+				// Note: calling the hook before processing the collision!
+				// If the listener returns false, it didn't process it, so we should.
+				if (!engine.collide_hook(this, body.get(), other.get(), distance)) {
+					//!!Possibly also handle this in a hook, but one of the physics.
+					body->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
 				}
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
-				engine.interaction_hook(this, Event::Collision, body.get(), globe.get());
-			} else {
- 				float g = G * globe->mass / (distance * distance);
+				engine.interaction_hook(this, Event::Collision, body.get(), other.get());
+			} else { // i.e. not colliding:
+				float g = G * other->mass / (distance * distance);
 				sf::Vector2f gvect(dx * g, dy * g);
 				//!!should rather be: sf::Vector2f gvect(dx / distance * g, dy / distance * g);
 				sf::Vector2f dv = gvect * dt;

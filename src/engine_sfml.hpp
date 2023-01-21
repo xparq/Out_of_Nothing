@@ -79,20 +79,21 @@ public:
 // callbacks supported by the World:
 public:
 
-	virtual void collide_hook(World* world, World::Body* obj1, World::Body* obj2)
+	virtual bool collide_hook(World* world, World::Body* obj1, World::Body* obj2)
 	{
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
-		obj1->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
 		//!!...body->p -= ds...;
+		return false;
 	}
 
-	virtual void collide_hook(World* world, World::Body* obj1, World::Body* obj2, float distance)
+	virtual bool collide_hook(World* world, World::Body* obj1, World::Body* obj2, float distance)
 	{
 		return collide_hook(world, obj1, obj2);
 	}
 
-	virtual void touch_hook(World* world, World::Body* obj1, World::Body* obj2)
+	virtual bool touch_hook(World* world, World::Body* obj1, World::Body* obj2)
 	{
+		return false;
 	}
 
 	//! High-level, abstract (not just "generic"!) hook for n-body interactions:
@@ -111,9 +112,10 @@ friend class Renderer_SFML;
 
 public:
 // SFML-specific World-event hooks:
-	void touch_hook(World* world, World::Body* obj1, World::Body* obj2) override
+	bool touch_hook(World* world, World::Body* obj1, World::Body* obj2) override
 	{
 		audio.play_sound(clack_sound);
+		return false;
 	}
 
 // Internals... -- not quite yet; just allow access for now:
