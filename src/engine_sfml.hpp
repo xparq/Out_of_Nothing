@@ -190,8 +190,10 @@ public:
 	//------------------------------------------------------------------------
 	size_t add_body(World_SFML::Body&& obj);
 	size_t add_body(); // add a random one
+	void   add_bodies(size_t n);
 	void   remove_body(size_t ndx);
 	void   remove_body(); // delete a random one
+	void   remove_bodies(size_t n);
 
 	//------------------------------------------------------------------------
 	void _setup();

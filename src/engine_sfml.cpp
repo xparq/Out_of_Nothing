@@ -153,7 +153,9 @@ void Engine_SFML::event_loop()
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
 				case 'n': add_body(); break;
+				case 'N': add_bodies(100); break;
 				case 'd': remove_body(); break;
+				case 'D': remove_bodies(100); break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
 				case 'o': pan_reset(); break;
@@ -234,6 +236,11 @@ sf::sleep(sf::milliseconds(1));
 	});
 }
 
+void Engine_SFML::add_bodies(size_t n)
+{
+	while (n--) add_body();
+}
+
 void Engine_SFML::remove_body(size_t ndx)
 {
 	world.remove_body(ndx);
@@ -258,6 +265,10 @@ cerr << "Deleting object #"	 << ndx << "...\n";
 	remove_body(ndx);
 }
 
+void Engine_SFML::remove_bodies(size_t n)
+{
+	while (n--) remove_body();
+}
 
 //----------------------------------------------------------------------------
 void Engine_SFML::_setup()
@@ -299,19 +310,20 @@ void Engine_SFML::_setup_huds()
 	debug_hud.add("globe vx",   &world.bodies[globe_ndx]->v.x);
 	debug_hud.add("globe vy",   &world.bodies[globe_ndx]->v.y);
 
-	help_hud.add("THIS IS NOT A TOY. DO NOT SWALLOW.");
+	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
 	help_hud.add("");
 	help_hud.add("F12: toggle HUDs");
 	help_hud.add("arrows: thrust");
-	help_hud.add("n: add new object");
-	help_hud.add("d: delete (randomly selected) object");
-	help_hud.add("Space: pause (physics)");
+	help_hud.add("+/-: zoom");
+	help_hud.add("n: add an object (Shift+n: 100x)");
+	help_hud.add("   Pro tip: hold Shift+n for several seconds...");
+	help_hud.add("d: remove an object (Shift+d: 100x)");
+	help_hud.add("Shift+arrows: pan");
 	help_hud.add("h: home in on the globe");
 	help_hud.add("o: reset pan offset");
-	help_hud.add("+/-: zoom");
-	help_hud.add("Shift+arrows: pan");
 	help_hud.add("m: toggle music");
-	help_hud.add("mouse wheel: alpha fading (for debugging)");
+	help_hud.add("mouse wheel: test alpha fading");
+	help_hud.add("Space: pause the physics");
 	help_hud.add("Esc: quit");
 }
 #endif
