@@ -1,6 +1,15 @@
 #include "hud_sfml.hpp"
 
+//#include <typeinfo>
+#include <string>
+	using std::string, std::getline;
+#include <sstream>
+	using std::stringstream;
+#include <limits>
+	using std::numeric_limits; // # of digits for precise float output
+//#include <format>
 #include <iostream>
+	using std::cerr, std::endl;
 
 using namespace std;
 

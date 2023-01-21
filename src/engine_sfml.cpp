@@ -271,9 +271,9 @@ void Engine_SFML::_setup()
 	add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5},
 				.color = 0xa0f000});
 
-	clack_sound = audio.add_sound("resource/sound/clack.wav");
+	clack_sound = audio.add_sound("asset/sound/clack.wav");
 
-	audio.play_music("resource/music/default.ogg");
+	audio.play_music("asset/music/default.ogg");
 
 #ifdef HUD_ENABLED
 	_setup_huds();
@@ -287,7 +287,7 @@ void Engine_SFML::_setup_huds()
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
 	debug_hud.add("frame delay (s)", &world.dt);
-//!!debug_hud.add("FPS", [this]()->string { return to_string(1000 / this->world.dt); });
+//!!debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
 //	debug_hud.add("pan X", &_OFFSET_X);
 //	debug_hud.add("pan Y", &_OFFSET_Y);
 //	debug_hud.add("SCALE", &_SCALE);

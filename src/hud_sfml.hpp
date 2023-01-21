@@ -9,18 +9,14 @@
 
 #include <vector>
 	using std::vector;
-#include <typeinfo>
 #include <tuple>
 	using std::tuple, std::make_tuple;
 #include <any>
-#include <functional> // function
-#include <string> // getline
+	using std::any;
+#include <functional>
+	using std::function;
+#include <string>
 	using std::string;
-#include <sstream> // istringstream, getline
-#include <limits> // digit # for precise output
-//#include <format>
-
-using namespace std;
 
 class HUD
 {
@@ -88,7 +84,7 @@ struct HUD_SFML : public HUD
 {
 //!!void draw(const Engine_SFML* engine);
 
-	static constexpr auto CFG_HUD_FONT_PATH = "resource/fira.ttf";
+	static constexpr auto CFG_HUD_FONT_PATH = "asset/fira.ttf";
 	static constexpr uint32_t CFG_DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
 
 	void clear() { lines_to_draw.clear(); }

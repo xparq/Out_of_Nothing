@@ -3,6 +3,8 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 
+#include <memory>
+	using std::make_shared;
 #include <cassert>
 
 void Renderer_SFML::render(const Engine_SFML& game)

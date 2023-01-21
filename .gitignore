@@ -7,3 +7,4 @@ tmp/
 *.code-workspace
 resource/music
 release/
+_release/
