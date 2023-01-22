@@ -36,8 +36,8 @@ public:
 	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 
 // Ops
-	void render(const Engine_SFML& game); // can't keep it inline here: uses the Engine!
-	void draw(const Engine_SFML& game); // can't keep it inline here: uses the Engine!
+	void render(Engine_SFML& game); // can't keep it inline here: uses the Engine!
+	void draw(Engine_SFML& game); // can't keep it inline here: uses the Engine!
 
 	void create_cached_body_shape(const Engine_SFML& game, const World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
 	void delete_cached_body_shape(const Engine_SFML& game, size_t body_ndx);

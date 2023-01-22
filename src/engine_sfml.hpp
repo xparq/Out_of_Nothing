@@ -102,6 +102,13 @@ public:
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 		obj1->color += 0x3363c3;
 	}
+
+//------------------------------------------------------------------------
+// Housekeeping
+public:
+	Engine() {}
+	Engine(const Engine_SFML&) = delete;
+	virtual ~Engine() {}
 };
 
 
@@ -119,6 +126,9 @@ public:
 	}
 
 // Internals... -- not quite yet; just allow access for now:
+	sf::RenderWindow window;
+//!!was:	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
+
 public:
 	World_SFML  world;
 	Renderer_SFML renderer;
@@ -133,20 +143,18 @@ public:
 	Audio_Stub audio;
 #endif
 
-	//------------------------------------------------------------------------
-	void pause(bool state = true)  override { _paused = state; world.pause(state); }
-
-	void toggle_music() { audio.toggle_music(); }
-
 protected:
 	float _SCALE = CFG_DEFAULT_SCALE;
 	float _OFFSET_X = 0, _OFFSET_Y = 0;
 
-public: //!!Currently used by the global standalone fn event_loop() directly!
-	sf::RenderWindow& window;
-//!!was:	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
 public:
 // Ops
+	bool run();
+
+	void pause(bool state = true)  override { _paused = state; world.pause(state); }
+
+	void toggle_music() { audio.toggle_music(); }
+
 	//! Should be idempotent to tolerate keyboard repeats (which could be disabled, but better be robust)!
 	auto up_thruster_start()    { thrust_up.throttle(CFG_THRUST_FORCE); }
 	auto down_thruster_start()  { thrust_down.throttle(CFG_THRUST_FORCE); }
@@ -187,6 +195,8 @@ public:
 	void updates_for_next_frame();
 	void draw();
 
+	void toggle_fullscreen();
+
 	//------------------------------------------------------------------------
 	size_t add_body(World_SFML::Body&& obj);
 	size_t add_body(); // add a random one
@@ -204,16 +214,8 @@ public:
 //------------------------------------------------------------------------
 // Housekeeping
 public:
-	Engine_SFML(sf::RenderWindow& _window)
-	      : window(_window)
-#ifdef HUD_ENABLED	
-			, debug_hud(_window)
-			, help_hud(_window, 10) // left = 10 
-#endif
-	{
-		_setup();
-	}
-	
+	Engine_SFML();
+	Engine_SFML(const Engine_SFML&) = delete;
 };
 
 #endif // __ENGINE_SFML__

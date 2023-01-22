@@ -7,7 +7,8 @@
 	using std::make_shared;
 #include <cassert>
 
-void Renderer_SFML::render(const Engine_SFML& game)
+
+void Renderer_SFML::render(Engine_SFML& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	// The indexes match the corresponding physical bodies!
@@ -28,7 +29,7 @@ void Renderer_SFML::render(const Engine_SFML& game)
 	}
 }
 
-void Renderer_SFML::draw(const Engine_SFML& game)
+void Renderer_SFML::draw(Engine_SFML& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	for (const auto& entity : shapes_to_draw) {

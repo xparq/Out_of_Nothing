@@ -6,7 +6,7 @@ rem	env. vars set here won't persist.
 set sz_appname=sfml-test
 set sz_prjdir=%~dp0..
 
-set sfml_libroot=%sz_prjdir%/../../sfml/current
+if "%sfml_libroot%"=="" set sfml_libroot=%sz_prjdir%/../../sfml/current
 
 set INCLUDE=%sfml_libroot%/include;%INCLUDE%
 set LIB=%sfml_libroot%/lib;%LIB%

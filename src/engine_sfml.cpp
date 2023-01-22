@@ -1,19 +1,76 @@
 #include "engine_sfml.hpp"
 
+#include <SFML/Window/VideoMode.hpp>
+#include <SFML/Window/Context.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Sleep.hpp>
 
+#include <thread>
 #include <memory>
 	using std::make_shared;
-#include <iostream>
-	using std::cerr, std::endl;
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
+#include <iostream>
+	using std::cerr, std::endl;
 
 using namespace std;
+
+
+Engine_SFML::Engine_SFML()
+		: window(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),"SFML (OpenGL) Test")
+		//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
+		//!!??
+		//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
+		//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
+
+#ifdef HUD_ENABLED
+			, debug_hud(window)
+			, help_hud(window, 10) // left = 10
+//			, debug_hud()
+//			, help_hud(10) // left = 10
+#endif
+{
+cerr << "TRACE 0\n" << endl;
+		_setup();
+}
+
+
+bool Engine_SFML::run()
+{
+	//! The event loop will block and sleep.
+	//! The update thread is safe to start before the event loop, but we should also draw something
+	//! already before the first event, so we have to release the SFML (OpenGL) Window (crucial!),
+	//! and unfreeze the update thread (which would wait on the first event by default).
+	if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+		cerr << "\n- [main] sf::setActive(false) failed, WTF?! Terminating.\n";
+		return false;
+	}
+
+	ui_event_state = Engine::UIEventState::IDLE;
+
+#ifdef THREADS_ENABLED
+	std::thread engine_updates(&Engine_SFML::update_thread_main_loop, this);
+			// &engine a) for `this`, b) when this wasn't a member fn, the value form vs ref was ambiguous and failed to compile,
+			// and c) the thread ctor would copy the params (by default), and that would be really wonky for the entire engine! :)
+#endif
+
+	event_loop();
+
+cerr << "TRACE - before threads join\n";
+
+#ifdef THREADS_ENABLED
+	engine_updates.join();
+#endif
+
+	return true;
+}
 
 //----------------------------------------------------------------------------
 void Engine_SFML::update_thread_main_loop()
 {
+	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
+	                     //!! The only change I can see is a different getActiveContext ID here, if this is enabled.
+
 	while (!terminated()) {
 		switch (ui_event_state) {
 		case UIEventState::BUSY:
@@ -22,7 +79,18 @@ void Engine_SFML::update_thread_main_loop()
 		case UIEventState::IDLE:
 		case UIEventState::EVENT_READY:
 			updates_for_next_frame();
+			//!!?? Why is this redundant?!
+			if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
+				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+//?				terminate();
+//?				return;
+			}
 			draw();
+			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+//?				terminate();
+//?				return;
+			}
 			break;
 		default:
 cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
@@ -32,14 +100,8 @@ cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
 	sf::sleep(sf::milliseconds(30)); //!! (remaining_time_ms)
 		//!!This doesn't seem to have any effect on the CPU load! :-o
 		//!!Nor does it ruin the smooth rendering! :-o WTF?!
+//cerr << "sf::Context [update loop]: " << sf::Context::getActiveContextId() << endl;
 	}
-/*
-	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-		cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
-		terminate();
-		return;
-	}
-*/
 }
 
 //----------------------------------------------------------------------------
@@ -74,6 +136,8 @@ void Engine_SFML::updates_for_next_frame()
 //----------------------------------------------------------------------------
 void Engine_SFML::event_loop()
 {
+	sf::Context context; //!! Seems redundant; it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
+
 	while (window.isOpen() && !terminated()) {
 			sf::Event event;
 
@@ -91,6 +155,13 @@ void Engine_SFML::event_loop()
 ??!!*/			
 		for (; window.pollEvent(event);) {
 #endif					
+
+			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
+//?				terminate();
+//?				return;
+			}
+
 			//!! The update thread may still be busy calculating, so we can't just go ahead and change things!
 			//!! But... then again, how come this thing still works at all?! :-o
 			//!! Clearly there must be cases when processing the new event here overlaps with an ongoing update
@@ -125,23 +196,26 @@ void Engine_SFML::event_loop()
 					break;
 
 				case sf::Keyboard::Up:
-					if (event.key.shift) pan_up();
+					if (event.key.shift) pan_down();
 					else                 up_thruster_start();
 					break;
 				case sf::Keyboard::Down:
-					if (event.key.shift) pan_down();
+					if (event.key.shift) pan_up();
 					else                 down_thruster_start();
 					break;
 				case sf::Keyboard::Left:
-					if (event.key.shift) pan_left();
+					if (event.key.shift) pan_right();
 					else                 left_thruster_start();
 					break;
 				case sf::Keyboard::Right:
-					if (event.key.shift) pan_right();
+					if (event.key.shift) pan_left();
 					else                 right_thruster_start();
 					break;
 
 				case sf::Keyboard::F12: toggle_huds(); break;
+
+				case sf::Keyboard::F11: toggle_fullscreen(); break;
+
 				}
 				break;
 
@@ -189,6 +263,8 @@ cerr << "END sf::Event::Closed\n";
 			}
 
 			ui_event_state = UIEventState::EVENT_READY;
+
+//cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
 
 #ifndef THREADS_ENABLED
 		} // for
@@ -270,6 +346,37 @@ void Engine_SFML::remove_bodies(size_t n)
 	while (n--) remove_body();
 }
 
+
+//----------------------------------------------------------------------------
+void Engine_SFML::toggle_fullscreen()
+{
+	static bool is_full = false;
+
+	// Give some time to the update thread to finish...
+	// (The event loop should have set the state to BUSY!)
+	sf::sleep(sf::milliseconds(100));
+
+	if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+	}
+
+	window.create(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),
+			"SFML (OpenGL) Test", is_full ? sf::Style::Default : sf::Style::Fullscreen);
+//exit(-1);
+
+	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
+cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+	}
+
+	is_full = !is_full;
+
+//	if (!(is_full = !is_full) /* :) */) {
+//		// to full
+//	} else {
+//		// to windowed
+//	}
+}
+
 //----------------------------------------------------------------------------
 void Engine_SFML::_setup()
 {
@@ -295,6 +402,7 @@ void Engine_SFML::_setup_huds()
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
+
 	debug_hud.add("frame delay (s)", &world.dt);
 //!!debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
 //	debug_hud.add("pan X", &_OFFSET_X);

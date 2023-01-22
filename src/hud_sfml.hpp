@@ -114,6 +114,8 @@ struct HUD_SFML : public HUD
 		}
 	}
 
+	void _setup(sf::RenderWindow& window);
+
 public:
 	int cfg_hud_line_height = 13; //!!?? SFML docs say pixel, but what pixel?
 	static int constexpr cfg_hud_panel_top = 0;
@@ -123,8 +125,6 @@ public:
 		_panel_top(ypos),
 		_panel_left(xpos)
 	{ _setup(window); }
-	
-	void _setup(sf::RenderWindow& window);
 
 protected:
 	std::vector<sf::Text> lines_to_draw;

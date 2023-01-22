@@ -1,7 +1,8 @@
 ﻿out/
-*.exe
 *.obj
 *.pdb
+*.exe
+!tooling/*.exe
 tmp/
 *.tmp
 *.code-workspace

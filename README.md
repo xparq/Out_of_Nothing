@@ -14,7 +14,7 @@ cellular automata?...
 ------------------------------------------------------------------------------
 DEPS.:
 	- MSVC (a version supporting c++20, or c++23 if actually using <format>)
-	- SFML 2.6.x (using a4bca205 off the main branch actually)
+	- SFML 2.6.x (last tried: a4bca205 off the main branch actually)
 	- openal32.dll (for audio) - even if linked with the static SFML libs, this
 	  will still be loaded (just like the MSVC runtime DLLs -- see below)!
 
@@ -60,9 +60,12 @@ BUILD:
 
 TEST:
 
-	1. Put a default.ogg file into the asset dir for bgnd. music.
-	2. Run `run.cmd` (trivial wrapper for finding the DLLs).
+	1. Put a `default.ogg` file into the asset dir for background music.
+           (In case there wan't one in the package.)
 
+	2. Run `run.cmd` (trivial wrapper to let the .exe find the DLLs).
+
+	3. Check the console for diag. messages (esp. in debug mode).
 
 RELEASE:
 
@@ -75,8 +78,8 @@ RELEASE:
 
 CODE:
 
-Sorry, it's still pretty messy (not yet cleaned up all the initial eager,
-quick-and-dirty SFML test-driving hackery)!
+It's still rather horrific here and there (not yet cleaned up all the initial
+eager, quick-and-dirty SFML test-driving hackery)!
 
 Unresolved threading-related(?) SFML + OpenGL window/context misery:
 [fix-gl-ctx], [fix-setactive-fail] (-> CHANGES.txt)
