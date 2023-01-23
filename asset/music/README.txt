@@ -1,1 +1,1 @@
-﻿Credits: none; public-domain music from an old exercise of mine.
+﻿Credits: old music exercise of mine; public-domain.

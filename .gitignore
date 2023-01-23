@@ -1,11 +1,20 @@
-﻿out/
+﻿tmp/
+*.tmp
+
+out/
+
+# Stray items from accidental compilations outside "out"
 *.obj
 *.pdb
+*.ilk
 *.exe
 !tooling/*.exe
-tmp/
-*.tmp
+
 *.code-workspace
-resource/music
+
+asset/music/*
+!asset/music/README.*
+!asset/music/default.ogg
+
 release/
 _release/
