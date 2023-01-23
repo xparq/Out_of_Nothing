@@ -34,33 +34,27 @@ LINK_CMD=link -nologo
 # LINK_CMD=link /LTCG:INCREMENTAL
 # Assuming being called from a script that has already set the path:
 BB=busybox
+ECHO=@$(BB) echo
 
 # For the "clean" rule (safety measure against a runaway `rm -rf *`):
 CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .sh
 
-BUILD_OPT_LABEL=BUILD OPTION:
+MAKEFILE=$(prjdir)/Makefile
+
+BUILD_OPT_LABEL=OPTION:
+
 
 !if defined(DEBUG) && "$(DEBUG)" != "0"
-!MESSAGE
-!MESSAGE $(BUILD_OPT_LABEL) DEBUG
 CL_CMD=$(CL_CMD) -Zi -DDEBUG
 !else
-!MESSAGE 
-!MESSAGE $(BUILD_OPT_LABEL) RELEASE (optimized)
 CL_CMD=$(CL_CMD) -O2 -DNDEBUG
 !endif
 
-MAKEFILE=$(prjdir)/Makefile
-
 !if defined(SFML_DLL)
-!MESSAGE $(BUILD_OPT_LABEL) Link with SFML DLLs
-!MESSAGE 
 LIBS=	sfml-graphics.lib sfml-window.lib sfml-system.lib \
 	sfml-audio.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
 	opengl32.lib
 !else
-!MESSAGE $(BUILD_OPT_LABEL) Static-linked SFML
-!MESSAGE 
 CL_CMD=$(CL_CMD) -DSFML_STATIC
 LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 	sfml-audio-s.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
@@ -83,11 +77,30 @@ LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 
 # NMAKE only runs the first root target by default! :-o So...:
 #-----------------------------------------------------------------------------
-DEFAULT: $(EXE)
+DEFAULT::
+	$(ECHO) Processing default target ($(EXE))...
+!if defined(DEBUG) && "$(DEBUG)" != "0"
+	$(ECHO)
+	$(ECHO) - $(BUILD_OPT_LABEL) DEBUG
+!else
+	$(ECHO)
+	$(ECHO) - $(BUILD_OPT_LABEL) RELEASE (optimized)
+!endif
+!if defined(SFML_DLL)
+	$(ECHO) - $(BUILD_OPT_LABEL) Link with SFML DLLs
+	$(ECHO)
+!else
+	$(ECHO) - $(BUILD_OPT_LABEL) Static-linked SFML
+	$(ECHO)
+!endif
 
+DEFAULT:: $(EXE)
 
 #-----------------------------------------------------------------------------
 clean:
+	$(ECHO)
+	$(ECHO) "Cleaning up..."
+	$(ECHO)
 # FFS... Since migrating the build script to BB sh, the `rm` command started
 # failing... It can't find the file for some reason -- the same file that's printed
 # I could delete, with the same printed BB command, from the cmdline all right! :-o
@@ -102,7 +115,7 @@ clean:
 			$(BB) rm "$(out_dir)/*%x"
 
 #-----------------------------------------------------------------------------
-$(EXE):	$(MODULES)
+$(EXE):: $(MODULES)
 	$(LINK_CMD) /out:$(EXE) $(MODULES) $(LIBS)
 
 
