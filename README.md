@@ -20,23 +20,24 @@ DEPS.:
 
 BUILD:
 
-	Set `sfml_libroot=` in `tooling/_setenv.cmd` to match your setup!
+	Set `SFML_LIBROOT=` in `tooling/_setenv.cmd` to match your setup!
 	Make sure the MSVC CLI tools (CL, LINK, NMAKE etc.) are on the path!
 
-	Build with statically linked SFML libs:
+	Build with static-linked SFML libs:
 
 		build.cmd
 
-	or, for the SFML DLLs:
+	or, with the SFML DLLs:
 
 		build.cmd SFML_DLL=1
 
 	Add DEBUG=1 for debug build.
 
-	!! Don't forget to run `build clean` before switching build modes!
-	   This is obviosuly also true when passing any of the conditional
-	   compilation flags directly to `build`, instead of changing them
-	   in cfg.h!
+	Also see (and change) the conditional compilation options in cfg.h.
+
+	(If you forget to run `build clean` before changing the build mode, no
+	worries: the build script detects it for you, and triggers a full rebuild
+	to avoid mismatched binaries.)
 
 	Note: Even with a static build, openal32.dll (shipped with SFML) will still
 	      be linked dynamically!
@@ -82,7 +83,8 @@ RELEASE:
 
 ![screenshot](https://github.com/lunakid/sfml-test/blob/main/asset/image/screenshot_2500.png)
 
-CODE:
+
+NOTES ABOUT THE CODE:
 
 It's still rather horrific here and there (not yet cleaned up all the initial
 eager, quick-and-dirty SFML test-driving hackery)!
