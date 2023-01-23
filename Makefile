@@ -23,7 +23,7 @@ LINK_CMD=link -nologo
 
 BUILD_OPT_LABEL=BUILD OPTION:
 
-!if defined(DEBUG)
+!if defined(DEBUG) && "$(DEBUG)" != "0"
 !MESSAGE
 !MESSAGE $(BUILD_OPT_LABEL) DEBUG
 CL_CMD=$(CL_CMD) -Zi -DDEBUG
