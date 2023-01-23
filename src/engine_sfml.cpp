@@ -30,7 +30,6 @@ Engine_SFML::Engine_SFML()
 //			, help_hud(10) // left = 10
 #endif
 {
-cerr << "TRACE 0\n" << endl;
 		_setup();
 }
 
@@ -420,7 +419,6 @@ void Engine_SFML::_setup_huds()
 
 	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
 	help_hud.add("");
-	help_hud.add("F12: toggle HUDs");
 	help_hud.add("arrows: thrust");
 	help_hud.add("+/-: zoom");
 	help_hud.add("n: add an object (Shift+n: 100x)");
@@ -430,6 +428,8 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("h: home in on the globe");
 	help_hud.add("o: reset pan offset");
 	help_hud.add("m: toggle music");
+	help_hud.add("F11: toggle fullscreen");
+	help_hud.add("F12: toggle HUDs");
 	help_hud.add("mouse wheel: test alpha fading");
 	help_hud.add("Space: pause the physics");
 	help_hud.add("Esc: quit");
