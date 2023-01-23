@@ -10,7 +10,7 @@ if "%sfml_libroot%"=="" set sfml_libroot=%sz_prjdir%/../../sfml/current
 
 set INCLUDE=%sfml_libroot%/include;%INCLUDE%
 set LIB=%sfml_libroot%/lib;%LIB%
-set PATH=%sfml_libroot%/bin;%PATH%
+set PATH=%sz_prjdir%/tooling;%sfml_libroot%/bin;%PATH%
 
 set sz_src_dir=%sz_prjdir%/src
 set sz_asset_subdir=asset

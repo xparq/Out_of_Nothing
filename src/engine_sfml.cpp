@@ -23,7 +23,7 @@ Engine_SFML::Engine_SFML()
 		//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
 		//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
 
-#ifdef HUD_ENABLED
+#ifndef DISABLE_HUD
 			, debug_hud(window)
 			, help_hud(window, 10) // left = 10
 //			, debug_hud()
@@ -47,7 +47,7 @@ bool Engine_SFML::run()
 
 	ui_event_state = Engine::UIEventState::IDLE;
 
-#ifdef THREADS_ENABLED
+#ifndef DISABLE_THREADS
 	std::thread engine_updates(&Engine_SFML::update_thread_main_loop, this);
 			// &engine a) for `this`, b) when this wasn't a member fn, the value form vs ref was ambiguous and failed to compile,
 			// and c) the thread ctor would copy the params (by default), and that would be really wonky for the entire engine! :)
@@ -55,9 +55,8 @@ bool Engine_SFML::run()
 
 	event_loop();
 
-cerr << "TRACE - before threads join\n";
-
-#ifdef THREADS_ENABLED
+#ifndef DISABLE_THREADS
+//cerr << "TRACE - before threads join\n";
 	engine_updates.join();
 #endif
 
@@ -113,7 +112,7 @@ void Engine_SFML::draw()
 	window.clear();
 
 	renderer.draw(*this);
-#ifdef HUD_ENABLED
+#ifndef DISABLE_HUD
 	if (_show_huds) {
 		debug_hud.draw(window);
 		if (_show_help) help_hud.draw(window);
@@ -140,7 +139,7 @@ void Engine_SFML::event_loop()
 	while (window.isOpen() && !terminated()) {
 			sf::Event event;
 
-#ifdef THREADS_ENABLED
+#ifndef DISABLE_THREADS
 		if (!window.waitEvent(event)) {
 			cerr << "- Event processing failed. WTF?! Terminating.\n";
 			exit(-1);
@@ -265,11 +264,10 @@ cerr << "END sf::Event::Closed\n";
 
 //cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
 
-#ifndef THREADS_ENABLED
+#ifdef DISABLE_THREADS
 		} // for
 
 		updates_for_next_frame();
-
 		draw();
 //!!test idempotency:
 //!!	draw();
@@ -390,12 +388,12 @@ void Engine_SFML::_setup()
 
 	audio.play_music("asset/music/default.ogg");
 
-#ifdef HUD_ENABLED
+#ifndef DISABLE_HUD
 	_setup_huds();
 #endif	
 }
 
-#ifdef HUD_ENABLED	
+#ifndef DISABLE_HUD
 void Engine_SFML::_setup_huds()
 {
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
@@ -420,18 +418,18 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
 	help_hud.add("");
 	help_hud.add("arrows: thrust");
-	help_hud.add("+/-: zoom");
-	help_hud.add("n: add an object (Shift+n: 100x)");
-	help_hud.add("   Pro tip: hold Shift+n for several seconds...");
-	help_hud.add("d: remove an object (Shift+d: 100x)");
+	help_hud.add("+/-:    zoom");
+	help_hud.add("n:      add an object (Shift+n: 100x)");
+	help_hud.add("        Pro tip: hold Shift+n for several seconds...");
+	help_hud.add("d:      remove an object (Shift+d: 100x)");
 	help_hud.add("Shift+arrows: pan");
-	help_hud.add("h: home in on the globe");
-	help_hud.add("o: reset pan offset");
-	help_hud.add("m: toggle music");
-	help_hud.add("F11: toggle fullscreen");
-	help_hud.add("F12: toggle HUDs");
+	help_hud.add("h:      home in on the globe");
+	help_hud.add("o:      reset pan offset");
+	help_hud.add("m:      toggle music");
+	help_hud.add("F11:    toggle fullscreen");
+	help_hud.add("F12:    toggle HUDs");
+	help_hud.add("Space:  pause the physics");
+	help_hud.add("Esc:    quit");
 	help_hud.add("mouse wheel: test alpha fading");
-	help_hud.add("Space: pause the physics");
-	help_hud.add("Esc: quit");
 }
 #endif

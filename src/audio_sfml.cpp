@@ -1,6 +1,6 @@
 #include "audio_sfml.hpp"
 
-#ifdef AUDIO_ENABLE // The #define comes from cfg.h via audio_sfml.hpp, so that should be outside this #ifdef... ;)
+#ifndef DISABLE_AUDIO // Defined in cfg.h, which may come via the audio header, so the #include should be outside this #ifdef!... ;)
 
 #include <SFML/Audio/Sound.hpp>
 
@@ -54,4 +54,4 @@ void Audio_SFML::toggle_music()
 	}
 }
 
-#endif // AUDIO_ENABLED
+#endif // DISABLE_AUDIO

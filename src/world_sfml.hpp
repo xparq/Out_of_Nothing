@@ -1,8 +1,6 @@
 ﻿#ifndef __WORLD_SFML__
 #define __WORLD_SFML__
 
-#include "cfg.h"
-
 #include <SFML/System/Vector2.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>

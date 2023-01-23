@@ -1,8 +1,6 @@
 ﻿#ifndef __RENDERER_SFML__
 #define __RENDERER_SFML__
 
-#include "cfg.h"
-
 #include "world_sfml.hpp"
 
 #include <SFML/Graphics/Transformable.hpp>

@@ -1,8 +1,6 @@
 #ifndef __HUD_SFML__
 #define __HUD_SFML__
 
-#include "cfg.h"
-
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Text.hpp>

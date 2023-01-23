@@ -1,8 +1,6 @@
 ﻿#ifndef __ENGINE_SFML__
 #define __ENGINE_SFML__
 
-#include "cfg.h"
-
 #include "world_sfml.hpp"
 #include "renderer_sfml.hpp"
 #include "hud_sfml.hpp"
@@ -132,12 +130,12 @@ public:
 public:
 	World_SFML  world;
 	Renderer_SFML renderer;
-#ifdef HUD_ENABLED
+#ifndef DISABLE_HUD
 	HUD_SFML    debug_hud;
 	HUD_SFML    help_hud;
 #endif
 
-#ifdef AUDIO_ENABLE
+#ifndef DISABLE_AUDIO
 	Audio_SFML audio;
 #else
 	Audio_Stub audio;
@@ -207,7 +205,7 @@ public:
 
 	//------------------------------------------------------------------------
 	void _setup();
-#ifdef HUD_ENABLED	
+#ifndef DISABLE_HUD
 	void _setup_huds();
 #endif
 

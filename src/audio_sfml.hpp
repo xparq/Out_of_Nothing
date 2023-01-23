@@ -1,8 +1,6 @@
 #ifndef __AUDIO_SFML_
 #define __AUDIO_SFML_
 
-#include "cfg.h"
-
 class Audio_Stub
 {
 public:
@@ -12,7 +10,7 @@ public:
 	virtual void   toggle_music()  {}
 };
 
-#ifdef AUDIO_ENABLE // If disabled, only the stub class will be available.
+#ifndef DISABLE_AUDIO // If disabled, only the stub class will be available.
 
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Audio/Sound.hpp>
@@ -47,6 +45,6 @@ private:
 	sf::Music _music; //!! only this one single player object yet!
 };
 
-#endif // AUDIO_ENABLED
+#endif // DISABLE_AUDIO
 
 #endif // __AUDIO_SFML_

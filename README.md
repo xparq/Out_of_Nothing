@@ -33,7 +33,10 @@ BUILD:
 
 	Add DEBUG=1 for debug build.
 
-	Delete out/*.obj (or the whole "out" folder) before switching build modes!
+	!! Don't forget to run `build clean` before switching build modes!
+	   This is obviosuly also true when passing any of the conditional
+	   compilation flags directly to `build`, instead of changing them
+	   in cfg.h!
 
 	Note: Even with a static build, openal32.dll (shipped with SFML) will still
 	      be linked dynamically!
