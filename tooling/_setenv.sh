@@ -28,7 +28,7 @@ sz_release_dir=${sz_prjdir}/release
 
 HASH_INCLUDE_FILE=${sz_out_dir}/commit_hash.inc
 
-# Enable this in its own commit:
+# CD to prj root for the rest of the process:
 # cd "%sz_prjdir%"
 
 if [ ! -d "${sz_out_dir}" ]; then mkdir "${sz_out_dir}"; fi

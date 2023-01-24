@@ -24,7 +24,7 @@ set sz_release_dir=%sz_tmp_dir%/release
 
 set HASH_INCLUDE_FILE=%sz_out_dir%/commit_hash.inc
 
-rem Enable this in its own commit:
+rem CD to prj root for the rest of the process:
 cd "%sz_prjdir%"
 
 if not exist "%sz_out_dir%" md "%sz_out_dir%"
