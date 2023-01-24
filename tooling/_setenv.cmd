@@ -22,6 +22,9 @@ set sz_out_dir=%sz_prjdir%/out
 set sz_tmp_dir=%sz_prjdir%/tmp
 set sz_release_dir=%sz_tmp_dir%/release
 
-if not exist "%sz_out_dir%" md "%sz_out_dir%"
-
 set HASH_INCLUDE_FILE=%sz_out_dir%/commit_hash.inc
+
+rem Enable this in its own commit:
+cd "%sz_prjdir%"
+
+if not exist "%sz_out_dir%" md "%sz_out_dir%"

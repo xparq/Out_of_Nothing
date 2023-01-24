@@ -58,7 +58,7 @@ void Renderer_SFML::create_cached_body_shape(const Engine_SFML& game, const Worl
 }
 
 void Renderer_SFML::delete_cached_body_shape(const Engine_SFML& game, size_t body_ndx)
-{
+{game;
 	assert(body_ndx != (size_t)-1);
 	// Assume the body has already been deleted from the world:
 	assert(shapes_to_draw.size()   == game.world.bodies.size() + 1);

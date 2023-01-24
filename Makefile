@@ -25,7 +25,7 @@ MODULES=$(out_dir)/main.obj \
 
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h
 
-CL_FLAGS=$(CL_FLAGS) -W1 -std:c++latest -MD -EHsc
+CL_FLAGS=$(CL_FLAGS) -W4 -std:c++latest -MD -EHsc
 # For GitHub issue #15 (don't rely on manually including cfg.h):
 CL_FLAGS=$(CL_FLAGS) -FI cfg.h
 CL_CMD=cl -nologo -c $(CL_FLAGS) -Fo$(out_dir)/ -Fd$(out_dir)/

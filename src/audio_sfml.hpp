@@ -4,9 +4,9 @@
 class Audio_Stub
 {
 public:
-	virtual size_t add_sound(const char* filename)  { return 0; }
-	virtual void   play_sound(size_t ndx)  {}
-	virtual bool   play_music(const char* filename) { return false; }
+	virtual size_t add_sound(const char* filename)  { filename; return 0; }
+	virtual void   play_sound(size_t ndx)  { ndx; }
+	virtual bool   play_music(const char* filename) { filename; return false; }
 	virtual void   toggle_music()  {}
 };
 

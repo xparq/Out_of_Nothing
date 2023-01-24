@@ -38,7 +38,7 @@ public:
 	{
 		any ptr; ptr.emplace<T*>(var); //!!?? would work incorrectly (crash?!) with .emplace<void*>(var) -- but why?!
 		datarefs.push_back(make_tuple(typeid(T).name(), ptr,
-			prompt != "" ? string(prompt) + prompt_suffix : default_prompt));
+			*prompt ? string(prompt) + prompt_suffix : default_prompt));
 //std::cerr << typeid(T).name() << " added.\n";
 	}
 
@@ -92,7 +92,7 @@ struct HUD_SFML : public HUD
 	{
 		lines_to_draw.emplace_back(utf8_str, font, cfg_hud_line_height);
 		auto& line = lines_to_draw[line_count()-1];
-		line.setPosition(sf::Vector2f(_panel_left, _panel_top + line_count() * cfg_hud_line_height));
+		line.setPosition(sf::Vector2f((float)_panel_left, (float)_panel_top + line_count() * cfg_hud_line_height));
 
 //		line.setStyle(sf::Text::Bold | sf::Text::Underlined);
 		line.setFillColor(sf::Color(CFG_DEFAULT_TEXT_COLOR));

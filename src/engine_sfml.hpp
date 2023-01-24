@@ -11,7 +11,6 @@
 
 #include <atomic>
 
-
 //----------------------------------------------------------------------------
 class Engine // "Controller"
 //----------------------------------------------------------------------------
@@ -22,10 +21,10 @@ public:
 	//! so replacing the physics may very well invalidate these! :-o
 	//! The depencendies should be formalized e.g. via using virtual units
 	//! provided by the physics there!
-	static constexpr float CFG_GLOBE_RADIUS = 50000000; // m
-	static constexpr float CFG_THRUST_FORCE = 6e34; // N (kg*m/s^2)
+	static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
+	static constexpr float CFG_THRUST_FORCE = 6e34f; // N (kg*m/s^2)
 	
-	static constexpr float CFG_DEFAULT_SCALE = 0.0000008; //! This one also depends very much on the physics!
+	static constexpr float CFG_DEFAULT_SCALE = 0.0000008f; //! This one also depends very much on the physics!
 
 	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
 
@@ -77,26 +76,27 @@ public:
 // callbacks supported by the World:
 public:
 
-	virtual bool collide_hook(World* world, World::Body* obj1, World::Body* obj2)
-	{
+/*
+	virtual bool collide_hook(World* w, World::Body* obj1, World::Body* obj2)
+	{w, obj1, obj2;
+		return false;
+	}
+*/
+	virtual bool collide_hook(World* w, World::Body* obj1, World::Body* obj2, float distance)
+	{w, obj1, obj2, distance;
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 		//!!...body->p -= ds...;
 		return false;
 	}
 
-	virtual bool collide_hook(World* world, World::Body* obj1, World::Body* obj2, float distance)
-	{
-		return collide_hook(world, obj1, obj2);
-	}
-
-	virtual bool touch_hook(World* world, World::Body* obj1, World::Body* obj2)
-	{
+	virtual bool touch_hook(World* w, World::Body* obj1, World::Body* obj2)
+	{w, obj1, obj2;
 		return false;
 	}
 
 	//! High-level, abstract (not just "generic"!) hook for n-body interactions:
-	virtual void interaction_hook(World* world, World::Event event, World::Body* obj1, World::Body* obj2, ...)
-	{
+	virtual void interaction_hook(World* w, World::Event event, World::Body* obj1, World::Body* obj2, ...)
+	{w, event, obj1, obj2;
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 		obj1->color += 0x3363c3;
 	}
@@ -117,8 +117,8 @@ friend class Renderer_SFML;
 
 public:
 // SFML-specific World-event hooks:
-	bool touch_hook(World* world, World::Body* obj1, World::Body* obj2) override
-	{
+	bool touch_hook(World* w, World::Body* obj1, World::Body* obj2) override
+	{w, obj1, obj2;
 		audio.play_sound(clack_sound);
 		return false;
 	}
@@ -178,11 +178,11 @@ public:
 		//!!??
 	}
 
-	auto zoom_in()  { auto factor = 1.25; _SCALE *= factor;
+	auto zoom_in()  { auto factor = 1.25f; _SCALE *= factor;
 		renderer.resize_objects(factor);
 		_pan_adjust_after_zoom();
 	}
-	auto zoom_out () { auto factor = 0.80; _SCALE *= factor;
+	auto zoom_out () { auto factor = 0.80f; _SCALE *= factor;
 		renderer.resize_objects(factor);
 		_pan_adjust_after_zoom();
 	}

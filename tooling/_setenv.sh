@@ -26,10 +26,13 @@ sz_out_dir=${sz_prjdir}/out
 sz_tmp_dir=${sz_prjdir}/tmp
 sz_release_dir=${sz_prjdir}/release
 
+HASH_INCLUDE_FILE=${sz_out_dir}/commit_hash.inc
+
+# Enable this in its own commit:
+# cd "%sz_prjdir%"
+
 if [ ! -d "${sz_out_dir}" ]; then mkdir "${sz_out_dir}"; fi
 if [ ! -d "${sz_out_dir}" ]; then
 	echo "- ERROR: Failed to setup project env (${sz_out_dir} was not created)!"
 	exit 1
 fi
-
-HASH_INCLUDE_FILE=${sz_out_dir}/commit_hash.inc

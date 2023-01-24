@@ -34,10 +34,10 @@ struct Physics
 };
 // Physics constants -- !!MOVE INTO Physics! --:
 	//! `const` can't do non-integral statics! :-/
-	static constexpr float G = 6.673e-11; //!! No point keeping this real and all the others stretched,
+	static constexpr float G = 6.673e-11f; //!! No point keeping this real and all the others stretched,
 	               //!! const unless a real orbital simulation is the goal (which isn't)!...
-	static constexpr float DENSITY_ROCK = 2000; // kg/m3
-	static constexpr float FRICTION = 0.3;
+	static constexpr float DENSITY_ROCK = 2000.0f; // kg/m3
+	static constexpr float FRICTION = 0.3f;
 
 // Internal state:
 	float dt; // inter-frame increment of the world model time
@@ -80,7 +80,7 @@ public: // Just allow access for now...:
 	bool is_colliding(const Body* obj1, const Body* obj2)
 	// Takes the body shape into account.
 	// Note: a real coll. calc. (e.g. bounding box intersect.) may not need to the distance to be calculated.
-	{
+	{obj1, obj2;
 		//auto distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
 
 		return false;
