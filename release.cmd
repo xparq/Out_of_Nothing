@@ -3,7 +3,7 @@ setlocal
 call %~dp0tooling/_setenv.cmd keep_sfml_libroot
 
 pushd %sz_prjdir%
-for /f %%i in ('git rev-parse --short HEAD') do set last_commit_hash=%%i
+for /f %%i in ('git rev-parse --short=8 HEAD') do set last_commit_hash=%%i
 popd
 
 set packname=%sz_appname%-%last_commit_hash%.zip

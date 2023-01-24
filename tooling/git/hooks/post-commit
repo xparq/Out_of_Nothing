@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# We are in the work tree now, Git promised...
+#
+
+echo "Post-commit code-generation for the next build..."
+echo "(BEWARE: \`build clean\` would delete it, so a normal build must also be able to regenerated it!"
+echo "But it must not just regenerate it every time, as it would trigger unnecessary rebuilds...)"
+
+
+# Need to set the project dir here, as _setenv.sh won't
+# be able find it ($0 doesn't work when sourced!)
+sz_prjdir=$(pwd)
+. tooling/_setenv.sh
+	if [ $? != 0 ]; then exit 1; fi
+
+. tooling/git/_create_commit_hash_include_file.sh

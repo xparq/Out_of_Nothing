@@ -1,5 +1,8 @@
 ﻿@echo off
 
+# We are supposed to be in the repo's work-tree root; at least
+# that seems to be the case when run from a GH Action...
+
 pushd .
 call :main
 if errorlevel 1 echo - ERROR: SFML setup failed.

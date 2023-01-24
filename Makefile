@@ -37,7 +37,7 @@ BB=busybox
 ECHO=@$(BB) echo
 
 # For the "clean" rule (safety measure against a runaway `rm -rf *`):
-CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .sh
+CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .inc .sh
 
 MAKEFILE=$(prjdir)/Makefile
 
@@ -77,7 +77,7 @@ LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 
 # NMAKE only runs the first root target by default! :-o So...:
 #-----------------------------------------------------------------------------
-DEFAULT::
+DEFAULT:: $(HASH_INCLUDE_FILE)
 	$(ECHO) Processing default target ($(EXE))...
 !if defined(DEBUG) && "$(DEBUG)" != "0"
 	$(ECHO)
@@ -121,3 +121,10 @@ $(EXE):: $(MODULES)
 
 ## Sorry, no autodep. yet...
 $(MODULES): $(INCLUDES) $(MAKEFILE)
+
+## Espeecially for this one...:
+$(out_dir)/main.obj: $(HASH_INCLUDE_FILE)
+
+$(HASH_INCLUDE_FILE):
+	$(BB) sh tooling/git/_create_commit_hash_include_file.sh
+
