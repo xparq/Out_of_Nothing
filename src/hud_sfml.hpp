@@ -6,51 +6,69 @@
 #include <SFML/Graphics/Text.hpp>
 
 #include <vector>
-	using std::vector;
+	//using std::vector;
+#include <typeinfo>
 #include <tuple>
-	using std::tuple, std::make_tuple;
+	//using std::tuple, std::make_tuple;
 #include <any>
-	using std::any;
+	//using std::any;
 #include <functional>
-	using std::function;
+	//using std::function;
 #include <string>
 	using std::string;
 
 class HUD
 {
-	typedef tuple<string, std::any, string> ITEM; // type, var*, prompt
-	typedef string (*CALLBACK)();
+//public: // <- Questionable... Just a convenience typedef for very little gain:
+protected:
+	using FPTR = string (*)(); // raw function ptr (see CALLBACK for functors/closures (capturing lambdas)!)
+protected:
+	//!NOTE: "stateless" lambdas will (or just could?) also get auto-converted to plain old functions!
+	using CALLBACK = std::function<string()>; //! not a raw fn pointer, not a ptr at all, but a (stateful) function object, so not convertible to/from void*!
+	using WATCHER = std::tuple<string // typename
+	                                 , std::any // src* (data address or free function ptr), or CALLBACK _object_
+                                     , string>; // prompt
 
 public:
 
-/*!!
-	template <typename T>
-	auto add(std::function<T> f) {
-	}
-!!*/
-
-	//!! add(prompt, string (*f)()) {...}
-	void add(string (*f)()); // Alas, can't just do CALLBACK f... :-/
 	void add(const char* literal);
 
-	template <typename T>
-	auto add(const char* prompt, T* var)
+	template <typename T> auto add(const char* prompt, T* var, const char* _tyepname = nullptr)
 	{
-		any ptr; ptr.emplace<T*>(var); //!!?? would work incorrectly (crash?!) with .emplace<void*>(var) -- but why?!
-		datarefs.push_back(make_tuple(typeid(T).name(), ptr,
+		if (!_tyepname) _tyepname = typeid(T).name();
+		std::any ptr; ptr.emplace<T*>(var); //!!?? would work incorrectly (crash?!) with .emplace<void*>(var) -- but why?!
+		watchers.push_back(make_tuple(
+			_tyepname,
+			ptr,
 			*prompt ? string(prompt) + prompt_suffix : default_prompt));
-//std::cerr << typeid(T).name() << " added.\n";
+//!!??Crashes if var is int*, as if sizeof int* < sizeof void* mattered, but it shouldn't:
+//!!??		std::cerr << _tyepname << " -> " << (void*)any_cast<void*>(ptr) << " added." << endl;
+//		std::cerr << _tyepname << " added." << endl;
 	}
 
-	template <typename T>
-	auto add(T* var) { return add("", var); }
+	//!!auto add(prompt, FPTR f) {...}
 
-	string render_to(std::stringstream& out);
+	// (Can't template this, as stateless lambdas wouldn't match without casting.)
+	void add(FPTR f);
 
-	std::vector<ITEM> datarefs;
+	// Catch-all lambda matcher (needs no cast for lambdas, but we know kinda nothing here...)
+	template <typename F> auto add(F f)
+	{
+//std::cerr << "- unknown lambda catched...\n";
+		std::any functor; functor.emplace<CALLBACK>((CALLBACK)f);
+		watchers.push_back(make_tuple(functor_name, functor, default_prompt));
+	}
+
+	// "promptless watcher" call form (a bit too vague tho, but mostly works):
+	template <typename T> auto add(T* var) { return add("", var); }
+
+	string render_watched_item_to(std::stringstream& out);
+
+	std::vector<WATCHER> watchers;
 
 	string charptr_literal_name;
-	string callable_name;
+	string fptr_name;
+	string functor_name;
 	string int_name;
 	string float_name;
 	string double_name;
@@ -66,7 +84,8 @@ public:
 	HUD()
 	{
 		charptr_literal_name = "string literal"; //!!?? Why did this work (why different from const char*): typeid("literal").name()?
-		callable_name        = typeid([]()->string{ return ""; }).name(); //!!?? "Callable"; //!
+		fptr_name     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
+		functor_name  = "CALLBACK"; // synthetic name for <CALLBACK> functor objects
 
 		int_name     = typeid(int).name();
 		float_name   = typeid(float).name();
@@ -98,19 +117,7 @@ struct HUD_SFML : public HUD
 		line.setFillColor(sf::Color(CFG_DEFAULT_TEXT_COLOR));
 	}
 
-	void draw(sf::RenderWindow& window)
-	{
-		clear();
-
-		std::stringstream ss; render_to(ss);
-		for (std::string line; std::getline(ss, line);) {
-			append_line(line.c_str());
-		}		
-
-		for (auto& text : lines_to_draw) {
-			window.draw(text);
-		}
-	}
+	void draw(sf::RenderWindow& window);
 
 	void _setup(sf::RenderWindow& window);
 

@@ -400,8 +400,11 @@ void Engine_SFML::_setup_huds()
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
 
-	debug_hud.add("frame delay (s)", &world.dt);
-//!!debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
+//!!	debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
+	debug_hud.add([this](){
+			return string("FPS: ") + to_string(1 / this->world.dt); });
+	//debug_hud.add("frame delay (s)", &world.dt);
+
 //	debug_hud.add("pan X", &_OFFSET_X);
 //	debug_hud.add("pan Y", &_OFFSET_Y);
 //	debug_hud.add("SCALE", &_SCALE);

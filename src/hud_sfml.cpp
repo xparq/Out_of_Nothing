@@ -27,67 +27,64 @@ void HUD_SFML::_setup(sf::RenderWindow& window)
 }
 
 
-//!! add(prompt, string (*f)()) {...}
-void HUD::add(string (*f)())
-{
-//!! Just forward to the generic add with no prompt!
-cerr << callable_name << endl;
-cerr << (void*)f << " -> " << f() << endl;
-
-	any ptr; ptr.emplace<void*>(f); //!!?? why does <CALLBACK> crash here?!
-	datarefs.push_back(make_tuple(callable_name, ptr, default_prompt));
-}
-
+//----------------------------------------------------------------------------
 void HUD::add(const char* literal)
 {
 	any noptr; noptr.emplace<void*>(nullptr);
-	datarefs.push_back(make_tuple(charptr_literal_name, noptr, literal));
+	watchers.push_back(make_tuple(charptr_literal_name, noptr, literal));
 }
 
+void HUD::add(FPTR f)
+{
+//std::cerr << "adding " << fptr_name << ": "
+//		     << (void*)f << " -> " << f() << endl;
+	return add("", (void*)f, fptr_name.c_str());
+//!!??Alas, this crashes:
+//!!??		return add("", f, fptr_name.c_str());
 
-string HUD::render_to(std::stringstream& out)
+//		any ptr; ptr.emplace<void*>(f); //!!?? and why does <FPTR>(f) crash here??
+//		watchers.push_back(make_tuple(fptr_name, ptr, default_prompt));
+}
+
+//----------------------------------------------------------------------------
+string HUD::render_watched_item_to(std::stringstream& out)
 {
 	string result;
-	for (auto ref : datarefs) {
+	for (auto ref : watchers) {
 
 		//!! This is still too fragile! (Remember: name() is implementation-dependent, and
 		//!! could be anything: mangled, duplicates, long raw template name for string etc.). 
 		//!! E.g. with MSVC char* and char would both be just "char"! :-o
 
 		if (string(get<0>(ref)) == charptr_literal_name) {
-//				out << "[char* literal] ";
 			out << get<2>(ref);
-		} else if (string(get<0>(ref)) == callable_name) {
-//				out << "[lambda] ";
-			string (*f)() = (CALLBACK)(any_cast<void*>(get<1>(ref)));
+		} else if (string(get<0>(ref)) == fptr_name) { // raw fn*
+			auto f = (FPTR)(any_cast<void*>(get<1>(ref)));
+			out << f();
+		} else if (string(get<0>(ref)) == functor_name) { // CALLBACK functor
+			auto f = any_cast<CALLBACK>(get<1>(ref));
 			out << f();
 		} else if (string(get<0>(ref)) == int_name) {
-//				out << "[int] ";
 			out << get<2>(ref);
 			out << * any_cast<int*>(get<1>(ref));
 		} else if (string(get<0>(ref)) == float_name) {
-//				out << "[float] ";
 			auto save = out.precision(numeric_limits<float>::max_digits10);
 			out << get<2>(ref);
 			out << * any_cast<float*>(get<1>(ref));
 			out.precision(save);
 		} else if (string(get<0>(ref)) == double_name) {
-//				out << "[double] ";
 			auto save = out.precision(numeric_limits<double>::max_digits10);
 			out << get<2>(ref);
 			out << * any_cast<double*>(get<1>(ref));
 			out.precision(save);
-		} else if (string(get<0>(ref)) == charptr_name) {
-//				out << "[char*] ";
+		} else if (string(get<0>(ref)) == charptr_name) { // char*
 			out << (const char*) (* any_cast<const char**>(get<1>(ref)));
 //!!??Why would it crash with this, just omiting the const:			
 //!!??				     << ", current val: " << (const char*) (* any_cast<char**>(get<1>(ref)));
 		} else if (string(get<0>(ref)) == string_name) {
-//				out << "[string] ";
 			out << get<2>(ref);
 			out << * any_cast<string*>(get<1>(ref));
-		} else if (string(get<0>(ref)) == char_name) {
-//				out << "[char] ";
+		} else if (string(get<0>(ref)) == char_name) { // char
 			out << get<2>(ref);
 			out << * any_cast<char*>(get<1>(ref));
 
@@ -100,3 +97,17 @@ string HUD::render_to(std::stringstream& out)
 	return out.str();
 }
 
+//----------------------------------------------------------------------------
+void HUD_SFML::draw(sf::RenderWindow& window)
+{
+	clear();
+
+	std::stringstream ss; render_watched_item_to(ss);
+	for (std::string line; std::getline(ss, line);) {
+		append_line(line.c_str());
+	}
+
+	for (auto& text : lines_to_draw) {
+		window.draw(text);
+	}
+}
