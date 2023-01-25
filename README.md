@@ -3,7 +3,7 @@ a simple framework/toolkit for developing apps that need this sort of "game-like
 2D platform, c) even more vaguely: perhaps actually developing something interesting
 out of it.
 
-![screenshot](https://github.com/lunakid/sfml-test/blob/main/asset/image/screenshot_6000_zoomout_2.png)
+![screenshot](asset/image/screenshot_6000_zoomout_2.png)
 
 ...Still not clear, what the hell these steerable giant planets should do to each other. :)
 Should it be a game (e.g. multiplayer, slingshotting moons at each other, placing balls
@@ -81,7 +81,7 @@ RELEASE:
 	Windows installation).	
 
 
-![screenshot](https://github.com/lunakid/sfml-test/blob/main/asset/image/screenshot_2500.png)
+![screenshot](asset/image/screenshot_2500.png)
 
 
 NOTES ABOUT THE CODE:
@@ -100,7 +100,7 @@ Unresolved threading-related(?) SFML + OpenGL window/context misery:
 
 
 
-![screenshot](https://github.com/lunakid/sfml-test/blob/main/asset/image/screenshot_5000_void_sphere_zoomout_1.png)
+![screenshot](asset/image/screenshot_5000_void_sphere_zoomout_1.png)
 ------------------------------------------------------------------------------
 READ/LEARN/TRY/USE:
 
