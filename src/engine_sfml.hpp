@@ -35,16 +35,16 @@ public:
 	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
 
 	struct Thruster {
-		float _throttle = 0;
-		float throttle(float new_throttle)
+		float _thrust_level = 0;
+		float thrust_level(float new_thrust_level)
 		{
-			auto prev_throttle = _throttle;
-			_throttle = new_throttle;
-			return prev_throttle;
+			auto prev_thrust_level = _thrust_level;
+			_thrust_level = new_thrust_level;
+			return prev_thrust_level;
 		}
-		float throttle() const { return _throttle; }
+		float thrust_level() const { return _thrust_level; }
 	};
-	//!!Thtusters should have vectorized throttles relative to the body orientation,
+	//!!Thrusters should be vectorized, relative to the body orientation,
 	//!!which is currently fixed to be identical to the world coordinate system...
 	Thruster thrust_up;
 	Thruster thrust_down;
@@ -154,15 +154,15 @@ public:
 	void toggle_music() { audio.toggle_music(); }
 
 	//! Should be idempotent to tolerate keyboard repeats (which could be disabled, but better be robust)!
-	auto up_thruster_start()    { thrust_up.throttle(CFG_THRUST_FORCE); }
-	auto down_thruster_start()  { thrust_down.throttle(CFG_THRUST_FORCE); }
-	auto left_thruster_start()  { thrust_left.throttle(CFG_THRUST_FORCE); }
-	auto right_thruster_start() { thrust_right.throttle(CFG_THRUST_FORCE); }
+	auto up_thruster_start()    { thrust_up.thrust_level(CFG_THRUST_FORCE); }
+	auto down_thruster_start()  { thrust_down.thrust_level(CFG_THRUST_FORCE); }
+	auto left_thruster_start()  { thrust_left.thrust_level(CFG_THRUST_FORCE); }
+	auto right_thruster_start() { thrust_right.thrust_level(CFG_THRUST_FORCE); }
 
-	auto up_thruster_stop()     { thrust_up.throttle(0); }
-	auto down_thruster_stop()   { thrust_down.throttle(0); }
-	auto left_thruster_stop()   { thrust_left.throttle(0); }
-	auto right_thruster_stop()  { thrust_right.throttle(0); }
+	auto up_thruster_stop()     { thrust_up.thrust_level(0); }
+	auto down_thruster_stop()   { thrust_down.thrust_level(0); }
+	auto left_thruster_stop()   { thrust_left.thrust_level(0); }
+	auto right_thruster_stop()  { thrust_right.thrust_level(0); }
 
 	auto pan_up()     { _OFFSET_Y -= CFG_PAN_STEP; }
 	auto pan_down()   { _OFFSET_Y += CFG_PAN_STEP; }

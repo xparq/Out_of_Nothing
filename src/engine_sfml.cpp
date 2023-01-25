@@ -210,10 +210,9 @@ void Engine_SFML::event_loop()
 					else                 right_thruster_start();
 					break;
 
+				case sf::Keyboard::Home: pan_reset(); break;
 				case sf::Keyboard::F12: toggle_huds(); break;
-
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
-
 				}
 				break;
 
@@ -230,7 +229,6 @@ void Engine_SFML::event_loop()
 				case 'D': remove_bodies(100); break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
-				case 'o': pan_reset(); break;
 				case 'h': pan_center_body(0); break;
 				case ' ': toggle_pause(); break;
 				case 'm': toggle_music(); break;
@@ -427,7 +425,7 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("d:      remove an object (Shift+d: 100x)");
 	help_hud.add("Shift+arrows: pan");
 	help_hud.add("h:      home in on the globe");
-	help_hud.add("o:      reset pan offset");
+	help_hud.add("Home:   reset view position (not the zoom)");
 	help_hud.add("m:      toggle music");
 	help_hud.add("F11:    toggle fullscreen");
 	help_hud.add("F12:    toggle HUDs");

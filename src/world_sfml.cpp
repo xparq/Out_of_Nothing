@@ -39,8 +39,8 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 
 		// Thrust:
 		if (i == engine.globe_ndx) {
-			sf::Vector2f F_thr( (-engine.thrust_left.throttle() + engine.thrust_right.throttle()) * dt,
-							    (-engine.thrust_up.throttle() + engine.thrust_down.throttle()) *dt);
+			sf::Vector2f F_thr( (-engine.thrust_left.thrust_level() + engine.thrust_right.thrust_level()) * dt,
+							    (-engine.thrust_up.thrust_level() + engine.thrust_down.thrust_level()) *dt);
 			body->v += (F_thr / body->mass);
 		}
 
