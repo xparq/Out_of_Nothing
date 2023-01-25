@@ -3,13 +3,14 @@
 
 sz_appname=sfml-test
 
+##!!This $0 is incorrect if we're being sourced by another script in a different dir!!!
 sz_prjdir=${sz_prjdir:-$(dirname $0)/..}
 if [ ! -f "${sz_prjdir}/tooling/_setenv.sh" ]; then
 	echo "- ERROR: Failed to set the project dir (misplaced ${sz_prjdir}/tooling/_setenv.sh)!"
 	exit 1
 fi
 
-sfml_libroot=${sfml_libroot:-${sz_prjdir}/../../sfml/current}
+sfml_libroot=${sfml_libroot:-${sz_prjdir}/../../sw/devel/lib/sfml/current}
 
 #echo ${sz_prjdir}
 #echo ${sfml_libroot}
@@ -29,7 +30,7 @@ sz_release_dir=${sz_prjdir}/release
 HASH_INCLUDE_FILE=${sz_out_dir}/commit_hash.inc
 
 # CD to prj root for the rest of the process:
-# cd "%sz_prjdir%"
+cd "%sz_prjdir%"
 
 if [ ! -d "${sz_out_dir}" ]; then mkdir "${sz_out_dir}"; fi
 if [ ! -d "${sz_out_dir}" ]; then
