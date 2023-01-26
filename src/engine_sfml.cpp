@@ -289,7 +289,7 @@ size_t Engine_SFML::add_body()
 	auto p_range = CFG_GLOBE_RADIUS * 5;
 	auto v_range = CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
 
-cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
+//cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
 
 //!!atrocious hack to wait for the ongoing update to finish!... ;)
 //!!test whether std::atomic could solve it!
@@ -398,7 +398,7 @@ void Engine_SFML::_setup_huds()
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
 
-//!!	debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
+//!!with prompt: debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
 	debug_hud.add([this](){
 			return string("FPS: ") + to_string(1 / this->world.dt); });
 	//debug_hud.add("frame delay (s)", &world.dt);
@@ -407,7 +407,9 @@ void Engine_SFML::_setup_huds()
 //	debug_hud.add("pan Y", &_OFFSET_Y);
 //	debug_hud.add("SCALE", &_SCALE);
 
-//	debug_hud.add("globe R", &CFG_GLOBE_RADIUS); //!!now this one does crash! :-o
+//!!This one still crashes (both in debug/release builds)! :-o
+//!!debug_hud.add("globe R", &CFG_GLOBE_RADIUS);
+
 	debug_hud.add("globe R", &world.bodies[globe_ndx]->r); //!!and also this did earlier! :-o WTF??!?! how come ->mass didn't then?!?!
 	                                                       //!!??and how come it doesn't again after a recompilation?!?!?!?!
 	debug_hud.add("globe m", &world.bodies[globe_ndx]->mass);
@@ -432,5 +434,7 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("Space:  pause the physics");
 	help_hud.add("Esc:    quit");
 	help_hud.add("mouse wheel: test alpha fading");
+	help_hud.add("");
+	help_hud.add("Command-line options: ...exe /?");
 }
 #endif
