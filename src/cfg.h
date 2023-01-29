@@ -1,4 +1,4 @@
-﻿//! Force-include this during build (e.g. with /FI), instead of relying on
+//! Force-include this during build (e.g. with /FI), instead of relying on
 //! manually doing so everywhere (or even more risky: "where applicable"...)
 //!
 //! To support not including this at all, the original #defines have been

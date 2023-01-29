@@ -1,4 +1,4 @@
-﻿#ifndef __WORLD_SFML__
+#ifndef __WORLD_SFML__
 #define __WORLD_SFML__
 
 #include <SFML/System/Vector2.hpp>

@@ -1,4 +1,4 @@
-﻿echo off
+@echo off
 rem	This is expected to be called from a (temporary) process context, where
 rem	the env. vars won't persist, and won't clash with anything important!
 

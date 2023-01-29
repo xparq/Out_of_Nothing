@@ -1,4 +1,4 @@
-﻿busybox:
+busybox:
 	32-bit .exe (for max. Windows coverage), compressed (with upx -9, down from 600K).
 	For heavy-duty scripted use, you 
 	Starting with v1.36, one that alreaady has httpd -- but could not get CGI running, it's probably not built with CGI support!

@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 
 # We are supposed to be in the repo's work-tree root; at least
 # that seems to be the case when run from a GH Action...

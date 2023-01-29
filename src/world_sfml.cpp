@@ -1,4 +1,4 @@
-﻿#include "world_sfml.hpp"
+#include "world_sfml.hpp"
 #include "engine_sfml.hpp"
 
 #include <cmath> // pow?, sqrt

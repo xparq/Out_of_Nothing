@@ -1,4 +1,4 @@
-﻿#ifndef __RENDERER_SFML__
+#ifndef __RENDERER_SFML__
 #define __RENDERER_SFML__
 
 #include "world_sfml.hpp"
