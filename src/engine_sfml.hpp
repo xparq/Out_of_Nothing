@@ -1,4 +1,4 @@
-#ifndef __ENGINE_SFML__
+﻿#ifndef __ENGINE_SFML__
 #define __ENGINE_SFML__
 
 #include "world_sfml.hpp"
@@ -196,8 +196,12 @@ public:
 	void toggle_fullscreen();
 
 	//------------------------------------------------------------------------
-	size_t add_body(World_SFML::Body&& obj);
+	void spawn(size_t n = 1);
+
+	//------------------------------------------------------------------------
+	// These are low-level ops, not user/player actions!
 	size_t add_body(); // add a random one
+	size_t add_body(World_SFML::Body&& obj);
 	void   add_bodies(size_t n);
 	void   remove_body(size_t ndx);
 	void   remove_body(); // delete a random one

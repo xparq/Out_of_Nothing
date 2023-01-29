@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 		.moons = args("moons")
 	});*/
 	if (args["moons"]) {
-		engine.add_bodies( ::atoi(args("moons").c_str()) );
+		engine.add_bodies( ::atoi(args("moons").c_str()) -2 ); // 2 were pre-created...
 	}
 
 	engine.run();

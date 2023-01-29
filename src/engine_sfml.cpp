@@ -224,8 +224,8 @@ void Engine_SFML::event_loop()
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
-				case 'n': add_body(); break;
-				case 'N': add_bodies(100); break;
+				case 'n': spawn(); break;
+				case 'N': spawn(100); break;
 				case 'd': remove_body(); break;
 				case 'D': remove_bodies(100); break;
 				case '+': zoom_in(); break;
@@ -274,6 +274,15 @@ cerr << "END sf::Event::Closed\n";
 	} // while
 }
 
+
+//----------------------------------------------------------------------------
+void Engine_SFML::spawn(size_t n)
+{
+	add_bodies(n);
+}
+
+
+
 //----------------------------------------------------------------------------
 size_t Engine_SFML::add_body(World_SFML::Body&& obj)
 {
@@ -292,18 +301,18 @@ size_t Engine_SFML::add_body()
 
 //cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
 
-//!!atrocious hack to wait for the ongoing update to finish!... ;)
-//!!test whether std::atomic could solve it!
+//!!Atrocious hack to wait for the ongoing update to finish!... ;)
+//!!Doesn't seem to crash!... :-o :)
+//!!Test whether std::atomic could solve it!
 sf::sleep(sf::milliseconds(1));
-//!!Doesn't seem to crash regardless!... :-o :)
 
 	return add_body({
 		.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
 				+ r_min,
-		.p = { (rand() * p_range) / RAND_MAX - p_range/2,
-		       (rand() * p_range) / RAND_MAX - p_range/2 },
-		.v = { (rand() * v_range) / RAND_MAX - v_range/2,
-		       (rand() * v_range) / RAND_MAX - v_range/2 },
+		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
+		       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
+		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
+		       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
 		.color = (uint32_t) (float)0xffffff * rand(),
 	});
 }
