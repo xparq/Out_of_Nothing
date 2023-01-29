@@ -1,4 +1,4 @@
-﻿#ifndef __ENGINE_SFML__
+#ifndef __ENGINE_SFML__
 #define __ENGINE_SFML__
 
 #include "world_sfml.hpp"
@@ -58,8 +58,6 @@ public:
 protected:
 	bool _terminated = false;
 	bool _paused = false;
-	bool _show_huds = true;
-	bool _show_help = false;
 
 public:
 	auto toggle_pause()  { _paused = !_paused; pause(_paused); }
@@ -68,9 +66,6 @@ public:
 
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
-
-	auto toggle_huds()  { _show_huds = !_show_huds; }
-	auto toggle_help()  { _show_help = !_show_help; }
 
 //----------------------------------------------------------------------------
 // callbacks supported by the World:
@@ -133,6 +128,7 @@ public:
 #ifndef DISABLE_HUD
 	HUD_SFML    debug_hud;
 	HUD_SFML    help_hud;
+	bool _show_huds = true;
 #endif
 
 #ifndef DISABLE_AUDIO
@@ -151,6 +147,10 @@ public:
 
 	void pause(bool state = true)  override { _paused = state; world.pause(state); }
 
+#ifndef DISABLE_HUD
+	auto toggle_huds()  { _show_huds = !_show_huds; }
+	auto toggle_help()  { help_hud.active(!help_hud.active()); }
+#endif
 	void toggle_music() { audio.toggle_music(); }
 
 	//! Should be idempotent to tolerate keyboard repeats (which could be disabled, but better be robust)!

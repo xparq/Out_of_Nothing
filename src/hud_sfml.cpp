@@ -100,6 +100,8 @@ string HUD::render_watched_item_to(std::stringstream& out)
 //----------------------------------------------------------------------------
 void HUD_SFML::draw(sf::RenderWindow& window)
 {
+	if (!active()) return;
+
 	clear();
 
 	std::stringstream ss; render_watched_item_to(ss);

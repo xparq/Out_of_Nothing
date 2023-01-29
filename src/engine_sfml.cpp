@@ -115,7 +115,8 @@ void Engine_SFML::draw()
 #ifndef DISABLE_HUD
 	if (_show_huds) {
 		debug_hud.draw(window);
-		if (_show_help) help_hud.draw(window);
+		if (help_hud.active()) help_hud.draw(window); //!! the active-chk is redundant, the HUD does the same; TBD, who's boss!
+		                                              //!! "activity" may mean more than drawing. so... actually both can do it?
 	}
 #endif
 	window.display();
@@ -433,8 +434,10 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("F12:    toggle HUDs");
 	help_hud.add("Space:  pause the physics");
 	help_hud.add("Esc:    quit");
-	help_hud.add("mouse wheel: test alpha fading");
+//	help_hud.add("mouse wheel: test alpha fading");
 	help_hud.add("");
 	help_hud.add("Command-line options: ...exe /?");
+
+	help_hud.active(true);
 }
 #endif

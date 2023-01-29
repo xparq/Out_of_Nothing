@@ -16,6 +16,8 @@
 	//using std::function;
 #include <string>
 	using std::string;
+# include <utility>
+	//using std::exchange;
 
 class HUD
 {
@@ -76,11 +78,14 @@ public:
 	string charptr_name;
 	string string_name;
 
-public:
+protected:
 	string default_prompt = "";
 	string prompt_prefix =  "> ";
 	string prompt_suffix =  ": ";
 
+	bool _active = true;
+
+public:
 	HUD()
 	{
 		charptr_literal_name = "string literal"; //!!?? Why did this work (why different from const char*): typeid("literal").name()?
@@ -94,6 +99,9 @@ public:
 		charptr_name = typeid(const char*).name(); //!!??
 		string_name  = typeid(string).name();
 	}
+
+	bool active() const       { return _active; }
+	bool active(bool active)  { return std::exchange(_active, active); }
 };
 
 //----------------------------------------------------------------------------
