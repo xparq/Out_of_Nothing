@@ -1,36 +1,39 @@
 # This is expected to be called from a (temporary) process context, where
 # the env. vars won't persist, and won't clash with anything important!
 
-sz_appname=sfml-test
+export sz_appname=sfml-test
 
 ##!!This $0 is incorrect if we're being sourced by another script in a different dir!!!
-sz_prjdir=${sz_prjdir:-$(dirname $0)/..}
-if [ ! -f "${sz_prjdir}/tooling/_setenv.sh" ]; then
+export sz_prjdir=${sz_prjdir:-`dirname $0`/..}
+sz_prjdir="`realpath ${sz_prjdir}`"
+
+if [ ! -e "${sz_prjdir}/tooling/_setenv.sh" ]; then
 	echo "- ERROR: Failed to set the project dir (misplaced ${sz_prjdir}/tooling/_setenv.sh)!"
 	exit 1
 fi
 
-sfml_libroot=${sfml_libroot:-${sz_prjdir}/../../sw/devel/lib/sfml/current}
+sfml_libroot=${sfml_libroot:-${sz_prjdir}/../../SW/devel/lib/sfml/current}
 
 #echo ${sz_prjdir}
 #echo ${sfml_libroot}
 #read x
 
-INCLUDE="${sfml_libroot}/include;${INCLUDE}"
-LIB="${sfml_libroot}/lib;${LIB}"
-PATH="${sz_prjdir}/tooling;${sfml_libroot}/bin;${PATH}"
+# Note the ; separators, which would fail with GCC... on everywhere, but Windows... :-/
+export INCLUDE="${sfml_libroot}/include;${INCLUDE}"
+export LIB="${sfml_libroot}/lib;${LIB}"
+export PATH="${sz_prjdir}/tooling;${sfml_libroot}/bin;${PATH}"
 
-sz_src_dir=${sz_prjdir}/src
-sz_asset_subdir=asset
-sz_asset_dir=${sz_prjdir}/${sz_asset_subdir}
-sz_out_dir=${sz_prjdir}/out
-sz_tmp_dir=${sz_prjdir}/tmp
-sz_release_dir=${sz_prjdir}/release
+export sz_src_dir=${sz_prjdir}/src
+export sz_asset_subdir=asset
+export sz_asset_dir=${sz_prjdir}/${sz_asset_subdir}
+export sz_out_dir=${sz_prjdir}/out
+export sz_tmp_dir=${sz_prjdir}/tmp
+export sz_release_dir=${sz_prjdir}/release
 
-HASH_INCLUDE_FILE=${sz_out_dir}/commit_hash.inc
+export HASH_INCLUDE_FILE=${sz_out_dir}/commit_hash.inc
 
 # CD to prj root for the rest of the process:
-cd "%sz_prjdir%"
+cd "$sz_prjdir"
 
 if [ ! -d "${sz_out_dir}" ]; then mkdir "${sz_out_dir}"; fi
 if [ ! -d "${sz_out_dir}" ]; then

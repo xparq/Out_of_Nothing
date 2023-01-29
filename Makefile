@@ -25,10 +25,10 @@ MODULES=$(out_dir)/main.obj \
 
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h
 
-CL_FLAGS=$(CL_FLAGS) -W4 -std:c++latest -MD -EHsc
+CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc
 # For GitHub issue #15 (don't rely on manually including cfg.h):
-CL_FLAGS=$(CL_FLAGS) -FI cfg.h
-CL_CMD=cl -nologo -c $(CL_FLAGS) -Fo$(out_dir)/ -Fd$(out_dir)/
+CC_FLAGS=$(CC_FLAGS) -FI cfg.h
+CC_CMD=cl -nologo -c $(CC_FLAGS) -Fo$(out_dir)/ -Fd$(out_dir)/
 LINK_CMD=link -nologo
 #!!?? Why does this not do anything useful:
 # LINK_CMD=link /LTCG:INCREMENTAL
@@ -45,9 +45,9 @@ BUILD_OPT_LABEL=OPTION:
 
 
 !if defined(DEBUG) && "$(DEBUG)" != "0"
-CL_CMD=$(CL_CMD) -Zi -DDEBUG
+CC_CMD=$(CC_CMD) -Zi -DDEBUG
 !else
-CL_CMD=$(CL_CMD) -O2 -DNDEBUG
+CC_CMD=$(CC_CMD) -O2 -DNDEBUG
 !endif
 
 !if defined(SFML_DLL)
@@ -55,7 +55,7 @@ LIBS=	sfml-graphics.lib sfml-window.lib sfml-system.lib \
 	sfml-audio.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
 	opengl32.lib
 !else
-CL_CMD=$(CL_CMD) -DSFML_STATIC
+CC_CMD=$(CC_CMD) -DSFML_STATIC
 LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 	sfml-audio-s.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
 	opengl32.lib freetype.lib vorbis.lib vorbisfile.lib \
@@ -64,7 +64,7 @@ LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 
 
 {$(src_dir)/}.cpp{$(out_dir)/}.obj::
-	$(CL_CMD) $<
+	$(CC_CMD) $<
 
 ## This non-batch alternative for attempting to generate .h* deps is futile...
 ## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
@@ -72,10 +72,10 @@ LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 ## But even if the list was massaged into makefile syntax, the MSVC output is still
 ## "unredirectable", as both the includes AND the errors/warnings go to stdout!... :-(
 ## {$(src_dir)/}.cpp{$(out_dir)/}.obj:
-##	$(CL_CMD) $<        -showIncludes > $(out_dir)/$*.hdep
+##	$(CC_CMD) $<        -showIncludes > $(out_dir)/$*.hdep
 
 
-# NMAKE only runs the first root target by default! :-o So...:
+# NMAKE only runs the first root target by default! So...:
 #-----------------------------------------------------------------------------
 DEFAULT:: $(HASH_INCLUDE_FILE)
 	$(ECHO) Processing default target ($(EXE))...
