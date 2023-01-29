@@ -1,4 +1,4 @@
-﻿#include "Args.hpp"
+#include "Args.hpp"
 #include "engine_sfml.hpp"
 
 #include <iostream> // cerr
@@ -9,7 +9,6 @@ using namespace std;
 
 
 //!!...
-extern
 #include "../out/commit_hash.inc"
 
 

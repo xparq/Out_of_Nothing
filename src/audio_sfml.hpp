@@ -1,6 +1,8 @@
 #ifndef __AUDIO_SFML_
 #define __AUDIO_SFML_
 
+#include <cstddef> // size_t
+
 class Audio_Stub
 {
 public:
