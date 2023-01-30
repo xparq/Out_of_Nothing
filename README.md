@@ -9,7 +9,7 @@ You can't wait! ;)
 
 ------------------------------------------------------------------------------
 DEPS.:
-	- MSVC (a version supporting c++20, or c++23 if actually using <format>)
+	- MSVC (a version supporting c++20, or c++23 if actually using \<format>)
 	- SFML 2.6.x (last tried: a4bca205 off the main branch actually)
 	- openal32.dll (for audio) - even if linked with the static SFML libs, this
 	  will still be loaded (just like the MSVC runtime DLLs -- see below)!

@@ -122,7 +122,7 @@ $(EXE):: $(MODULES)
 ## Sorry, no autodep. yet...
 $(MODULES): $(INCLUDES) $(MAKEFILE)
 
-## Espeecially for this one...:
+## Especially for this one...:
 $(out_dir)/main.obj: $(HASH_INCLUDE_FILE)
 
 $(HASH_INCLUDE_FILE):
