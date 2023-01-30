@@ -1,15 +1,11 @@
-﻿A simple SFML trial project a) for learning the lib, b) hopefully distilling
-a simple framework/toolkit for developing apps that need this sort of "game-like"
-2D platform, c) even more vaguely: perhaps actually developing something interesting
-out of it.
+﻿Still just the simple SFML trial project started for a) learning the lib, b) hopefully
+distilling a simple framework/toolkit for developing apps that need this sort of
+game-like 2D platform, c) even more vaguely: perhaps actually developing something
+interesting out of it -- but now I'm full of fascinating ideas to explore, as soon as
+I get through some boring/daunting architectural design + low-level tech parts first.
+You can't wait! ;)
 
 ![screenshot](asset/image/screenshot_6000_zoomout_2.png)
-
-...Still not clear, what the hell these steerable giant planets should do to each other. :)
-Should it be a game (e.g. multiplayer, slingshotting moons at each other, placing balls
-into pockets, billiard-like; etc. etc.)? 
-Should it be a sim. experiment of e.g. evolutionary trajectory developments, or a 
-cellular automata?...
 
 ------------------------------------------------------------------------------
 DEPS.:

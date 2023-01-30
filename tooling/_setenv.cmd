@@ -2,7 +2,7 @@
 rem	This is expected to be called from a (temporary) process context, where
 rem	the env. vars won't persist, and won't clash with anything important!
 
-set sz_appname=sfml-test
+set sz_appname=oon
 
 rem !!
 rem !! These could crash horrendously, if e.g. the existing value has & in it etc...:

@@ -1,7 +1,7 @@
 # This is expected to be called from a (temporary) process context, where
 # the env. vars won't persist, and won't clash with anything important!
 
-export sz_appname=sfml-test
+export sz_appname=oon
 
 ##!!This $0 is incorrect if we're being sourced by another script in a different dir!!!
 export sz_prjdir=${sz_prjdir:-`dirname $0`/..}
