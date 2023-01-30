@@ -28,8 +28,8 @@ save_make_cmd(){
 	echo "$cmd"			>> "${outfile}"
 }
 
-new_make_cmd_script="${SZ_OUT_DIR}/make-cmd-PENDING.sh"
-last_make_cmd_script="${SZ_OUT_DIR}/make-cmd-used.sh"
+new_make_cmd_script="${SZ_OUT_DIR}/make-cmd-PENDING.tmp"
+last_make_cmd_script="${SZ_OUT_DIR}/make-cmd-used.tmp"
 #echo ${new_make_cmd_script}
 
 save_make_cmd "${make_build_cmd}" "${new_make_cmd_script}"
@@ -39,11 +39,11 @@ if [ -f "${last_make_cmd_script}" ] && diff -q "${new_make_cmd_script}" "${last_
 	# (That -q may become optional later for retaining the diff for diagnostics!)
 	rm "${last_make_cmd_script}"
 	mv "${new_make_cmd_script}" "${last_make_cmd_script}"
-	${last_make_cmd_script}
 else
 	echo "- Build command/environment changed! Doing full rebuild..."
 	${make_clean_cmd}
 	# This repetition is pretty stupid & fragile this way, but...:
 	save_make_cmd "${make_build_cmd}" "${last_make_cmd_script}"
-	${last_make_cmd_script}
 fi
+
+. ${last_make_cmd_script}
