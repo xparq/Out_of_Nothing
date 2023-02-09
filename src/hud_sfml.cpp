@@ -56,13 +56,19 @@ string HUD::render_watched_item_to(std::stringstream& out)
 		//!! could be anything: mangled, duplicates, long raw template name for string etc.). 
 		//!! E.g. with MSVC char* and char would both be just "char"! :-o
 
+		// get<0>: type
+		// get<1>: ref
+		// get<2>: prompt
+
 		if (string(get<0>(ref)) == charptr_literal_name) {
 			out << get<2>(ref);
 		} else if (string(get<0>(ref)) == fptr_name) { // raw fn*
 			auto f = (FPTR)(any_cast<void*>(get<1>(ref)));
+			out << get<2>(ref);
 			out << f();
 		} else if (string(get<0>(ref)) == functor_name) { // CALLBACK functor
 			auto f = any_cast<CALLBACK>(get<1>(ref));
+			out << get<2>(ref);
 			out << f();
 		} else if (string(get<0>(ref)) == int_name) {
 			out << get<2>(ref);

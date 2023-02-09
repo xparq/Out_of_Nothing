@@ -37,7 +37,12 @@ int main(int argc, char* argv[])
 		engine.add_bodies( ::atoi(args("moons").c_str()) -2 ); // 2 were pre-created...
 	}
 
-	engine.run();
+	try {
+		engine.run();
+	} catch (...) {
+		cerr << "UNHANDLED EXCEPTION!\n";
+		return -1;
+	}
 
 	return 0;
 }

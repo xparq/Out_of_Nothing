@@ -42,7 +42,7 @@ public:
 		watchers.push_back(make_tuple(
 			_tyepname,
 			ptr,
-			*prompt ? string(prompt) + prompt_suffix : default_prompt));
+			prompt && *prompt ? string(prompt) + prompt_suffix : default_prompt));
 //!!??Crashes if var is int*, as if sizeof int* < sizeof void* mattered, but it shouldn't:
 //!!??		std::cerr << _tyepname << " -> " << (void*)any_cast<void*>(ptr) << " added." << endl;
 //		std::cerr << _tyepname << " added." << endl;
@@ -50,19 +50,20 @@ public:
 
 	//!!auto add(prompt, FPTR f) {...}
 
-	// (Can't template this, as stateless lambdas wouldn't match without casting.)
+	// Can't template this, as stateless ("captureless") lambdas wouldn't match without casting!
 	void add(FPTR f);
 
 	// Catch-all lambda matcher (needs no cast for lambdas, but we know kinda nothing here...)
-	template <typename F> auto add(F f)
+	template <typename F> auto add(const char* prompt, F f)
 	{
 //std::cerr << "- unknown lambda catched...\n";
 		std::any functor; functor.emplace<CALLBACK>((CALLBACK)f);
-		watchers.push_back(make_tuple(functor_name, functor, default_prompt));
+		watchers.push_back(make_tuple(functor_name, functor,
+							prompt && *prompt ? string(prompt) + prompt_suffix : default_prompt));
 	}
 
 	// "promptless watcher" call form (a bit too vague tho, but mostly works):
-	template <typename T> auto add(T* var) { return add("", var); }
+//	template <typename T> auto add(T* var) { return add("", var); }
 
 	string render_watched_item_to(std::stringstream& out);
 

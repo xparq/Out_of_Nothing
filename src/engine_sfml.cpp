@@ -409,15 +409,15 @@ void Engine_SFML::_setup_huds()
 	debug_hud.add("Press ? for help...");
 
 //!!with prompt: debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
-	debug_hud.add([this](){
-			return string("FPS: ") + to_string(1 / this->world.dt); });
+	debug_hud.add("FPS", [this](){ return to_string(1 / this->world.dt); });
 	//debug_hud.add("frame delay (s)", &world.dt);
-
 //	debug_hud.add("pan X", &_OFFSET_X);
 //	debug_hud.add("pan Y", &_OFFSET_Y);
 //	debug_hud.add("SCALE", &_SCALE);
 
-//!!This one still crashes (both in debug/release builds)! :-o
+	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
+
+//!!This one still crashes (both in debug & release builds)! :-o
 //!!debug_hud.add("globe R", &CFG_GLOBE_RADIUS);
 
 	debug_hud.add("globe R", &world.bodies[globe_ndx]->r); //!!and also this did earlier! :-o WTF??!?! how come ->mass didn't then?!?!

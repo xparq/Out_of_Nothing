@@ -2,6 +2,17 @@
 ## root-level tartet if none was named on the command line: higher-level targets
 ## must be described before dependent target rules!
 
+# Cfg. macros, can be overridden from the make (build) cmdline:
+#
+#	LINKMODE=static
+#	LINKMODE=dll
+#
+#	DEBUG=1
+#	DEBUG=0 (-> release)
+#
+# Macros set on the MAKE cmdline will override these defaults:
+LINKMODE=static
+DEBUG=1
 
 # Support my "legacy" env. var names:
 prjdir=$(SZ_PRJDIR)
@@ -25,10 +36,12 @@ MODULES=$(out_dir)/main.obj \
 
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h
 
+#CC_FLAGS=$(CC_FLAGS) -nologo
 CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc
-# For GitHub issue #15 (don't rely on manually including cfg.h):
+# For GH #15 (don't rely on manually including cfg.h):
 CC_FLAGS=$(CC_FLAGS) -FI cfg.h
-CC_CMD=cl -nologo -c $(CC_FLAGS) -Fo$(out_dir)/ -Fd$(out_dir)/
+CC_FLAGS=$(CC_FLAGS) -Fo$(out_dir)/ -Fd$(out_dir)/ -c
+CC_CMD=cl -nologo
 LINK_CMD=link -nologo
 #!!?? Why does this not do anything useful:
 # LINK_CMD=link /LTCG:INCREMENTAL
@@ -36,32 +49,67 @@ LINK_CMD=link -nologo
 BB=busybox
 ECHO=@$(BB) echo
 
-# For the "clean" rule (safety measure against a runaway `rm -rf *`):
-CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .inc .sh
-
 MAKEFILE=$(prjdir)/Makefile
 
 BUILD_OPT_LABEL=OPTION:
 
-
-!if defined(DEBUG) && "$(DEBUG)" != "0"
-CC_CMD=$(CC_CMD) -Zi -DDEBUG
+# Linkmode alternatives:
+CC_FLAGS_LINK_static=-DSFML_STATIC
+CC_FLAGS_LINK_dll=
+#!!NMAKE doesn't seem to support macros in macro names, so we have to dance the !ifs... :-/
+#CC_FLAGS_LINKMODE=$(CC_FLAGS_$(CC_FLAGS_LINKMODE))
+!if "$(LINKMODE)" == "static"
+CC_FLAGS_LINKMODE=$(CC_FLAGS_LINK_static)
+!else if "$(LINKMODE)" == "dll"
+CC_FLAGS_LINKMODE=$(CC_FLAGS_LINK_dll)
 !else
-CC_CMD=$(CC_CMD) -O2 -DNDEBUG
+!error Unknown link mode: $(LINKMODE)!
 !endif
 
-!if defined(SFML_DLL)
-LIBS=	sfml-graphics.lib sfml-window.lib sfml-system.lib \
-	sfml-audio.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
-	opengl32.lib
-!else
-CC_CMD=$(CC_CMD) -DSFML_STATIC
-LIBS=	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
+LIBS_static=\
+	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
 	sfml-audio-s.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
 	opengl32.lib freetype.lib vorbis.lib vorbisfile.lib \
 	user32.lib kernel32.lib gdi32.lib winmm.lib advapi32.lib
+LIBS_dll=\
+	sfml-graphics.lib sfml-window.lib sfml-system.lib \
+	sfml-audio.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
+	opengl32.lib
+#!!sigh... LIBS=$(LIBS$(LINKMODE))
+!if "$(LINKMODE)" == "static"
+LIBS=$(LIBS_static)
+!else if "$(LINKMODE)" == "dll"
+LIBS=$(LIBS_dll)
+!else
+!error Unknown link mode: $(LINKMODE)!
 !endif
 
+# Debug / Release alternatives:
+CC_FLAGS_DEBUG_1=-Zi -DDEBUG
+CC_FLAGS_DEBUG_0=-O2 -DNDEBUG
+#!!FFS... CC_FLAGS_DEBUG=$(CC_FLAGS_DEBUG_$(DEBUG))
+!if defined(DEBUG) && $(DEBUG) == 1
+CC_FLAGS_DEBUGMODE=$(CC_FLAGS_DEBUG_1)
+!else if $(DEBUG) == 0
+CC_FLAGS_DEBUGMODE=$(CC_FLAGS_DEBUG_0)
+!else
+!error Unknown debug mode: $(DEBUG)!
+!endif
+
+# File types for the "clean" rule (safety measure against a runaway `rm -rf *`):
+CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .inc .tmp
+
+
+#-----------------------------------------------------------------------------
+# All Internals below...
+
+CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE)
+
+CC_CMD=$(CC_CMD) $(CC_FLAGS)
+
+
+#-----------------------------------------------------------------------------
+# Rules, finally...
 
 {$(src_dir)/}.cpp{$(out_dir)/}.obj::
 	$(CC_CMD) $<
