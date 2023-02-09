@@ -2,7 +2,8 @@
   TODO                                           (See also the GitHub issues!)
 ------------------------------------------------------------------------------
 
-! dt -> FPS display (requires functor support for HUds)
+! Try TGUI(https://en.sfml-dev.org/forums/index.php?topic=18901.0)
+  and/or sfml-widgets(https://github.com/abodelot/sfml-widgets)!
 
 ! Try repositioning (in 3D) the music dynamically, to see if there's anything
   interesting to do with that.
@@ -29,8 +30,6 @@
 
 ! Space grid, distant stars, z-depth...
   ! And perhaps real 3D one day, with turning around in space etc.
-
-! globe.v in the HUD is inconsistent with how the globe actually moves! :-o
 
 ! Mouse wheel should zoom, not "fade" (now that I know how both (wheel & alpha) work).
 

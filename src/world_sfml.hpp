@@ -37,7 +37,8 @@ struct Physics
 	static constexpr float G = 6.673e-11f; //!! No point keeping this real and all the others stretched,
 	               //!! const unless a real orbital simulation is the goal (which isn't)!...
 	static constexpr float DENSITY_ROCK = 2000.0f; // kg/m3
-	static constexpr float FRICTION = 0.03f;
+
+	float FRICTION = 0.03f;
 
 // Internal state:
 	float dt; // inter-frame increment of the world model time

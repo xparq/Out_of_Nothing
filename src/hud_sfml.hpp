@@ -110,7 +110,7 @@ struct HUD_SFML : public HUD
 {
 //!!void draw(const Engine_SFML* engine);
 
-	static constexpr auto CFG_HUD_FONT_PATH = "asset/fira.ttf";
+	static constexpr auto CFG_HUD_FONT_PATH = "asset/font/HUD.font";
 	static constexpr uint32_t CFG_DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
 
 	void clear() { lines_to_draw.clear(); }

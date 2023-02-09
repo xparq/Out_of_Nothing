@@ -176,17 +176,26 @@ void Engine_SFML::event_loop()
 
 			ui_event_state = UIEventState::BUSY;
 
+			switch (event.key.code) {
+				case sf::Keyboard::Up: case sf::Keyboard::W:
+				    if (event.type == sf::Event::KeyPressed)
+						up_thruster_start(); else up_thruster_stop();
+					break;
+				case sf::Keyboard::Down: case sf::Keyboard::S:
+				    if (event.type == sf::Event::KeyPressed)
+						down_thruster_start(); else down_thruster_stop();
+					break;
+				case sf::Keyboard::Left:  case sf::Keyboard::A:
+				    if (event.type == sf::Event::KeyPressed)
+						left_thruster_start(); else left_thruster_stop();
+					break;
+				case sf::Keyboard::Right: case sf::Keyboard::D:
+				    if (event.type == sf::Event::KeyPressed)
+						right_thruster_start(); else right_thruster_stop();
+					break;
+			}
 			switch (event.type)
 			{
-			case sf::Event::KeyReleased:
-				switch (event.key.code) {
-				case sf::Keyboard::Up:    up_thruster_stop(); break;
-				case sf::Keyboard::Down:  down_thruster_stop(); break;
-				case sf::Keyboard::Left:  left_thruster_stop(); break;
-				case sf::Keyboard::Right: right_thruster_stop(); break;
-				}
-				break;
-
 			case sf::Event::KeyPressed:
 				switch (event.key.code) {
 				case sf::Keyboard::Escape: //!!Merge with Closed!
@@ -196,19 +205,15 @@ void Engine_SFML::event_loop()
 
 				case sf::Keyboard::Up:
 					if (event.key.shift) pan_down();
-					else                 up_thruster_start();
 					break;
 				case sf::Keyboard::Down:
 					if (event.key.shift) pan_up();
-					else                 down_thruster_start();
 					break;
 				case sf::Keyboard::Left:
 					if (event.key.shift) pan_right();
-					else                 left_thruster_start();
 					break;
 				case sf::Keyboard::Right:
 					if (event.key.shift) pan_left();
-					else                 right_thruster_start();
 					break;
 
 				case sf::Keyboard::Home: pan_reset(); break;
@@ -218,7 +223,8 @@ void Engine_SFML::event_loop()
 				break;
 
 			case sf::Event::MouseWheelScrolled:
-				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
+				if (event.mouseWheelScroll.delta > 0) zoom_in(); else zoom_out();
+//				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
 				break;
 
 			case sf::Event::TextEntered:
@@ -226,8 +232,10 @@ void Engine_SFML::event_loop()
 				switch (static_cast<char>(event.text.unicode)) {
 				case 'n': spawn(); break;
 				case 'N': spawn(100); break;
-				case 'd': remove_body(); break;
-				case 'D': remove_bodies(100); break;
+				case 'r': remove_body(); break;
+				case 'R': remove_bodies(100); break;
+				case 'f': world.FRICTION -= 0.01f; break;
+				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
 				case 'h': pan_center_body(0); break;
@@ -408,42 +416,43 @@ void Engine_SFML::_setup_huds()
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
 
-//!!with prompt: debug_hud.add("FPS", [this]()->string { return to_string(1 / this->world.dt); });
 	debug_hud.add("FPS", [this](){ return to_string(1 / this->world.dt); });
 	//debug_hud.add("frame delay (s)", &world.dt);
-//	debug_hud.add("pan X", &_OFFSET_X);
-//	debug_hud.add("pan Y", &_OFFSET_Y);
-//	debug_hud.add("SCALE", &_SCALE);
-
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
+	debug_hud.add("Friction", [this](){ return to_string(this->world.FRICTION); });
 
 //!!This one still crashes (both in debug & release builds)! :-o
 //!!debug_hud.add("globe R", &CFG_GLOBE_RADIUS);
 
-	debug_hud.add("globe R", &world.bodies[globe_ndx]->r); //!!and also this did earlier! :-o WTF??!?! how come ->mass didn't then?!?!
+	debug_hud.add("Globe R", &world.bodies[globe_ndx]->r); //!!and also this did earlier! :-o WTF??!?! how come ->mass didn't then?!?!
 	                                                       //!!??and how come it doesn't again after a recompilation?!?!?!?!
-	debug_hud.add("globe m", &world.bodies[globe_ndx]->mass);
-	debug_hud.add("globe x",    &world.bodies[globe_ndx]->p.x);
-	debug_hud.add("globe y",    &world.bodies[globe_ndx]->p.y);
-	debug_hud.add("globe vx",   &world.bodies[globe_ndx]->v.x);
-	debug_hud.add("globe vy",   &world.bodies[globe_ndx]->v.y);
+	debug_hud.add("      m", &world.bodies[globe_ndx]->mass);
+	debug_hud.add("      x",    &world.bodies[globe_ndx]->p.x);
+	debug_hud.add("      y",    &world.bodies[globe_ndx]->p.y);
+	debug_hud.add("      vx",   &world.bodies[globe_ndx]->v.x);
+	debug_hud.add("      vy",   &world.bodies[globe_ndx]->v.y);
 
-	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
-	help_hud.add("");
-	help_hud.add("arrows: thrust");
-	help_hud.add("+/-:    zoom");
-	help_hud.add("n:      add an object (Shift+n: 100x)");
-	help_hud.add("        Pro tip: hold Shift+n for several seconds...");
-	help_hud.add("d:      remove an object (Shift+d: 100x)");
+//	debug_hud.add("pan X", &_OFFSET_X);
+//	debug_hud.add("pan Y", &_OFFSET_Y);
+	debug_hud.add("SCALE", &_SCALE);
+
+
+//	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
+//	help_hud.add("");
+	help_hud.add("arrows (or AWSD): thrust");
+	help_hud.add("N:      add an object (Shift+N: 100x)");
+	help_hud.add("        Pro tip: hold Shift+N for several seconds...");
+	help_hud.add("R:      remove an object (Shift+R: 100x)");
+	help_hud.add("F:      decrease, Shift+F: increase friction");
+	help_hud.add("Space:  pause the physics");
 	help_hud.add("Shift+arrows: pan");
-	help_hud.add("h:      home in on the globe");
+	help_hud.add("mouse wheel (or +/-): zoom");
+	help_hud.add("H:      home in on the globe");
 	help_hud.add("Home:   reset view position (not the zoom)");
-	help_hud.add("m:      toggle music");
+	help_hud.add("M:      toggle music");
 	help_hud.add("F11:    toggle fullscreen");
 	help_hud.add("F12:    toggle HUDs");
-	help_hud.add("Space:  pause the physics");
 	help_hud.add("Esc:    quit");
-//	help_hud.add("mouse wheel: test alpha fading");
 	help_hud.add("");
 	help_hud.add("Command-line options: ...exe /?");
 

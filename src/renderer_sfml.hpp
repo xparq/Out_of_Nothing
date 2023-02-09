@@ -17,8 +17,8 @@ class Renderer_SFML // "View"
 {
 //----------------------------------------------------------------------------
 public:
-	static constexpr auto VIEW_WIDTH  = 800;
-	static constexpr auto VIEW_HEIGHT = 600;
+	static constexpr auto VIEW_WIDTH  = 1024;
+	static constexpr auto VIEW_HEIGHT = 768;
 
 	static constexpr const auto ALPHA_ACTIVE = 255;
 	static constexpr auto ALPHA_INACTIVE = 127;
