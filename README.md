@@ -6,8 +6,7 @@ developing something interesting out of it -- but now I'm full of fascinating id
 to explore, as soon as I get through some boring/daunting architectural design +
 low-level tech parts first. You can't wait! ;)
 
-![screenshot](asset/image/screenshot_6000_zoomout_2.png)
-
+![screenshot](asset/image/screenshot_10k_low_friction.png)
 ------------------------------------------------------------------------------
 DEPS.:
 	- MSVC (a version supporting c++20, or c++23 if actually using \<format>)
@@ -78,9 +77,6 @@ RELEASE:
 	Windows installation).	
 
 
-![screenshot](asset/image/screenshot_2500.png)
-
-
 NOTES ABOUT THE CODE:
 
 It's still rather horrific here and there (not yet cleaned up all the initial
@@ -96,7 +92,7 @@ Unresolved threading-related(?) SFML + OpenGL window/context misery:
 	https://en.sfml-dev.org/forums/index.php?topic=24091.0
 
 
-
+------------------------------------------------------------------------------
 ![screenshot](asset/image/screenshot_5000_void_sphere_zoomout_1.png)
 ------------------------------------------------------------------------------
 READ/LEARN/TRY/USE:

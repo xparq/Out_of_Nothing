@@ -37,7 +37,7 @@ struct Physics
 	static constexpr float G = 6.673e-11f; //!! No point keeping this real and all the others stretched,
 	               //!! const unless a real orbital simulation is the goal (which isn't)!...
 	static constexpr float DENSITY_ROCK = 2000.0f; // kg/m3
-	static constexpr float FRICTION = 0.3f;
+	static constexpr float FRICTION = 0.03f;
 
 // Internal state:
 	float dt; // inter-frame increment of the world model time
@@ -71,7 +71,7 @@ public:
 	enum Event { None, Collision };
 
 public: // Just allow access for now...:
-	std::vector< std::shared_ptr<Body> > bodies;
+	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
 
 // Ops
 	size_t add_body(Body&& obj);

@@ -12,7 +12,7 @@
 #
 # Macros set on the MAKE cmdline will override these defaults:
 LINKMODE=static
-DEBUG=1
+DEBUG=0
 
 # Support my "legacy" env. var names:
 prjdir=$(SZ_PRJDIR)

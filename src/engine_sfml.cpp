@@ -340,7 +340,7 @@ cerr <<	"No more \"free\" items to delete.\n";
 sf::sleep(sf::milliseconds(1)); // It DOES crash without this! ;)
 
 	auto ndx = 1/*leave the globe!*/ + rand() * ((world.bodies.size()-1) / (RAND_MAX + 1));
-cerr << "Deleting object #"	 << ndx << "...\n";
+//cerr << "Deleting object #"	 << ndx << "...\n";
 	assert(ndx > 0);
 	assert(ndx < world.bodies.size());
 	remove_body(ndx);
