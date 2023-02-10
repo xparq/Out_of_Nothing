@@ -2,8 +2,11 @@
   TODO                                           (See also the GitHub issues!)
 ------------------------------------------------------------------------------
 
-! Try TGUI(https://en.sfml-dev.org/forums/index.php?topic=18901.0)
-  and/or sfml-widgets(https://github.com/abodelot/sfml-widgets)!
+! Try TGUI(https://tgui.eu/):
+	https://en.sfml-dev.org/forums/index.php?topic=18901.0
+	https://github.com/texus/TGUI/
+  or maybe even (the much more crude) sfml-widgets:
+	https://github.com/abodelot/sfml-widgets
 
 ! Try repositioning (in 3D) the music dynamically, to see if there's anything
   interesting to do with that.

@@ -1,12 +1,13 @@
-Still just the simple SFML trial project started for a) learning the lib, b) learning
-how to architect around frame-based low-level graphics (typical for games, anims.,
-visual sims. etc.), c) hopefully distilling a simple framework/toolkit for developing
-apps that need this sort of a platform, d) even more vaguely: perhaps actually
-developing something interesting out of it -- but now I'm full of fascinating ideas
-to explore, as soon as I get through some boring/daunting architectural design +
-low-level tech parts first. You can't wait! ;)
+Still just the simple SFML trial project started for a) learning the lib,
+b) learning how to architect around frame-based low-level graphics for games
+or visual sims.), c) hopefully distilling a simple framework/toolkit for
+developing apps that need this sort of a platform, d) even more vaguely:
+perhaps actually developing something interesting out of it -- but now I'm
+full of fascinating ideas to explore, as soon as I get through some boring
+and/or daunting architectural design + low-level tech parts first.
+You can't wait! ;)
 
-![screenshot](asset/image/screenshot_10k_low_friction.png)
+![screenshot](asset/image/13k-vari-friction-1024.png )
 ------------------------------------------------------------------------------
 DEPS.:
 	- MSVC (a version supporting c++20, or c++23 if actually using \<format>)
@@ -77,7 +78,7 @@ RELEASE:
 	Windows installation).	
 
 ------------------------------------------------------------------------------
-![screenshot](asset/image/13k-vari-friction-1024.png )
+![screenshot](asset/image/screenshot_10k_low_friction.png)
 ------------------------------------------------------------------------------
 
 NOTES ABOUT THE CODE:
