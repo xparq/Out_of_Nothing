@@ -25,9 +25,7 @@ Engine_SFML::Engine_SFML()
 
 #ifndef DISABLE_HUD
 			, debug_hud(window)
-			, help_hud(window, 10) // left = 10
-//			, debug_hud()
-//			, help_hud(10) // left = 10
+			, help_hud(window, 10, HUD_SFML::CFG_HUD_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
 		_setup();
@@ -234,6 +232,7 @@ void Engine_SFML::event_loop()
 				case 'N': spawn(100); break;
 				case 'r': remove_body(); break;
 				case 'R': remove_bodies(100); break;
+				case 'i': toggle_interact_all(); break;
 				case 'f': world.FRICTION -= 0.01f; break;
 				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
@@ -432,6 +431,8 @@ void Engine_SFML::_setup_huds()
 	debug_hud.add("      vx",   &world.bodies[globe_ndx]->v.x);
 	debug_hud.add("      vy",   &world.bodies[globe_ndx]->v.y);
 
+	debug_hud.add("All-body interactions", &_interact_all);
+
 //	debug_hud.add("pan X", &_OFFSET_X);
 //	debug_hud.add("pan Y", &_OFFSET_Y);
 	debug_hud.add("SCALE", &_SCALE);
@@ -443,6 +444,7 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("N:      add an object (Shift+N: 100x)");
 	help_hud.add("        Pro tip: hold Shift+N for several seconds...");
 	help_hud.add("R:      remove an object (Shift+R: 100x)");
+	help_hud.add("I:      toggle all-body interactions");
 	help_hud.add("F:      decrease, Shift+F: increase friction");
 	help_hud.add("Space:  pause the physics");
 	help_hud.add("Shift+arrows: pan");

@@ -24,7 +24,7 @@ public:
 	static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
 	static constexpr float CFG_THRUST_FORCE = 6e34f; // N (kg*m/s^2)
 	
-	static constexpr float CFG_DEFAULT_SCALE = 0.0000008f; //! This one also depends very much on the physics!
+	static constexpr float CFG_DEFAULT_SCALE = 0.0000005f; //! This one also depends very much on the physics!
 
 	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
 
@@ -33,6 +33,7 @@ public:
 
 	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
 	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
+	bool _interact_all = false; // bodies react with each other too, or only with the player(s)
 
 	struct Thruster {
 		float _thrust_level = 0;
@@ -63,6 +64,8 @@ public:
 	auto toggle_pause()  { _paused = !_paused; pause(_paused); }
 	auto paused()  { return _paused; }
 	virtual void pause(bool state = true) = 0; //!! dumb way to depend on the actual World type...
+
+	auto toggle_interact_all()  { _interact_all = !_interact_all; }
 
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }

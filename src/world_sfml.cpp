@@ -33,20 +33,31 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 	dt = clock.getElapsedTime().asSeconds();
 	clock.restart();
 
+	// Go through the autogen effects first:
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{
 		auto& body = bodies[i];
 
-		// Thrust:
+		// Thrust (only for the Superglobe now...):
 		if (i == engine.globe_ndx) {
 			sf::Vector2f F_thr( (-engine.thrust_left.thrust_level() + engine.thrust_right.thrust_level()) * dt,
 							    (-engine.thrust_up.thrust_level() + engine.thrust_down.thrust_level()) *dt);
 			body->v += (F_thr / body->mass);
 		}
+	}
 
-		// Gravity - only apply to the moons, ignore the moons' effect on the globe!
-		if (i > engine.globe_ndx) {
-			auto& other = bodies[engine.globe_ndx];
+// Now do the interaction matrix:
+//!!This line below is hard-coded to globe-ndx == 0, and also ignores any other (potential) players!...
+for (size_t actor_obj_ndx = 0; actor_obj_ndx < (engine._interact_all ? bodies.size() : 1); ++actor_obj_ndx)
+
+	for (size_t i = 0; i < bodies.size(); ++i)
+	{
+		auto& body = bodies[i];
+
+		// Gravity
+		if (i > engine.globe_ndx && i != actor_obj_ndx) { // <- only apply to the moons, ignore the moons' effect on the Superglobe!
+//		if (i != actor_obj_ndx) {
+			auto& other = bodies[actor_obj_ndx];
 
 			auto dx = other->p.x - body->p.x,
 			     dy = other->p.y - body->p.y;
@@ -95,7 +106,11 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 				// If the listener returns false, it didn't process it, so we should.
 				if (!engine.collide_hook(this, body.get(), other.get(), distance)) {
 					//!!Possibly also handle this in a hook, but one of the physics.
-					body->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
+
+					//!! Interestingly, if this spee reset below is disabled, an orbiting moon
+					//!! that hits the surface of the Superglobe (in a flat-enough angle),
+					//!! DOES bounce off of it! :-o WHY?
+					//body->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
 				}
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
@@ -109,14 +124,28 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 //cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
 			}
 		}
+/*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
+		// Friction:
+		sf::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+		sf::Vector2f dv = friction_decel * (dt);
+		body->v += dv;
+!!*/		
+//cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
+	}
+
+	for (size_t i = 0; i < bodies.size(); ++i)
+	{
+		auto& body = bodies[i];
 
 		// Friction:
 		sf::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
 		sf::Vector2f dv = friction_decel * (dt);
 		body->v += dv;
+		
+		// And finally the positions:
 		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
-
 		body->p += ds;
-//cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
 	}
+
+
 }

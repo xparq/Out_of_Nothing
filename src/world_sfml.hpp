@@ -121,4 +121,3 @@ public:
 
 
 #endif // __WORLD_SFML__
-
