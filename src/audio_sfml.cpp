@@ -30,8 +30,10 @@ void Audio_SFML::play_sound(size_t ndx)
 	if (ndx >= sounds.size()) {
 		return;
 	}
-	_sound.setBuffer(sounds[ndx]);
-	_sound.play();
+	if (audio_enabled && !sounds[ndx].muted) {
+		_sound.setBuffer(sounds[ndx]);
+		_sound.play();
+	}
 }
 
 bool Audio_SFML::play_music(const char* filename)
@@ -40,8 +42,10 @@ bool Audio_SFML::play_music(const char* filename)
 cerr << "- Error loading music: " << filename << endl;
 		return false;
 	}
-	_music.setLoop(true);
-	_music.play();
+	if (audio_enabled) {
+		_music.setLoop(true);
+		_music.play();
+	}
 	return true;
 }
 
@@ -52,6 +56,14 @@ void Audio_SFML::toggle_music()
 	} else {
 		_music.play();
 	}
+}
+
+void Audio_SFML::toggle_sound(size_t ndx)
+{
+	if (ndx >= sounds.size()) {
+		return;
+	}
+	sounds[ndx].muted = !sounds[ndx].muted;
 }
 
 #endif // DISABLE_AUDIO

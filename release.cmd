@@ -1,9 +1,14 @@
-﻿@echo off
+@echo off
 setlocal
 call %~dp0tooling/_setenv.cmd keep_sfml_libroot
 
 pushd %sz_prjdir%
-for /f %%i in ('git rev-parse --short=8 HEAD') do set last_commit_hash=%%i
+rem !! Amazingly, this started to fail for some unknown reason: that same git cmd
+rem !! just works all right outside of that FOR loop... :-o ("usebackq" didn't help).
+rem !!for /f %%i in ('git rev-parse --short=8 HEAD') do set last_commit_hash=%%i
+rem !! Luckily, this alternative hack still works:
+git rev-parse --short=8 HEAD > %sz_tmp_dir%/last-commit.hash
+for /f %%i in (%sz_tmp_dir%/last-commit.hash) do set last_commit_hash=%%i
 popd
 
 set packname=%sz_appname%-%last_commit_hash%.zip

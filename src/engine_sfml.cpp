@@ -240,6 +240,7 @@ void Engine_SFML::event_loop()
 				case 'h': pan_center_body(0); break;
 				case ' ': toggle_pause(); break;
 				case 'm': toggle_music(); break;
+				case 'M': toggle_sound_fxs(); break;
 				case '?': toggle_help(); break;
 				}
 				break;
@@ -440,7 +441,7 @@ void Engine_SFML::_setup_huds()
 
 //	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
 //	help_hud.add("");
-	help_hud.add("arrows (or AWSD): thrust");
+	help_hud.add("AWSD (or arrows): thrust");
 	help_hud.add("N:      add an object (Shift+N: 100x)");
 	help_hud.add("        Pro tip: hold Shift+N for several seconds...");
 	help_hud.add("R:      remove an object (Shift+R: 100x)");
@@ -451,7 +452,7 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("mouse wheel (or +/-): zoom");
 	help_hud.add("H:      home in on the globe");
 	help_hud.add("Home:   reset view position (not the zoom)");
-	help_hud.add("M:      toggle music");
+	help_hud.add("M:      (un)mute music (Shift+M: same for snd. fx.)");
 	help_hud.add("F11:    toggle fullscreen");
 	help_hud.add("F12:    toggle HUDs");
 	help_hud.add("Esc:    quit");

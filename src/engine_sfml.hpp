@@ -155,6 +155,7 @@ public:
 	auto toggle_help()  { help_hud.active(!help_hud.active()); }
 #endif
 	void toggle_music() { audio.toggle_music(); }
+	void toggle_sound_fxs() { audio.toggle_sound(clack_sound); }
 
 	//! Should be idempotent to tolerate keyboard repeats (which could be disabled, but better be robust)!
 	auto up_thruster_start()    { thrust_up.thrust_level(CFG_THRUST_FORCE); }

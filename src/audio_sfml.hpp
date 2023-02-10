@@ -5,11 +5,15 @@
 
 class Audio_Stub
 {
+protected:
+	bool audio_enabled = true;
 public:
+	void toggle_audio() { audio_enabled = !audio_enabled; }
 	virtual size_t add_sound(const char* filename)  { filename; return 0; }
 	virtual void   play_sound(size_t ndx)  { ndx; }
 	virtual bool   play_music(const char* filename) { filename; return false; }
 	virtual void   toggle_music()  {}
+	virtual void   toggle_sound(size_t) {}
 };
 
 #ifndef DISABLE_AUDIO // If disabled, only the stub class will be available.
@@ -23,10 +27,12 @@ public:
 class Audio_SFML : public Audio_Stub
 {
 	struct SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector : public sf::SoundBuffer {
-		   SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector(int) {}
-		   SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector() {}
-		   SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector(const SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector&)
-			   { /* cerr << "SFML SndBuf wrapper BEING COPIED!\n"; */ }
+		bool muted = false;
+
+		SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector(int) {}
+		SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector() {}
+		SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector(const SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector&)
+			{ /* cerr << "SFML SndBuf wrapper BEING COPIED!\n"; */ }
 	};
 	std::vector<SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector> sounds;
 
@@ -35,6 +41,7 @@ public:
 	void play_sound(size_t ndx) override;
 	bool play_music(const char* filename) override;
 	void toggle_music() override;
+	void toggle_sound(size_t ndx) override;
 
 	Audio_SFML()
 	{
