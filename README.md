@@ -76,6 +76,9 @@ RELEASE:
 	are available on the PATH (which should be the case for any sane
 	Windows installation).	
 
+------------------------------------------------------------------------------
+![screenshot](asset/image/13k-vari-friction-1024.png )
+------------------------------------------------------------------------------
 
 NOTES ABOUT THE CODE:
 
@@ -97,7 +100,7 @@ Unresolved threading-related(?) SFML + OpenGL window/context misery:
 ------------------------------------------------------------------------------
 READ/LEARN/TRY/USE:
 
-Jan Haller ("Nexus" on the SFML forum) is a formidable master, whose stuff is worth checking out:
+Jan Haller ("Nexus" on the SFML forum) is quite the expert, whose stuff is worth checking out:
 - Thor lib: https://en.sfml-dev.org/forums/?topic=7329 -> https://bromeon.ch/libraries/thor/, https://github.com/Bromeon/Thor (ARCHIVED!)
   -> https://en.sfml-dev.org/forums/index.php?topic=7329.480
 - Aurora C++ helper lib: https://github.com/Bromeon/Aurora (ARCHIVED!)
