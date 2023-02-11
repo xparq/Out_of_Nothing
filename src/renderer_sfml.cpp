@@ -6,6 +6,8 @@
 #include <memory>
 	using std::make_shared;
 #include <cassert>
+//#include <iostream>
+//	using std::cerr;
 
 
 void Renderer_SFML::render(Engine_SFML& game)
@@ -35,6 +37,31 @@ void Renderer_SFML::draw(Engine_SFML& game)
 	for (const auto& entity : shapes_to_draw) {
 		game.window.draw(*entity);
 	}
+
+	if (game.physics_paused()) {
+		draw_paused_banner(game);
+	}
+}
+
+void Renderer_SFML::draw_paused_banner(Engine_SFML& game)
+{
+	sf::Font font;
+	if (!font.loadFromFile("asset/font/default.font")) {
+		//! SFML does print errors to the console.
+		return;
+	}
+
+	auto TXT_WIDTH = 300u;
+	auto TXT_HEIGHT = 80u;
+	sf::Text banner("PAUSED", font, TXT_HEIGHT);
+	banner.setPosition({
+		(float)game.window.getSize().x/2 - TXT_WIDTH/2,
+		(float)game.window.getSize().y/2 - TXT_HEIGHT/2 - 16 //!!fuckup offset
+	});
+	banner.setStyle(sf::Text::Bold | sf::Text::Bold);
+	banner.setFillColor(sf::Color(sf::Color(0xc0b0a08f)));
+
+	game.window.draw(banner);
 }
 
 

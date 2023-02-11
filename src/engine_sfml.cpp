@@ -121,6 +121,7 @@ void Engine_SFML::draw()
 		                                              //!! "activity" may mean more than drawing. so... actually both can do it?
 	}
 #endif
+
 	window.display();
 }
 
