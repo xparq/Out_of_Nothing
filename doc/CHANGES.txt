@@ -98,7 +98,7 @@
 
 
 ------------------------------------------------------------------------------
-  DONE                (See the Git log! These are just supplementary details.)
+  DONE            (See the Git log + GH issues! These are old manual records.)
 ------------------------------------------------------------------------------
 
 + Pause - time itself, too (because the sim time only shares scale with real time,

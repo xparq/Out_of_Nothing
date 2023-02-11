@@ -12,7 +12,7 @@
 #include <atomic>
 
 //----------------------------------------------------------------------------
-class Engine // "Controller"
+class SimApp // "Controller"
 //----------------------------------------------------------------------------
 {
 // Config
@@ -31,41 +31,17 @@ public:
 // Player-controls (state)
 public:
 
-	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
-	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
-	bool _interact_all = false; // bodies react with each other too, or only with the player(s)
-
-	struct Thruster {
-		float _thrust_level = 0;
-		float thrust_level(float new_thrust_level)
-		{
-			auto prev_thrust_level = _thrust_level;
-			_thrust_level = new_thrust_level;
-			return prev_thrust_level;
-		}
-		float thrust_level() const { return _thrust_level; }
-	};
-	//!!Thrusters should be vectorized, relative to the body orientation,
-	//!!which is currently fixed to be identical to the world coordinate system...
-	Thruster thrust_up;
-	Thruster thrust_down;
-	Thruster thrust_left;
-	Thruster thrust_right;
-
-public:
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
-
-protected:
-	bool _terminated = false;
-	bool _paused = false;
 
 public:
 	auto toggle_physics()  { _paused = !_paused; pause_physics(_paused); }
 	auto physics_paused()  { return _paused; }
 	virtual void pause_physics(bool state = true) { _paused = state; }; //! override to stop the actual world...
 
-	auto toggle_interact_all()  { _interact_all = !_interact_all; }
+//!!virtual size_t add_player(questionable generic config type here
+//!!                          -- but such covariance isn't even supported in C++!...) = 0;
+	virtual void   remove_player(size_t ndx) = 0; //!this should then be virtual, too (like destructors)
 
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
@@ -102,14 +78,29 @@ public:
 //------------------------------------------------------------------------
 // Housekeeping
 public:
-	Engine() {}
-	Engine(const Engine_SFML&) = delete;
-	virtual ~Engine() {}
+	SimApp() {}
+	SimApp(const SimApp&) = delete;
+	virtual ~SimApp() {}
+
+//------------------------------------------------------------------------
+// Data...
+protected:
+	bool _terminated = false;
+	bool _paused = false;
+	enum KBD_STATE {
+		SHIFT, LSHIFT, RSHIFT,
+		CTRL, LCTRL, RCTRL,
+		ALT, LALT, RALT,
+		CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, // CAPS: 60, but NUM & SCROLL just gives key.code -1 :-/
+		__SIZE
+	};
+
+	bool kbd_state[KBD_STATE::__SIZE] = {0}; // Can't just be bool, 'coz the doubled modifiers need 2 bits!
 };
 
 
 //============================================================================
-class Engine_SFML : public Engine
+class Engine_SFML : public SimApp
 {
 friend class Renderer_SFML;
 
@@ -121,62 +112,22 @@ public:
 		return false;
 	}
 
-// Internals... -- not quite yet; just allow access for now:
-	sf::RenderWindow window;
-//!!was:	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
-
-public:
-	World_SFML  world;
-	Renderer_SFML renderer;
-#ifndef DISABLE_HUD
-	HUD_SFML    debug_hud;
-	HUD_SFML    help_hud;
-	bool _show_huds = true;
-#endif
-
-#ifndef DISABLE_AUDIO
-	Audio_SFML audio;
-#else
-	Audio_Stub audio;
-#endif
-
-protected:
-	float _SCALE = CFG_DEFAULT_SCALE;
-	float _OFFSET_X = 0, _OFFSET_Y = 0;
-
-	enum KBD_STATE {
-		SHIFT, LSHIFT, RSHIFT,
-		CTRL, LCTRL, RCTRL,
-		ALT, LALT, RALT,
-		CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, // CAPS: 60, but NUM & SCROLL just gives key.code -1 :-/
-		__SIZE
-	};
-
-	bool kbd_state[KBD_STATE::__SIZE] = {0}; // Can't just be bool, 'coz the doubled modifiers need 2 bits!
-
 public:
 // Ops
 	bool run();
 
-	void pause_physics(bool state = true)  override { Engine::pause_physics(state); world.pause(state); }
-
-#ifndef DISABLE_HUD
-	auto toggle_huds()  { _show_huds = !_show_huds; }
-	auto toggle_help()  { help_hud.active(!help_hud.active()); }
-#endif
-	void toggle_music() { audio.toggle_music(); }
-	void toggle_sound_fxs() { audio.toggle_sound(clack_sound); }
+	void pause_physics(bool state = true)  override { SimApp::pause_physics(state); world.pause(state); }
+	auto toggle_interact_all()  { world._interact_all = !world._interact_all; }
 
 	//! Should be idempotent to tolerate keyboard repeats (which could be disabled, but better be robust)!
-	auto up_thruster_start()    { thrust_up.thrust_level(CFG_THRUST_FORCE); }
-	auto down_thruster_start()  { thrust_down.thrust_level(CFG_THRUST_FORCE); }
-	auto left_thruster_start()  { thrust_left.thrust_level(CFG_THRUST_FORCE); }
-	auto right_thruster_start() { thrust_right.thrust_level(CFG_THRUST_FORCE); }
-
-	auto up_thruster_stop()     { thrust_up.thrust_level(0); }
-	auto down_thruster_stop()   { thrust_down.thrust_level(0); }
-	auto left_thruster_stop()   { thrust_left.thrust_level(0); }
-	auto right_thruster_stop()  { thrust_right.thrust_level(0); }
+	void    up_thruster_start();
+	void  down_thruster_start();
+	void  left_thruster_start();
+	void right_thruster_start();
+	void    up_thruster_stop();
+	void  down_thruster_stop();
+	void  left_thruster_stop();
+	void right_thruster_stop();
 
 	auto pan_up()     { _OFFSET_Y -= CFG_PAN_STEP; }
 	auto pan_down()   { _OFFSET_Y += CFG_PAN_STEP; }
@@ -196,6 +147,14 @@ public:
 		renderer.resize_objects(factor);
 		_pan_adjust_after_zoom();
 	}
+
+	void toggle_music() { audio.toggle_music(); }
+	void toggle_sound_fxs() { audio.toggle_sound(clack_sound); }
+#ifndef DISABLE_HUD
+	auto toggle_huds()  { _show_huds = !_show_huds; }
+	auto toggle_help()  { help_hud.active(!help_hud.active()); }
+#endif
+
 
 	//------------------------------------------------------------------------
 	void event_loop();
@@ -217,6 +176,9 @@ public:
 	void   remove_body(); // delete a random one
 	void   remove_bodies(size_t n);
 
+	size_t add_player(World_SFML::Body&& obj); //!! override;
+	void   remove_player(size_t ndx) override;
+
 	//------------------------------------------------------------------------
 	void _setup();
 #ifndef DISABLE_HUD
@@ -228,6 +190,33 @@ public:
 public:
 	Engine_SFML();
 	Engine_SFML(const Engine_SFML&) = delete;
+
+//------------------------------------------------------------------------
+// Data -- Internals...
+protected:
+	sf::RenderWindow window;
+//!!was:	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
+
+	World_SFML  world;
+	Renderer_SFML renderer;
+
+#ifndef DISABLE_HUD
+	HUD_SFML    debug_hud;
+	HUD_SFML    help_hud;
+	bool _show_huds = true;
+#endif
+
+#ifndef DISABLE_AUDIO
+	Audio_SFML audio;
+#else
+	Audio_Stub audio;
+#endif
+
+	float _SCALE = CFG_DEFAULT_SCALE;
+	float _OFFSET_X = 0, _OFFSET_Y = 0;
+
+	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
+	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
 };
 
 #endif // __ENGINE_SFML__

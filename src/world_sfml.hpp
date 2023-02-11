@@ -27,7 +27,7 @@ class World // "Model"
 {
 
 public:
-//!!:) static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
+static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
 struct Physics
 {
 //	...
@@ -40,16 +40,34 @@ struct Physics
 
 	float FRICTION = 0.03f;
 
-// Internal state:
+// Internal state: -- !!NOT YET! SOME PRETTY EXTERNAL/PUBLIC STUFF, TOO!...
 	float dt; // inter-frame increment of the world model time
+	bool _interact_all = false; // bodies react with each other too, or only with the player(s)
+
 	bool _paused = false;
+
 	auto paused() { return _paused; }
 	virtual void pause(bool state = true) = 0;
 
 public:
+	struct Thruster {
+		float _thrust_level = 0;
+		float thrust_level(float new_thrust_level)
+		{
+			auto prev_thrust_level = _thrust_level;
+			_thrust_level = new_thrust_level;
+			return prev_thrust_level;
+		}
+		float thrust_level() const { return _thrust_level; }
+	};
+	//!!Thrusters should be vectorized, relative to the body orientation,
+	//!!which is currently fixed to be identical to the world coordinate system...
+
 struct Body
 //! Inner class of World, because it depends on the physics (e.g. constants).
 {
+	//!!ObjConfig cfg; // basically the obj. type
+
 	// preset:
 	float r = 0;
 	float density{World::DENSITY_ROCK / 2};
@@ -60,12 +78,37 @@ struct Body
 	uint32_t color = 0; // RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
 	                    // The reason is easier add_body() calls here.)
 
+	//!! Ugly hack to start generalizing object compositions & to allow the world
+	//!! to calc. propulsion without consulting the controller. (I mean this is still
+	//!! less ugly than these being part of the game app (controller) itself! :) )
+	//!! Should be handled later indirectly (and uniformly) via object configurations
+	//!! (which would basically be a flexible type system).
+	//!!
+	//!!BTW, thrust should be axial anyway, so these 4 should be just 2:
+	Thruster thrust_up{ MyNaN }; //! will be changed to "real" numbers for objects with actually functioning thrusters
+	Thruster thrust_down{ MyNaN };
+	Thruster thrust_left{ MyNaN };
+	Thruster thrust_right {MyNaN };
+
+	struct {
+		bool gravity_immunity = false;
+	} superpower;
+
 	// computed only:
 	float mass;
 
 	//! Can't do this to support designated inits: Body() : mass(powf(r, 3) * density) {}
 	//! So... (see add_body()):
 	void precalc() { mass = powf(r, 3) * density; }
+
+	// Ops.:
+	bool has_thrusters() { return thrust_up.thrust_level() != MyNaN; }
+	void add_thrusters() { // Umm...: ;)
+		thrust_up.thrust_level(0);
+		thrust_down.thrust_level(0);
+		thrust_left.thrust_level(0);
+		thrust_right.thrust_level(0);
+	}
 };
 
 public:

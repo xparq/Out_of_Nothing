@@ -38,24 +38,25 @@ void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
 	{
 		auto& body = bodies[i];
 
-		// Thrust (only for the Superglobe now...):
-		if (i == engine.globe_ndx) {
-			sf::Vector2f F_thr( (-engine.thrust_left.thrust_level() + engine.thrust_right.thrust_level()) * dt,
-							    (-engine.thrust_up.thrust_level() + engine.thrust_down.thrust_level()) *dt);
+		// Thrust -- for objects with working thrusters...:
+		if (body->has_thrusters()) {
+			sf::Vector2f F_thr( (-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
+							    (-body->thrust_up.thrust_level() + body->thrust_down.thrust_level()) * dt);
 			body->v += (F_thr / body->mass);
 		}
 	}
 
 // Now do the interaction matrix:
 //!!This line below is hard-coded to globe-ndx == 0, and also ignores any other (potential) players!...
-for (size_t actor_obj_ndx = 0; actor_obj_ndx < (engine._interact_all ? bodies.size() : 1); ++actor_obj_ndx)
+for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 1); ++actor_obj_ndx)
 
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{
 		auto& body = bodies[i];
 
 		// Gravity
-		if (i > engine.globe_ndx && i != actor_obj_ndx) { // <- only apply to the moons, ignore the moons' effect on the Superglobe!
+		if (!body->superpower.gravity_immunity // <- Ignore gravity on player superglobes by default!
+			&& i != actor_obj_ndx) {
 //		if (i != actor_obj_ndx) {
 			auto& other = bodies[actor_obj_ndx];
 
@@ -146,6 +147,4 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (engine._interact_all ? bodies.si
 		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
 		body->p += ds;
 	}
-
-
 }

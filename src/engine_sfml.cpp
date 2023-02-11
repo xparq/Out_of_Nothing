@@ -43,7 +43,7 @@ bool Engine_SFML::run()
 		return false;
 	}
 
-	ui_event_state = Engine::UIEventState::IDLE;
+	ui_event_state = SimApp::UIEventState::IDLE;
 
 #ifndef DISABLE_THREADS
 	std::thread engine_updates(&Engine_SFML::update_thread_main_loop, this);
@@ -355,8 +355,6 @@ void Engine_SFML::spawn(size_t n)
 	add_bodies(n);
 }
 
-
-
 //----------------------------------------------------------------------------
 size_t Engine_SFML::add_body(World_SFML::Body&& obj)
 {
@@ -411,7 +409,7 @@ cerr <<	"No more \"free\" items to delete.\n";
 
 //!!atrocious hack to wait for the ongoing update to finish!... ;)
 //!!test whether std::atomic could solve it!
-sf::sleep(sf::milliseconds(1)); // It DOES crash without this! ;)
+	sf::sleep(sf::milliseconds(1)); // It DOES crash without this! ;)
 
 	auto ndx = 1/*leave the globe!*/ + rand() * ((world.bodies.size()-1) / (RAND_MAX + 1));
 //cerr << "Deleting object #"	 << ndx << "...\n";
@@ -423,6 +421,20 @@ sf::sleep(sf::milliseconds(1)); // It DOES crash without this! ;)
 void Engine_SFML::remove_bodies(size_t n)
 {
 	while (n--) remove_body();
+}
+
+//----------------------------------------------------------------------------
+size_t Engine_SFML::add_player(World_SFML::Body&& obj)
+{
+	// These are the only modelling differences for now:
+	obj.add_thrusters();
+	obj.superpower.gravity_immunity = true;
+
+	return add_body(std::forward<World_SFML::Body>(obj));
+}
+
+void Engine_SFML::remove_player(size_t ndx)
+{ndx;
 }
 
 
@@ -462,7 +474,7 @@ void Engine_SFML::_setup()
 	window.setFramerateLimit(30);
 
 	// globe:
-	globe_ndx = add_body({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
+	globe_ndx = add_player({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
 	// moons:
 	add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 0x14b0c0});
 	add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5},
@@ -505,7 +517,7 @@ void Engine_SFML::_setup_huds()
 	debug_hud.add("      vx",   &world.bodies[globe_ndx]->v.x);
 	debug_hud.add("      vy",   &world.bodies[globe_ndx]->v.y);
 
-	debug_hud.add("All-body interactions", &_interact_all);
+	debug_hud.add("All-body interactions", &world._interact_all);
 
 //	debug_hud.add("pan X", &_OFFSET_X);
 //	debug_hud.add("pan Y", &_OFFSET_Y);
@@ -537,3 +549,13 @@ void Engine_SFML::_setup_huds()
 	help_hud.active(true);
 }
 #endif
+
+void Engine_SFML::up_thruster_start()    { world.bodies[globe_ndx]->thrust_up.thrust_level(CFG_THRUST_FORCE); }
+void Engine_SFML::down_thruster_start()  { world.bodies[globe_ndx]->thrust_down.thrust_level(CFG_THRUST_FORCE); }
+void Engine_SFML::left_thruster_start()  { world.bodies[globe_ndx]->thrust_left.thrust_level(CFG_THRUST_FORCE); }
+void Engine_SFML::right_thruster_start() { world.bodies[globe_ndx]->thrust_right.thrust_level(CFG_THRUST_FORCE); }
+
+void Engine_SFML::up_thruster_stop()     { world.bodies[globe_ndx]->thrust_up.thrust_level(0); }
+void Engine_SFML::down_thruster_stop()   { world.bodies[globe_ndx]->thrust_down.thrust_level(0); }
+void Engine_SFML::left_thruster_stop()   { world.bodies[globe_ndx]->thrust_left.thrust_level(0); }
+void Engine_SFML::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_level(0); }
