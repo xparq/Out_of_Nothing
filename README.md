@@ -19,15 +19,8 @@ and start crafting the fun bits. You can't wait! ;)
 
 ![screenshot](asset/image/screenshot/8k1.png)
 ------------------------------------------------------------------------------
-DEPS.:
 
-	- MSVC (a version supporting c++20, or c++23 if actually using \<format>)
-	- SFML 2.6.x (last tried: a4bca205 off the main branch actually)
-	- openal32.dll (for audio) - even if linked with the static SFML libs, this
-	  will still be loaded (just like the MSVC runtime DLLs -- see below)!
-
-
-Further technical & other information: -> [doc/...](doc/)
+Technical & other details: -> [doc/...](doc/)
 
 
 _(BTW the screenshots are getting obsolete fast, but I'm updating them 
@@ -35,7 +28,6 @@ occasionally. However, they can't convey the fist-hand experience of actually
 manipulating the wolrd first-hand, or even just the mesmerizing flow and
 constant development of structures -- just like in the real universe.)_
 
-------------------------------------------------------------------------------
 ![screenshot](asset/image/screenshot/screenshot_10k_low_friction.png)
 ------------------------------------------------------------------------------
 ![screenshot](asset/image/screenshot/screenshot_5000_void_sphere_zoomout_1.png)
