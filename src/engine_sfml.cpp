@@ -92,10 +92,14 @@ void Engine_SFML::update_thread_main_loop()
 cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
 		}
 
+/* Doing it properly with setFramerateLimit() now!
 	//! If there's still time left from the frame slice:
 	sf::sleep(sf::milliseconds(30)); //!! (remaining_time_ms)
-		//!!This doesn't seem to have any effect on the CPU load! :-o
-		//!!Nor does it ruin the smooth rendering! :-o WTF?!
+		//! This won't stop the other (e.g. event loop) thread(s) from churning, though!
+		//! -> use blocking/sleeping event query there!
+		//! Nor does it ruin the smooth rendering! :-o WTF?!
+		//! -> Because SFML double-buffers implicitly, AFAIK...
+*/
 //cerr << "sf::Context [update loop]: " << sf::Context::getActiveContextId() << endl;
 	}
 }
@@ -124,10 +128,40 @@ void Engine_SFML::draw()
 void Engine_SFML::updates_for_next_frame()
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	if (paused()) return;
+	if (physics_paused()) {
+		sf::sleep(sf::milliseconds(50)); //! a bit gross, but...
+		return;
+	}
+
+	// Saving the old superglobe position for things like auto-scroll:
+	auto p0 = world.bodies[globe_ndx]->p;
 
 	world.recalc_for_next_frame(*this);
+
+	// Auto-scroll to follow player movement:
+	//!!Unfortunately, the perfect key -- Scroll Lock -- doesn't produce a valid keykode
+	//!!in SFML... :-( But perhaps we could still use it, as not very many other keys
+	//!!give -1! :))
+	if (kbd_state[KBD_STATE::SCROLL_LOCK] || kbd_state[KBD_STATE::SHIFT]) {
+		pan_follow_body(globe_ndx, p0.x, p0.y);
+	}
 }
+
+
+void Engine_SFML::pan_center_body(auto body_id)
+{
+	const auto& body = world.bodies[body_id];
+	_OFFSET_X = - body->p.x * _SCALE;
+	_OFFSET_Y = - body->p.y * _SCALE;
+}
+
+void Engine_SFML::pan_follow_body(auto body_id, float old_x, float old_y)
+{
+	const auto& body = world.bodies[body_id];
+	_OFFSET_X -= (body->p.x - old_x) * _SCALE;
+	_OFFSET_Y -= (body->p.y - old_y) * _SCALE;
+}
+
 
 
 //----------------------------------------------------------------------------
@@ -194,8 +228,32 @@ void Engine_SFML::event_loop()
 			}
 			switch (event.type)
 			{
+			case sf::Event::KeyReleased:
+				switch (event.key.code) {
+				case sf::Keyboard::LShift:   kbd_state[KBD_STATE::LSHIFT] = false; break;
+				case sf::Keyboard::RShift:   kbd_state[KBD_STATE::RSHIFT] = false; break;
+				case sf::Keyboard::LControl: kbd_state[KBD_STATE::LCTRL]  = false; break;
+				case sf::Keyboard::RControl: kbd_state[KBD_STATE::RCTRL]  = false; break;
+				case sf::Keyboard::LAlt:     kbd_state[KBD_STATE::LALT]   = false; break;
+				case sf::Keyboard::RAlt:     kbd_state[KBD_STATE::RALT]   = false; break;
+//				case -1:
+//cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
+//					kbd_state[KBD_STATE::SCROLL_LOCK] = false;
+//					break;
+				}
+				kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::LSHIFT] || kbd_state[KBD_STATE::RSHIFT]; //!! SFML/Windows BUG: https://github.com/SFML/SFML/issues/1301
+				kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::LCTRL]  || kbd_state[KBD_STATE::RCTRL];
+				kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::LALT]   || kbd_state[KBD_STATE::RALT];
+				break;
 			case sf::Event::KeyPressed:
 				switch (event.key.code) {
+				case sf::Keyboard::LShift:   kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::LSHIFT] = true; break;
+				case sf::Keyboard::RShift:   kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::RSHIFT] = true; break;
+				case sf::Keyboard::LControl: kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::LCTRL]  = true; break;
+				case sf::Keyboard::RControl: kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::RCTRL]  = true; break;
+				case sf::Keyboard::LAlt:     kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::LALT]   = true; break;
+				case sf::Keyboard::RAlt:     kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::RALT]   = true; break;
+
 				case sf::Keyboard::Escape: //!!Merge with Closed!
 					terminate();
 					// [fix-setactive-fail] -> DON'T: window.close();
@@ -217,6 +275,14 @@ void Engine_SFML::event_loop()
 				case sf::Keyboard::Home: pan_reset(); break;
 				case sf::Keyboard::F12: toggle_huds(); break;
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
+
+				case -1:
+cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
+					kbd_state[KBD_STATE::SCROLL_LOCK] = !kbd_state[KBD_STATE::SCROLL_LOCK];
+					break;
+
+//				default:
+//cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
 				}
 				break;
 
@@ -237,8 +303,8 @@ void Engine_SFML::event_loop()
 				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
-				case 'h': pan_center_body(0); break;
-				case ' ': toggle_pause(); break;
+				case 'h': pan_center_body(globe_ndx); break;
+				case ' ': toggle_physics(); break;
 				case 'm': toggle_music(); break;
 				case 'M': toggle_sound_fxs(); break;
 				case '?': toggle_help(); break;
@@ -261,7 +327,6 @@ cerr << "END sf::Event::Closed\n";
 				break;
 
 			default:
-
 				ui_event_state = UIEventState::IDLE;
 
 				break;
@@ -393,6 +458,8 @@ cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 //----------------------------------------------------------------------------
 void Engine_SFML::_setup()
 {
+	window.setFramerateLimit(30);
+
 	// globe:
 	globe_ndx = add_body({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
 	// moons:
@@ -403,6 +470,11 @@ void Engine_SFML::_setup()
 	clack_sound = audio.add_sound("asset/sound/clack.wav");
 
 	audio.play_music("asset/music/default.ogg");
+	/*
+	static sf::Music m2; if (m2.openFromFile("asset/music/extra sonic layer.ogg")) {
+		m2.setLoop(false); m2.play();
+	}
+	*/
 
 #ifndef DISABLE_HUD
 	_setup_huds();
@@ -437,6 +509,8 @@ void Engine_SFML::_setup_huds()
 //	debug_hud.add("pan X", &_OFFSET_X);
 //	debug_hud.add("pan Y", &_OFFSET_Y);
 	debug_hud.add("SCALE", &_SCALE);
+//	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
+//	debug_hud.add("ALT", (bool*)&kbd_state[KBD_STATE::ALT]);
 
 
 //	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
@@ -448,7 +522,7 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("I:      toggle all-body interactions");
 	help_hud.add("F:      decrease, Shift+F: increase friction");
 	help_hud.add("Space:  pause the physics");
-	help_hud.add("Shift+arrows: pan");
+	help_hud.add("Shift+arrows: pan, Scroll Lock: autoscroll");
 	help_hud.add("mouse wheel (or +/-): zoom");
 	help_hud.add("H:      home in on the globe");
 	help_hud.add("Home:   reset view position (not the zoom)");

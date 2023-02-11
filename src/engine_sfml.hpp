@@ -61,9 +61,9 @@ protected:
 	bool _paused = false;
 
 public:
-	auto toggle_pause()  { _paused = !_paused; pause(_paused); }
-	auto paused()  { return _paused; }
-	virtual void pause(bool state = true) = 0; //!! dumb way to depend on the actual World type...
+	auto toggle_physics()  { _paused = !_paused; pause_physics(_paused); }
+	auto physics_paused()  { return _paused; }
+	virtual void pause_physics(bool state = true) { _paused = state; }; //! override to stop the actual world...
 
 	auto toggle_interact_all()  { _interact_all = !_interact_all; }
 
@@ -108,7 +108,7 @@ public:
 };
 
 
-//----------------------------------------------------------------------------
+//============================================================================
 class Engine_SFML : public Engine
 {
 friend class Renderer_SFML;
@@ -144,11 +144,21 @@ protected:
 	float _SCALE = CFG_DEFAULT_SCALE;
 	float _OFFSET_X = 0, _OFFSET_Y = 0;
 
+	enum KBD_STATE {
+		SHIFT, LSHIFT, RSHIFT,
+		CTRL, LCTRL, RCTRL,
+		ALT, LALT, RALT,
+		CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, // CAPS: 60, but NUM & SCROLL just gives key.code -1 :-/
+		__SIZE
+	};
+
+	bool kbd_state[KBD_STATE::__SIZE] = {0}; // Can't just be bool, 'coz the doubled modifiers need 2 bits!
+
 public:
 // Ops
 	bool run();
 
-	void pause(bool state = true)  override { _paused = state; world.pause(state); }
+	void pause_physics(bool state = true)  override { Engine::pause_physics(state); world.pause(state); }
 
 #ifndef DISABLE_HUD
 	auto toggle_huds()  { _show_huds = !_show_huds; }
@@ -173,14 +183,10 @@ public:
 	auto pan_left()   { _OFFSET_X -= CFG_PAN_STEP; }
 	auto pan_right()  { _OFFSET_X += CFG_PAN_STEP; }
 	auto pan_reset()  { _OFFSET_X = _OFFSET_Y = 0; }
-	auto pan_center_body(auto body_id) {
-		const auto& body = world.bodies[body_id];
-		_OFFSET_X = - body->p.x * _SCALE;
-		_OFFSET_Y = - body->p.y * _SCALE;
-	}
-	auto _pan_adjust_after_zoom() {
-		//!!??
-	}
+	void pan_center_body(auto body_id);
+	void pan_follow_body(auto body_id, float old_x, float old_y);
+
+	void _pan_adjust_after_zoom() { /* !!?? */ }
 
 	auto zoom_in()  { auto factor = 1.25f; _SCALE *= factor;
 		renderer.resize_objects(factor);
