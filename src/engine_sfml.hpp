@@ -106,11 +106,7 @@ friend class Renderer_SFML;
 
 public:
 // SFML-specific World-event hooks:
-	bool touch_hook(World* w, World::Body* obj1, World::Body* obj2) override
-	{w, obj1, obj2;
-		audio.play_sound(clack_sound);
-		return false;
-	}
+	bool touch_hook(World* w, World::Body* obj1, World::Body* obj2) override;
 
 public:
 // Ops

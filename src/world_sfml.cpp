@@ -25,7 +25,7 @@ void World::remove_body(size_t ndx)
 
 
 //----------------------------------------------------------------------------
-void World_SFML::recalc_for_next_frame(Engine_SFML& engine)
+void World_SFML::recalc_next_state(Engine_SFML& engine)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	if (paused()) return;

@@ -109,6 +109,7 @@ struct Body
 		thrust_left.thrust_level(0);
 		thrust_right.thrust_level(0);
 	}
+	bool is_player() { return has_thrusters(); } // ;)
 };
 
 public:
@@ -148,7 +149,7 @@ protected:
 
 public:
 
-	void recalc_for_next_frame(Engine_SFML& engine); // ++world
+	void recalc_next_state(Engine_SFML& engine); // ++world
 
 	void pause(bool state = true) override
 	{

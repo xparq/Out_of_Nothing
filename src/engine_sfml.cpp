@@ -137,7 +137,7 @@ void Engine_SFML::updates_for_next_frame()
 	// Saving the old superglobe position for things like auto-scroll:
 	auto p0 = world.bodies[globe_ndx]->p;
 
-	world.recalc_for_next_frame(*this);
+	world.recalc_next_state(*this);
 
 	// Auto-scroll to follow player movement:
 	//!!Unfortunately, the perfect key -- Scroll Lock -- doesn't produce a valid keykode
@@ -239,6 +239,7 @@ void Engine_SFML::event_loop()
 				case sf::Keyboard::RAlt:     kbd_state[KBD_STATE::RALT]   = false; break;
 //				case -1:
 //cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
+// (But actually Caps and Num Lock also give -1...)
 //					kbd_state[KBD_STATE::SCROLL_LOCK] = false;
 //					break;
 				}
@@ -435,6 +436,14 @@ size_t Engine_SFML::add_player(World_SFML::Body&& obj)
 
 void Engine_SFML::remove_player(size_t ndx)
 {ndx;
+}
+
+bool Engine_SFML::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
+{w;
+	if (obj1->is_player() || obj2->is_player()) {
+		audio.play_sound(clack_sound);
+	}
+	return false; //!!this is not used yet, but I will forget this when it gets to be... :-/
 }
 
 
