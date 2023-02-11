@@ -49,6 +49,7 @@ cerr << "- Error loading music: " << filename << endl;
 	return true;
 }
 
+//!!NOTE: This one pauses, vs. toggle_sound() mutes!
 void Audio_SFML::toggle_music()
 {
 	if (_music.getStatus() == sf::Music::Playing) {
@@ -58,6 +59,7 @@ void Audio_SFML::toggle_music()
 	}
 }
 
+//!!NOTE: This one mutes, vs. toggle_music() pauses!
 void Audio_SFML::toggle_sound(size_t ndx)
 {
 	if (ndx >= sounds.size()) {
