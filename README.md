@@ -7,7 +7,7 @@ full of fascinating ideas to explore, as soon as I get through some boring
 and/or daunting architectural design + low-level tech parts first.
 You can't wait! ;)
 
-![screenshot](asset/image/13k-vari-friction-1024.png )
+![screenshot](asset/image/screenshot/8k1.png)
 ------------------------------------------------------------------------------
 DEPS.:
 	- MSVC (a version supporting c++20, or c++23 if actually using \<format>)
@@ -78,7 +78,7 @@ RELEASE:
 	Windows installation).	
 
 ------------------------------------------------------------------------------
-![screenshot](asset/image/screenshot_10k_low_friction.png)
+![screenshot](asset/image/screenshot/screenshot_10k_low_friction.png)
 ------------------------------------------------------------------------------
 
 NOTES ABOUT THE CODE:
@@ -97,7 +97,7 @@ Unresolved threading-related(?) SFML + OpenGL window/context misery:
 
 
 ------------------------------------------------------------------------------
-![screenshot](asset/image/screenshot_5000_void_sphere_zoomout_1.png)
+![screenshot](asset/image/screenshot/screenshot_5000_void_sphere_zoomout_1.png)
 ------------------------------------------------------------------------------
 READ/LEARN/TRY/USE:
 
@@ -109,3 +109,6 @@ Jan Haller ("Nexus" on the SFML forum) is quite the expert, whose stuff is worth
 
 Nero Games:
 - their engine: https://nero-games.com/about/, https://github.com/NeroGames/nero-game-engine (using ImGUI)
+
+------------------------------------------------------------------------------
+![screenshot](asset/image/screenshot/13k-vari-friction-1024.png)
