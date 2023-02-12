@@ -19,6 +19,7 @@
 
 using namespace std;
 
+//----------------------------------------------------------------------------
 void HUD_SFML::_setup(sf::RenderWindow& window)
 {
 	if (!font.loadFromFile(CFG_HUD_FONT_PATH)) {
@@ -28,11 +29,16 @@ void HUD_SFML::_setup(sf::RenderWindow& window)
 
 	// Adjust for negative "virtual" offsets:
 	sf::Vector2u winsize = window.getSize();
-	_panel_left = _panel_left < 0 ? winsize.x + _panel_left : _panel_left;
-	//!!UNTESTED:
-	_panel_top = _panel_top < 0 ? winsize.y + _panel_top : _panel_top;
+
+	_panel_left = req_panel_left < 0 ? winsize.x + req_panel_left : req_panel_left;
+	_panel_top  = req_panel_top  < 0 ? winsize.y + req_panel_top  : req_panel_top;
 }
 
+//----------------------------------------------------------------------------
+void HUD_SFML::onResize(sf::RenderWindow& window)
+{
+	_setup(window);
+}
 
 //----------------------------------------------------------------------------
 void HUD::add(const char* literal)
@@ -117,11 +123,11 @@ string HUD::render_watched_item_to(std::stringstream& out)
 //----------------------------------------------------------------------------
 void HUD_SFML::append_line(const char* utf8_str)
 {
-	lines_to_draw.emplace_back(utf8_str, font, CFG_HUD_LINE_HEIGHT);
+	lines_to_draw.emplace_back(utf8_str, font, DEFAULT_LINE_HEIGHT);
 	auto& line = lines_to_draw[line_count()-1];
 	line.setPosition({
-			(float)_panel_left + CFG_HUD_PADDING,
-			(float)_panel_top  + CFG_HUD_PADDING + (line_count()-1) * CFG_HUD_LINE_HEIGHT});
+			(float)_panel_left + DEFAULT_PADDING,
+			(float)_panel_top  + DEFAULT_PADDING + (line_count()-1) * DEFAULT_LINE_HEIGHT});
 
 //		line.setStyle(sf::Text::Bold | sf::Text::Underlined);
 	line.setFillColor(sf::Color(_fgcolor));
@@ -151,7 +157,7 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 
 	// OK, finally draw something:
 	sf::RectangleShape rect({450, //!!... "Fit-to-text" feature by recompilation ;)
-		(float)lines_to_draw.size() * CFG_HUD_LINE_HEIGHT + 2*CFG_HUD_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
+		(float)lines_to_draw.size() * DEFAULT_LINE_HEIGHT + 2*DEFAULT_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
 	rect.setPosition({(float)_panel_left, (float)_panel_top});
 	rect.setFillColor(sf::Color(_bgcolor));
 	rect.setOutlineColor(sf::Color((uint32_t)(_bgcolor * 1.5f)));

@@ -19,10 +19,20 @@
 # include <utility>
 	//using std::exchange;
 
+
 class HUD
 {
-//public: // <- Questionable... Just a convenience typedef for very little gain:
-protected:
+public:
+	// (pixels)
+	static constexpr int DEFAULT_LINE_HEIGHT = 13; //! Lots of obscure warnings if this was size_t! :-o
+	static constexpr int DEFAULT_PANEL_TOP = 4; // signed!
+	static constexpr int DEFAULT_PANEL_LEFT = -250; // signed!
+	static constexpr size_t DEFAULT_PANEL_WIDTH = 0; //!! 0: fit-text - NOT IMPLEMENTED YET!
+	static constexpr size_t DEFAULT_PANEL_HEIGHT = 0; //!! 0: fit-text - NOT IMPLEMENTED YET!
+	static constexpr int DEFAULT_PADDING = 6;
+
+
+protected: //public:? <- Questionable. Just a convenience typedef for very little gain:
 	using FPTR = string (*)(); // raw function ptr (see CALLBACK for functors/closures (capturing lambdas)!)
 protected:
 	//!NOTE: "stateless" lambdas will (or just could?) also get auto-converted to plain old functions!
@@ -105,6 +115,9 @@ public:
 
 	bool active() const       { return _active; }
 	bool active(bool active)  { return std::exchange(_active, active); }
+
+	//virtual void onResize(size_t width, size_t height) {}
+	virtual ~HUD() = default;
 };
 
 //----------------------------------------------------------------------------
@@ -113,16 +126,8 @@ struct HUD_SFML : public HUD
 //!!void draw(const Engine_SFML* engine);
 
 	static constexpr auto CFG_HUD_FONT_PATH = "asset/font/HUD.font";
-	static constexpr uint32_t CFG_DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
-	static constexpr uint32_t CFG_DEFAULT_BACKGROUND_COLOR = 0x00406050;
-
-	// All these are in pixels:
-	static constexpr int CFG_HUD_LINE_HEIGHT = 13; //! Lots of obscure warnings if this was size_t! :-o
-	static constexpr int CFG_HUD_PANEL_TOP = 4; // signed!
-	static constexpr int CFG_HUD_PANEL_LEFT = -240; // signed!
-	static constexpr size_t CFG_HUD_PANEL_WIDTH = 0; //!! 0: fit-text
-	static constexpr size_t CFG_HUD_PANEL_HEIGHT = 0; //!! 0: fit-text
-	static constexpr int CFG_HUD_PADDING = 6;
+	static constexpr uint32_t DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
+	static constexpr uint32_t DEFAULT_BACKGROUND_COLOR = 0x00406050;
 
 	void clear_content() { lines_to_draw.clear(); }
 	auto line_count() const { return lines_to_draw.size(); }
@@ -130,12 +135,14 @@ struct HUD_SFML : public HUD
 	void draw(sf::RenderWindow& window);
 	void _setup(sf::RenderWindow& window);
 
+	virtual void onResize(sf::RenderWindow& window);
+
 public:
-	HUD_SFML(sf::RenderWindow& window, int xpos = CFG_HUD_PANEL_LEFT, int ypos = CFG_HUD_PANEL_TOP,
-		uint32_t fgcolor = CFG_DEFAULT_TEXT_COLOR, uint32_t bgcolor = CFG_DEFAULT_BACKGROUND_COLOR)
+	HUD_SFML(sf::RenderWindow& window, int xpos = DEFAULT_PANEL_LEFT, int ypos = DEFAULT_PANEL_TOP,
+		uint32_t fgcolor = DEFAULT_TEXT_COLOR, uint32_t bgcolor = DEFAULT_BACKGROUND_COLOR)
 		:
-		_panel_top(ypos),
-		_panel_left(xpos),
+		req_panel_top(ypos),
+		req_panel_left(xpos),
 		_fgcolor(fgcolor),
 		_bgcolor(bgcolor)
 	{ _setup(window); }
@@ -144,13 +151,16 @@ protected:
 	std::vector<sf::Text> lines_to_draw;
 	sf::Font font;
 
-	int _panel_top;
-	int _panel_left;
-	size_t _panel_width = CFG_HUD_PANEL_WIDTH;
-	size_t _panel_height = CFG_HUD_PANEL_HEIGHT;
+	int req_panel_top;
+	int req_panel_left;
 
-	uint32_t _fgcolor = CFG_DEFAULT_TEXT_COLOR;
-	uint32_t _bgcolor = CFG_DEFAULT_BACKGROUND_COLOR;
+	int _panel_top;  // calc. by _setup()
+	int _panel_left; // calc. by _setup()
+	size_t _panel_width  = DEFAULT_PANEL_WIDTH;
+	size_t _panel_height = DEFAULT_PANEL_HEIGHT;
+
+	uint32_t _fgcolor = DEFAULT_TEXT_COLOR;
+	uint32_t _bgcolor = DEFAULT_BACKGROUND_COLOR;
 };
 
 #endif // __HUD_SFML__

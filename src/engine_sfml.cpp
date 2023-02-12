@@ -31,8 +31,8 @@ Engine_SFML::Engine_SFML()
 		//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
 
 #ifndef DISABLE_HUD
-			, debug_hud(window)
-			, help_hud(window, 10, HUD_SFML::CFG_HUD_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
+			, debug_hud(window, -220)
+			, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
 		_setup();
@@ -488,29 +488,35 @@ void Engine_SFML::toggle_fullscreen()
 {
 	static bool is_full = false;
 
-	// Give some time to the update thread to finish...
-	// (The event loop should have set the state to BUSY!)
-	sf::sleep(sf::milliseconds(100));
-
 	if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 	}
 
-	window.create(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),
-			"SFML (OpenGL) Test", is_full ? sf::Style::Default : sf::Style::Fullscreen);
-//exit(-1);
+	is_full = !is_full;
+
+	window.create(
+		is_full ? sf::VideoMode::getDesktopMode() : sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),
+		"Something Out of Nothing",
+		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
+	);
+
+	onResize();
 
 	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
 cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 	}
-
-	is_full = !is_full;
 
 //	if (!(is_full = !is_full) /* :) */) {
 //		// full
 //	} else {
 //		// windowed
 //	}
+}
+
+void Engine_SFML::onResize()
+{
+	debug_hud.onResize(window);
+	help_hud.onResize(window);
 }
 
 //----------------------------------------------------------------------------
@@ -534,14 +540,12 @@ void Engine_SFML::_setup()
 	}
 	*/
 
-#ifndef DISABLE_HUD
 	_setup_huds();
-#endif	
 }
 
-#ifndef DISABLE_HUD
 void Engine_SFML::_setup_huds()
 {
+#ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
@@ -592,8 +596,8 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("Command-line options: ...exe /?");
 
 	help_hud.active(true);
-}
 #endif
+}
 
 void Engine_SFML::up_thruster_start()    { world.bodies[globe_ndx]->thrust_up.thrust_level(CFG_THRUST_FORCE); }
 void Engine_SFML::down_thruster_start()  { world.bodies[globe_ndx]->thrust_down.thrust_level(CFG_THRUST_FORCE); }
