@@ -6,6 +6,8 @@
 #include <SFML/System/Sleep.hpp>
 
 #include <thread>
+#include <mutex>
+
 #include <memory>
 	using std::make_shared;
 #include <cstdlib>
@@ -14,6 +16,11 @@
 	using std::cerr, std::endl;
 
 using namespace std;
+
+
+namespace sync {
+	std::mutex Updating;
+};
 
 
 Engine_SFML::Engine_SFML()
@@ -67,13 +74,22 @@ void Engine_SFML::update_thread_main_loop()
 	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
 	                     //!! The only change I can see is a different getActiveContext ID here, if this is enabled.
 
+	std::unique_lock proc_lock{sync::Updating, std::defer_lock};
+
+#ifndef DISABLE_THREADS
 	while (!terminated()) {
+#endif
 		switch (ui_event_state) {
 		case UIEventState::BUSY:
 //cerr << " [[[...BUSY...]]] ";
 			break;
 		case UIEventState::IDLE:
 		case UIEventState::EVENT_READY:
+			try {
+				proc_lock.lock();
+			} catch (...) {
+				cerr << "- WTF proc_lock failed?! (already locked? " << proc_lock.owns_lock() << ")\n";
+			}
 			updates_for_next_frame();
 			//!!?? Why is this redundant?!
 			if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
@@ -81,18 +97,29 @@ void Engine_SFML::update_thread_main_loop()
 //?				terminate();
 //?				return;
 			}
+
+			//!! This is problematic, as it currently relies on sf::setFrameRateLImit()
+			//!! which would make the thread sleep -- but with still holding the lock! :-/
+			//!! So... Either control the framerate ourselves (the upside of which is one
+			//!! less external API dependency), or further separate rendering from actual
+			//!! displaying (so we can release the update lock right after renedring)
+			//!! -- AND THEN ALSO IMPLEMENTING SYNCING BETWEEN THOSE TWO!...
 			draw();
 			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 //?				terminate();
 //?				return;
 			}
+			proc_lock.unlock();
 			break;
 		default:
 cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
 		}
 
-/* Doing it properly with setFramerateLimit() now!
+//cerr << "- releasing Events...\n";
+		//sync::EventsFreeToGo.release();
+
+/* Doing it with setFramerateLimit() now!
 	//! If there's still time left from the frame slice:
 	sf::sleep(sf::milliseconds(30)); //!! (remaining_time_ms)
 		//! This won't stop the other (e.g. event loop) thread(s) from churning, though!
@@ -101,7 +128,9 @@ cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
 		//! -> Because SFML double-buffers implicitly, AFAIK...
 */
 //cerr << "sf::Context [update loop]: " << sf::Context::getActiveContextId() << endl;
+#ifndef DISABLE_THREADS
 	}
+#endif
 }
 
 //----------------------------------------------------------------------------
@@ -173,6 +202,8 @@ void Engine_SFML::event_loop()
 {
 	sf::Context context; //!! Seems redundant; it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
 
+	std::unique_lock noproc_lock{sync::Updating, std::defer_lock};
+
 	while (window.isOpen() && !terminated()) {
 			sf::Event event;
 
@@ -181,6 +212,11 @@ void Engine_SFML::event_loop()
 			cerr << "- Event processing failed. WTF?! Terminating.\n";
 			exit(-1);
 		}
+
+		ui_event_state = UIEventState::BUSY;
+//cerr << "- acquiring lock for events...\n";
+		noproc_lock.lock();
+
 #else
 /*!!?? Why did this (always?) fail?!
 		if (!window.pollEvent(event)) {
@@ -188,9 +224,15 @@ void Engine_SFML::event_loop()
 			exit(-1);
 		}
 ??!!*/			
-		for (; window.pollEvent(event);) {
-#endif					
 
+		// This inner loop is only for non-threading mode, to prevent event processing
+		// (reaction) delays (or even loss) due to accumulating events coming faster
+		// than 1/frame (for a long enough period to cause noticable jam/stutter)!
+		for (; window.pollEvent(event);) {
+
+		ui_event_state = UIEventState::BUSY;
+//cerr << "- acquiring events...\n";
+#endif
 			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
 //?				terminate();
@@ -209,8 +251,6 @@ void Engine_SFML::event_loop()
 			//!! into a queue in the update/processing thread, like:
 			//!! engine.inputs.push(event);
 			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
-
-			ui_event_state = UIEventState::BUSY;
 
 			switch (event.key.code) {
 				case sf::Keyboard::Up: case sf::Keyboard::W:
@@ -287,7 +327,7 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 					break;
 
 //				default:
-//cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
+cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
 				}
 				break;
 
@@ -326,9 +366,9 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 
 			case sf::Event::Closed: //!!Merge with key:Esc!
 				terminate();
-cerr << "BEGIN sf::Event::Closed\n"; //!!this frame is to trace an error from the lib/OpenGL
+//cerr << "BEGIN sf::Event::Closed\n"; //!!this frame is to trace an error from SFML/OpenGL
 				window.close();
-cerr << "END sf::Event::Closed\n";
+//cerr << "END sf::Event::Closed\n";
 				break;
 
 			default:
@@ -337,17 +377,19 @@ cerr << "END sf::Event::Closed\n";
 				break;
 			}
 
-			ui_event_state = UIEventState::EVENT_READY;
-
 //cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
 
-#ifdef DISABLE_THREADS
+#ifndef DISABLE_THREADS
+		ui_event_state = UIEventState::EVENT_READY;
+//cerr << "- freeing proc lock...\n";
+		noproc_lock.unlock();
+#else
 		} // for
-
-		updates_for_next_frame();
-		draw();
+		ui_event_state = UIEventState::EVENT_READY;
+		update_thread_main_loop(); // <- not looping when threads disabled
 //!!test idempotency:
 //!!	draw();
+
 #endif			
 	} // while
 }
@@ -377,11 +419,6 @@ size_t Engine_SFML::add_body()
 
 //cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
 
-//!!Atrocious hack to wait for the ongoing update to finish!... ;)
-//!!Doesn't seem to crash!... :-o :)
-//!!Test whether std::atomic could solve it!
-sf::sleep(sf::milliseconds(1));
-
 	return add_body({
 		.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
 				+ r_min,
@@ -410,10 +447,6 @@ void Engine_SFML::remove_body()
 cerr <<	"No more \"free\" items to delete.\n";
 		return;
 	}
-
-//!!atrocious hack to wait for the ongoing update to finish!... ;)
-//!!test whether std::atomic could solve it!
-	sf::sleep(sf::milliseconds(1)); // It DOES crash without this! ;)
 
 	auto ndx = 1/*leave the globe!*/ + rand() * ((world.bodies.size()-1) / (RAND_MAX + 1));
 //cerr << "Deleting object #"	 << ndx << "...\n";
@@ -474,9 +507,9 @@ cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 	is_full = !is_full;
 
 //	if (!(is_full = !is_full) /* :) */) {
-//		// to full
+//		// full
 //	} else {
-//		// to windowed
+//		// windowed
 //	}
 }
 
