@@ -339,10 +339,10 @@ cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
-				case 'n': spawn(); break;
-				case 'N': spawn(100); break;
-				case 'r': remove_body(); break;
-				case 'R': remove_bodies(100); break;
+				case 'N': spawn(); break;
+				case 'n': spawn(100); break;
+				case 'R': remove_body(); break;
+				case 'r': remove_bodies(100); break;
 				case 'i': toggle_interact_all(); break;
 				case 'f': world.FRICTION -= 0.01f; break;
 				case 'F': world.FRICTION += 0.01f; break;
@@ -578,9 +578,8 @@ void Engine_SFML::_setup_huds()
 //	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
 //	help_hud.add("");
 	help_hud.add("AWSD (or arrows): thrust");
-	help_hud.add("N:      add an object (Shift+N: 100x)");
-	help_hud.add("        Pro tip: hold Shift+N for several seconds...");
-	help_hud.add("R:      remove an object (Shift+R: 100x)");
+	help_hud.add("N:      add 100 objects (Shift+N: only 1)");
+	help_hud.add("R:      remove 100 objects (Shift+R: only 1)");
 	help_hud.add("I:      toggle all-body interactions");
 	help_hud.add("F:      decrease, Shift+F: increase friction");
 	help_hud.add("Space:  pause the physics");
