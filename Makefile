@@ -35,7 +35,7 @@ MODULES=$(out_dir)/main.obj \
 	$(out_dir)/audio_sfml.obj \
 	$(out_dir)/TGUI-Clipping.obj \
 
-INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h
+INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h $(src_dir)/misc/*.hpp
 
 #CC_FLAGS=$(CC_FLAGS) -nologo
 CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc

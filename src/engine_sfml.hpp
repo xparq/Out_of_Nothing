@@ -6,8 +6,11 @@
 #include "hud_sfml.hpp"
 #include "audio_sfml.hpp"
 
+#include "misc/rolling_average.hpp"
+
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/System/Clock.hpp>
 
 #include <atomic>
 
@@ -87,6 +90,8 @@ public:
 protected:
 	bool _terminated = false;
 	bool _paused = false;
+	RollingAverage<5> avg_frame_delay;
+
 	enum KBD_STATE {
 		SHIFT, LSHIFT, RSHIFT,
 		CTRL, LCTRL, RCTRL,
@@ -112,7 +117,12 @@ public:
 // Ops
 	bool run();
 
-	void pause_physics(bool state = true)  override { SimApp::pause_physics(state); world.pause(state); }
+	void pause_physics(bool state = true) override {
+		SimApp::pause_physics(state);
+		//! Need to start from 0 when unpausing.
+		//! (The other reset, on pausing, is redundant, but keeping for simplicity.)
+		clock.restart();
+	}
 	auto toggle_interact_all()  { world._interact_all = !world._interact_all; }
 
 	//! Should be idempotent to tolerate keyboard repeats (which could be disabled, but better be robust)!
@@ -191,7 +201,7 @@ public:
 // Data -- Internals...
 protected:
 	sf::RenderWindow window;
-//!!was:	sf::RenderWindow* window; // unique_ptr<sf::RenderWindow> window would add nothing but unwarranted complexity here
+	sf::Clock clock;
 
 	World_SFML  world;
 	Renderer_SFML renderer;

@@ -25,15 +25,19 @@ void World::remove_body(size_t ndx)
 
 
 //----------------------------------------------------------------------------
-void World_SFML::recalc_next_state(Engine_SFML& engine)
+void World_SFML::recalc_next_state(float dt, Engine_SFML& engine)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	if (paused()) return;
+#ifdef _SKIP_
+//!!testin' testin'...
+static int SKIP_TIMES = 0; //! const[expr] here would trigger a warning later for if (0)
+static int skipping_interactions = SKIP_TIMES;
+static float accumulated_dt = 0; // s
+auto last_dt = dt;
+#endif
 
-	dt = clock.getElapsedTime().asSeconds();
-	clock.restart();
-
-	// Go through the autogen effects first:
+	// Go through the autogenic effects first:
+	//!!This should be a separate collection tho; super wasteful to go thru all every time!
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{
 		auto& body = bodies[i];
@@ -46,6 +50,17 @@ void World_SFML::recalc_next_state(Engine_SFML& engine)
 		}
 	}
 
+#ifdef _SKIP_
+//!!testin' testin'...
+if (SKIP_TIMES && --skipping_interactions) {
+	accumulated_dt += dt; goto end_interact_loop;
+} else {
+//	cerr << ".";
+	if (accumulated_dt > 0) { dt = accumulated_dt; accumulated_dt = 0; }
+	skipping_interactions = SKIP_TIMES;
+}
+#endif
+
 // Now do the interaction matrix:
 //!!This line below is hard-coded to globe-ndx == 0, and also ignores any other (potential) players!...
 for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 1); ++actor_obj_ndx)
@@ -54,10 +69,8 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 	{
 		auto& body = bodies[i];
 
-		// Gravity
-		if (!body->superpower.gravity_immunity // <- Ignore gravity on player superglobes by default!
-			&& i != actor_obj_ndx) {
-//		if (i != actor_obj_ndx) {
+		// Collisions & gravity...
+		if (i != actor_obj_ndx) {
 			auto& other = bodies[actor_obj_ndx];
 
 			auto dx = other->p.x - body->p.x,
@@ -116,7 +129,8 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
 				engine.interaction_hook(this, Event::Collision, body.get(), other.get());
-			} else { // i.e. not colliding:
+
+			} else if (!body->superpower.gravity_immunity) { // process gravity if not colliding
 				float g = G * other->mass / (distance * distance);
 				sf::Vector2f gvect(dx * g, dy * g);
 				//!!should rather be: sf::Vector2f gvect(dx / distance * g, dy / distance * g);
@@ -133,6 +147,11 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 !!*/		
 //cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
 	}
+
+#ifdef _SKIP_
+end_interact_loop:
+dt = last_dt;
+#endif
 
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{

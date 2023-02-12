@@ -130,14 +130,17 @@ void Engine_SFML::updates_for_next_frame()
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	if (physics_paused()) {
-		sf::sleep(sf::milliseconds(50)); //! a bit gross, but...
+		sf::sleep(sf::milliseconds(50)); //!!that direct 50 is gross, but...
 		return;
 	}
+	auto frame_delay = clock.getElapsedTime().asSeconds();
+	clock.restart(); //! Must also be duly restarted on unpausing!
+	avg_frame_delay.update(frame_delay);
 
 	// Saving the old superglobe position for things like auto-scroll:
 	auto p0 = world.bodies[globe_ndx]->p;
 
-	world.recalc_next_state(*this);
+	world.recalc_next_state(frame_delay, *this);
 
 	// Auto-scroll to follow player movement:
 	//!!Unfortunately, the perfect key -- Scroll Lock -- doesn't produce a valid keykode
@@ -510,8 +513,8 @@ void Engine_SFML::_setup_huds()
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
 
-	debug_hud.add("FPS", [this](){ return to_string(1 / this->world.dt); });
-	//debug_hud.add("frame delay (s)", &world.dt);
+	debug_hud.add("FPS", [this](){ return to_string(1 / (float)this->avg_frame_delay); });
+	//debug_hud.add("avg. frame delay (s)", [this](){ return to_string(this->avg_frame_delay); });
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
 	debug_hud.add("Friction", [this](){ return to_string(this->world.FRICTION); });
 
