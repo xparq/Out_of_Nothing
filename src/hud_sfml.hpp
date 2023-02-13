@@ -123,8 +123,6 @@ public:
 //----------------------------------------------------------------------------
 struct HUD_SFML : public HUD
 {
-//!!void draw(const Engine_SFML* engine);
-
 	static constexpr auto CFG_HUD_FONT_PATH = "asset/font/HUD.font";
 	static constexpr uint32_t DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
 	static constexpr uint32_t DEFAULT_BACKGROUND_COLOR = 0x00406050;

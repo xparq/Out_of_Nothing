@@ -12,7 +12,7 @@
 #include <SFML/System/Clock.hpp>
 
 //============================================================================
-class Engine_SFML : public OON
+class OON_sfml : public OON
 {
 friend class Renderer_SFML;
 
@@ -101,8 +101,8 @@ public:
 //------------------------------------------------------------------------
 // Housekeeping
 public:
-	Engine_SFML();
-	Engine_SFML(const Engine_SFML&) = delete;
+	OON_sfml();
+	OON_sfml(const OON_sfml&) = delete;
 
 //------------------------------------------------------------------------
 // Data -- Internals...

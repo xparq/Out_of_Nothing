@@ -81,7 +81,7 @@ cerr << "Loaded from slot " << slot_id << ".\n";
 
 
 //============================================================================
-Engine_SFML::Engine_SFML()
+OON_sfml::OON_sfml()
 		// Creating the window right away here (only) to support init-by-constr. for the HUDs:
 		: window(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}), WINDOW_TITLE)
 		//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
@@ -97,7 +97,7 @@ Engine_SFML::Engine_SFML()
 		_setup();
 }
 
-bool Engine_SFML::run()
+bool OON_sfml::run()
 {
 	//! The event loop will block and sleep.
 	//! The update thread is safe to start before the event loop, but we should also draw something
@@ -111,23 +111,24 @@ bool Engine_SFML::run()
 	ui_event_state = SimApp::UIEventState::IDLE;
 
 #ifndef DISABLE_THREADS
-	std::thread engine_updates(&Engine_SFML::update_thread_main_loop, this);
-			// &engine a) for `this`, b) when this wasn't a member fn, the value form vs ref was ambiguous and failed to compile,
-			// and c) the thread ctor would copy the params (by default), and that would be really wonky for the entire engine! :)
+	std::thread game_state_updates(&OON_sfml::update_thread_main_loop, this);
+		//! NOTES:
+		//! - When it wasn't a member fn, the value vs ref. form was ambiguous and failed to compile!
+		//! - The thread ctor would *copy* its params (by default), which would be kinda wonky for the entire app. ;)
 #endif
 
 	event_loop();
 
 #ifndef DISABLE_THREADS
 //cerr << "TRACE - before threads join\n";
-	engine_updates.join();
+	game_state_updates.join();
 #endif
 
 	return true;
 }
 
 //----------------------------------------------------------------------------
-void Engine_SFML::update_thread_main_loop()
+void OON_sfml::update_thread_main_loop()
 {
 	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
 	                     //!! The only change I can see is a different getActiveContext ID here, if this is enabled.
@@ -192,7 +193,7 @@ void Engine_SFML::update_thread_main_loop()
 }
 
 //----------------------------------------------------------------------------
-void Engine_SFML::draw()
+void OON_sfml::draw()
 {
 	renderer.render(*this);
 		// Was in updates_for_next_frame(), but pause should not stop UI updates.
@@ -213,7 +214,7 @@ void Engine_SFML::draw()
 }
 
 //----------------------------------------------------------------------------
-void Engine_SFML::updates_for_next_frame()
+void OON_sfml::updates_for_next_frame()
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	if (physics_paused()) {
@@ -239,14 +240,14 @@ void Engine_SFML::updates_for_next_frame()
 }
 
 
-void Engine_SFML::pan_center_body(auto body_id)
+void OON_sfml::pan_center_body(auto body_id)
 {
 	const auto& body = world.bodies[body_id];
 	_OFFSET_X = - body->p.x * _SCALE;
 	_OFFSET_Y = - body->p.y * _SCALE;
 }
 
-void Engine_SFML::pan_follow_body(auto body_id, float old_x, float old_y)
+void OON_sfml::pan_follow_body(auto body_id, float old_x, float old_y)
 {
 	const auto& body = world.bodies[body_id];
 	_OFFSET_X -= (body->p.x - old_x) * _SCALE;
@@ -256,7 +257,7 @@ void Engine_SFML::pan_follow_body(auto body_id, float old_x, float old_y)
 
 
 //----------------------------------------------------------------------------
-void Engine_SFML::event_loop()
+void OON_sfml::event_loop()
 {
 	sf::Context context; //!! Seems redundant; it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
 
@@ -303,11 +304,11 @@ void Engine_SFML::event_loop()
 			//!! cycle before they notice our "BUSY" state change here, and stop! :-o
 			//!! So... a semaphore from their end must be provided to this point of this thread, too!
 			//!! And it may not be just as easy as sg. like:
-			//!!while (engine.busy_updating())
+			//!!while (game.busy_updating())
 			//!!	;
 			//!! A much cleaner way would be pushing the events received here
 			//!! into a queue in the update/processing thread, like:
-			//!! engine.inputs.push(event);
+			//!! game.inputs.push(event);
 			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
 
 			switch (event.key.code) {
@@ -457,13 +458,13 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 
 
 //----------------------------------------------------------------------------
-void Engine_SFML::spawn(size_t n)
+void OON_sfml::spawn(size_t n)
 {
 	add_bodies(n);
 }
 
 //----------------------------------------------------------------------------
-size_t Engine_SFML::add_body(World::Body&& obj)
+size_t OON_sfml::add_body(World::Body&& obj)
 {
 	auto ndx = world.add_body(std::forward<decltype(obj)>(obj));
 	// Pre-cache shapes for rendering... (!! Likely pointless, but this is just what I started with...)
@@ -471,7 +472,7 @@ size_t Engine_SFML::add_body(World::Body&& obj)
 	return ndx;
 }
 
-size_t Engine_SFML::add_body()
+size_t OON_sfml::add_body()
 {
 	auto r_min = world.CFG_GLOBE_RADIUS / 10;
 	auto r_max = world.CFG_GLOBE_RADIUS * 0.5;
@@ -491,18 +492,18 @@ size_t Engine_SFML::add_body()
 	});
 }
 
-void Engine_SFML::add_bodies(size_t n)
+void OON_sfml::add_bodies(size_t n)
 {
 	while (n--) add_body();
 }
 
-void Engine_SFML::remove_body(size_t ndx)
+void OON_sfml::remove_body(size_t ndx)
 {
 	world.remove_body(ndx);
 	renderer.delete_cached_body_shape(*this, ndx);
 }
 
-void Engine_SFML::remove_body()
+void OON_sfml::remove_body()
 {
 	if (world.bodies.size() < 2) { // Leave the "globe" (so not ".empty()")!
 cerr <<	"No more \"free\" items to delete.\n";
@@ -516,13 +517,13 @@ cerr <<	"No more \"free\" items to delete.\n";
 	remove_body(ndx);
 }
 
-void Engine_SFML::remove_bodies(size_t n)
+void OON_sfml::remove_bodies(size_t n)
 {
 	while (n--) remove_body();
 }
 
 //----------------------------------------------------------------------------
-size_t Engine_SFML::add_player(World::Body&& obj)
+size_t OON_sfml::add_player(World::Body&& obj)
 {
 	// These are the only modelling differences for now:
 	obj.add_thrusters();
@@ -531,11 +532,11 @@ size_t Engine_SFML::add_player(World::Body&& obj)
 	return add_body(std::forward<World::Body>(obj));
 }
 
-void Engine_SFML::remove_player(size_t ndx)
+void OON_sfml::remove_player(size_t ndx)
 {ndx;
 }
 
-bool Engine_SFML::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
+bool OON_sfml::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 {w;
 	if (obj1->is_player() || obj2->is_player()) {
 		audio.play_sound(clack_sound);
@@ -545,7 +546,7 @@ bool Engine_SFML::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 
 
 //----------------------------------------------------------------------------
-void Engine_SFML::toggle_fullscreen()
+void OON_sfml::toggle_fullscreen()
 {
 	static bool is_full = false;
 
@@ -575,7 +576,7 @@ cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 //	}
 }
 
-void Engine_SFML::onResize()
+void OON_sfml::onResize()
 {
 	debug_hud.onResize(window);
 	help_hud.onResize(window);
@@ -583,7 +584,7 @@ void Engine_SFML::onResize()
 
 
 //----------------------------------------------------------------------------
-void Engine_SFML::_setup()
+void OON_sfml::_setup()
 {
 	//! Note: the window itself has just been created by the ctor.!
 	//! But... it will also be recreated each time the fullscreen/windowed
@@ -610,7 +611,7 @@ void Engine_SFML::_setup()
 	_setup_huds();
 }
 
-void Engine_SFML::_setup_huds()
+void OON_sfml::_setup_huds()
 {
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
@@ -666,12 +667,12 @@ void Engine_SFML::_setup_huds()
 #endif
 }
 
-void Engine_SFML::up_thruster_start()    { world.bodies[globe_ndx]->thrust_up.thrust_level(CFG_THRUST_FORCE); }
-void Engine_SFML::down_thruster_start()  { world.bodies[globe_ndx]->thrust_down.thrust_level(CFG_THRUST_FORCE); }
-void Engine_SFML::left_thruster_start()  { world.bodies[globe_ndx]->thrust_left.thrust_level(CFG_THRUST_FORCE); }
-void Engine_SFML::right_thruster_start() { world.bodies[globe_ndx]->thrust_right.thrust_level(CFG_THRUST_FORCE); }
+void OON_sfml::up_thruster_start()    { world.bodies[globe_ndx]->thrust_up.thrust_level(CFG_THRUST_FORCE); }
+void OON_sfml::down_thruster_start()  { world.bodies[globe_ndx]->thrust_down.thrust_level(CFG_THRUST_FORCE); }
+void OON_sfml::left_thruster_start()  { world.bodies[globe_ndx]->thrust_left.thrust_level(CFG_THRUST_FORCE); }
+void OON_sfml::right_thruster_start() { world.bodies[globe_ndx]->thrust_right.thrust_level(CFG_THRUST_FORCE); }
 
-void Engine_SFML::up_thruster_stop()     { world.bodies[globe_ndx]->thrust_up.thrust_level(0); }
-void Engine_SFML::down_thruster_stop()   { world.bodies[globe_ndx]->thrust_down.thrust_level(0); }
-void Engine_SFML::left_thruster_stop()   { world.bodies[globe_ndx]->thrust_left.thrust_level(0); }
-void Engine_SFML::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_level(0); }
+void OON_sfml::up_thruster_stop()     { world.bodies[globe_ndx]->thrust_up.thrust_level(0); }
+void OON_sfml::down_thruster_stop()   { world.bodies[globe_ndx]->thrust_down.thrust_level(0); }
+void OON_sfml::left_thruster_stop()   { world.bodies[globe_ndx]->thrust_left.thrust_level(0); }
+void OON_sfml::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_level(0); }

@@ -10,7 +10,7 @@
 #include <memory> // shared_ptr
 
 
-class Engine_SFML;
+class OON_sfml;
 
 //----------------------------------------------------------------------------
 class Renderer_SFML // "View"
@@ -34,16 +34,15 @@ public:
 	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 
 // Ops
-	void render(Engine_SFML& game); // can't keep it inline here: uses the Engine!
-	void draw(Engine_SFML& game); // can't keep it inline here: uses the Engine!
-	void draw_paused_banner(Engine_SFML& game);
+	void render(OON_sfml& game); // can't keep it inline here: uses the game object!
+	void draw(OON_sfml& game); // can't keep it inline here: uses the game object!
+	void draw_paused_banner(OON_sfml& game);
 
-	void create_cached_body_shape(const Engine_SFML& game, const Model::World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
-	void delete_cached_body_shape(const Engine_SFML& game, size_t body_ndx);
+	void create_cached_body_shape(const OON_sfml& game, const Model::World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
+	void delete_cached_body_shape(const OON_sfml& game, size_t body_ndx);
 
 // Internals
-//!!protected: //!!STILL USED DIRECTLY BY THE ENGINE! :-/
-public:
+//!!protected: //!!STILL USED DIRECTLY BY THE GAME CONTROLLER CLASS! :-/
 	void resize_objects(float factor)
 	{
 		transform_objects([factor](sf::Transformable& shape) {

@@ -12,7 +12,7 @@
 //#include <iostream>
 //	using std::cerr;
 
-void Renderer_SFML::render(Engine_SFML& game)
+void Renderer_SFML::render(OON_sfml& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	// The indexes match the corresponding physical bodies!
@@ -33,7 +33,7 @@ void Renderer_SFML::render(Engine_SFML& game)
 	}
 }
 
-void Renderer_SFML::draw(Engine_SFML& game)
+void Renderer_SFML::draw(OON_sfml& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	for (const auto& entity : shapes_to_draw) {
@@ -45,7 +45,7 @@ void Renderer_SFML::draw(Engine_SFML& game)
 	}
 }
 
-void Renderer_SFML::draw_paused_banner(Engine_SFML& game)
+void Renderer_SFML::draw_paused_banner(OON_sfml& game)
 {
 	sf::Font font;
 	if (!font.loadFromFile("asset/font/default.font")) {
@@ -67,7 +67,7 @@ void Renderer_SFML::draw_paused_banner(Engine_SFML& game)
 }
 
 
-void Renderer_SFML::create_cached_body_shape(const Engine_SFML& game, const Model::World::Body& body, size_t body_ndx /*= (size_t)-1*/)
+void Renderer_SFML::create_cached_body_shape(const OON_sfml& game, const Model::World::Body& body, size_t body_ndx /*= (size_t)-1*/)
 {
 	// There must be objects actually added already:
 	assert(game.world.bodies.size() > 0);
@@ -86,7 +86,7 @@ void Renderer_SFML::create_cached_body_shape(const Engine_SFML& game, const Mode
 	assert(shapes_to_change.size() == body_ndx + 1);
 }
 
-void Renderer_SFML::delete_cached_body_shape(const Engine_SFML& game, size_t body_ndx)
+void Renderer_SFML::delete_cached_body_shape(const OON_sfml& game, size_t body_ndx)
 {game;
 	assert(body_ndx != (size_t)-1);
 	// Assume the body has already been deleted from the world:

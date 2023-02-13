@@ -28,15 +28,15 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	Engine_SFML engine;/*({
+	OON_sfml game;/*({
 		.moons = args("moons")
 	});*/
 	if (args["moons"]) {
-		engine.add_bodies( ::atoi(args("moons").c_str()) -2 ); // 2 were pre-created...
+		game.add_bodies( ::atoi(args("moons").c_str()) -2 ); // 2 were pre-created...
 	}
 
 	try {
-		engine.run();
+		game.run();
 	} catch (...) {
 		cerr << "UNHANDLED EXCEPTION!\n";
 		return -1;
