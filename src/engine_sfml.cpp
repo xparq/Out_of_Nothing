@@ -14,9 +14,18 @@
 	using std::rand; // and the RAND_MAX macro!
 #include <iostream>
 	using std::cerr, std::endl;
+#include <cassert>
 
 using namespace std;
 
+
+//
+// "App-local global" implementation-level (const) params...
+//
+static constexpr auto WINDOW_TITLE = "Out of Nothing";
+namespace cfg {
+	static constexpr auto FPS_THROTTLE = 30;
+}
 
 namespace sync {
 	std::mutex Updating;
@@ -24,7 +33,8 @@ namespace sync {
 
 
 Engine_SFML::Engine_SFML()
-		: window(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),"SFML (OpenGL) Test")
+		// Creating the window right away here (only) to support init-by-constr. for the HUDs:
+		: window(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}), WINDOW_TITLE)
 		//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 		//!!??
 		//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
@@ -113,7 +123,7 @@ void Engine_SFML::update_thread_main_loop()
 			proc_lock.unlock();
 			break;
 		default:
-cerr << " [[[...!!??UNKNOWN EVENT STATE??!!...]]] ";
+			assert(("[[[...!!UNKNOWN EVENT STATE!!...]]]", false));
 		}
 
 //cerr << "- releasing Events...\n";
@@ -327,7 +337,7 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 					break;
 
 //				default:
-cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
+//cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
 				}
 				break;
 
@@ -496,9 +506,10 @@ cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 
 	window.create(
 		is_full ? sf::VideoMode::getDesktopMode() : sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),
-		"Something Out of Nothing",
+		WINDOW_TITLE,
 		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
 	);
+	window.setFramerateLimit(cfg::FPS_THROTTLE);
 
 	onResize();
 
@@ -522,7 +533,11 @@ void Engine_SFML::onResize()
 //----------------------------------------------------------------------------
 void Engine_SFML::_setup()
 {
-	window.setFramerateLimit(30);
+	//! Note: the window itself has just been created by the ctor.!
+	//! But... it will also be recreated each time the fullscreen/windowed
+	//! mode is toggled, so this will need to be repeated after every
+	//! `window.create` call (i.e. in `toggle_fullscreen`):
+	window.setFramerateLimit(cfg::FPS_THROTTLE);
 
 	// globe:
 	globe_ndx = add_player({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
@@ -551,7 +566,6 @@ void Engine_SFML::_setup_huds()
 	debug_hud.add("Press ? for help...");
 
 	debug_hud.add("FPS", [this](){ return to_string(1 / (float)this->avg_frame_delay); });
-	//debug_hud.add("avg. frame delay (s)", [this](){ return to_string(this->avg_frame_delay); });
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
 	debug_hud.add("Friction", [this](){ return to_string(this->world.FRICTION); });
 
@@ -592,7 +606,7 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("F12:    toggle HUDs");
 	help_hud.add("Esc:    quit");
 	help_hud.add("");
-	help_hud.add("Command-line options: ...exe /?");
+	help_hud.add("Command-line options: oon.exe /?");
 
 	help_hud.active(true);
 #endif
