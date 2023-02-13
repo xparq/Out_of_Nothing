@@ -59,20 +59,20 @@ public:
 		return false;
 	}
 */
-	virtual bool collide_hook(World* w, World::Body* obj1, World::Body* obj2, float distance)
+	virtual bool collide_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2, float distance)
 	{w, obj1, obj2, distance;
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 		//!!...body->p -= ds...;
 		return false;
 	}
 
-	virtual bool touch_hook(World* w, World::Body* obj1, World::Body* obj2)
+	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2)
 	{w, obj1, obj2;
 		return false;
 	}
 
 	//! High-level, abstract (not just "generic"!) hook for n-body interactions:
-	virtual void interaction_hook(World* w, World::Event event, World::Body* obj1, World::Body* obj2, ...)
+	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...)
 	{w, event, obj1, obj2;
 		//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 		obj1->color += 0x3363c3;
@@ -111,7 +111,7 @@ friend class Renderer_SFML;
 
 public:
 // SFML-specific World-event hooks:
-	bool touch_hook(World* w, World::Body* obj1, World::Body* obj2) override;
+	bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
 public:
 // Ops
@@ -176,13 +176,13 @@ public:
 	//------------------------------------------------------------------------
 	// These are low-level ops, not user/player actions!
 	size_t add_body(); // add a random one
-	size_t add_body(World_SFML::Body&& obj);
+	size_t add_body(Model::World::Body&& obj);
 	void   add_bodies(size_t n);
 	void   remove_body(size_t ndx);
 	void   remove_body(); // delete a random one
 	void   remove_bodies(size_t n);
 
-	size_t add_player(World_SFML::Body&& obj); //!! override;
+	size_t add_player(Model::World::Body&& obj); //!! override;
 	void   remove_player(size_t ndx) override;
 
 	//------------------------------------------------------------------------
@@ -203,7 +203,7 @@ protected:
 	sf::RenderWindow window;
 	sf::Clock clock;
 
-	World_SFML  world;
+	Model::World_SFML  world;
 	Renderer_SFML renderer;
 
 #ifndef DISABLE_HUD

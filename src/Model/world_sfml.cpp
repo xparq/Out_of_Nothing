@@ -7,7 +7,7 @@
 
 using namespace std;
 
-//namespace Model {
+namespace Model {
 
 //----------------------------------------------------------------------------
 size_t World::add_body(Body&& obj)
@@ -168,6 +168,6 @@ dt = last_dt;
 		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
 		body->p += ds;
 	}
-//}
+}
 
 } // namespace

@@ -8,7 +8,10 @@
 	// using std::shared_ptr;
 #include <vector>
 
-//namespace Model {
+class Engine_SFML; //! Sigh, must predeclare it here, outside the namespace...
+                   //! Curiously, it's not in the "global" :: namespece either
+                   //! by default, so ::Engine...; wouldn't work there either! :-o
+namespace Model {
 
 //!!Put these into some generic geometry helper thing:
 template <typename T> T distance_2d(T dx, T dy)  { return sqrt(dx*dx + dy*dy); }
@@ -133,7 +136,7 @@ public: // Just allow access for now...:
 
 };
 
-class Engine_SFML;
+//! class Engine_SFML; <- Sigh... See its declaration way up, outside the namespace!
 //----------------------------------------------------------------------------
 class World_SFML : public World
 {
@@ -141,5 +144,5 @@ public:
 	void recalc_next_state(float dt, Engine_SFML& engine); // ++world
 };
 
-//} // namespace
+} // namespace
 #endif // __WORLD_SFML__

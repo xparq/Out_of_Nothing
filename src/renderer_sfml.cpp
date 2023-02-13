@@ -1,6 +1,5 @@
-#include "engine_sfml.hpp"
-
 #include "renderer_sfml.hpp"
+#include "engine_sfml.hpp"
 
 #include <SFML/Graphics/CircleShape.hpp>
 
@@ -66,7 +65,7 @@ void Renderer_SFML::draw_paused_banner(Engine_SFML& game)
 }
 
 
-void Renderer_SFML::create_cached_body_shape(const Engine_SFML& game, const World::Body& body, size_t body_ndx /*= (size_t)-1*/)
+void Renderer_SFML::create_cached_body_shape(const Engine_SFML& game, const Model::World::Body& body, size_t body_ndx /*= (size_t)-1*/)
 {
 	// There must be objects actually added already:
 	assert(game.world.bodies.size() > 0);

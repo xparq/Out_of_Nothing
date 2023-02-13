@@ -1,4 +1,6 @@
 #include "engine_sfml.hpp"
+	using namespace Model;
+	//using Model::World, Model::World_SFML;
 
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Context.hpp>
@@ -412,7 +414,7 @@ void Engine_SFML::spawn(size_t n)
 }
 
 //----------------------------------------------------------------------------
-size_t Engine_SFML::add_body(World_SFML::Body&& obj)
+size_t Engine_SFML::add_body(World::Body&& obj)
 {
 	auto ndx = world.add_body(std::forward<decltype(obj)>(obj));
 	// Pre-cache shapes for rendering... (!! Likely pointless, but this is just what I started with...)

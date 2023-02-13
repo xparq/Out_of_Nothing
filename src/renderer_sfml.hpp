@@ -38,7 +38,7 @@ public:
 	void draw(Engine_SFML& game); // can't keep it inline here: uses the Engine!
 	void draw_paused_banner(Engine_SFML& game);
 
-	void create_cached_body_shape(const Engine_SFML& game, const World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
+	void create_cached_body_shape(const Engine_SFML& game, const Model::World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
 	void delete_cached_body_shape(const Engine_SFML& game, size_t body_ndx);
 
 // Internals
