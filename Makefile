@@ -86,8 +86,9 @@ LIBS=$(LIBS_dll)
 !endif
 
 # Debug / Release alternatives:
-CC_FLAGS_DEBUG_1=-Zi -DDEBUG
 CC_FLAGS_DEBUG_0=-O2 -DNDEBUG
+# These -O... below are taken from Dr. Memory's README/Quick start...:
+CC_FLAGS_DEBUG_1=-Zi -Oy- -Ob0 -DDEBUG
 LINK_FLAGS_DEBUG_0=
 LINK_FLAGS_DEBUG_1=-debug
 #!!FFS... CC_FLAGS_DEBUG=$(CC_FLAGS_DEBUG_$(DEBUG))

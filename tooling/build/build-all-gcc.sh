@@ -1,4 +1,4 @@
-sz_prjdir="`dirname $0`"
+sz_prjdir="`dirname $0`/../.."
 # Well, the SFML-MinGW libs *ALMOST* work with w64devkit, but...: https://github.com/SFML/SFML/issues/1586
 # So, SFML would need to be entirely rebuilt for w64devkit specifically,
 # just to support these two minor (std::string-related?) incompatibilities. :-/
@@ -12,9 +12,9 @@ CC_FLAGS=-DDISABLE_AUDIO $CC_FLAGS
 . "${sz_prjdir}/tooling/_setenv.sh"
 
 # Support my "legacy" env. var names:
-prjdir=$SZ_PRJDIR
-src_dir=$SZ_SRC_DIR
-out_dir=$SZ_OUT_DIR
+prjdir=${SZ_PRJDIR:-$sz_prjdir}
+src_dir=${SZ_SRC_DIR:-$sz_src_dir}
+out_dir=${SZ_OUT_DIR:-$sz_out_dir}
 #Why the FUCK did this only work in lowercase?!
 appname=$sz_appname
 

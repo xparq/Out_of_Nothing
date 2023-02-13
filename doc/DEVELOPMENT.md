@@ -12,7 +12,13 @@
 ------------------------------------------------------------------------------
 
 	Set `SFML_LIBROOT=` in `tooling/_setenv.cmd` to match your setup!
-	Make sure the MSVC CLI tools (CL, LINK, NMAKE etc.) are on the path!
+	(And of course anything else, if needed.)
+
+	It really only has been built on Windows (10) yet.
+
+	Make sure the MSVC CLI tools (CL, LINK, NMAKE etc.) are on the PATH.
+	Oh, and an instance of [BusyBox.exe](https://frippery.org/files/busybox/busybox.exe) (but that goes without saying, as
+	everybody has one already, right? ;) )
 
 	Build with static-linked SFML libs:
 
