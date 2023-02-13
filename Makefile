@@ -27,21 +27,35 @@ appname=$(SZ_APPNAME)
 
 EXE=$(out_dir)/$(appname).exe
 
+# The existing actual source subdir(s) should/will match the obj. subdir(s):
+World_subdir=World
+#! Note however, about CL /Fo (i.e. "Fuk output subdirs"):
+#!      "The specified directory must exist, or the compiler reports error D8003.
+#!      The directory isn't created automatically."
+#!
+#! GCC could do it all right, without a hitch. Just sayin...
+
 MODULES=$(out_dir)/main.obj \
-	$(out_dir)/world_sfml.obj \
+	$(out_dir)/$(World_subdir)/world_sfml.obj \
 	$(out_dir)/renderer_sfml.obj \
 	$(out_dir)/engine_sfml.obj \
 	$(out_dir)/hud_sfml.obj \
 	$(out_dir)/audio_sfml.obj \
 	$(out_dir)/TGUI-Clipping.obj \
 
-INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h $(src_dir)/misc/*.hpp
+INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h $(src_dir)/$(World_subdir)/*.hpp $(src_dir)/misc/*.hpp
 
 #CC_FLAGS=$(CC_FLAGS) -nologo
 CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc
 # For GH #15 (don't rely on manually including cfg.h):
 CC_FLAGS=$(CC_FLAGS) -FI cfg.h
-CC_FLAGS=$(CC_FLAGS) -Fo$(out_dir)/ -Fd$(out_dir)/ -c
+
+CC_OUTDIR_FLAGS_=-Fo$(out_dir)/ -Fd$(out_dir)/
+CC_FLAGS_=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_) -c
+
+CC_OUTDIR_FLAGS_World=-Fo$(out_dir)/$(World_subdir)/ -Fd$(out_dir)/$(World_subdir)/
+CC_FLAGS_World=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_World) -c
+
 CC_CMD=cl -nologo
 LINK_CMD=link -nologo
 #!!?? Why does this not do anything useful:
@@ -49,6 +63,7 @@ LINK_CMD=link -nologo
 # Assuming being called from a script that has already set the path:
 BB=busybox
 ECHO=@$(BB) echo
+MKDIR=$(BB) mkdir -p
 
 MAKEFILE=$(prjdir)/Makefile
 
@@ -111,14 +126,17 @@ CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .inc .tmp
 
 CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE)
 
-CC_CMD=$(CC_CMD) $(CC_FLAGS)
-
 
 #-----------------------------------------------------------------------------
 # Rules, finally...
 
 {$(src_dir)/}.cpp{$(out_dir)/}.obj::
-	$(CC_CMD) $<
+	$(CC_CMD) $(CC_FLAGS_) $<
+
+{$(src_dir)/$(World_subdir)/}.cpp{$(out_dir)/$(World_subdir)/}.obj::
+#!!Alas, this doesn't seem to work in inference rules:
+#!!	$(ECHO) SOURCE DRIVE + PATH: %|dpF
+	$(CC_CMD) $(CC_FLAGS_World) $<
 
 ## This non-batch alternative for attempting to generate .h* deps is futile...
 ## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
@@ -147,6 +165,9 @@ DEFAULT:: $(HASH_INCLUDE_FILE)
 	$(ECHO) - $(BUILD_OPT_LABEL) Static-linked SFML
 	$(ECHO)
 !endif
+#!! Make this subdir creation less atrocious:
+	$(MKDIR) $(out_dir)/$(World_subdir)
+
 
 DEFAULT:: $(EXE)
 
@@ -181,4 +202,3 @@ $(out_dir)/main.obj: $(HASH_INCLUDE_FILE)
 
 $(HASH_INCLUDE_FILE):
 	$(BB) sh tooling/git/_create_commit_hash_include_file.sh
-

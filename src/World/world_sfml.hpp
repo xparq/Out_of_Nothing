@@ -8,6 +8,7 @@
 	// using std::shared_ptr;
 #include <vector>
 
+//!!namespace world {...}
 
 //!!Put these into some generic geometry helper thing:
 template <typename T> T distance_2d(T dx, T dy)  { return sqrt(dx*dx + dy*dy); }
@@ -18,7 +19,6 @@ template <typename T> T distance_2d(T x1, T y1, T x2, T y2)
 }
 
 
-class Engine; // for callbacks
 //----------------------------------------------------------------------------
 class World // "Model"
 //----------------------------------------------------------------------------

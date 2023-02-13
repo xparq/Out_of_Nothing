@@ -18,11 +18,6 @@ sfml_libroot=${sfml_libroot:-${sz_prjdir}/../../SW/devel/lib/sfml/current}
 #echo ${sfml_libroot}
 #read x
 
-# Note the ; separators, which would fail with GCC... on everywhere, but Windows... :-/
-export INCLUDE="${sfml_libroot}/include;${INCLUDE}"
-export LIB="${sfml_libroot}/lib;${LIB}"
-export PATH="${sz_prjdir}/tooling;${sfml_libroot}/bin;${PATH}"
-
 export sz_src_dir=${sz_prjdir}/src
 export sz_asset_subdir=asset
 export sz_asset_dir=${sz_prjdir}/${sz_asset_subdir}
@@ -40,3 +35,8 @@ if [ ! -d "${sz_out_dir}" ]; then
 	echo "- ERROR: Failed to setup project env (${sz_out_dir} was not created)!"
 	exit 1
 fi
+
+# Note the ; separators, which would fail with GCC... on everywhere, but Windows... :-/
+export INCLUDE="${sz_src_dir};${sfml_libroot}/include;${INCLUDE}"
+export LIB="${sfml_libroot}/lib;${LIB}"
+export PATH="${sz_prjdir}/tooling;${sfml_libroot}/bin;${PATH}"

@@ -1,7 +1,7 @@
 ﻿#ifndef __ENGINE_SFML__
 #define __ENGINE_SFML__
 
-#include "world_sfml.hpp"
+#include "World/world_sfml.hpp"
 #include "renderer_sfml.hpp"
 #include "hud_sfml.hpp"
 #include "audio_sfml.hpp"
