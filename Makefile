@@ -88,11 +88,15 @@ LIBS=$(LIBS_dll)
 # Debug / Release alternatives:
 CC_FLAGS_DEBUG_1=-Zi -DDEBUG
 CC_FLAGS_DEBUG_0=-O2 -DNDEBUG
+LINK_FLAGS_DEBUG_0=
+LINK_FLAGS_DEBUG_1=-debug
 #!!FFS... CC_FLAGS_DEBUG=$(CC_FLAGS_DEBUG_$(DEBUG))
 !if defined(DEBUG) && $(DEBUG) == 1
 CC_FLAGS_DEBUGMODE=$(CC_FLAGS_DEBUG_1)
+LINK_FLAGS_DEBUGMODE=$(LINK_FLAGS_DEBUG_1)
 !else if $(DEBUG) == 0
 CC_FLAGS_DEBUGMODE=$(CC_FLAGS_DEBUG_0)
+LINK_FLAGS_DEBUGMODE=$(LINK_FLAGS_DEBUG_0)
 !else
 !error Unknown debug mode: $(DEBUG)!
 !endif
@@ -165,7 +169,7 @@ clean:
 
 #-----------------------------------------------------------------------------
 $(EXE):: $(MODULES)
-	$(LINK_CMD) /out:$(EXE) $(MODULES) $(LIBS)
+	$(LINK_CMD) $(LINK_FLAGS_DEBUGMODE) /out:$(EXE) $(MODULES) $(LIBS)
 
 
 ## Sorry, no autodep. yet...
