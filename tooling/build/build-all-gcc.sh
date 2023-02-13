@@ -26,6 +26,7 @@ out_dir=${out_dir:-./tmp}
 #endif
 
 EXE=${out_dir}/${appname}.exe
+#EXE=${out_dir}/${appname}-gcc.exe
 
 MODULES="
 	main
@@ -72,6 +73,6 @@ done
 export CPLUS_INCLUDE_PATH="$INCLUDE;$CPLUS_INCLUDE_PATH"
 export    LIBRARY_PATH="$LIB;$LIBRARY_PATH"
 
-cmd="g++ ${CC_FLAGS} -DSFML_STATIC -L${LIB} $srcs $libs -o${out_dir}/${appname}-gcc.exe"
+cmd="g++ ${CC_FLAGS} -DSFML_STATIC -L${LIB} $srcs $libs -o${EXE}"
 echo $cmd
 $cmd
