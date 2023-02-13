@@ -36,9 +36,9 @@ World_subdir=Model
 #! GCC could do it all right, without a hitch. Just sayin...
 
 MODULES=$(out_dir)/main.obj \
+	$(out_dir)/OON_sfml.obj \
 	$(out_dir)/$(World_subdir)/World.obj \
 	$(out_dir)/renderer_sfml.obj \
-	$(out_dir)/engine_sfml.obj \
 	$(out_dir)/hud_sfml.obj \
 	$(out_dir)/audio_sfml.obj \
 	$(out_dir)/TGUI-Clipping.obj \

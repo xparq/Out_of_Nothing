@@ -1,5 +1,8 @@
 #include "renderer_sfml.hpp"
-#include "engine_sfml.hpp"
+
+#include "OON_sfml.hpp" //!!This stinks: should only use the Model,
+                        //!!perhaps *some* of the _generic_ OON stuff,
+                        //!!and either have or get (as params) any gfx infrastr. resources directly!
 
 #include <SFML/Graphics/CircleShape.hpp>
 
@@ -8,7 +11,6 @@
 #include <cassert>
 //#include <iostream>
 //	using std::cerr;
-
 
 void Renderer_SFML::render(Engine_SFML& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!

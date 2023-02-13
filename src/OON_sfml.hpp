@@ -1,7 +1,7 @@
-﻿#ifndef __ENGINE_SFML__
-#define __ENGINE_SFML__
+#ifndef __OON_SFML__
+#define __OON_SFML__
 
-#include "SimApp.hpp"
+#include "OON.hpp"
 
 #include "renderer_sfml.hpp"
 #include "hud_sfml.hpp"
@@ -12,7 +12,7 @@
 #include <SFML/System/Clock.hpp>
 
 //============================================================================
-class Engine_SFML : public SimApp
+class Engine_SFML : public OON
 {
 friend class Renderer_SFML;
 
@@ -130,4 +130,4 @@ protected:
 	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
 };
 
-#endif // __ENGINE_SFML__
+#endif // __OON_SFML__

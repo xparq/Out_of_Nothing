@@ -29,9 +29,9 @@ EXE=${out_dir}/${appname}.exe
 
 MODULES="
 	main
+	OON_sfml
 	Model/World
 	renderer_sfml
-	engine_sfml
 	hud_sfml
 	audio_sfml
 "
