@@ -1,7 +1,7 @@
 #ifndef __RENDERER_SFML__
 #define __RENDERER_SFML__
 
-#include "Model/world_sfml.hpp"
+#include "Model/World.hpp"
 
 #include <SFML/Graphics/Transformable.hpp>
 #include <SFML/Graphics/Drawable.hpp>

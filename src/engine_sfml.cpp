@@ -1,6 +1,6 @@
 #include "engine_sfml.hpp"
-	using namespace Model;
-	//using Model::World, Model::World_SFML;
+
+using namespace Model;
 
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Context.hpp>
@@ -9,7 +9,6 @@
 
 #include <thread>
 #include <mutex>
-
 #include <memory>
 	using std::make_shared;
 #include <cstdlib>
@@ -33,7 +32,55 @@ namespace sync {
 	std::mutex Updating;
 };
 
+namespace MEMDB {
+	unsigned constexpr MAX_WORLD_SNAPSHOTS = 10;
+	uint16_t saved_slots = 0; // bitfield
+	World world_snapshots[MAX_WORLD_SNAPSHOTS];
+};
 
+
+//============================================================================
+//!! These sould be atomic/blocking, but... meh... ;)
+//!! (These are being called currently from a locked section of the event loop anyway.)
+Model::World& SimApp::get_world() { return world; }
+void SimApp::set_world(Model::World& W) { world = W; }
+
+//----------------------------------------------------------------------------
+void SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
+{
+	using namespace MEMDB;
+	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
+
+	auto slot = slot_id - 1; //! internally they are 0-based tho...
+	decltype(saved_slots) slot_bit = 1 << slot;
+	if (saved_slots && slot_bit) {
+cerr << "- WARNING: Overwriting previously saved state at slot #" << slot_id << "!...\n";
+	}
+	world_snapshots[slot] = get_world(); // :)
+	saved_slots |= slot_bit;
+
+cerr << "Saved to slot #" << slot_id << ".\n";
+}
+
+void SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
+{
+	using namespace MEMDB;
+	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
+
+	auto slot = slot_id - 1; //! internally they are 0-based tho...
+	decltype(saved_slots) slot_bit = 1 << slot;
+	if (! saved_slots && slot_bit) {
+cerr << "- ERROR: No saved state at slot #" << slot_id << " yet!\n";
+		return;
+	}
+
+	//!!Type mismatch here! :-o Dissolve the already negligible last _SFML depdendencies in World!
+	set_world(world_snapshots[slot]); // :)world_snapshots[0] = set_world(); // :)
+cerr << "Loaded from slot " << slot_id << ".\n";
+}
+
+
+//============================================================================
 Engine_SFML::Engine_SFML()
 		// Creating the window right away here (only) to support init-by-constr. for the HUDs:
 		: window(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}), WINDOW_TITLE)
@@ -49,7 +96,6 @@ Engine_SFML::Engine_SFML()
 {
 		_setup();
 }
-
 
 bool Engine_SFML::run()
 {
@@ -330,6 +376,9 @@ void Engine_SFML::event_loop()
 					break;
 
 				case sf::Keyboard::Home: pan_reset(); break;
+//!!NOT YET:
+//!!				case sf::Keyboard::F2:  save_snapshot(); break;
+//!!				case sf::Keyboard::F3:  load_snapshot(); break;
 				case sf::Keyboard::F12: toggle_huds(); break;
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
 
@@ -341,11 +390,6 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 //				default:
 //cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
 				}
-				break;
-
-			case sf::Event::MouseWheelScrolled:
-				if (event.mouseWheelScroll.delta > 0) zoom_in(); else zoom_out();
-//				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
 				break;
 
 			case sf::Event::TextEntered:
@@ -366,6 +410,11 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 				case 'M': toggle_sound_fxs(); break;
 				case '?': toggle_help(); break;
 				}
+				break;
+
+			case sf::Event::MouseWheelScrolled:
+				if (event.mouseWheelScroll.delta > 0) zoom_in(); else zoom_out();
+//				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
 				break;
 
 			case sf::Event::LostFocus:
@@ -424,10 +473,10 @@ size_t Engine_SFML::add_body(World::Body&& obj)
 
 size_t Engine_SFML::add_body()
 {
-	auto r_min = CFG_GLOBE_RADIUS / 10;
-	auto r_max = CFG_GLOBE_RADIUS * 0.5;
-	auto p_range = CFG_GLOBE_RADIUS * 5;
-	auto v_range = CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+	auto r_min = world.CFG_GLOBE_RADIUS / 10;
+	auto r_max = world.CFG_GLOBE_RADIUS * 0.5;
+	auto p_range = world.CFG_GLOBE_RADIUS * 5;
+	auto v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
 
 //cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
 
@@ -473,13 +522,13 @@ void Engine_SFML::remove_bodies(size_t n)
 }
 
 //----------------------------------------------------------------------------
-size_t Engine_SFML::add_player(World_SFML::Body&& obj)
+size_t Engine_SFML::add_player(World::Body&& obj)
 {
 	// These are the only modelling differences for now:
 	obj.add_thrusters();
 	obj.superpower.gravity_immunity = true;
 
-	return add_body(std::forward<World_SFML::Body>(obj));
+	return add_body(std::forward<World::Body>(obj));
 }
 
 void Engine_SFML::remove_player(size_t ndx)
@@ -532,6 +581,7 @@ void Engine_SFML::onResize()
 	help_hud.onResize(window);
 }
 
+
 //----------------------------------------------------------------------------
 void Engine_SFML::_setup()
 {
@@ -542,10 +592,10 @@ void Engine_SFML::_setup()
 	window.setFramerateLimit(cfg::FPS_THROTTLE);
 
 	// globe:
-	globe_ndx = add_player({ .r = CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
+	globe_ndx = add_player({ .r = world.CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
 	// moons:
-	add_body({ .r = CFG_GLOBE_RADIUS/10, .p = {CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -CFG_GLOBE_RADIUS * 2}, .color = 0x14b0c0});
-	add_body({ .r = CFG_GLOBE_RADIUS/7,  .p = {-CFG_GLOBE_RADIUS * 1.6f, +CFG_GLOBE_RADIUS * 1.2f}, .v = {-CFG_GLOBE_RADIUS*1.8, -CFG_GLOBE_RADIUS*1.5},
+	add_body({ .r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2}, .color = 0x14b0c0});
+	add_body({ .r = world.CFG_GLOBE_RADIUS/7,  .p = {-world.CFG_GLOBE_RADIUS * 1.6f, +world.CFG_GLOBE_RADIUS * 1.2f}, .v = {-world.CFG_GLOBE_RADIUS*1.8, -world.CFG_GLOBE_RADIUS*1.5},
 				.color = 0xa0f000});
 
 	clack_sound = audio.add_sound("asset/sound/clack.wav");
@@ -572,7 +622,7 @@ void Engine_SFML::_setup_huds()
 	debug_hud.add("Friction", [this](){ return to_string(this->world.FRICTION); });
 
 //!!This one still crashes (both in debug & release builds)! :-o
-//!!debug_hud.add("globe R", &CFG_GLOBE_RADIUS);
+//!!debug_hud.add("globe R", &world.CFG_GLOBE_RADIUS);
 
 	debug_hud.add("Globe R", &world.bodies[globe_ndx]->r); //!!and also this did earlier! :-o WTF??!?! how come ->mass didn't then?!?!
 	                                                       //!!??and how come it doesn't again after a recompilation?!?!?!?!
@@ -603,6 +653,8 @@ void Engine_SFML::_setup_huds()
 	help_hud.add("mouse wheel (or +/-): zoom");
 	help_hud.add("H:      home in on the globe");
 	help_hud.add("Home:   reset view position (not the zoom)");
+//!!NOT YET:
+//!!help_hud.add("F2/F3:  Save/Load world snapshot");
 	help_hud.add("M:      (un)mute music (Shift+M: same for snd. fx.)");
 	help_hud.add("F11:    toggle fullscreen");
 	help_hud.add("F12:    toggle HUDs");

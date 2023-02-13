@@ -1,5 +1,5 @@
-#include "Model/world_sfml.hpp"
-#include "engine_sfml.hpp"
+#include "Model/World.hpp"
+#include "SimApp.hpp"
 
 #include <cmath> // pow?, sqrt
 #include <iostream> // cerr
@@ -25,9 +25,8 @@ void World::remove_body(size_t ndx)
 	bodies.erase(bodies.begin() + ndx);
 }
 
-
 //----------------------------------------------------------------------------
-void World_SFML::recalc_next_state(float dt, Engine_SFML& engine)
+void World::recalc_next_state(float dt, SimApp& game)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 #ifdef _SKIP_
@@ -46,7 +45,7 @@ auto last_dt = dt;
 
 		// Thrust -- for objects with working thrusters...:
 		if (body->has_thrusters()) {
-			sf::Vector2f F_thr( (-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
+			sfml::Vector2f F_thr( (-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
 							    (-body->thrust_up.thrust_level() + body->thrust_down.thrust_level()) * dt);
 			body->v += (F_thr / body->mass);
 		}
@@ -108,10 +107,10 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				// Call this before processing the collision-induced speed changes,
 				// so that the calc. can take into consideration the relative speed!
 //!!			auto rel_dv = distance_2d(body->v.x, body->v.y, other->v.x, other->v.y);
-				static constexpr float EPS_COLLISION = engine.CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
+				static constexpr float EPS_COLLISION = CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
 				if (abs(distance - (body->r + other->r)) < EPS_COLLISION ) {
 //cerr << "Touch!\n";
-					if (!engine.touch_hook(this, body.get(), other.get())) {
+					if (!game.touch_hook(this, body.get(), other.get())) {
 						;
 					}
 				} else {
@@ -120,7 +119,7 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 
 				// Note: calling the hook before processing the collision!
 				// If the listener returns false, it didn't process it, so we should.
-				if (!engine.collide_hook(this, body.get(), other.get(), distance)) {
+				if (!game.collide_hook(this, body.get(), other.get(), distance)) {
 					//!!Possibly also handle this in a hook, but one of the physics.
 
 					//!! Interestingly, if this spee reset below is disabled, an orbiting moon
@@ -130,21 +129,21 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				}
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
-				engine.interaction_hook(this, Event::Collision, body.get(), other.get());
+				game.interaction_hook(this, Event::Collision, body.get(), other.get());
 
 			} else if (!body->superpower.gravity_immunity) { // process gravity if not colliding
 				float g = G * other->mass / (distance * distance);
-				sf::Vector2f gvect(dx * g, dy * g);
-				//!!should rather be: sf::Vector2f gvect(dx / distance * g, dy / distance * g);
-				sf::Vector2f dv = gvect * dt;
+				sfml::Vector2f gvect(dx * g, dy * g);
+				//!!should rather be: sfml::Vector2f gvect(dx / distance * g, dy / distance * g);
+				sfml::Vector2f dv = gvect * dt;
 				body->v += dv;
 //cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
 			}
 		}
 /*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
 		// Friction:
-		sf::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
-		sf::Vector2f dv = friction_decel * (dt);
+		sfml::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+		sfml::Vector2f dv = friction_decel * (dt);
 		body->v += dv;
 !!*/		
 //cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
@@ -160,12 +159,12 @@ dt = last_dt;
 		auto& body = bodies[i];
 
 		// Friction:
-		sf::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
-		sf::Vector2f dv = friction_decel * (dt);
+		sfml::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+		sfml::Vector2f dv = friction_decel * (dt);
 		body->v += dv;
 		
 		// And finally the positions:
-		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
+		sfml::Vector2f ds(body->v.x * dt, body->v.y * dt);
 		body->p += ds;
 	}
 }

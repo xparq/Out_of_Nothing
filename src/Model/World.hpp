@@ -1,16 +1,23 @@
 #ifndef __WORLD_SFML__
 #define __WORLD_SFML__
 
-#include <SFML/System/Vector2.hpp>
+#include "SFML/Vector2.hpp"
+	//! NOTE: despite the filename, it's NOT being included from SFML, but has
+	//! been ripped out of it and copied here, because it's nicely self-containing,
+	//! so we can keep using it, while still detaching from the *entire* lib itself!
+	//! To avoid duplicate definitions and confusiion, the local version has changed
+	//! the `sf` namespace from to `sfml`!)
+	//! The actual types are of course syntactically incompatible though, so some
+	//! awkward manual (compile-time) fiddling might still be required occasionally.
 
 #include <cmath> // sqrt
 #include <memory>
 	// using std::shared_ptr;
 #include <vector>
 
-class Engine_SFML; //! Sigh, must predeclare it here, outside the namespace...
+class SimApp; //! Sigh, must predeclare it here, outside the namespace...
                    //! Curiously, it's not in the "global" :: namespece either
-                   //! by default, so ::Engine...; wouldn't work there either! :-o
+                   //! by default, so ::SimApp; wouldn't work there either! :-o
 namespace Model {
 
 //!!Put these into some generic geometry helper thing:
@@ -22,11 +29,11 @@ template <typename T> T distance_2d(T x1, T y1, T x2, T y2)
 }
 
 
+//! class SimApp; <- Sigh... See its declaration way up, outside the namespace!
 //----------------------------------------------------------------------------
 class World // "Model"
 //----------------------------------------------------------------------------
 {
-
 public:
 static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
 struct Physics
@@ -45,6 +52,10 @@ struct Physics
 	bool _interact_all = false; // bodies react with each other too, or only with the player(s)
 
 public:
+
+	//------------------------------------------------------------------------
+	void recalc_next_state(float dt, SimApp& app); // ++world
+
 	//------------------------------------------------------------------------
 	struct Thruster {
 		float _thrust_level = 0;
@@ -69,8 +80,8 @@ public:
 		float density{World::DENSITY_ROCK / 2};
 
 		// preset + updated:
-		sf::Vector2f p{0, 0};
-		sf::Vector2f v{0, 0};
+		sfml::Vector2f p{0, 0};
+		sfml::Vector2f v{0, 0};
 		uint32_t color = 0; // RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
 							// The reason is easier add_body() calls here.)
 
@@ -134,14 +145,11 @@ public: // Just allow access for now...:
 		return distance <= obj1->r + obj2->r;
 	}
 
-};
+// Housekeeping...
+	World& operator= (const World& other) = default;
 
-//! class Engine_SFML; <- Sigh... See its declaration way up, outside the namespace!
-//----------------------------------------------------------------------------
-class World_SFML : public World
-{
-public:
-	void recalc_next_state(float dt, Engine_SFML& engine); // ++world
+// "Config." params... (!!being migrated from the Controller)
+	static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
 };
 
 } // namespace
