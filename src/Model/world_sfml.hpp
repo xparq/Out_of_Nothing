@@ -8,7 +8,7 @@
 	// using std::shared_ptr;
 #include <vector>
 
-//!!namespace world {...}
+//namespace Model {
 
 //!!Put these into some generic geometry helper thing:
 template <typename T> T distance_2d(T dx, T dy)  { return sqrt(dx*dx + dy*dy); }
@@ -141,5 +141,5 @@ public:
 	void recalc_next_state(float dt, Engine_SFML& engine); // ++world
 };
 
-
+//} // namespace
 #endif // __WORLD_SFML__

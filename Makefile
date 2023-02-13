@@ -28,7 +28,7 @@ appname=$(SZ_APPNAME)
 EXE=$(out_dir)/$(appname).exe
 
 # The existing actual source subdir(s) should/will match the obj. subdir(s):
-World_subdir=World
+World_subdir=Model
 #! Note however, about CL /Fo (i.e. "Fuk output subdirs"):
 #!      "The specified directory must exist, or the compiler reports error D8003.
 #!      The directory isn't created automatically."

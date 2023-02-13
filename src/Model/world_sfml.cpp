@@ -1,4 +1,4 @@
-#include "World/world_sfml.hpp"
+#include "Model/world_sfml.hpp"
 #include "engine_sfml.hpp"
 
 #include <cmath> // pow?, sqrt
@@ -6,6 +6,8 @@
 #include <cassert>
 
 using namespace std;
+
+//namespace Model {
 
 //----------------------------------------------------------------------------
 size_t World::add_body(Body&& obj)
@@ -166,4 +168,6 @@ dt = last_dt;
 		sf::Vector2f ds(body->v.x * dt, body->v.y * dt);
 		body->p += ds;
 	}
-}
+//}
+
+} // namespace

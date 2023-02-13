@@ -29,7 +29,7 @@ EXE=${out_dir}/${appname}.exe
 
 MODULES="
 	main
-	World/world_sfml
+	Model/world_sfml
 	renderer_sfml
 	engine_sfml
 	hud_sfml
