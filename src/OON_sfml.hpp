@@ -81,9 +81,10 @@ public:
 
 	//------------------------------------------------------------------------
 	void spawn(size_t n = 1);
+	void exhaust_burst();
 
 	//------------------------------------------------------------------------
-	// These are low-level ops, not user/player actions!
+	// These are low-level ops, not meant to be user/player actions!
 	size_t add_body(); // add a random one
 	size_t add_body(Model::World::Body&& obj);
 	void   add_bodies(size_t n);

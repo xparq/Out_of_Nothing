@@ -377,6 +377,9 @@ void OON_sfml::event_loop()
 					break;
 
 				case sf::Keyboard::Home: pan_reset(); break;
+
+				case sf::Keyboard::Pause: toggle_physics(); break;
+
 				case sf::Keyboard::F2:  save_snapshot(); break;
 				case sf::Keyboard::F3:  load_snapshot(); break;
 				case sf::Keyboard::F12: toggle_huds(); break;
@@ -395,6 +398,7 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
+				case ' ': exhaust_burst(); break;
 				case 'N': spawn(); break;
 				case 'n': spawn(100); break;
 				case 'R': remove_body(); break;
@@ -405,14 +409,19 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
 				case 'h': pan_center_body(globe_ndx); break;
-				case ' ': toggle_physics(); break;
 				case 'm': toggle_music(); break;
 				case 'P': sw_fps_throttling(!sw_fps_throttling()); break;
 				case 'M': toggle_sound_fxs(); break;
 				case '?': toggle_help(); break;
 				}
 				break;
-
+/*!!NOT YET, AND NOT FOR SPAWN (#83):
+			case sf::Event::MouseButtonPressed:
+				if (event.mouseButton.button == sf::Mouse::Button::Left) {
+					spawn(100);
+				}
+				break;
+!!*/
 			case sf::Event::MouseWheelScrolled:
 				if (event.mouseWheelScroll.delta > 0) zoom_in(); else zoom_out();
 //				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
@@ -464,6 +473,33 @@ void OON_sfml::spawn(size_t n)
 }
 
 //----------------------------------------------------------------------------
+void OON_sfml::exhaust_burst()
+{
+	auto constexpr n = 60;
+/*!! Too boring with all these small particles:
+	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.3;
+	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 2;
+	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 3; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+*/
+	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.5;
+	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 5;
+	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+	for (int i = 0; i++ < n;) {
+		add_body({
+			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
+					+ r_min,
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
+				(rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
+			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
+				(rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
+			.color = (uint32_t) (float)0xffffff * rand(),
+		});
+	}
+}
+
+//----------------------------------------------------------------------------
 size_t OON_sfml::add_body(World::Body&& obj)
 {
 	auto ndx = world.add_body(std::forward<decltype(obj)>(obj));
@@ -474,20 +510,18 @@ size_t OON_sfml::add_body(World::Body&& obj)
 
 size_t OON_sfml::add_body()
 {
-	auto r_min = world.CFG_GLOBE_RADIUS / 10;
-	auto r_max = world.CFG_GLOBE_RADIUS * 0.5;
-	auto p_range = world.CFG_GLOBE_RADIUS * 5;
-	auto v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-
+	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 3;
+	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 30;
+	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
 //cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
-
 	return add_body({
 		.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
 				+ r_min,
 		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
 		       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
-		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
-		       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
+		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.05f,
+		       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.05f },
 		.color = (uint32_t) (float)0xffffff * rand(),
 	});
 }
@@ -660,13 +694,13 @@ void OON_sfml::_setup_huds()
 //	help_hud.add("");
 	help_hud.add("------- Controls:");
 	help_hud.add("AWSD (or arrows): thrust");
-	help_hud.add("N:      add 100 objects (Shift+N: only 1)");
+	help_hud.add("Space:  add 100 objects (Shift+N: only 1)");
 	help_hud.add("R:      remove 100 objects (Shift+R: only 1)");
 //	help_hud.add("------- Metaphysics:");
 	help_hud.add("I:      toggle all-body interactions");
 	help_hud.add("F:      decrease, Shift+F: increase friction");
 //	help_hud.add("C:      chg. collision mode: pass/stick/bounce");
-	help_hud.add("Space:  pause the physics");
+	help_hud.add("Pause:  pause the physics");
 	help_hud.add("Shift+arrows: pan, Scroll Lock: autoscroll");
 	help_hud.add("mouse wheel (or +/-): zoom");
 	help_hud.add("H:      home in on the globe");
