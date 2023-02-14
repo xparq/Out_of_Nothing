@@ -29,6 +29,7 @@ EXE=$(out_dir)/$(appname).exe
 
 # The existing actual source subdir(s) should/will match the obj. subdir(s):
 World_subdir=Model
+UI_subdir=UI
 #! Note however, about CL /Fo (i.e. "Fuk output subdirs"):
 #!      "The specified directory must exist, or the compiler reports error D8003.
 #!      The directory isn't created automatically."
@@ -39,7 +40,7 @@ MODULES=$(out_dir)/main.obj \
 	$(out_dir)/OON_sfml.obj \
 	$(out_dir)/$(World_subdir)/World.obj \
 	$(out_dir)/renderer_sfml.obj \
-	$(out_dir)/hud_sfml.obj \
+	$(out_dir)/$(UI_subdir)/hud_sfml.obj \
 	$(out_dir)/audio_sfml.obj \
 	$(out_dir)/TGUI-Clipping.obj \
 
@@ -54,7 +55,9 @@ CC_OUTDIR_FLAGS_=-Fo$(out_dir)/ -Fd$(out_dir)/
 CC_FLAGS_=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_) -c
 
 CC_OUTDIR_FLAGS_World=-Fo$(out_dir)/$(World_subdir)/ -Fd$(out_dir)/$(World_subdir)/
+CC_OUTDIR_FLAGS_UI=-Fo$(out_dir)/$(UI_subdir)/ -Fd$(out_dir)/$(UI_subdir)/
 CC_FLAGS_World=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_World) -c
+CC_FLAGS_UI=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_UI) -c
 
 CC_CMD=cl -nologo
 LINK_CMD=link -nologo
@@ -138,6 +141,11 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE)
 #!!	$(ECHO) SOURCE DRIVE + PATH: %|dpF
 	$(CC_CMD) $(CC_FLAGS_World) $<
 
+{$(src_dir)/$(UI_subdir)/}.cpp{$(out_dir)/$(UI_subdir)/}.obj::
+#!!Alas, this doesn't seem to work in inference rules:
+#!!	$(ECHO) SOURCE DRIVE + PATH: $(%|dpF)<
+	$(CC_CMD) $(CC_FLAGS_UI) $<
+
 ## This non-batch alternative for attempting to generate .h* deps is futile...
 ## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
 ## illegal in batch rules!)
@@ -165,8 +173,10 @@ DEFAULT:: $(HASH_INCLUDE_FILE)
 	$(ECHO) - $(BUILD_OPT_LABEL) Static-linked SFML
 	$(ECHO)
 !endif
-#!! Make this subdir creation less atrocious:
+#!! Make this hamfisted subdir creation less atrocious:
+#!! (Not that the rest of the "tree management" is any less lame!)
 	$(MKDIR) $(out_dir)/$(World_subdir)
+	$(MKDIR) $(out_dir)/$(UI_subdir)
 
 
 DEFAULT:: $(EXE)
@@ -179,15 +189,18 @@ clean:
 # FFS... Since migrating the build script to BB sh, the `rm` command started
 # failing... It can't find the file for some reason -- the same file that's printed
 # I could delete, with the same printed BB command, from the cmdline all right! :-o
-# Is it the f* confusing dual globbing behavior again?...
+# Is it the confusing "stealth" dual globbing behavior again?...
 # Not likely: globbing would only be disabled if BB_GLOBBING=0, which shouldn't be
 # the case here... Right? RIGHT???
 # ...Oh no!... It really is! (Yeah, I did consider that we are running inside BB sh,
-# but assumed sh resets it when returning back to CMD!... :-o )
+# but assumed it would reset it when launching a "foreign" process like CMD... :-o )
 	@set BB_GLOBBING=1
 	@for %x in ($(CLEANED_OUTPUT_EXT)) do \
-		@if exist "$(out_dir)/*%x" \
-			$(BB) rm "$(out_dir)/*%x"
+		@$(BB) find "$(out_dir)" -type f -name "*%x" -exec $(BB) rm "{}" ^;
+#! This didn't work, as `rm -r dir/*x` is too dumb to recurse below dir despite -r
+#! (no matter the BB_GLOBBING state):
+#		@if exist "$(out_dir)/*%x" \
+#			$(BB) rm -r "$(out_dir)/*%x"
 
 #-----------------------------------------------------------------------------
 $(EXE):: $(MODULES)

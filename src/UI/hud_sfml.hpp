@@ -20,6 +20,8 @@
 	//using std::exchange;
 
 
+namespace UI {
+
 class HUD
 {
 public:
@@ -161,4 +163,5 @@ protected:
 	uint32_t _bgcolor = DEFAULT_BACKGROUND_COLOR;
 };
 
+}; // namespace
 #endif // __HUD_SFML__

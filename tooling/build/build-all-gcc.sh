@@ -33,7 +33,7 @@ MODULES="
 	OON_sfml
 	Model/World
 	renderer_sfml
-	hud_sfml
+	UI/hud_sfml
 	audio_sfml
 "
 

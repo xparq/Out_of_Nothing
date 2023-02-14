@@ -1,7 +1,5 @@
 #include "OON_sfml.hpp"
 
-using namespace Model;
-
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Context.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -17,8 +15,9 @@ using namespace Model;
 	using std::cerr, std::endl;
 #include <cassert>
 
+using namespace Model;
+using namespace UI;
 using namespace std;
-
 
 //
 // "App-local global" implementation-level (const) params...

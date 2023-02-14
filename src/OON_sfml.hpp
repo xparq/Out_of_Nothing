@@ -4,7 +4,7 @@
 #include "OON.hpp"
 
 #include "renderer_sfml.hpp"
-#include "hud_sfml.hpp"
+#include "UI/hud_sfml.hpp"
 #include "audio_sfml.hpp"
 
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -115,8 +115,8 @@ protected:
 	Renderer_SFML renderer;
 
 #ifndef DISABLE_HUD
-	HUD_SFML    debug_hud;
-	HUD_SFML    help_hud;
+	UI::HUD_SFML    debug_hud;
+	UI::HUD_SFML    help_hud;
 	bool _show_huds = true;
 #endif
 

@@ -19,6 +19,8 @@
 
 using namespace std;
 
+namespace UI {
+
 //----------------------------------------------------------------------------
 void HUD_SFML::_setup(sf::RenderWindow& window)
 {
@@ -170,3 +172,5 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 
 //	window.setView(saved_view);
 }
+
+}; // namespace
