@@ -51,8 +51,8 @@ public:
 	virtual Model::World& get_world() /*const*/;
 	virtual void set_world(Model::World&);
 
-	virtual void save_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
-	virtual void load_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
+	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
+	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
 
 //----------------------------------------------------------------------------
 // Model event hooks (callbacks):

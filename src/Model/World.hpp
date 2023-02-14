@@ -21,6 +21,8 @@ class SimApp; //! Sigh, must predeclare it here, outside the namespace...
 namespace Model {
 
 //!!Put these into some generic geometry helper thing:
+	//!! There might also be a need for a "fast" version that's only used to
+	//!! sort/select/differentiate objects by distance, so the sqrt can be skipped!
 template <typename T> T distance_2d(T dx, T dy)  { return sqrt(dx*dx + dy*dy); }
 template <typename T> T distance_2d(T x1, T y1, T x2, T y2)
 {
@@ -28,14 +30,14 @@ template <typename T> T distance_2d(T x1, T y1, T x2, T y2)
 	return distance_2d(dx*dx, dy*dy);
 }
 
+constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
 
-//! class SimApp; <- Sigh... See its declaration way up, outside the namespace!
+
 //----------------------------------------------------------------------------
-class World // "Model"
-//----------------------------------------------------------------------------
+class World
 {
 public:
-static constexpr float MyNaN = 2e31f; // to avoid the pain of using the std NAN...
+
 struct Physics
 {
 //	...
@@ -146,6 +148,8 @@ public: // Just allow access for now...:
 	}
 
 // Housekeeping...
+	World() = default;
+	World(const World& other) = default;
 	World& operator= (const World& other) = default;
 
 // "Config." params... (!!being migrated from the Controller)

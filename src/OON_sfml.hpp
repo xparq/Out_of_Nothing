@@ -87,7 +87,7 @@ public:
 	void   add_bodies(size_t n);
 	void   remove_body(size_t ndx);
 	void   remove_body(); // delete a random one
-	void   remove_bodies(size_t n);
+	void   remove_bodies(size_t n = -1); // -1 -> all
 
 	size_t add_player(Model::World::Body&& obj); //!! override;
 	void   remove_player(size_t ndx) override;
@@ -97,6 +97,7 @@ public:
 	void _setup_huds();
 
 	void onResize();
+	virtual bool load_snapshot(unsigned slot = 1) override;
 
 //------------------------------------------------------------------------
 // Housekeeping

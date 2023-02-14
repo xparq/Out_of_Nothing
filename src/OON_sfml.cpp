@@ -46,7 +46,7 @@ Model::World& SimApp::get_world() { return world; }
 void SimApp::set_world(Model::World& W) { world = W; }
 
 //----------------------------------------------------------------------------
-void SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
+bool SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
 {
 	using namespace MEMDB;
 	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
@@ -59,10 +59,11 @@ cerr << "- WARNING: Overwriting previously saved state at slot #" << slot_id << 
 	world_snapshots[slot] = get_world(); // :)
 	saved_slots |= slot_bit;
 
-cerr << "Saved to slot #" << slot_id << ".\n";
+cerr << "Model world saved to slot #" << slot_id << ".\n";
+	return true;
 }
 
-void SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
+bool SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 {
 	using namespace MEMDB;
 	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
@@ -71,12 +72,12 @@ void SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 	decltype(saved_slots) slot_bit = 1 << slot;
 	if (! saved_slots && slot_bit) {
 cerr << "- ERROR: No saved state at slot #" << slot_id << " yet!\n";
-		return;
+		return false;
 	}
 
-	//!!Type mismatch here! :-o Dissolve the already negligible last _SFML depdendencies in World!
-	set_world(world_snapshots[slot]); // :)world_snapshots[0] = set_world(); // :)
-cerr << "Loaded from slot " << slot_id << ".\n";
+	set_world(world_snapshots[slot]);
+cerr << "Model world loaded from slot " << slot_id << ".\n";
+	return true;
 }
 
 
@@ -377,9 +378,8 @@ void OON_sfml::event_loop()
 					break;
 
 				case sf::Keyboard::Home: pan_reset(); break;
-//!!NOT YET:
-//!!				case sf::Keyboard::F2:  save_snapshot(); break;
-//!!				case sf::Keyboard::F3:  load_snapshot(); break;
+				case sf::Keyboard::F2:  save_snapshot(); break;
+				case sf::Keyboard::F3:  load_snapshot(); break;
 				case sf::Keyboard::F12: toggle_huds(); break;
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
 
@@ -517,8 +517,9 @@ cerr <<	"No more \"free\" items to delete.\n";
 	remove_body(ndx);
 }
 
-void OON_sfml::remove_bodies(size_t n)
+void OON_sfml::remove_bodies(size_t n/* = -1*/)
 {
+	if (n == (unsigned)-1) n = world.bodies.size();
 	while (n--) remove_body();
 }
 
@@ -654,8 +655,7 @@ void OON_sfml::_setup_huds()
 	help_hud.add("mouse wheel (or +/-): zoom");
 	help_hud.add("H:      home in on the globe");
 	help_hud.add("Home:   reset view position (not the zoom)");
-//!!NOT YET:
-//!!help_hud.add("F2/F3:  Save/Load world snapshot");
+	help_hud.add("F2/F3:  Save/Load world snapshot");
 	help_hud.add("M:      (un)mute music (Shift+M: same for snd. fx.)");
 	help_hud.add("F11:    toggle fullscreen");
 	help_hud.add("F12:    toggle HUDs");
@@ -676,3 +676,33 @@ void OON_sfml::up_thruster_stop()     { world.bodies[globe_ndx]->thrust_up.thrus
 void OON_sfml::down_thruster_stop()   { world.bodies[globe_ndx]->thrust_down.thrust_level(0); }
 void OON_sfml::left_thruster_stop()   { world.bodies[globe_ndx]->thrust_left.thrust_level(0); }
 void OON_sfml::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_level(0); }
+
+
+bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
+{
+	// This should load the model back, but can't rebuild the rendering state:
+	if (!SimApp::load_snapshot(slot_id)) {
+		return false;
+	}
+
+	//!! NOPE: set_world(world_snapshots[slot]);
+	//! Alas, somebody must resync the renderer, too!... :-/
+/* A cleaner, but slower way would be this:
+	//! So...
+	//! 1. Halt everything...
+	//     DONE, for now, by the event handler!
+	//! 2. Purge everything...
+	remove_bodies();
+	//! 3. add the bodies back:
+	for (auto& bodyptr : world_snapshots[slot]) {
+		add_body(*bodyptr);
+	}
+*/
+// Faster, more under-the-hood method:
+	renderer.reset();
+	for (size_t n = 0; n < world.bodies.size(); ++n) {
+		renderer.create_cached_body_shape(*this, *world.bodies[n], n);
+	}
+cerr << "Game state restored from slot " << slot_id << ".\n";
+	return true;
+}

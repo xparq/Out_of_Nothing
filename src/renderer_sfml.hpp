@@ -10,28 +10,24 @@
 #include <memory> // shared_ptr
 
 
-class OON_sfml;
-
 //----------------------------------------------------------------------------
-class Renderer_SFML // "View"
+class Renderer
 {
+public:
+	virtual void reset() = 0;
+};
+
+
+class OON_sfml;
 //----------------------------------------------------------------------------
+class Renderer_SFML : public Renderer// "View"
+{
 public:
 	static constexpr auto VIEW_WIDTH  = 1024;
 	static constexpr auto VIEW_HEIGHT = 768;
 
 	static constexpr const auto ALPHA_ACTIVE = 255;
 	static constexpr auto ALPHA_INACTIVE = 127;
-
-// Input params
-	uint8_t p_alpha;
-
-// Internals:
-//!!...not quite yet -- just allow access:
-public:
-	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
-	//!!misnomer alert below! should be sg. like "body_images" (as they are not just any Transformables!!! -- these are linked to physical bodies!):
-	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 
 // Ops
 	void render(OON_sfml& game); // can't keep it inline here: uses the game object!
@@ -59,12 +55,19 @@ public:
 		}
 	}
 
+	void reset() override;
 
 // Housekeeping
-	Renderer_SFML()
-	      :	p_alpha(ALPHA_ACTIVE)
-	{
-	}
+	Renderer_SFML() = default;
+
+// Rendering params:
+	uint8_t p_alpha = ALPHA_ACTIVE;
+
+// Internals:
+protected:
+	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
+	//!!misnomer alert below! should be sg. like "body_images" (as they are not just any Transformables!!! -- these are linked to physical bodies!):
+	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
 };
 
 #endif // __RENDERER_SFML__
