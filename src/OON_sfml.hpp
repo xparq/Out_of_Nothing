@@ -77,6 +77,8 @@ public:
 
 	void toggle_fullscreen();
 
+	bool sw_fps_throttling(int newstate = -1); // -1 means read; std::optional can't help with omitting it altogether
+
 	//------------------------------------------------------------------------
 	void spawn(size_t n = 1);
 

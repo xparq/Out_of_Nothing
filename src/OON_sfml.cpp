@@ -153,7 +153,7 @@ void OON_sfml::update_thread_main_loop()
 			updates_for_next_frame();
 			//!!?? Why is this redundant?!
 			if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+				cerr << "\n- [update_thread_main_loop] sf::setActive(true) failed!\n";
 //?				terminate();
 //?				return;
 			}
@@ -408,6 +408,7 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 				case 'h': pan_center_body(globe_ndx); break;
 				case ' ': toggle_physics(); break;
 				case 'm': toggle_music(); break;
+				case 'P': sw_fps_throttling(!sw_fps_throttling()); break;
 				case 'M': toggle_sound_fxs(); break;
 				case '?': toggle_help(); break;
 				}
@@ -551,8 +552,10 @@ void OON_sfml::toggle_fullscreen()
 {
 	static bool is_full = false;
 
+	//! NOTE: We're being called here from a locked section of the event loop.
+
 	if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
 	}
 
 	is_full = !is_full;
@@ -562,12 +565,12 @@ cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 		WINDOW_TITLE,
 		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
 	);
-	window.setFramerateLimit(cfg::FPS_THROTTLE);
+	sw_fps_throttling(sw_fps_throttling()); // awkward way to reactivate the last thr. state
 
 	onResize();
 
 	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
 	}
 
 //	if (!(is_full = !is_full) /* :) */) {
@@ -575,6 +578,17 @@ cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 //	} else {
 //		// windowed
 //	}
+}
+
+bool OON_sfml::sw_fps_throttling(int newstate/* = -1*/)
+{
+	static bool state = true;
+
+	if (newstate != -1) {
+		state = newstate;
+		window.setFramerateLimit(state ? cfg::FPS_THROTTLE : 0);
+	}
+	return state;
 }
 
 void OON_sfml::onResize()
@@ -591,7 +605,7 @@ void OON_sfml::_setup()
 	//! But... it will also be recreated each time the fullscreen/windowed
 	//! mode is toggled, so this will need to be repeated after every
 	//! `window.create` call (i.e. in `toggle_fullscreen`):
-	window.setFramerateLimit(cfg::FPS_THROTTLE);
+	sw_fps_throttling(true);
 
 	// globe:
 	globe_ndx = add_player({ .r = world.CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
@@ -645,20 +659,26 @@ void OON_sfml::_setup_huds()
 
 //	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
 //	help_hud.add("");
+	help_hud.add("------- Controls:");
 	help_hud.add("AWSD (or arrows): thrust");
 	help_hud.add("N:      add 100 objects (Shift+N: only 1)");
 	help_hud.add("R:      remove 100 objects (Shift+R: only 1)");
+//	help_hud.add("------- Metaphysics:");
 	help_hud.add("I:      toggle all-body interactions");
 	help_hud.add("F:      decrease, Shift+F: increase friction");
+//	help_hud.add("C:      chg. collision mode: pass/stick/bounce");
 	help_hud.add("Space:  pause the physics");
 	help_hud.add("Shift+arrows: pan, Scroll Lock: autoscroll");
 	help_hud.add("mouse wheel (or +/-): zoom");
 	help_hud.add("H:      home in on the globe");
-	help_hud.add("Home:   reset view position (not the zoom)");
-	help_hud.add("F2/F3:  Save/Load world snapshot");
+	help_hud.add("Home:   go to the Home position (zoom not chg.)");
+	help_hud.add("------- Meta:"); //!!Find another label, like "Console" or "Admin"...
+	help_hud.add("F2/F3:  save/load world snapshot");
 	help_hud.add("M:      (un)mute music (Shift+M: same for snd. fx.)");
+	help_hud.add("Shft+P: toggle FPS throttling (lower CPU load)");
 	help_hud.add("F11:    toggle fullscreen");
 	help_hud.add("F12:    toggle HUDs");
+	help_hud.add("");
 	help_hud.add("Esc:    quit");
 	help_hud.add("");
 	help_hud.add("Command-line options: oon.exe /?");
@@ -688,18 +708,20 @@ bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 	//!! NOPE: set_world(world_snapshots[slot]);
 	//! Alas, somebody must resync the renderer, too!... :-/
 /* A cleaner, but slower way would be this:
-	//! So...
 	//! 1. Halt everything...
 	//     DONE, for now, by the event handler!
 	//! 2. Purge everything...
 	remove_bodies();
-	//! 3. add the bodies back:
+	//! 3. Add the bodies back...
 	for (auto& bodyptr : world_snapshots[slot]) {
 		add_body(*bodyptr);
 	}
-*/
-// Faster, more under-the-hood method:
+*/// Faster, more under-the-hood method:
+	//! 1. Halt everything...
+	//     DONE, for now, by the event handler!
+	//! 2. Purge the renderer only...
 	renderer.reset();
+	//! 3. Recreate the shapes...
 	for (size_t n = 0; n < world.bodies.size(); ++n) {
 		renderer.create_cached_body_shape(*this, *world.bodies[n], n);
 	}
