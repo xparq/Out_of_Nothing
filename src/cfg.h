@@ -3,8 +3,8 @@
 //!
 //! To support not including this at all, the original #defines have been
 //! negated, so now the defaults give the best experience.
-//! Also, only define them if they aren't already, to allow external control
-//! via build.
+//! (Also, only defining them here if they haven't been already, to allow
+//! controlling them from the build.)
 
 #ifndef __CFG_H_
 #define __CFG_H_
