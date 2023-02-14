@@ -44,7 +44,8 @@ MODULES=$(out_dir)/main.obj \
 	$(out_dir)/audio_sfml.obj \
 	$(out_dir)/TGUI-Clipping.obj \
 
-INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h $(src_dir)/$(World_subdir)/*.hpp $(src_dir)/misc/*.hpp
+INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h \
+	$(src_dir)/$(World_subdir)/*.hpp $(src_dir)/$(UI_subdir)/*.hpp $(src_dir)/misc/*.hpp
 
 #CC_FLAGS=$(CC_FLAGS) -nologo
 CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc
@@ -175,8 +176,8 @@ DEFAULT:: $(HASH_INCLUDE_FILE)
 !endif
 #!! Make this hamfisted subdir creation less atrocious:
 #!! (Not that the rest of the "tree management" is any less lame!)
-	$(MKDIR) $(out_dir)/$(World_subdir)
-	$(MKDIR) $(out_dir)/$(UI_subdir)
+	@$(MKDIR) $(out_dir)/$(World_subdir)
+	@$(MKDIR) $(out_dir)/$(UI_subdir)
 
 
 DEFAULT:: $(EXE)
