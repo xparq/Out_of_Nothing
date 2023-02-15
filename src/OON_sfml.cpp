@@ -510,19 +510,19 @@ size_t OON_sfml::add_body(World::Body&& obj)
 
 size_t OON_sfml::add_body()
 {
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 9;
 	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 3;
 	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 30;
 	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
 //cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
 	return add_body({
-		.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
+		.r = (float) (((float)rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
 				+ r_min,
 		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
 		       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
 		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.05f,
 		       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.05f },
-		.color = (uint32_t) (float)0xffffff * rand(),
+		.color = 0xffffff & ((uint32_t) rand() * rand()),
 	});
 }
 
@@ -560,9 +560,10 @@ void OON_sfml::remove_bodies(size_t n/* = -1*/)
 //----------------------------------------------------------------------------
 size_t OON_sfml::add_player(World::Body&& obj)
 {
-	// These are the only modelling differences for now:
+	// These are the player modelling differences:
 	obj.add_thrusters();
 	obj.superpower.gravity_immunity = true;
+	obj.superpower.free_color = true;
 
 	return add_body(std::forward<World::Body>(obj));
 }
@@ -571,11 +572,20 @@ void OON_sfml::remove_player(size_t ndx)
 {ndx;
 }
 
+
+//----------------------------------------------------------------------------
 bool OON_sfml::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 {w;
 	if (obj1->is_player() || obj2->is_player()) {
 		audio.play_sound(clack_sound);
 	}
+
+	obj1->T += 100;
+	obj2->T += 100;
+
+	obj1->recalc();
+	obj2->recalc();
+
 	return false; //!!this is not used yet, but I will forget this when it gets to be... :-/
 }
 
@@ -641,11 +651,12 @@ void OON_sfml::_setup()
 	sw_fps_throttling(true);
 
 	// globe:
-	globe_ndx = add_player({ .r = world.CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xb02000});
+	globe_ndx = add_player({ .r = world.CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
 	// moons:
-	add_body({ .r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2}, .color = 0x14b0c0});
+	add_body({ .r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2},
+				.color = 0xff2020});
 	add_body({ .r = world.CFG_GLOBE_RADIUS/7,  .p = {-world.CFG_GLOBE_RADIUS * 1.6f, +world.CFG_GLOBE_RADIUS * 1.2f}, .v = {-world.CFG_GLOBE_RADIUS*1.8, -world.CFG_GLOBE_RADIUS*1.5},
-				.color = 0xa0f000});
+				.color = 0x3060ff});
 
 	clack_sound = audio.add_sound("asset/sound/clack.wav");
 
@@ -666,20 +677,17 @@ void OON_sfml::_setup_huds()
 	//!!?? in this generic pointer passing context?!
 	debug_hud.add("Press ? for help...");
 
-	debug_hud.add("FPS", [this](){ return to_string(1 / (float)this->avg_frame_delay); });
+	debug_hud.add("FPS",        [this](){ return to_string(1 / (float)this->avg_frame_delay); });
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
-	debug_hud.add("Friction", [this](){ return to_string(this->world.FRICTION); });
+	debug_hud.add("Friction",   [this](){ return to_string(this->world.FRICTION); });
 
-//!!This one still crashes (both in debug & release builds)! :-o
-//!!debug_hud.add("globe R", &world.CFG_GLOBE_RADIUS);
-
-	debug_hud.add("Globe R", &world.bodies[globe_ndx]->r); //!!and also this did earlier! :-o WTF??!?! how come ->mass didn't then?!?!
-	                                                       //!!??and how come it doesn't again after a recompilation?!?!?!?!
-	debug_hud.add("      m", &world.bodies[globe_ndx]->mass);
-	debug_hud.add("      x",    &world.bodies[globe_ndx]->p.x);
-	debug_hud.add("      y",    &world.bodies[globe_ndx]->p.y);
-	debug_hud.add("      vx",   &world.bodies[globe_ndx]->v.x);
-	debug_hud.add("      vy",   &world.bodies[globe_ndx]->v.y);
+	debug_hud.add("Globe T",  &world.bodies[globe_ndx]->T);
+//	debug_hud.add("      R",  &world.bodies[globe_ndx]->r);
+	debug_hud.add("      m",  &world.bodies[globe_ndx]->mass);
+	debug_hud.add("      x",  &world.bodies[globe_ndx]->p.x);
+	debug_hud.add("      y",  &world.bodies[globe_ndx]->p.y);
+	debug_hud.add("      vx", &world.bodies[globe_ndx]->v.x);
+	debug_hud.add("      vy", &world.bodies[globe_ndx]->v.y);
 
 	debug_hud.add("All-body interactions", &world._interact_all);
 

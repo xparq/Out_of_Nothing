@@ -40,6 +40,18 @@ public:
 
 struct Physics
 {
+	static /*constexpr*/ float T_to_BV(float T); //!! just faking something simple
+	// "Hot stars have temperatures around 60,000 K while cold stars have temperatures around 3,000 K"
+	// But the hottest is around 200000 K.
+	// So... Let's just stick to a 0 - 100000 K range
+
+	// Color temp. conversion from B-V val.:
+	// https://stackoverflow.com/a/22630970/1479945:
+	static /*constexpr*/ float BV_to_T_and_RGB(float bv, uint32_t* p_color = nullptr); // BV <-0.4,+2.0> -> RGB <0,1>
+	//! The result must be shitfed <<8 for SFML's sf::Color!
+	//! E.g. that's exactly what the OON renderer does, so it's
+	//! fine to just store this directly in the objects.
+
 //	...
 };
 // Physics constants -- !!MOVE INTO Physics! --:
@@ -76,16 +88,23 @@ public:
 	//! Inner class of World, because it depends on the physics (e.g. constants).
 	{
 		//!!ObjConfig cfg; // basically the obj. type
+		struct {
+			bool gravity_immunity = false;
+			bool free_color = false; // T doesn't affect color
+		} superpower;
 
-		// preset:
+		// Preset:
 		float r = 0;
-		float density{World::DENSITY_ROCK / 2};
-
-		// preset + updated:
+		float density{World::DENSITY_ROCK / 2}; //!!low-density objects should look like Swiss cheese! ;)
 		sfml::Vector2f p{0, 0};
 		sfml::Vector2f v{0, 0};
-		uint32_t color = 0; // RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
-							// The reason is easier add_body() calls here.)
+		float T = 0; // affected by various events; represented by color
+		float lifetime = 300; // 5 min...
+		uint32_t color = 0; // if left 0, it'll recalculated from T (if not 0)
+				// RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
+				// The reason is easier add_body() calls here.)
+		// Always computed:
+		float mass;
 
 		//!! Ugly hack to start generalizing object compositions & to allow the world
 		//!! to calc. propulsion without consulting the controller. (I mean this is still
@@ -99,16 +118,9 @@ public:
 		Thruster thrust_left{ MyNaN };
 		Thruster thrust_right {MyNaN };
 
-		struct {
-			bool gravity_immunity = false;
-		} superpower;
-
-		// computed only:
-		float mass;
-
-		//! Can't do this to support designated inits: Body() : mass(powf(r, 3) * density) {}
-		//! So... (see add_body()):
-		void precalc() { mass = powf(r, 3) * density; }
+		//! Alas, can't do this with designated inits: Body() : mass(powf(r, 3) * density) {} :-(
+		//! So... (see e.g. add_body()):
+		void recalc();
 
 		// Ops.:
 		bool has_thrusters() { return thrust_up.thrust_level() != MyNaN; }
@@ -137,7 +149,6 @@ public: // Just allow access for now...:
 	// Note: a real coll. calc. (e.g. bounding box intersect.) may not need to the distance to be calculated.
 	{obj1, obj2;
 		//auto distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
-
 		return false;
 	}
 
