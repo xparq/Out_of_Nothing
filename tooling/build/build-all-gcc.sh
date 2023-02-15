@@ -30,6 +30,8 @@ EXE=${out_dir}/${appname}.exe
 
 MODULES="
 	main
+	SimApp
+	OON
 	OON_sfml
 	Model/World
 	renderer_sfml

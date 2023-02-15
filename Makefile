@@ -37,6 +37,8 @@ UI_subdir=UI
 #! GCC could do it all right, without a hitch. Just sayin...
 
 MODULES=$(out_dir)/main.obj \
+	$(out_dir)/SimApp.obj \
+	$(out_dir)/OON.obj \
 	$(out_dir)/OON_sfml.obj \
 	$(out_dir)/$(World_subdir)/World.obj \
 	$(out_dir)/renderer_sfml.obj \
