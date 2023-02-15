@@ -651,7 +651,7 @@ void OON_sfml::_setup()
 	sw_fps_throttling(true);
 
 	// globe:
-	globe_ndx = add_player({ .r = world.CFG_GLOBE_RADIUS, .density = world.DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+	globe_ndx = add_player({ .r = world.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
 	// moons:
 	add_body({ .r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2},
 				.color = 0xff2020});
@@ -667,10 +667,10 @@ void OON_sfml::_setup()
 	}
 	*/
 
-	_setup_huds();
+	_setup_UI();
 }
 
-void OON_sfml::_setup_huds()
+void OON_sfml::_setup_UI()
 {
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
@@ -727,17 +727,6 @@ void OON_sfml::_setup_huds()
 	help_hud.active(true);
 #endif
 }
-
-void OON_sfml::up_thruster_start()    { world.bodies[globe_ndx]->thrust_up.thrust_level(CFG_THRUST_FORCE); }
-void OON_sfml::down_thruster_start()  { world.bodies[globe_ndx]->thrust_down.thrust_level(CFG_THRUST_FORCE); }
-void OON_sfml::left_thruster_start()  { world.bodies[globe_ndx]->thrust_left.thrust_level(CFG_THRUST_FORCE); }
-void OON_sfml::right_thruster_start() { world.bodies[globe_ndx]->thrust_right.thrust_level(CFG_THRUST_FORCE); }
-
-void OON_sfml::up_thruster_stop()     { world.bodies[globe_ndx]->thrust_up.thrust_level(0); }
-void OON_sfml::down_thruster_stop()   { world.bodies[globe_ndx]->thrust_down.thrust_level(0); }
-void OON_sfml::left_thruster_stop()   { world.bodies[globe_ndx]->thrust_left.thrust_level(0); }
-void OON_sfml::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_level(0); }
-
 
 bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 {

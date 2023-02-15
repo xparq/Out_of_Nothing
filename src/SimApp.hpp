@@ -13,7 +13,9 @@ class SimApp // "Controller"
 protected:
 	Model::World world;
 
-// Config
+//----------------------------------------------------------------------------
+// Config (static)...
+//----------------------------------------------------------------------------
 public:
 	//! See also: World physics! The specific values here depend on the laws there,
 	//! so replacing the physics may very well invalidate these! :-o
@@ -29,13 +31,9 @@ public:
 
 	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
 
-// Player-controls (state)
-public:
-	enum UIEventState { IDLE, BUSY, EVENT_READY };
-	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
-
 //----------------------------------------------------------------------------
-// Base API:
+// Base API...
+//----------------------------------------------------------------------------
 public:
 	auto toggle_physics()  { _paused = !_paused; pause_physics(_paused); }
 	auto physics_paused()  { return _paused; }
@@ -54,14 +52,14 @@ public:
 	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
 	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
 
-//----------------------------------------------------------------------------
-// Model event hooks (callbacks):
-/*
+	//----------------------------------------------------------------------------
+	// Model event hooks (callbacks)
+	/*
 	virtual bool collide_hook(World* w, World::Body* obj1, World::Body* obj2)
 	{w, obj1, obj2;
 		return false;
 	}
-*/
+	*/
 	virtual bool collide_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2, float distance);
 	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2);
 
@@ -71,18 +69,24 @@ public:
 	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...);
 
 //------------------------------------------------------------------------
-// Housekeeping
+// Housekeeping...
+//----------------------------------------------------------------------------
 public:
 	SimApp() {}
 	SimApp(const SimApp&) = delete;
 	virtual ~SimApp() {}
 
 //------------------------------------------------------------------------
-// Data...
+// Data / Internals...
+//----------------------------------------------------------------------------
 protected:
 	bool _terminated = false;
 	bool _paused = false;
 	RollingAverage<5> avg_frame_delay;
+
+	// Player-controls (transient state)
+	enum UIEventState { IDLE, BUSY, EVENT_READY };
+	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
 
 	enum KBD_STATE {
 		SHIFT, LSHIFT, RSHIFT,

@@ -13,12 +13,14 @@
 //	using std::cerr;
 
 
+//----------------------------------------------------------------------------
 void Renderer_SFML::reset()
 {
 	shapes_to_change.clear();
 	shapes_to_draw.clear();
 }
 
+//----------------------------------------------------------------------------
 void Renderer_SFML::render(OON_sfml& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
@@ -40,6 +42,7 @@ void Renderer_SFML::render(OON_sfml& game)
 	}
 }
 
+//----------------------------------------------------------------------------
 void Renderer_SFML::draw(OON_sfml& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
@@ -52,6 +55,7 @@ void Renderer_SFML::draw(OON_sfml& game)
 	}
 }
 
+//----------------------------------------------------------------------------
 void Renderer_SFML::draw_paused_banner(OON_sfml& game)
 {
 	sf::Font font;
@@ -73,7 +77,7 @@ void Renderer_SFML::draw_paused_banner(OON_sfml& game)
 	game.window.draw(banner);
 }
 
-
+//----------------------------------------------------------------------------
 void Renderer_SFML::create_cached_body_shape(const OON_sfml& game, const Model::World::Body& body, size_t body_ndx /*= (size_t)-1*/)
 {
 	// There must be objects actually added already:
@@ -93,6 +97,7 @@ void Renderer_SFML::create_cached_body_shape(const OON_sfml& game, const Model::
 	assert(shapes_to_change.size() == body_ndx + 1);
 }
 
+//----------------------------------------------------------------------------
 void Renderer_SFML::delete_cached_body_shape(const OON_sfml& game, size_t body_ndx)
 {game;
 	assert(body_ndx != (size_t)-1);

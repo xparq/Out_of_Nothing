@@ -1,4 +1,4 @@
-﻿tmp/
+tmp/
 *.tmp
 
 out/
@@ -20,3 +20,6 @@ release/
 _release/
 
 import/
+
+*.lock
+cache/

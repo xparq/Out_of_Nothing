@@ -40,6 +40,8 @@ MODULES=$(out_dir)/main.obj \
 	$(out_dir)/SimApp.obj \
 	$(out_dir)/OON.obj \
 	$(out_dir)/OON_sfml.obj \
+	$(out_dir)/$(World_subdir)/Physics.obj \
+	$(out_dir)/$(World_subdir)/Object.obj \
 	$(out_dir)/$(World_subdir)/World.obj \
 	$(out_dir)/renderer_sfml.obj \
 	$(out_dir)/$(UI_subdir)/hud_sfml.obj \
@@ -149,13 +151,14 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE)
 #!!	$(ECHO) SOURCE DRIVE + PATH: $(%|dpF)<
 	$(CC_CMD) $(CC_FLAGS_UI) $<
 
+
 ## This non-batch alternative for attempting to generate .h* deps is futile...
 ## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
 ## illegal in batch rules!)
 ## But even if the list was massaged into makefile syntax, the MSVC output is still
 ## "unredirectable", as both the includes AND the errors/warnings go to stdout!... :-(
 ## {$(src_dir)/}.cpp{$(out_dir)/}.obj:
-##	$(CC_CMD) $<        -showIncludes > $(out_dir)/$*.hdep
+##	$(CC_CMD) $(CC_FLAGS_) $< -showIncludes > $(out_dir)/$*.hdep
 
 
 # NMAKE only runs the first root target by default! So...:

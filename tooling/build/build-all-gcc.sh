@@ -33,7 +33,9 @@ MODULES="
 	SimApp
 	OON
 	OON_sfml
+	Model/Physics
 	Model/World
+	Model/Object
 	renderer_sfml
 	UI/hud_sfml
 	audio_sfml
@@ -51,7 +53,7 @@ LIBS="
 INCLUDES="${src_dir}/*.hpp ${src_dir}/*.h"
 
 CC_FLAGS="${CC_FLAGS} -std=c++20"
-CC_FLAGS="${CC_FLAGS} -Wall -Wno-unused-value -Wno-switch"
+CC_FLAGS="${CC_FLAGS} -Wall -Wno-unused-value -Wno-switch -Wno-misleading-indentation"
 # For GitHub issue #15 (don't rely on manually including cfg.h):
 #! CAREFUL with -include: cfg.h exists in w64devkit's stock include set, and would win without the src/! :-o
 CC_FLAGS="${CC_FLAGS} -include src/cfg.h"
