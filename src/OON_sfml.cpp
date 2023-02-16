@@ -34,48 +34,6 @@ namespace sync {
 
 
 //============================================================================
-//!! These sould be atomic/blocking, but... meh... ;)
-//!! (These are being called currently from a locked section of the event loop anyway.)
-Model::World& SimApp::get_world() { return world; }
-void SimApp::set_world(Model::World& W) { world = W; }
-
-//----------------------------------------------------------------------------
-bool SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
-{
-	using namespace MEMDB;
-	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
-
-	auto slot = slot_id - 1; //! internally they are 0-based tho...
-	decltype(saved_slots) slot_bit = 1 << slot;
-	if (saved_slots && slot_bit) {
-cerr << "- WARNING: Overwriting previously saved state at slot #" << slot_id << "!...\n";
-	}
-	world_snapshots[slot] = get_world(); // :)
-	saved_slots |= slot_bit;
-
-cerr << "Model world saved to slot #" << slot_id << ".\n";
-	return true;
-}
-
-bool SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
-{
-	using namespace MEMDB;
-	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
-
-	auto slot = slot_id - 1; //! internally they are 0-based tho...
-	decltype(saved_slots) slot_bit = 1 << slot;
-	if (! saved_slots && slot_bit) {
-cerr << "- ERROR: No saved state at slot #" << slot_id << " yet!\n";
-		return false;
-	}
-
-	set_world(world_snapshots[slot]);
-cerr << "Model world loaded from slot " << slot_id << ".\n";
-	return true;
-}
-
-
-//============================================================================
 OON_sfml::OON_sfml()
 		// Creating the window right away here (only) to support init-by-constr. for the HUDs:
 		: window(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}), WINDOW_TITLE)
@@ -375,8 +333,11 @@ void OON_sfml::event_loop()
 
 				case sf::Keyboard::Pause: toggle_physics(); break;
 
-				case sf::Keyboard::F2:  save_snapshot(); break;
-				case sf::Keyboard::F3:  load_snapshot(); break;
+				case sf::Keyboard::F1:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(1) : save_snapshot(1); break;
+				case sf::Keyboard::F2:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(2) : save_snapshot(2); break;
+				case sf::Keyboard::F3:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(3) : save_snapshot(3); break;
+				case sf::Keyboard::F4:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(4) : save_snapshot(4); break;
+
 				case sf::Keyboard::F12: toggle_huds(); break;
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
 
@@ -396,7 +357,7 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 				case ' ': exhaust_burst(); break;
 				case 'N': spawn(); break;
 				case 'n': spawn(100); break;
-				case 'R': OON::remove_body(); break; //!!?? WTF is this one ambiguous without the qualif.?!?!?
+				case 'R': OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
 				case 'r': remove_bodies(100); break;
 				case 'i': toggle_interact_all(); break;
 				case 'f': world.FRICTION -= 0.01f; break;
@@ -600,42 +561,43 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("FPS",        [this](){ return to_string(1 / (float)this->avg_frame_delay); });
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
 	debug_hud.add("Friction",   [this](){ return to_string(this->world.FRICTION); });
-
-	debug_hud.add("Globe T",  &world.bodies[globe_ndx]->T);
-//	debug_hud.add("      R",  &world.bodies[globe_ndx]->r);
-	debug_hud.add("      m",  &world.bodies[globe_ndx]->mass);
-	debug_hud.add("      x",  &world.bodies[globe_ndx]->p.x);
-	debug_hud.add("      y",  &world.bodies[globe_ndx]->p.y);
-	debug_hud.add("      vx", &world.bodies[globe_ndx]->v.x);
-	debug_hud.add("      vy", &world.bodies[globe_ndx]->v.y);
-
-	debug_hud.add("All-body interactions", &world._interact_all);
-
-//	debug_hud.add("pan X", &_OFFSET_X);
-//	debug_hud.add("pan Y", &_OFFSET_Y);
+	debug_hud.add("Globe T",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->T); });
+//	debug_hud.add("      R",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->r); });
+	debug_hud.add("      m",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->mass); });
+	debug_hud.add("      x",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->p.x); });
+	debug_hud.add("      y",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->p.y); });
+	debug_hud.add("      vx", [this](){ return to_string(this->world.bodies[this->globe_ndx]->v.x); });
+	debug_hud.add("      vy", [this](){ return to_string(this->world.bodies[this->globe_ndx]->v.y); });
+	debug_hud.add("All-body interactions", [this](){ return to_string(this->world._interact_all); });
+	debug_hud.add("");
+	debug_hud.add("pan X", &_OFFSET_X);
+	debug_hud.add("pan Y", &_OFFSET_Y);
 	debug_hud.add("SCALE", &_SCALE);
 //	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
 //	debug_hud.add("ALT", (bool*)&kbd_state[KBD_STATE::ALT]);
 
-
+	//------------------------------------------------------------------------
 //	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
 //	help_hud.add("");
 	help_hud.add("------- Controls:");
 	help_hud.add("AWSD (or arrows): thrust");
-	help_hud.add("Space:  add 100 objects (Shift+N: only 1)");
+	help_hud.add("Space:  exhaust trail");
+	help_hud.add("N:      add 100 objects (Shift+N: only 1)");
 	help_hud.add("R:      remove 100 objects (Shift+R: only 1)");
 //	help_hud.add("------- Metaphysics:");
 	help_hud.add("I:      toggle all-body interactions");
 	help_hud.add("F:      decrease, Shift+F: increase friction");
 //	help_hud.add("C:      chg. collision mode: pass/stick/bounce");
 	help_hud.add("Pause:  pause the physics");
-	help_hud.add("Shift+arrows: pan, Scroll Lock: autoscroll");
 	help_hud.add("mouse wheel (or +/-): zoom");
+	help_hud.add("Shift + arrows: pan");
+	help_hud.add("Shift:  autoscroll to follow player");
+	help_hud.add("Scroll Lock (or other Lock keys): toggle autoscroll");
 	help_hud.add("H:      home in on the globe");
 	help_hud.add("Home:   go to the Home position (zoom not chg.)");
 	help_hud.add("------- Meta:"); //!!Find another label, like "Console" or "Admin"...
-	help_hud.add("F2/F3:  save/load world snapshot");
-	help_hud.add("M:      (un)mute music (Shift+M: same for snd. fx.)");
+	help_hud.add("F1-F4:  save world snapshots (+Shift: load)");
+	help_hud.add("M:      (un)mute music (+Shift: same for the fx.)");
 	help_hud.add("Shft+P: toggle FPS throttling (lower CPU load)");
 	help_hud.add("F11:    toggle fullscreen");
 	help_hud.add("F12:    toggle HUDs");

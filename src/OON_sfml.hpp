@@ -20,21 +20,25 @@ friend class Renderer_SFML;
 // Model event hooks (callbacks)...
 //------------------------------------------------------------------------
 public:
-	bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
+	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
 //------------------------------------------------------------------------
 // API Op. Overrides...
 //------------------------------------------------------------------------
 public:
-	//--------------------------------------------------------------------
-	// Config / Setup:
-	size_t add_player(Model::World::Body&& obj); //!! override;
-	void   remove_player(size_t ndx) override;
 
 	virtual bool run() override;
 
 	//--------------------------------------------------------------------
-	// Player (gameplay) actions:
+	// Config / Setup:
+	//------------------------------------------------------------------------
+	virtual size_t add_player(Model::World::Body&& obj) override;
+	virtual void   remove_player(size_t ndx) override;
+	virtual size_t add_body(Model::World::Body&& obj) override;
+	virtual void   remove_body(size_t ndx) override;
+
+	//--------------------------------------------------------------------
+	// Player (gameplay) action overrides:
 
 	//--------------------------------------------------------------------
 	// "Semi-Meta" ops: still player actions, but not "core" gameplay:
@@ -75,19 +79,13 @@ public:
 //------------------------------------------------------------------------
 // Internals...
 //------------------------------------------------------------------------
-
-	virtual size_t add_body(Model::World::Body&& obj) override;
-	virtual void   remove_body(size_t ndx) override;
-
-//------------------------------------------------------------------------
-// Internals...
-//------------------------------------------------------------------------
 protected:
 	void event_loop();
 	void update_thread_main_loop();
-	void updates_for_next_frame();
 
+	void updates_for_next_frame();
 	void draw();
+
 	void onResize();
 
 	void _setup();

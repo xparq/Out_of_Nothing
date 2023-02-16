@@ -14,19 +14,16 @@ class SimApp // "Controller"
 // Config (static)...
 //----------------------------------------------------------------------------
 public:
-	//! See also: World physics! The specific values here depend on the laws there,
-	//! so replacing the physics may very well invalidate these! :-o
-	//! The depencendies should be formalized e.g. via using virtual units
-	//! provided by the physics there!
-
 	//!!Move the rest of these to the Model, too, for now:
 	//!!static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
 	//!!(They will become props initialized from a real config!)
 	static constexpr float CFG_THRUST_FORCE = 6e34f; // N (kg*m/s^2)
-
 	static constexpr float CFG_DEFAULT_SCALE = 0.0000005f; //! This one also depends very much on the physics!
-
 	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
+	//! See also: World physics! The specific values here depend on the laws there,
+	//! so replacing the physics may very well invalidate these! :-o
+	//! The depencendies should be formalized e.g. via using virtual units
+	//! provided by the physics there!
 
 //----------------------------------------------------------------------------
 // Base API...
@@ -38,15 +35,18 @@ public:
 	auto physics_paused()  { return _paused; }
 	virtual void pause_physics(bool state = true) { _paused = state; }; //! override to stop the actual world...
 
-//!!virtual size_t add_player(questionable generic config type here
-//!!                          -- but such covariance isn't even supported in C++!...) = 0;
+	virtual size_t add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
+	                //!! Bbut C++ doesn't have the covariance needed here.
+	                //!! (Still added this cringy fn. for consistency.)
 	virtual void   remove_player(size_t ndx) = 0; //!this should then be virtual, too (like destructors)
 
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
 
-	virtual Model::World& get_world() /*const*/;
-	virtual void set_world(Model::World&);
+	Model::World const& get_world() const;
+	Model::World& get_world();
+	void set_world(Model::World const&);
+	void set_world(Model::World &);
 
 	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
 	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX

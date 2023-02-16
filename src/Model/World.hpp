@@ -94,7 +94,11 @@ public:
 //----------------------------------------------------------------------------
 // API Ops...
 //----------------------------------------------------------------------------
+	// add_body() also does an initial recalc() on the object, to allow
+	// partially initialized template obj as input:
+	size_t add_body(Body const& obj);
 	size_t add_body(Body&& obj);
+
 	void remove_body(size_t ndx);
 
 	bool is_colliding(const Body* obj1, const Body* obj2)
@@ -121,11 +125,10 @@ public:
 //!!So just allow public access for now:
 public:
 
-	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
-
 	float FRICTION = 0.03f;
-
 	bool _interact_all = false; // bodies react with each other too, or only with the player(s)
+
+	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
 
 
 //------------------------------------------------------------------------
@@ -133,8 +136,11 @@ public:
 //----------------------------------------------------------------------------
 public:
 	World() = default;
-	World(const World& other) = default;
-	World& operator= (const World& other) = default;
+	World(const World& other) { _clone(other); }
+	World& operator= (const World& other)  { return _clone(other); }
+	//!!Say sg. about move, too! I guess they are inhibited by the above now.
+
+	World& _clone(World const& other);
 };
 
 } // namespace

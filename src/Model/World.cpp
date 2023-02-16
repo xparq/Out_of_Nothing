@@ -1,7 +1,7 @@
 #include "Model/World.hpp"
 #include "SimApp.hpp"
 
-#include <cmath> // pow?, sqrt
+#include <cmath> // sqrt, pow?
 #include <iostream> // cerr
 #include <cassert>
 
@@ -9,11 +9,18 @@ using namespace std;
 
 namespace Model {
 
+size_t World::add_body(Body const& obj)
+{
+	bodies.push_back(std::make_shared<Body>(obj));
+	auto ndx = bodies.size() - 1;
+	bodies[ndx]->recalc();
+	return ndx;
+}
+
 size_t World::add_body(Body&& obj)
 {
-	obj.recalc();
-	bodies.push_back(std::make_shared<Body>(obj));
-
+	obj.recalc(); // just recalc the original throw-away obj
+	bodies.emplace_back(std::make_shared<Body>(obj));
 	return bodies.size() - 1;
 }
 
@@ -168,4 +175,22 @@ dt = last_dt;
 	}
 }
 
-} // namespace
+//----------------------------------------------------------------------------
+World& World::_clone(World const& other)
+{
+	//!!Move these into some container to avoid forgetting
+	//!!some when manip. them one by one! :-/
+	//!!There might anyway be a distinction between these and
+	//!!throw-away volatile state (like caches) in the future.
+	FRICTION = other.FRICTION;
+	_interact_all = other._interact_all;
+
+	bodies.clear();
+	for (auto const& b : other.bodies) {
+		add_body(*b);
+	}
+//cerr << "World cloned.\n";
+	return *this;
+}
+
+} // namespace Model
