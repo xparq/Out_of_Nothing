@@ -3,16 +3,13 @@
 
 #include "Model/World.hpp"
 #include "misc/rolling_average.hpp"
+import Storage;
 
 #include <atomic>
 
-//----------------------------------------------------------------------------
+//============================================================================
 class SimApp // "Controller"
-//----------------------------------------------------------------------------
 {
-protected:
-	Model::World world;
-
 //----------------------------------------------------------------------------
 // Config (static)...
 //----------------------------------------------------------------------------
@@ -35,6 +32,8 @@ public:
 // Base API...
 //----------------------------------------------------------------------------
 public:
+	virtual bool run() = 0;
+
 	auto toggle_physics()  { _paused = !_paused; pause_physics(_paused); }
 	auto physics_paused()  { return _paused; }
 	virtual void pause_physics(bool state = true) { _paused = state; }; //! override to stop the actual world...
@@ -69,12 +68,18 @@ public:
 	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...);
 
 //------------------------------------------------------------------------
-// Housekeeping...
+// C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	SimApp() {}
+	SimApp() = default;
 	SimApp(const SimApp&) = delete;
-	virtual ~SimApp() {}
+	virtual ~SimApp() = default;
+
+//------------------------------------------------------------------------
+// Data / Game (World) State...
+//----------------------------------------------------------------------------
+protected:
+	Model::World world;
 
 //------------------------------------------------------------------------
 // Data / Internals...
@@ -82,6 +87,7 @@ public:
 protected:
 	bool _terminated = false;
 	bool _paused = false;
+	//!!Migrate to the Metrics system:
 	RollingAverage<5> avg_frame_delay;
 
 	// Player-controls (transient state)

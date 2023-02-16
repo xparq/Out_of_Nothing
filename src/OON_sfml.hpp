@@ -23,11 +23,21 @@ public:
 	bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
 //------------------------------------------------------------------------
-// API Ops...
+// API Op. Overrides...
 //------------------------------------------------------------------------
 public:
-	bool run();
+	//--------------------------------------------------------------------
+	// Config / Setup:
+	size_t add_player(Model::World::Body&& obj); //!! override;
+	void   remove_player(size_t ndx) override;
 
+	virtual bool run() override;
+
+	//--------------------------------------------------------------------
+	// Player (gameplay) actions:
+
+	//--------------------------------------------------------------------
+	// "Semi-Meta" ops: still player actions, but not "core" gameplay:
 	void pan_center_body(auto body_id);
 	void pan_follow_body(auto body_id, float old_x, float old_y);
 
@@ -40,48 +50,39 @@ public:
 		_pan_adjust_after_zoom();
 	}
 
-#ifndef DISABLE_HUD
-	auto toggle_huds()  { _show_huds = !_show_huds; }
-	auto toggle_help()  { help_hud.active(!help_hud.active()); }
-#endif
-
-	void toggle_music() { audio.toggle_music(); }
-	void toggle_sound_fxs() { audio.toggle_sound(clack_sound); }
-
-	void toggle_fullscreen();
-
-	bool sw_fps_throttling(int newstate = -1); // -1 means read; std::optional can't help with omitting it altogether
-
-	//------------------------------------------------------------------------
-	void pause_physics(bool state = true) override {
+	virtual void pause_physics(bool state = true) override {
 		SimApp::pause_physics(state);
 		//! Need to start from 0 when unpausing.
 		//! (The other reset, on pausing, is redundant, but keeping for simplicity.)
 		clock.restart();
 	}
 
-	void spawn(size_t n = 1);
-	void exhaust_burst();
-
 	virtual bool load_snapshot(unsigned slot = 1) override;
+	//! The generic version of this is enough for now:
+	//virtual bool save_snapshot(unsigned slot = 1) override;
 
-	//------------------------------------------------------------------------
-	// These are low-level ops, not meant to be user/player actions!
-	size_t add_body(); // add a random one
-	size_t add_body(Model::World::Body&& obj);
-	void   add_bodies(size_t n);
-	void   remove_body(size_t ndx);
-	void   remove_body(); // delete a random one
-	void   remove_bodies(size_t n = -1); // -1 -> all
-
-	size_t add_player(Model::World::Body&& obj); //!! override;
-	void   remove_player(size_t ndx) override;
+	//--------------------------------------------------------------------
+	// "Meta" ops: beyond the gameplay ("user", rather than "player" actions):
+#ifndef DISABLE_HUD
+	auto toggle_huds()  { _show_huds = !_show_huds; }
+	auto toggle_help()  { help_hud.active(!help_hud.active()); }
+#endif
+	void toggle_music() { audio.toggle_music(); }
+	void toggle_sound_fxs() { audio.toggle_sound(clack_sound); }
+	void toggle_fullscreen();
+	bool sw_fps_throttling(int newstate = -1); // -1 means read; std::optional can't help with omitting it altogether
 
 //------------------------------------------------------------------------
-// Housekeeping...
+// Internals...
+//------------------------------------------------------------------------
+
+	virtual size_t add_body(Model::World::Body&& obj) override;
+	virtual void   remove_body(size_t ndx) override;
+
+//------------------------------------------------------------------------
+// Internals...
 //------------------------------------------------------------------------
 protected:
-
 	void event_loop();
 	void update_thread_main_loop();
 	void updates_for_next_frame();
@@ -89,10 +90,12 @@ protected:
 	void draw();
 	void onResize();
 
-	//------------------------------------------------------------------------
 	void _setup();
 	void _setup_UI();
 
+//------------------------------------------------------------------------
+// C++ mechanics...
+//------------------------------------------------------------------------
 public:
 	OON_sfml();
 	OON_sfml(const OON_sfml&) = delete;

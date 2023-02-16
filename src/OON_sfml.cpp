@@ -1,4 +1,5 @@
 #include "OON_sfml.hpp"
+import Storage;
 
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Context.hpp>
@@ -29,12 +30,6 @@ namespace cfg {
 
 namespace sync {
 	std::mutex Updating;
-};
-
-namespace MEMDB {
-	unsigned constexpr MAX_WORLD_SNAPSHOTS = 10;
-	uint16_t saved_slots = 0; // bitfield
-	World world_snapshots[MAX_WORLD_SNAPSHOTS];
 };
 
 
@@ -401,7 +396,7 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 				case ' ': exhaust_burst(); break;
 				case 'N': spawn(); break;
 				case 'n': spawn(100); break;
-				case 'R': remove_body(); break;
+				case 'R': OON::remove_body(); break; //!!?? WTF is this one ambiguous without the qualif.?!?!?
 				case 'r': remove_bodies(100); break;
 				case 'i': toggle_interact_all(); break;
 				case 'f': world.FRICTION -= 0.01f; break;
@@ -467,39 +462,6 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 
 
 //----------------------------------------------------------------------------
-void OON_sfml::spawn(size_t n)
-{
-	add_bodies(n);
-}
-
-//----------------------------------------------------------------------------
-void OON_sfml::exhaust_burst()
-{
-	auto constexpr n = 60;
-/*!! Too boring with all these small particles:
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.3;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 2;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 3; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-*/
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.5;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 5;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-	for (int i = 0; i++ < n;) {
-		add_body({
-			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
-					+ r_min,
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
-				(rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
-			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
-				(rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
-			.color = (uint32_t) (float)0xffffff * rand(),
-		});
-	}
-}
-
-//----------------------------------------------------------------------------
 size_t OON_sfml::add_body(World::Body&& obj)
 {
 	auto ndx = world.add_body(std::forward<decltype(obj)>(obj));
@@ -508,53 +470,11 @@ size_t OON_sfml::add_body(World::Body&& obj)
 	return ndx;
 }
 
-size_t OON_sfml::add_body()
-{
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 9;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 3;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 30;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-//cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
-	return add_body({
-		.r = (float) (((float)rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
-				+ r_min,
-		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
-		       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
-		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.05f,
-		       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.05f },
-		.color = 0xffffff & ((uint32_t) rand() * rand()),
-	});
-}
-
-void OON_sfml::add_bodies(size_t n)
-{
-	while (n--) add_body();
-}
-
+//----------------------------------------------------------------------------
 void OON_sfml::remove_body(size_t ndx)
 {
 	world.remove_body(ndx);
 	renderer.delete_cached_body_shape(*this, ndx);
-}
-
-void OON_sfml::remove_body()
-{
-	if (world.bodies.size() < 2) { // Leave the "globe" (so not ".empty()")!
-cerr <<	"No more \"free\" items to delete.\n";
-		return;
-	}
-
-	auto ndx = 1/*leave the globe!*/ + rand() * ((world.bodies.size()-1) / (RAND_MAX + 1));
-//cerr << "Deleting object #"	 << ndx << "...\n";
-	assert(ndx > 0);
-	assert(ndx < world.bodies.size());
-	remove_body(ndx);
-}
-
-void OON_sfml::remove_bodies(size_t n/* = -1*/)
-{
-	if (n == (unsigned)-1) n = world.bodies.size();
-	while (n--) remove_body();
 }
 
 //----------------------------------------------------------------------------
