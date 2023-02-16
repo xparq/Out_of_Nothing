@@ -32,9 +32,20 @@
 
 	Also see (and change) the conditional compilation options in cfg.h.
 
-	(If you forget to run `build clean` before changing the build mode, no
-	worries: the build script detects it for you, and triggers a full rebuild
-	to avoid mismatched binaries.)
+
+Dependency tracking (and the lack of it):
+
+	If you forget to run `build clean` before changing the build mode, no
+	worries: the build script detects it, and triggers a full rebuild to
+	avoid a mismatch due to leftover binaries.
+
+	No source-level auto-dependendy tracking yet, though! :-/ Everything
+	just depends on every .h and .hpp for now, and also on .ixx (C++ module
+	sources).
+
+	Please let me know it you know of a "cleanish" way to fix this for MSVC!
+
+Misc.:
 
 	Note: Even with a static build, openal32.dll (shipped with SFML) will still
 	      be linked dynamically!
@@ -95,14 +106,14 @@
 
 - CODE QUALITY:
 
-	Much of it is still rather horrific prototype code, not yet cleaned up from
-	all the initial eager, quick-and-dirty SFML test-driving hackery.
+	There's  still some embarrassing prototype code not yet cleaned up
+	from the initial eager, quick-and-dirty SFML test-driving hackery.
 
 	Also, an ongoing unresolved threading-related(?) SFML + OpenGL window/context
 	misery: [fix-gl-ctx], [fix-setactive-fail] (-> CHANGES.txt)
 	Doesnt' seem to affect anything noticable though... Which wasn't always the
-	case (e.g. full-screen switching didn't work), but it just kinda went away. :-o
-	(Hopefully as a side-effect of two earlier C++-level memory-corrupting bugs.)
+	case (e.g. full-screen switching didn't work), but it just kinda went away :-o
+	(hopefully as a side-effect of two earlier C++-related mem.-corrupting bugs).
 
 
 ------------------------------------------------------------------------------

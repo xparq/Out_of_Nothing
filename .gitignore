@@ -5,6 +5,7 @@ out/
 
 # Stray items from accidental compilations outside "out"
 *.obj
+*.ifc
 *.pdb
 *.ilk
 *.exe

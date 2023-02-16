@@ -1,3 +1,9 @@
+.SUFFIXES: .cpp .obj .ixx .ifc .exe
+
+#!!?? Adding these actually botched the build by always processing clean, too,
+#!!?? after building everything! :D
+#!!??.PHONY: DEFAULT clean
+
 ## Order matters! Inference rules first! Also, as NMAKE only processes the first
 ## root-level tartet if none was named on the command line: higher-level targets
 ## must be described before dependent target rules!
@@ -27,6 +33,10 @@ appname=$(SZ_APPNAME)
 
 EXE=$(out_dir)/$(appname).exe
 
+# Changing the Makefile ($(MAKEFILE)) should trigger a full rebuild.
+#!! I'm sure there's a better way for this, but for now:
+FULL_REBUILD_TRIGGER=$(OBJS) $(CPP_MODULE_IFCS)
+
 # The existing actual source subdir(s) should/will match the obj. subdir(s):
 World_subdir=Model
 UI_subdir=UI
@@ -36,7 +46,14 @@ UI_subdir=UI
 #!
 #! GCC could do it all right, without a hitch. Just sayin...
 
-MODULES=$(out_dir)/main.obj \
+#!! Kludge until I find out the correct way:
+#!! Also done manually, coz no way to track the actual deps automatically...:
+CPP_MODULE_IFCS=\
+	$(out_dir)/Storage.ifc \
+
+OBJS=\
+	$(out_dir)/Storage.obj \
+	$(out_dir)/main.obj \
 	$(out_dir)/SimApp.obj \
 	$(out_dir)/OON.obj \
 	$(out_dir)/OON_sfml.obj \
@@ -51,6 +68,10 @@ MODULES=$(out_dir)/main.obj \
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h \
 	$(src_dir)/$(World_subdir)/*.hpp $(src_dir)/$(UI_subdir)/*.hpp $(src_dir)/misc/*.hpp
 
+#!!Ugh... A little hamfisted; see #118!
+CPP_MODULE_SOURCES=$(src_dir)/*.ixx
+
+#-----------------------------------------------------------------------------
 #CC_FLAGS=$(CC_FLAGS) -nologo
 CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc
 # For GH #15 (don't rely on manually including cfg.h):
@@ -63,6 +84,9 @@ CC_OUTDIR_FLAGS_World=-Fo$(out_dir)/$(World_subdir)/ -Fd$(out_dir)/$(World_subdi
 CC_OUTDIR_FLAGS_UI=-Fo$(out_dir)/$(UI_subdir)/ -Fd$(out_dir)/$(UI_subdir)/
 CC_FLAGS_World=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_World) -c
 CC_FLAGS_UI=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_UI) -c
+
+#!! No subdirs for modules yet:
+CC_FLAGS_CPPMODULES= -ifcOutput $(out_dir)/ -ifcSearchDir $(out_dir)/
 
 CC_CMD=cl -nologo
 LINK_CMD=link -nologo
@@ -132,11 +156,20 @@ CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .inc .tmp
 #-----------------------------------------------------------------------------
 # All Internals below...
 
-CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE)
+CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMODULES)
 
 
 #-----------------------------------------------------------------------------
 # Rules, finally...
+
+#!!?? I'm not sure if this is actually the sane way:
+{$(src_dir)/}.ixx{$(out_dir)/}.ifc::
+	$(CC_CMD) $(CC_FLAGS_) $<
+
+#!!?? I'm not sure if this is actually needed (or is the sane way):
+{$(src_dir)/}.ixx{$(out_dir)/}.ifc::
+	$(CC_CMD) $(CC_FLAGS_) $<
+
 
 {$(src_dir)/}.cpp{$(out_dir)/}.obj::
 	$(CC_CMD) $(CC_FLAGS_) $<
@@ -152,6 +185,7 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE)
 	$(CC_CMD) $(CC_FLAGS_UI) $<
 
 
+
 ## This non-batch alternative for attempting to generate .h* deps is futile...
 ## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
 ## illegal in batch rules!)
@@ -163,6 +197,8 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE)
 
 # NMAKE only runs the first root target by default! So...:
 #-----------------------------------------------------------------------------
+DEFAULT:: $(CPP_MODULE_IFCS)
+
 DEFAULT:: $(HASH_INCLUDE_FILE)
 	$(ECHO) Processing default target ($(EXE))...
 !if defined(DEBUG) && "$(DEBUG)" != "0"
@@ -184,6 +220,8 @@ DEFAULT:: $(HASH_INCLUDE_FILE)
 	@$(MKDIR) $(out_dir)/$(World_subdir)
 	@$(MKDIR) $(out_dir)/$(UI_subdir)
 
+
+DEFAULT:: $(CPP_MODULES)
 
 DEFAULT:: $(EXE)
 
@@ -209,12 +247,18 @@ clean:
 #			$(BB) rm -r "$(out_dir)/*%x"
 
 #-----------------------------------------------------------------------------
-$(EXE):: $(MODULES)
-	$(LINK_CMD) $(LINK_FLAGS_DEBUGMODE) /out:$(EXE) $(MODULES) $(LIBS)
+$(EXE):: $(OBJS)
+	$(LINK_CMD) $(LINK_FLAGS_DEBUGMODE) /out:$(EXE) $(OBJS) $(LIBS)
 
 
-## Sorry, no autodep. yet...
-$(MODULES): $(INCLUDES) $(MAKEFILE)
+#=============================================================================
+##!! INCLUDE THESE BELOW INSTEAD !!
+#=============================================================================
+
+$(FULL_REBUILD_TRIGGER): $(MAKEFILE)
+
+## Sorry, no autodeps. yet...
+$(OBJS) $(CPP_MODULE_IFCS): $(INCLUDES) $(CPP_MODULE_SOURCES)
 
 ## Especially for this one...:
 $(out_dir)/main.obj: $(HASH_INCLUDE_FILE)
