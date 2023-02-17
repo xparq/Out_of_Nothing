@@ -10,6 +10,26 @@ using namespace Model;
 //using namespace UI;
 using namespace std;
 
+
+//----------------------------------------------------------------------------
+bool OON::poll_and_process_controls()
+{
+	bool action = false;
+	if (_ctrl_update_thrusters()) {
+		action = true;
+//		if (kbd_state[KBD_STATE::SPACE]) {
+//			action = true;
+//			exhaust_burst(5);
+//		}
+	}
+	// Allow this now irrespective of any engine firing:
+	if (kbd_state[KBD_STATE::SPACE]) {
+		action = true;
+		exhaust_burst(5);
+	}
+	return action;
+}
+
 //----------------------------------------------------------------------------
 void OON::up_thruster_start()    { world.bodies[globe_ndx]->thrust_up.thrust_level(CFG_THRUST_FORCE); }
 void OON::down_thruster_start()  { world.bodies[globe_ndx]->thrust_down.thrust_level(CFG_THRUST_FORCE); }
@@ -19,6 +39,24 @@ void OON::up_thruster_stop()     { world.bodies[globe_ndx]->thrust_up.thrust_lev
 void OON::down_thruster_stop()   { world.bodies[globe_ndx]->thrust_down.thrust_level(0); }
 void OON::left_thruster_stop()   { world.bodies[globe_ndx]->thrust_left.thrust_level(0); }
 void OON::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_level(0); }
+
+bool OON::_ctrl_update_thrusters()
+{
+	auto drv = false;
+	if (/*kbd_state[KBD_STATE::UP]    || */kbd_state[KBD_STATE::W]) { drv = true; up_thruster_start(); }    else up_thruster_stop();
+	if (/*kbd_state[KBD_STATE::DOWN]  || */kbd_state[KBD_STATE::S]) { drv = true; down_thruster_start(); }  else down_thruster_stop();
+	if (/*kbd_state[KBD_STATE::LEFT]  || */kbd_state[KBD_STATE::A]) { drv = true; left_thruster_start(); }  else left_thruster_stop();
+	if (/*kbd_state[KBD_STATE::RIGHT] || */kbd_state[KBD_STATE::D]) { drv = true; right_thruster_start(); } else right_thruster_stop();
+	return drv;
+}
+
+/*
+bool OON::_ctrl_driving()
+{
+	return ((kbd_state[KBD_STATE::UP] || kbd_state[KBD_STATE::DOWN] || kbd_state[KBD_STATE::LEFT] || kbd_state[KBD_STATE::RIGHT] || 
+				kbd_state[KBD_STATE::W] || kbd_state[KBD_STATE::S] || kbd_state[KBD_STATE::A] || kbd_state[KBD_STATE::D]);
+}
+*/
 
 //----------------------------------------------------------------------------
 void OON::interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...)
@@ -35,9 +73,8 @@ void OON::spawn(size_t n)
 }
 
 //----------------------------------------------------------------------------
-void OON::exhaust_burst()
+void OON::exhaust_burst(size_t n/* = 50*/)
 {
-	auto constexpr n = 60;
 /*!! Too boring with all these small particles:
 	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
 	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.3;
@@ -52,10 +89,10 @@ void OON::exhaust_burst()
 		add_body({
 			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
 					+ r_min,
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
-				(rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x - world.bodies[globe_ndx]->v.x * 0.1f,   //!!...jesus, that literal dt here! :-o
+			       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y - world.bodies[globe_ndx]->v.y * 0.1f }, //!!...jesus, that literal dt here! :-o
 			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
-				(rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
+			       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
 			.color = (uint32_t) (float)0xffffff * rand(),
 		});
 	}

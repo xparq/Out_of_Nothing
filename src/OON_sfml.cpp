@@ -32,6 +32,48 @@ namespace sync {
 	std::mutex Updating;
 };
 
+// SFML -> SimApp virt. keycode translation
+//!!
+//!! This is a quick, but VERY FRAGILE way to map to SFML keys -- codes can change at any time! :-o
+//!!
+//!! using SimApp::KBD_STATE; // <- can't do it outside of classes :-/
+enum SimApp::KBD_STATE KBD_XLAT_SFML[] = {
+	SimApp::KBD_STATE::A, SimApp::KBD_STATE::B, SimApp::KBD_STATE::C, SimApp::KBD_STATE::D, SimApp::KBD_STATE::E, SimApp::KBD_STATE::F, SimApp::KBD_STATE::G, SimApp::KBD_STATE::H,
+		SimApp::KBD_STATE::I, SimApp::KBD_STATE::J, SimApp::KBD_STATE::K, SimApp::KBD_STATE::L, SimApp::KBD_STATE::M, SimApp::KBD_STATE::N, SimApp::KBD_STATE::O, SimApp::KBD_STATE::P,
+	SimApp::KBD_STATE::Q, SimApp::KBD_STATE::R, SimApp::KBD_STATE::S, SimApp::KBD_STATE::T, SimApp::KBD_STATE::U, SimApp::KBD_STATE::V, SimApp::KBD_STATE::W, SimApp::KBD_STATE::X,
+		SimApp::KBD_STATE::Y, SimApp::KBD_STATE::Z, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::ESCAPE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::SPACE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::LEFT,
+		SimApp::KBD_STATE::RIGHT, SimApp::KBD_STATE::UP, SimApp::KBD_STATE::DOWN, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::F1, SimApp::KBD_STATE::F2, SimApp::KBD_STATE::F3, SimApp::KBD_STATE::F4,
+		SimApp::KBD_STATE::F5, SimApp::KBD_STATE::F6, SimApp::KBD_STATE::F7, SimApp::KBD_STATE::F8, SimApp::KBD_STATE::F9, SimApp::KBD_STATE::F10, SimApp::KBD_STATE::F11, SimApp::KBD_STATE::F12,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::PAUSE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+};
 
 //============================================================================
 OON_sfml::OON_sfml()
@@ -174,6 +216,10 @@ void OON_sfml::updates_for_next_frame()
 		sf::sleep(sf::milliseconds(50)); //!!that direct 50 is gross, but...
 		return;
 	}
+
+	// In addition to the async. event loop:
+	poll_and_process_controls();
+
 	auto frame_delay = clock.getElapsedTime().asSeconds();
 	clock.restart(); //! Must also be duly restarted on unpausing!
 	avg_frame_delay.update(frame_delay);
@@ -183,7 +229,10 @@ void OON_sfml::updates_for_next_frame()
 
 	world.recalc_next_state(frame_delay, *this);
 
-	// Auto-scroll to follow player movement:
+	// Auto-scroll to follow player movement...
+	//!
+	//! NOTE: THIS MUST COME AFTER RECALCULATING THE NEW STATE!
+	//!
 	//!!Unfortunately, the perfect key -- Scroll Lock -- doesn't produce a valid keykode
 	//!!in SFML... :-( But perhaps we could still use it, as not very many other keys
 	//!!give -1! :))
@@ -192,7 +241,7 @@ void OON_sfml::updates_for_next_frame()
 	}
 }
 
-
+//----------------------------------------------------------------------------
 void OON_sfml::pan_center_body(auto body_id)
 {
 	const auto& body = world.bodies[body_id];
@@ -206,7 +255,6 @@ void OON_sfml::pan_follow_body(auto body_id, float old_x, float old_y)
 	_OFFSET_X -= (body->p.x - old_x) * _SCALE;
 	_OFFSET_Y -= (body->p.y - old_y) * _SCALE;
 }
-
 
 
 //----------------------------------------------------------------------------
@@ -264,27 +312,12 @@ void OON_sfml::event_loop()
 			//!! game.inputs.push(event);
 			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
 
-			switch (event.key.code) {
-				case sf::Keyboard::Up: case sf::Keyboard::W:
-				    if (event.type == sf::Event::KeyPressed)
-						up_thruster_start(); else up_thruster_stop();
-					break;
-				case sf::Keyboard::Down: case sf::Keyboard::S:
-				    if (event.type == sf::Event::KeyPressed)
-						down_thruster_start(); else down_thruster_stop();
-					break;
-				case sf::Keyboard::Left:  case sf::Keyboard::A:
-				    if (event.type == sf::Event::KeyPressed)
-						left_thruster_start(); else left_thruster_stop();
-					break;
-				case sf::Keyboard::Right: case sf::Keyboard::D:
-				    if (event.type == sf::Event::KeyPressed)
-						right_thruster_start(); else right_thruster_stop();
-					break;
-			}
 			switch (event.type)
 			{
 			case sf::Event::KeyReleased:
+
+				kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = false;
+
 				switch (event.key.code) {
 				case sf::Keyboard::LShift:   kbd_state[KBD_STATE::LSHIFT] = false; break;
 				case sf::Keyboard::RShift:   kbd_state[KBD_STATE::RSHIFT] = false; break;
@@ -303,6 +336,12 @@ void OON_sfml::event_loop()
 				kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::LALT]   || kbd_state[KBD_STATE::RALT];
 				break;
 			case sf::Event::KeyPressed:
+
+				kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = true;
+//!!See main.cpp:
+extern bool DEBUG_cfg_show_keycode;
+if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
+
 				switch (event.key.code) {
 				case sf::Keyboard::LShift:   kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::LSHIFT] = true; break;
 				case sf::Keyboard::RShift:   kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::RSHIFT] = true; break;
@@ -317,16 +356,20 @@ void OON_sfml::event_loop()
 					break;
 
 				case sf::Keyboard::Up:
-					if (event.key.shift) pan_down();
+					//if (event.key.shift)
+						pan_down();
 					break;
 				case sf::Keyboard::Down:
-					if (event.key.shift) pan_up();
+					//if (event.key.shift)
+						pan_up();
 					break;
 				case sf::Keyboard::Left:
-					if (event.key.shift) pan_right();
+					//if (event.key.shift)
+						pan_right();
 					break;
 				case sf::Keyboard::Right:
-					if (event.key.shift) pan_left();
+					//if (event.key.shift)
+						pan_left();
 					break;
 
 				case sf::Keyboard::Home: pan_reset(); break;
@@ -354,7 +397,7 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
-				case ' ': exhaust_burst(); break;
+//				case ' ': exhaust_burst(); break;
 				case 'N': spawn(); break;
 				case 'n': spawn(100); break;
 				case 'R': OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
@@ -504,6 +547,7 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
 //	}
 }
 
+//----------------------------------------------------------------------------
 bool OON_sfml::sw_fps_throttling(int newstate/* = -1*/)
 {
 	static bool state = true;
@@ -573,8 +617,10 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("pan X", &_OFFSET_X);
 	debug_hud.add("pan Y", &_OFFSET_Y);
 	debug_hud.add("SCALE", &_SCALE);
-//	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
-//	debug_hud.add("ALT", (bool*)&kbd_state[KBD_STATE::ALT]);
+	debug_hud.add("");
+	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
+	debug_hud.add("LSHIFT", (bool*)&kbd_state[KBD_STATE::LSHIFT]);
+	debug_hud.add("RSHIFT", (bool*)&kbd_state[KBD_STATE::RSHIFT]);
 
 	//------------------------------------------------------------------------
 //	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");

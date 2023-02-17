@@ -19,7 +19,7 @@ public:
 	//------------------------------------------------------------------------
 	// Player (gameplay) actions:
 	virtual void spawn(size_t n = 1);
-	virtual void exhaust_burst();
+	virtual void exhaust_burst(size_t n = 50);
 
 	auto toggle_interact_all()  { world._interact_all = !world._interact_all; }
 
@@ -51,6 +51,11 @@ public:
 	void   remove_bodies(size_t n = -1); // -1 -> all
 	virtual size_t add_body(Model::World::Body&& obj) = 0;
 	virtual void   remove_body(size_t ndx) = 0;
+
+	virtual bool poll_and_process_controls() override; // true if there was any input
+
+	// Helpers...
+	bool _ctrl_update_thrusters(); // true if any engine is firing
 
 //------------------------------------------------------------------------
 // C++ mechanics...

@@ -1,4 +1,4 @@
-#include "Args.hpp"
+#include "ext/Args.hpp"
 #include "OON_sfml.hpp"
 
 #include <string>
@@ -9,6 +9,8 @@ using namespace std;
 
 //!!...
 #include "../out/commit_hash.inc"
+//!!Also:
+bool DEBUG_cfg_show_keycode = false;
 
 //============================================================================
 int main(int argc, char* argv[])
@@ -20,12 +22,14 @@ int main(int argc, char* argv[])
 	});
 	//auto exename = args.exename();
 	if (args["?"] || args["h"] || args["help"]) {
-		cout << "Usage: " << args.exename() << " [-V] [--moons=n]" << endl;
+		cout << "Usage: " << args.exename() << " [-V] [--moons=n] [-K]"
+			<< endl;
 		return 0;
-	}
-	if (args["V"]) {
+	} else if (args["V"]) {
 		cout << "Version: " << LAST_COMMIT_HASH << endl;
 		return 0;
+	} else if (args["K"]) {
+		DEBUG_cfg_show_keycode = true;
 	}
 
 	OON_sfml game;/*({
