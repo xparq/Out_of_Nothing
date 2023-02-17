@@ -150,7 +150,7 @@ LINK_FLAGS_DEBUGMODE=$(LINK_FLAGS_DEBUG_0)
 !endif
 
 # File types for the "clean" rule (safety measure against a runaway `rm -rf *`):
-CLEANED_OUTPUT_EXT=.exe .obj .pdb .ilk .inc .tmp
+CLEANED_OUTPUT_EXT=.exe .obj .ifc .lib .pdb .ilk .inc .tmp
 
 
 #-----------------------------------------------------------------------------
