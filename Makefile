@@ -2,7 +2,7 @@
 
 #!!?? Adding these actually botched the build by always processing clean, too,
 #!!?? after building everything! :D
-#!!??.PHONY: DEFAULT clean
+#!!??.PHONY: MAIN clean
 
 ## Order matters! Inference rules first! Also, as NMAKE only processes the first
 ## root-level tartet if none was named on the command line: higher-level targets
@@ -195,11 +195,9 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMO
 ##	$(CC_CMD) $(CC_FLAGS_) $< -showIncludes > $(out_dir)/$*.hdep
 
 
-# NMAKE only runs the first root target by default! So...:
+# NMAKE only runs the first root target by default! So... `::` is essential.
 #-----------------------------------------------------------------------------
-DEFAULT:: $(CPP_MODULE_IFCS)
-
-DEFAULT:: $(HASH_INCLUDE_FILE)
+MAIN::
 	$(ECHO) Processing default target ($(EXE))...
 !if defined(DEBUG) && "$(DEBUG)" != "0"
 	$(ECHO)
@@ -220,10 +218,13 @@ DEFAULT:: $(HASH_INCLUDE_FILE)
 	@$(MKDIR) $(out_dir)/$(World_subdir)
 	@$(MKDIR) $(out_dir)/$(UI_subdir)
 
+MAIN:: $(HASH_INCLUDE_FILE)
 
-DEFAULT:: $(CPP_MODULES)
+MAIN:: $(CPP_MODULE_IFCS)
 
-DEFAULT:: $(EXE)
+MAIN:: $(CPP_MODULES)
+
+MAIN:: $(EXE)
 
 #-----------------------------------------------------------------------------
 clean:
@@ -264,4 +265,6 @@ $(OBJS) $(CPP_MODULE_IFCS): $(INCLUDES) $(CPP_MODULE_SOURCES)
 $(out_dir)/main.obj: $(HASH_INCLUDE_FILE)
 
 $(HASH_INCLUDE_FILE):
+	$(ECHO) "	Make last commit ID available for #including:"
 	$(BB) sh tooling/git/_create_commit_hash_include_file.sh
+	$(ECHO)
