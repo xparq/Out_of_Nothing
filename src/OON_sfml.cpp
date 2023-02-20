@@ -235,10 +235,7 @@ void OON_sfml::updates_for_next_frame()
 	//!
 	//! NOTE: THIS MUST COME AFTER RECALCULATING THE NEW STATE!
 	//!
-	//!!Unfortunately, the perfect key -- Scroll Lock -- doesn't produce a valid keykode
-	//!!in SFML... :-( But perhaps we could still use it, as not very many other keys
-	//!!give -1! :))
-	if (kbd_state[KBD_STATE::SCROLL_LOCK] || kbd_state[KBD_STATE::SHIFT]) {
+	if (kbd_state[KBD_STATE::SCROLL_LOCKED] || kbd_state[KBD_STATE::SHIFT]) {
 		pan_follow_body(globe_ndx, p0.x, p0.y);
 	}
 }
@@ -317,9 +314,9 @@ void OON_sfml::event_loop()
 			switch (event.type)
 			{
 			case sf::Event::KeyReleased:
-				kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = false;
-
-				if (event.key.code == -1) {
+				if (event.key.code != -1) {
+					kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = false;
+				} else {
 //cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
 //cerr << ((unsigned)GetKeyState(VK_CAPITAL) & 0xffff) << endl;
 //cerr << ((unsigned)GetKeyState(VK_NUMLOCK) & 0xffff) << endl;
@@ -332,12 +329,13 @@ void OON_sfml::event_loop()
 				break;
 
 			case sf::Event::KeyPressed:
-				kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = true;
 //!!See main.cpp:
 extern bool DEBUG_cfg_show_keycode;
 if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 
-				if (event.key.code == -1) {
+				if (event.key.code != -1) {
+					kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = true;
+				} else {
 //cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
 //cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_CAPITAL) & 0xffff) << endl;
 //cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_NUMLOCK) & 0xffff) << endl;
