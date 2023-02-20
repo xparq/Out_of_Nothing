@@ -6,6 +6,8 @@ import Storage;
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Sleep.hpp>
 
+#include <windows.h> // GetKeyState for the ...Lock keys ignored by SFML
+
 #include <thread>
 #include <mutex>
 #include <memory>
@@ -42,10 +44,10 @@ enum SimApp::KBD_STATE KBD_XLAT_SFML[] = {
 		SimApp::KBD_STATE::I, SimApp::KBD_STATE::J, SimApp::KBD_STATE::K, SimApp::KBD_STATE::L, SimApp::KBD_STATE::M, SimApp::KBD_STATE::N, SimApp::KBD_STATE::O, SimApp::KBD_STATE::P,
 	SimApp::KBD_STATE::Q, SimApp::KBD_STATE::R, SimApp::KBD_STATE::S, SimApp::KBD_STATE::T, SimApp::KBD_STATE::U, SimApp::KBD_STATE::V, SimApp::KBD_STATE::W, SimApp::KBD_STATE::X,
 		SimApp::KBD_STATE::Y, SimApp::KBD_STATE::Z, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::ESCAPE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::SPACE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::ESCAPE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::LCTRL, SimApp::KBD_STATE::LSHIFT, SimApp::KBD_STATE::LALT,
+		SimApp::KBD_STATE::WINDOWS, SimApp::KBD_STATE::RCTRL, SimApp::KBD_STATE::RSHIFT, SimApp::KBD_STATE::RALT, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
+	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::TILDE, SimApp::KBD_STATE::NUL,
+		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::SPACE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::TAB, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
 
 	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::LEFT,
 		SimApp::KBD_STATE::RIGHT, SimApp::KBD_STATE::UP, SimApp::KBD_STATE::DOWN, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
@@ -315,41 +317,38 @@ void OON_sfml::event_loop()
 			switch (event.type)
 			{
 			case sf::Event::KeyReleased:
-
 				kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = false;
 
-				switch (event.key.code) {
-				case sf::Keyboard::LShift:   kbd_state[KBD_STATE::LSHIFT] = false; break;
-				case sf::Keyboard::RShift:   kbd_state[KBD_STATE::RSHIFT] = false; break;
-				case sf::Keyboard::LControl: kbd_state[KBD_STATE::LCTRL]  = false; break;
-				case sf::Keyboard::RControl: kbd_state[KBD_STATE::RCTRL]  = false; break;
-				case sf::Keyboard::LAlt:     kbd_state[KBD_STATE::LALT]   = false; break;
-				case sf::Keyboard::RAlt:     kbd_state[KBD_STATE::RALT]   = false; break;
-//				case -1:
-//cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
-// (But actually Caps and Num Lock also give -1...)
-//					kbd_state[KBD_STATE::SCROLL_LOCK] = false;
-//					break;
+				if (event.key.code == -1) {
+//cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
+//cerr << ((unsigned)GetKeyState(VK_CAPITAL) & 0xffff) << endl;
+//cerr << ((unsigned)GetKeyState(VK_NUMLOCK) & 0xffff) << endl;
+//cerr << ((unsigned)GetKeyState(VK_SCROLL) & 0xffff) << endl;
+					// Emulate KeyReleased for the Locks:
+					kbd_state[KBD_STATE::CAPS_LOCK]   = kbd_state[KBD_STATE::CAPS_LOCKED] != (bool)((unsigned)GetKeyState(VK_CAPITAL) & 1);
+					kbd_state[KBD_STATE::NUM_LOCK]    = kbd_state[KBD_STATE::NUM_LOCKED] != (bool)((unsigned)GetKeyState(VK_NUMLOCK) & 1);
+					kbd_state[KBD_STATE::SCROLL_LOCK] = kbd_state[KBD_STATE::SCROLL_LOCKED] != (bool)((unsigned)GetKeyState(VK_SCROLL) & 1);
 				}
-				kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::LSHIFT] || kbd_state[KBD_STATE::RSHIFT]; //!! SFML/Windows BUG: https://github.com/SFML/SFML/issues/1301
-				kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::LCTRL]  || kbd_state[KBD_STATE::RCTRL];
-				kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::LALT]   || kbd_state[KBD_STATE::RALT];
 				break;
-			case sf::Event::KeyPressed:
 
+			case sf::Event::KeyPressed:
 				kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = true;
 //!!See main.cpp:
 extern bool DEBUG_cfg_show_keycode;
 if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 
-				switch (event.key.code) {
-				case sf::Keyboard::LShift:   kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::LSHIFT] = true; break;
-				case sf::Keyboard::RShift:   kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::RSHIFT] = true; break;
-				case sf::Keyboard::LControl: kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::LCTRL]  = true; break;
-				case sf::Keyboard::RControl: kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::RCTRL]  = true; break;
-				case sf::Keyboard::LAlt:     kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::LALT]   = true; break;
-				case sf::Keyboard::RAlt:     kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::RALT]   = true; break;
+				if (event.key.code == -1) {
+//cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
+//cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_CAPITAL) & 0xffff) << endl;
+//cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_NUMLOCK) & 0xffff) << endl;
+//cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_SCROLL) & 0xffff) << endl;
+					// Emulate KeyPressed for the Locks:
+					kbd_state[KBD_STATE::CAPS_LOCK]   = (unsigned)GetKeyState(VK_CAPITAL) & 0xff80;
+					kbd_state[KBD_STATE::NUM_LOCK]    = (unsigned)GetKeyState(VK_NUMLOCK) & 0xff80;
+					kbd_state[KBD_STATE::SCROLL_LOCK] = (unsigned)GetKeyState(VK_SCROLL) & 0xff80;
+				}
 
+				switch (event.key.code) {
 				case sf::Keyboard::Escape: //!!Merge with Closed!
 					terminate();
 					// [fix-setactive-fail] -> DON'T: window.close();
@@ -383,11 +382,6 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 
 				case sf::Keyboard::F12: toggle_huds(); break;
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
-
-				case -1:
-cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
-					kbd_state[KBD_STATE::SCROLL_LOCK] = !kbd_state[KBD_STATE::SCROLL_LOCK];
-					break;
 
 //				default:
 //cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
@@ -447,12 +441,21 @@ cerr << "INVALID KEYPRESS -1 is assumed to be Scroll Lock!... ;-o \n";
 				break;
 			}
 
+			// Set some virtual key meta-states:
+			kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::LSHIFT] || kbd_state[KBD_STATE::RSHIFT]; //!! SFML/Windows BUG: https://github.com/SFML/SFML/issues/1301
+			kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::LCTRL]  || kbd_state[KBD_STATE::RCTRL];
+			kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::LALT]   || kbd_state[KBD_STATE::RALT];
+			// These are ignored by SFML, must get manually:
+			kbd_state[KBD_STATE::CAPS_LOCKED]   = (unsigned)GetKeyState(VK_CAPITAL) & 1;
+			kbd_state[KBD_STATE::NUM_LOCKED]    = (unsigned)GetKeyState(VK_NUMLOCK) & 1;
+			kbd_state[KBD_STATE::SCROLL_LOCKED] = (unsigned)GetKeyState(VK_SCROLL) & 1;
+
 //cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
 
 #ifndef DISABLE_THREADS
-		ui_event_state = UIEventState::EVENT_READY;
+			ui_event_state = UIEventState::EVENT_READY;
 //cerr << "- freeing proc lock...\n";
-		noproc_lock.unlock();
+			noproc_lock.unlock();
 #else
 		} // for
 		ui_event_state = UIEventState::EVENT_READY;
@@ -607,7 +610,7 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("Friction",   [this](){ return to_string(this->world.FRICTION); });
 	debug_hud.add("Globe T",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->T); });
 //	debug_hud.add("      R",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->r); });
-	debug_hud.add("      m",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->mass); });
+	debug_hud.add("      m",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->mass); }); //!!?? WTF with the different number format
 	debug_hud.add("      x",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->p.x); });
 	debug_hud.add("      y",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->p.y); });
 	debug_hud.add("      vx", [this](){ return to_string(this->world.bodies[this->globe_ndx]->v.x); });
@@ -621,10 +624,11 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
 	debug_hud.add("LSHIFT", (bool*)&kbd_state[KBD_STATE::LSHIFT]);
 	debug_hud.add("RSHIFT", (bool*)&kbd_state[KBD_STATE::RSHIFT]);
+	debug_hud.add("CAPS LOCK", (bool*)&kbd_state[KBD_STATE::CAPS_LOCK]);
+	debug_hud.add("SCROLL LOCK", (bool*)&kbd_state[KBD_STATE::SCROLL_LOCK]);
+	debug_hud.add("NUM LOCK", (bool*)&kbd_state[KBD_STATE::NUM_LOCK]);
 
 	//------------------------------------------------------------------------
-//	help_hud.add("THIS IS NOT A TOY. SMALL ITEMS. DO NOT SWALLOW.");
-//	help_hud.add("");
 	help_hud.add("------- Controls:");
 	help_hud.add("AWSD (or arrows): thrust");
 	help_hud.add("Space:  exhaust trail");

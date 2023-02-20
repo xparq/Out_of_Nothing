@@ -104,13 +104,13 @@ public:
 		PAGE_UP = 11, PAGE_DOWN,
 		ENTER = 13,
 
-		SHIFT = 14, LSHIFT, RSHIFT,
-		CTRL, LCTRL, RCTRL,
-		ALT, LALT, RALT, ALTGR = RALT,
+		LSHIFT = 15, RSHIFT, // SHIFT is a meta state, see below
+		LCTRL = 18, RCTRL, // CTRL is a meta state, see below
+		LALT = 21, RALT, ALTGR = RALT, // ALT is a meta state, see below
 		WINDOWS,
 
-		CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, //!! CAPS, NUM & SCROLL just give key.code -1 in SFML 2.6.x :-/
-
+		CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, //!!Emulated in OON_sfml now -- move to a non-OON, but SFML-specific event preprocessor!
+		                                  //! NOTE: CAPS, NUM & SCROLL give key.code -1 in SFML 2.6.x :-/
 		ESCAPE = 27,
 
 		SPACE = 32,
@@ -139,6 +139,10 @@ public:
 		BRACE_LEFT, PIPE, BRACE_RIGHT, TILDE,
 		DELETE = 127, 
 		F1 = 129, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16,
+
+		// Meta states:
+		SHIFT = 160, CTRL, ALT,
+		CAPS_LOCKED, NUM_LOCKED, SCROLL_LOCKED,
 
 		__LAST__ = 254,
 		__SIZE__ //! Should be good for a good while...
