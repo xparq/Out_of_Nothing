@@ -56,6 +56,7 @@ void Renderer_SFML::draw(OON_sfml& game)
 }
 
 //----------------------------------------------------------------------------
+//!!MOVE TO UI::Widget::Notice!
 void Renderer_SFML::draw_paused_banner(OON_sfml& game)
 {
 	sf::Font font;

@@ -37,22 +37,25 @@ public:
 // API Types...
 //----------------------------------------------------------------------------
 public:
+	enum Event { None, Collision, Decay };
+
 	struct Body
 	//! Inner class of World, because it depends on the physics (e.g. constants).
 	{
 		//!!ObjConfig cfg; // basically the obj. type
+		static constexpr float Unlimited = -1; //! Not an enum to avoid the World::Body::Enumname::... atrocity
 		struct {
 			bool gravity_immunity = false;
 			bool free_color = false; // T doesn't affect color
 		} superpower;
 
-		// Preset:
+		// Presets:
+		float lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
 		float r = 0;
 		float density{Physics::DENSITY_ROCK / 2}; //!!low-density objects should look like Swiss cheese! ;)
 		sfml::Vector2f p{0, 0};
 		sfml::Vector2f v{0, 0};
 		float T = 0; // affected by various events; represented by color
-		float lifetime = 300; // 5 min...
 		uint32_t color = 0; // if left 0, it'll recalculated from T (if not 0)
 				// RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
 				// The reason is easier add_body() calls here.)
@@ -74,6 +77,8 @@ public:
 		//! Alas, can't do this with designated inits: Body() : mass(powf(r, 3) * density) {} :-(
 		//! So... (see e.g. add_body()):
 		void recalc();
+		bool can_decay() { return lifetime > 0; }
+		void on_event(Event e, ...); // Alas, can't be virtual: that would kill the C++ initializer struct! :-o :-/
 
 		// Ops.:
 		bool has_thrusters() { return thrust_up.thrust_level() != MyNaN; }
@@ -88,8 +93,6 @@ public:
 
 	//------------------------------------------------------------------------
 	void recalc_next_state(float dt, SimApp& app); // ++world
-
-	enum Event { None, Collision };
 
 //----------------------------------------------------------------------------
 // API Ops...

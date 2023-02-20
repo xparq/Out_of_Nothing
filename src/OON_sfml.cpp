@@ -27,7 +27,9 @@ using namespace std;
 //
 static constexpr auto WINDOW_TITLE = "Out of Nothing";
 namespace cfg {
-	static constexpr auto FPS_THROTTLE = 30;
+	static constexpr auto FPS_THROTTLE = 30; //!! Changing this changes the physics (by increasing resolution/precision)!!!
+	                                         //!! Things tend to be more interesting, with more "quantum-like" randomness,
+											 //!! with larger dt-s (less precision -> overshoots, tunnelling!)!
 }
 
 namespace sync {
@@ -489,6 +491,7 @@ size_t OON_sfml::add_player(World::Body&& obj)
 	obj.add_thrusters();
 	obj.superpower.gravity_immunity = true;
 	obj.superpower.free_color = true;
+	obj/*.superpower*/.lifetime = World::Body::Unlimited; //!!?? Should this be a superpower instead?
 
 	return add_body(std::forward<World::Body>(obj));
 }
@@ -576,12 +579,12 @@ void OON_sfml::_setup()
 	//! `window.create` call (i.e. in `toggle_fullscreen`):
 	sw_fps_throttling(true);
 
-	// globe:
-	globe_ndx = add_player({ .r = world.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+	// Player Superglobe:
+	globe_ndx = add_player({.r = world.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
 	// moons:
-	add_body({ .r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2},
+	add_body({.r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2},
 				.color = 0xff2020});
-	add_body({ .r = world.CFG_GLOBE_RADIUS/7,  .p = {-world.CFG_GLOBE_RADIUS * 1.6f, +world.CFG_GLOBE_RADIUS * 1.2f}, .v = {-world.CFG_GLOBE_RADIUS*1.8, -world.CFG_GLOBE_RADIUS*1.5},
+	add_body({.r = world.CFG_GLOBE_RADIUS/7,  .p = {-world.CFG_GLOBE_RADIUS * 1.6f, +world.CFG_GLOBE_RADIUS * 1.2f}, .v = {-world.CFG_GLOBE_RADIUS*1.8, -world.CFG_GLOBE_RADIUS*1.5},
 				.color = 0x3060ff});
 
 	clack_sound = audio.add_sound("asset/sound/clack.wav");

@@ -31,23 +31,63 @@ void World::remove_body(size_t ndx)
 	bodies.erase(bodies.begin() + ndx);
 }
 
+#define _SKIP_
+//#define _SKIP_INTERACTIONS_
 //----------------------------------------------------------------------------
 void World::recalc_next_state(float dt, SimApp& game)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
+//	static float t = 0; // s
+//
+//	t += dt;
+
 #ifdef _SKIP_
 //!!testin' testin'...
-static int SKIP_TIMES = 0; //! const[expr] here would trigger a warning later for if (0)
-static int skipping_interactions = SKIP_TIMES;
-static float accumulated_dt = 0; // s
+static int SKIP_N = 10; //! const[expr] here would trigger a warning for a later `if (0)`
+static int skipping_T_recalc = SKIP_N * 10;
+static int skipping_n_interactions = SKIP_N;
+static float accumulated_skip_dt = 0; // s
 auto last_dt = dt;
 #endif
 
-	// Go through the autogenic effects first:
+	// Go through autogenic effects first:
 	//!!This should be a separate collection tho; super wasteful to go thru all every time!
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{
 		auto& body = bodies[i];
+
+		// Lifecycle mgmt... (kill decaying objects before wasting effort on them)
+		if (body->can_decay()) {
+			body->lifetime -= dt;
+			if (body->lifetime <= 0) {
+				body->on_event(Event::Decay); //! NOTE: it's not the obj. that does the decaying it's just notified!
+
+				//!!bodies.erase(i);... //!!Watch out for the loop then, as this would make the indexes/iterators invalid!!
+										//!!Better just to mark it DELETED, and let another loop remove them later!
+//cerr << "#"<<i <<" DECAYED\n";
+				continue;
+			}
+		}
+
+		// As a placeholder for real thermodynamics, just auto-cool objects for now:
+		if (body->T > 0) {
+			body->T *= 0.99f;//!!
+			//!! Here should be an optimized prograssion to different "T color regimes"
+			//!! to avoid calling recalc() on every single tick!
+			//!! The temp. change should happen, and then either a quick condition here
+			//!! should detect change in "abstract color" (similar to B-V), or the renderer
+			//!! should always unconditionally map T to real color...
+			//!!
+			//!! OK, doing a "skiprate" refresh here, so that's gonna be the condition then...
+#ifdef _SKIP_
+			if (!--skipping_T_recalc) {
+				skipping_T_recalc = SKIP_N * 10;
+				body->recalc();
+//cerr << "#"<<i <<" Recalculated (at T = " << body->T << ").\n";
+			}
+#endif
+//cerr << "#"<<i <<" Cooled to " << body->T << "...\n";
+		}
 
 		// Thrust -- for objects with working thrusters...:
 		if (body->has_thrusters()) {
@@ -57,14 +97,16 @@ auto last_dt = dt;
 		}
 	}
 
-#ifdef _SKIP_
+#if defined(_SKIP_) && defined(_SKIP_INTERACTIONS_)
 //!!testin' testin'...
-if (SKIP_TIMES && --skipping_interactions) {
-	accumulated_dt += dt; goto end_interact_loop;
+if (SKIP_N && --skipping_n_interactions) {
+	accumulated_skip_dt += dt; goto end_interact_loop;
 } else {
 //	cerr << ".";
-	if (accumulated_dt > 0) { dt = accumulated_dt; accumulated_dt = 0; }
-	skipping_interactions = SKIP_TIMES;
+	// Consume the time we've "collected" while skipping:
+	if (accumulated_skip_dt > 0) { dt = accumulated_skip_dt; accumulated_skip_dt = 0; }
+	// Start skipping again:
+	skipping_n_interactions = SKIP_N;
 }
 #endif
 
@@ -155,9 +197,9 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 //cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
 	}
 
-#ifdef _SKIP_
+#ifdef _SKIP_INTERACTIONS_
 end_interact_loop:
-dt = last_dt;
+dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 #endif
 
 	for (size_t i = 0; i < bodies.size(); ++i)
