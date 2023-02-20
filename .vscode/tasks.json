@@ -4,18 +4,16 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "build.cmd",
+			"label": "build.cmd DEBUG=1",
 			"type": "shell",
-			"command": ".\\build.cmd",
-			"problemMatcher": ["$msCompile"],
+			"command": ".\\build.cmd DEBUG=1",
+			"problemMatcher": [
+				"$msCompile"
+			],
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			}
-//			,
-//			"options": {
-//				"cwd": "${workspaceFolder}"
-//			}
 		}
 	]
 }
