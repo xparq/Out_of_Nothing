@@ -71,19 +71,20 @@ auto last_dt = dt;
 
 		// As a placeholder for real thermodynamics, just auto-cool objects for now:
 		if (body->T > 0) {
-			body->T *= 0.99f;//!!
-			//!! Here should be an optimized prograssion to different "T color regimes"
+			body->T *= 0.996f; //!! even 0.995 already cools back down too fast to form "black holes"
+
+			//!! Here should be an optimized progression to different "T color regimes"
 			//!! to avoid calling recalc() on every single tick!
 			//!! The temp. change should happen, and then either a quick condition here
 			//!! should detect change in "abstract color" (similar to B-V), or the renderer
 			//!! should always unconditionally map T to real color...
 			//!!
-			//!! OK, doing a "skiprate" refresh here, so that's gonna be the condition then...
+			//!! Wel, OK, doing a "skiprate" refresh here, so that's gonna be the condition then...
 #ifdef _SKIP_
 			if (!--skipping_T_recalc) {
 				skipping_T_recalc = SKIP_N * 10;
 				body->recalc();
-//cerr << "#"<<i <<" Recalculated (at T = " << body->T << ").\n";
+//cerr << "#"<<i <<" Recalculated (T = " << body->T << ").\n";
 			}
 #endif
 //cerr << "#"<<i <<" Cooled to " << body->T << "...\n";

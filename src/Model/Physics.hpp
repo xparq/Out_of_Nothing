@@ -21,6 +21,9 @@ struct Physics
 	//! E.g. that's exactly what the OON renderer does, so it's
 	//! fine to just store this directly in the objects.
 
+	// OK, but now just using this quick-and-dirty impromptu hack, instead of all the above... ;)
+	static float T_to_RGB_and_BV(float T, uint32_t* p_color = nullptr);
+
 	//! `const` can't do non-integer statics! :-/
 	static constexpr float G = 6.673e-11f; //!! No point keeping this real and all the others stretched,
 	               //!! const unless a real orbital simulation is the goal (which isn't)!...
