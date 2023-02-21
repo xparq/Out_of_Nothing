@@ -351,8 +351,12 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 					break;
 
 				case sf::Keyboard::Pause: toggle_physics(); break;
-
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
+
+				case sf::Keyboard::Insert: spawn(kbd_state[KBD_STATE::SHIFT] ? 1 : 100); break;
+//!!...			case sf::Keyboard::Insert: add_bodies(kbd_state[KBD_STATE::SHIFT] ? 1 : 100); break;
+				case sf::Keyboard::Delete: remove_bodies(kbd_state[KBD_STATE::SHIFT] ? 1 : 100); break;
+//!!??			case sf::Keyboard::Delete: OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
 
 				case sf::Keyboard::F1:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(1) : save_snapshot(1); break;
 				case sf::Keyboard::F2:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(2) : save_snapshot(2); break;
@@ -372,10 +376,6 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
-				case 'N': spawn(); break;
-				case 'n': spawn(100); break;
-				case 'R': OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
-				case 'r': remove_bodies(100); break;
 				case 'f': world.FRICTION -= 0.01f; break;
 				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
@@ -622,8 +622,8 @@ void OON_sfml::_setup_UI()
 	help_hud.add("------- Controls:");
 	help_hud.add("Arrows: thrust");
 	help_hud.add("Space:  exhaust trail");
-	help_hud.add("N:      add 100 objects (Shift+N: only 1)");
-	help_hud.add("R:      remove 100 objects (Shift+R: only 1)");
+	help_hud.add("Ins:    add 100 objects (+Shift: only 1)");
+	help_hud.add("Del:    remove 100 objects (Shift+R: only 1)");
 //	help_hud.add("------- Metaphysics:");
 	help_hud.add("Tab:    toggle all-body interactions");
 	help_hud.add("F:      decrease (+Shift: incr.) drag (friction)");
