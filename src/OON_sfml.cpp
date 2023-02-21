@@ -320,9 +320,6 @@ void OON_sfml::event_loop()
 					kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = false;
 				} else {
 //cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
-//cerr << ((unsigned)GetKeyState(VK_CAPITAL) & 0xffff) << endl;
-//cerr << ((unsigned)GetKeyState(VK_NUMLOCK) & 0xffff) << endl;
-//cerr << ((unsigned)GetKeyState(VK_SCROLL) & 0xffff) << endl;
 					// Emulate KeyReleased for the Locks:
 					kbd_state[KBD_STATE::CAPS_LOCK]   = kbd_state[KBD_STATE::CAPS_LOCKED] != (bool)((unsigned)GetKeyState(VK_CAPITAL) & 1);
 					kbd_state[KBD_STATE::NUM_LOCK]    = kbd_state[KBD_STATE::NUM_LOCKED] != (bool)((unsigned)GetKeyState(VK_NUMLOCK) & 1);
@@ -339,9 +336,6 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 					kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = true;
 				} else {
 //cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
-//cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_CAPITAL) & 0xffff) << endl;
-//cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_NUMLOCK) & 0xffff) << endl;
-//cerr << "PRESS: "<< ((unsigned)GetKeyState(VK_SCROLL) & 0xffff) << endl;
 					// Emulate KeyPressed for the Locks:
 					kbd_state[KBD_STATE::CAPS_LOCK]   = (unsigned)GetKeyState(VK_CAPITAL) & 0xff80;
 					kbd_state[KBD_STATE::NUM_LOCK]    = (unsigned)GetKeyState(VK_NUMLOCK) & 0xff80;
@@ -355,18 +349,13 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 					break;
 
 				case sf::Keyboard::Pause: toggle_physics(); break;
-/* -> OON::_ctrl_update_continuous_pan()
-				case sf::Keyboard::W: pan_down(); break;
-				case sf::Keyboard::S: pan_up(); break;
-				case sf::Keyboard::A: pan_right(); break;
-				case sf::Keyboard::D: pan_left(); break;
-*/
-				case sf::Keyboard::Home: pan_reset(); break;
 
 				case sf::Keyboard::F1:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(1) : save_snapshot(1); break;
 				case sf::Keyboard::F2:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(2) : save_snapshot(2); break;
 				case sf::Keyboard::F3:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(3) : save_snapshot(3); break;
 				case sf::Keyboard::F4:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(4) : save_snapshot(4); break;
+
+				case sf::Keyboard::Home: pan_reset(); break;
 
 				case sf::Keyboard::F12: toggle_huds(); break;
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
@@ -379,7 +368,6 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
-//				case ' ': exhaust_burst(); break;
 				case 'N': spawn(); break;
 				case 'n': spawn(100); break;
 				case 'R': OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!

@@ -34,11 +34,9 @@ public:
 	void  left_thruster_stop();
 	void right_thruster_stop();
 
-	auto pan_up(int delta = CFG_PAN_STEP)     { _OFFSET_Y -= delta; }
-	auto pan_down(int delta = CFG_PAN_STEP)   { _OFFSET_Y += delta; }
-	auto pan_left(int delta = CFG_PAN_STEP)   { _OFFSET_X -= delta; }
-	auto pan_right(int delta = CFG_PAN_STEP)  { _OFFSET_X += delta; }
-	auto pan_reset()  { _OFFSET_X = _OFFSET_Y = 0; }
+	virtual void pan_x(int delta);
+	virtual void pan_y(int delta);
+	virtual void pan_reset();
 	void _pan_adjust_after_zoom() { /* !!?? */ }
 
 	//------------------------------------------------------------------------
@@ -56,7 +54,7 @@ public:
 	virtual bool poll_and_process_controls() override; // true if there was any input
 
 	bool _ctrl_update_thrusters(); // true if any engine is firing
-	bool _ctrl_update_continuous_pan();
+	bool _ctrl_update_pan(); // true if panning was requested
 
 //------------------------------------------------------------------------
 // C++ mechanics...
@@ -69,10 +67,13 @@ public:
 // Data / Internals...
 //------------------------------------------------------------------------
 protected:
-	float _SCALE = CFG_DEFAULT_SCALE; // -> SimApp
+	static constexpr int CFG_PAN_STEP = 5; // "SFML pixel"
+
+	float _SCALE = CFG_DEFAULT_SCALE;
 	float _OFFSET_X = 0, _OFFSET_Y = 0;
 
-//	int pan_step = CFG_PAN_STEP; // will be reset when starting to pan
+	// These will be reset to +/-CFG_PAN_STEP whenever starting to pan:
+	int pan_step_x = 0, pan_step_y = 0;
 
 	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
 	size_t clack_sound = 0; // paranoid safety init (see _setup()!)

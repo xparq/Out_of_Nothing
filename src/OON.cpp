@@ -1,4 +1,5 @@
 #include "OON.hpp"
+#include "misc/sign.hpp"
 
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
@@ -28,7 +29,7 @@ bool OON::poll_and_process_controls()
 		exhaust_burst(5);
 	}
 
-	if (_ctrl_update_continuous_pan())
+	if (_ctrl_update_pan())
 		action = true;
 
 	return action;
@@ -54,13 +55,27 @@ bool OON::_ctrl_update_thrusters()
 	return drv;
 }
 
-bool OON::_ctrl_update_continuous_pan()
+//----------------------------------------------------------------------------
+void OON::pan_x(int delta) { _OFFSET_X += delta; }
+void OON::pan_y(int delta) { _OFFSET_Y += delta; }
+void OON::pan_reset()  { _OFFSET_X = _OFFSET_Y = 0; }
+
+bool OON::_ctrl_update_pan()
 {
 	auto action = false;
-	if (kbd_state[KBD_STATE::W]) { action = true;  pan_down(CFG_PAN_STEP); }
-	if (kbd_state[KBD_STATE::S]) { action = true;    pan_up(CFG_PAN_STEP); }
-	if (kbd_state[KBD_STATE::A]) { action = true; pan_right(CFG_PAN_STEP); }
-	if (kbd_state[KBD_STATE::D]) { action = true;  pan_left(CFG_PAN_STEP); }
+
+	if (kbd_state[KBD_STATE::W]) { action = true; pan_step_y =  CFG_PAN_STEP; }
+	if (kbd_state[KBD_STATE::S]) { action = true; pan_step_y = -CFG_PAN_STEP; }
+	if (kbd_state[KBD_STATE::A]) { action = true; pan_step_x =  CFG_PAN_STEP; }
+	if (kbd_state[KBD_STATE::D]) { action = true; pan_step_x = -CFG_PAN_STEP; }
+
+	if (!action) {
+		if (pan_step_x) pan_step_x -= sign(pan_step_x);
+		if (pan_step_y) pan_step_y -= sign(pan_step_y);
+	}
+	if (pan_step_x) pan_x(pan_step_x);
+	if (pan_step_y) pan_y(pan_step_y);
+
 	return action;
 }
 

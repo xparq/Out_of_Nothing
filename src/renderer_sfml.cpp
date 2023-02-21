@@ -85,8 +85,8 @@ void Renderer_SFML::create_cached_body_shape(const OON_sfml& game, const Model::
 	assert(game.world.bodies.size() > 0);
 
 	//!!Can only "append" for now, so ndx must refer to the last element...
-//	if (body_ndx == (size_t)-1) body_ndx = game.world.bodies.size() - 1;
-	assert(body_ndx == game.world.bodies.size() - 1);
+	if (body_ndx == (size_t)-1) body_ndx = game.world.bodies.size() - 1;
+//	assert(body_ndx == game.world.bodies.size() - 1);
 
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)

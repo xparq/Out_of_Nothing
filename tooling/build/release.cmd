@@ -56,7 +56,7 @@ rem Add the VCREDIST DLLs:
 rem !! Alas, can't just do as above, as ZIP would want to pack with the full
 rem !! paths if vcredist_dlls had full paths... :-/
 pushd "%SystemRoot%\System32"
-rem !! Amazingly, the sh* below was syntactically invalid for CMD with the
+rem !! Amazingly, the shit below was syntactically invalid for CMD with the
 rem !! if ... (...) else (...) syntax, no matter the escaping... :-/
 if     exist "%packfile%" zip -rS %packfile% %vcredist_dlls%
 if not exist "%packfile%" echo. & echo - WARNING: couldn't add the MSVC DLLs ^(%packfile% must be an abs. path^)!
