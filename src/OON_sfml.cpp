@@ -13,7 +13,9 @@ import Storage;
 #include <memory>
 	using std::make_shared;
 #include <cstdlib>
-	using std::rand; // and the RAND_MAX macro!
+	using std::rand; // + RAND_MAX (macro!)
+#include <charconv>
+	using std::to_chars;
 #include <iostream>
 	using std::cerr, std::endl;
 #include <cassert>
@@ -580,30 +582,40 @@ void OON_sfml::_setup_UI()
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
 	//!!?? in this generic pointer passing context?!
-	debug_hud.add("Press ? for help...");
+
+	auto ftos = [this](auto* px) { return [this, px]() { static constexpr size_t LEN = 15;
+		char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *px);
+		return string(ec != std::errc() ? "???" : (*ptr = 0, buf));
+//		return ec != std::errc() ? "???" : string(string_view(buf, ptr)); // Or this...
+		};
+	};
 
 	debug_hud.add("FPS",        [this](){ return to_string(1 / (float)this->avg_frame_delay); });
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
-	debug_hud.add("Friction",   [this](){ return to_string(this->world.FRICTION); });
-	debug_hud.add("Globe T",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->T); });
-//	debug_hud.add("      R",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->r); });
-	debug_hud.add("      m",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->mass); }); //!!?? WTF with the different number format
-	debug_hud.add("      x",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->p.x); });
-	debug_hud.add("      y",  [this](){ return to_string(this->world.bodies[this->globe_ndx]->p.y); });
-	debug_hud.add("      vx", [this](){ return to_string(this->world.bodies[this->globe_ndx]->v.x); });
-	debug_hud.add("      vy", [this](){ return to_string(this->world.bodies[this->globe_ndx]->v.y); });
-	debug_hud.add("All-body interactions", [this](){ return to_string(this->world._interact_all); });
+	debug_hud.add("Body interactions", &this->world._interact_all);
+	debug_hud.add("Drag", ftos(&this->world.FRICTION));
 	debug_hud.add("");
-	debug_hud.add("pan X", &_OFFSET_X);
-	debug_hud.add("pan Y", &_OFFSET_Y);
-	debug_hud.add("SCALE", &_SCALE);
+	debug_hud.add("Globe T",  ftos(&this->world.bodies[this->globe_ndx]->T));
+	debug_hud.add("      R",  ftos(&this->world.bodies[this->globe_ndx]->r));
+	debug_hud.add("      m",  ftos(&this->world.bodies[this->globe_ndx]->mass));
+	debug_hud.add("      x",  ftos(&this->world.bodies[this->globe_ndx]->p.x));
+	debug_hud.add("      y",  ftos(&this->world.bodies[this->globe_ndx]->p.y));
+	debug_hud.add("      vx", ftos(&this->world.bodies[this->globe_ndx]->v.x));
+	debug_hud.add("      vy", ftos(&this->world.bodies[this->globe_ndx]->v.y));
 	debug_hud.add("");
+	debug_hud.add("VIEW SCALE", &_SCALE);
+	debug_hud.add("CAM. X", &_OFFSET_X);
+	debug_hud.add("CAM. Y", &_OFFSET_Y);
+/*	debug_hud.add("");
 	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
 	debug_hud.add("LSHIFT", (bool*)&kbd_state[KBD_STATE::LSHIFT]);
 	debug_hud.add("RSHIFT", (bool*)&kbd_state[KBD_STATE::RSHIFT]);
 	debug_hud.add("CAPS LOCK", (bool*)&kbd_state[KBD_STATE::CAPS_LOCK]);
 	debug_hud.add("SCROLL LOCK", (bool*)&kbd_state[KBD_STATE::SCROLL_LOCK]);
 	debug_hud.add("NUM LOCK", (bool*)&kbd_state[KBD_STATE::NUM_LOCK]);
+*/
+	debug_hud.add("");
+	debug_hud.add("Press ? for help...");
 
 	//------------------------------------------------------------------------
 	help_hud.add("------- Controls:");

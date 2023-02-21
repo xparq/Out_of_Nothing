@@ -89,8 +89,9 @@ string HUD::render_watched_item_to(std::stringstream& out)
 			out << get<2>(ref);
 			out << * any_cast<int*>(get<1>(ref));
 		} else if (string(get<0>(ref)) == bool_name) {
+			bool val = * any_cast<bool*>(get<1>(ref));
 			out << get<2>(ref);
-			out << * any_cast<bool*>(get<1>(ref));
+			out << (val ? "on" : "off");
 		} else if (string(get<0>(ref)) == float_name) {
 			auto save = out.precision(numeric_limits<float>::max_digits10);
 			out << get<2>(ref);
