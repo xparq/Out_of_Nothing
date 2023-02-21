@@ -27,6 +27,10 @@ bool OON::poll_and_process_controls()
 		action = true;
 		exhaust_burst(5);
 	}
+
+	if (_ctrl_update_continuous_pan())
+		action = true;
+
 	return action;
 }
 
@@ -43,11 +47,21 @@ void OON::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_
 bool OON::_ctrl_update_thrusters()
 {
 	auto drv = false;
-	if (/*kbd_state[KBD_STATE::UP]    || */kbd_state[KBD_STATE::W]) { drv = true; up_thruster_start(); }    else up_thruster_stop();
-	if (/*kbd_state[KBD_STATE::DOWN]  || */kbd_state[KBD_STATE::S]) { drv = true; down_thruster_start(); }  else down_thruster_stop();
-	if (/*kbd_state[KBD_STATE::LEFT]  || */kbd_state[KBD_STATE::A]) { drv = true; left_thruster_start(); }  else left_thruster_stop();
-	if (/*kbd_state[KBD_STATE::RIGHT] || */kbd_state[KBD_STATE::D]) { drv = true; right_thruster_start(); } else right_thruster_stop();
+	if (kbd_state[KBD_STATE::UP])    { drv = true;    up_thruster_start(); } else    up_thruster_stop();
+	if (kbd_state[KBD_STATE::DOWN])  { drv = true;  down_thruster_start(); } else  down_thruster_stop();
+	if (kbd_state[KBD_STATE::LEFT])  { drv = true;  left_thruster_start(); } else  left_thruster_stop();
+	if (kbd_state[KBD_STATE::RIGHT]) { drv = true; right_thruster_start(); } else right_thruster_stop();
 	return drv;
+}
+
+bool OON::_ctrl_update_continuous_pan()
+{
+	auto action = false;
+	if (kbd_state[KBD_STATE::W]) { action = true;  pan_down(CFG_PAN_STEP); }
+	if (kbd_state[KBD_STATE::S]) { action = true;    pan_up(CFG_PAN_STEP); }
+	if (kbd_state[KBD_STATE::A]) { action = true; pan_right(CFG_PAN_STEP); }
+	if (kbd_state[KBD_STATE::D]) { action = true;  pan_left(CFG_PAN_STEP); }
+	return action;
 }
 
 /*

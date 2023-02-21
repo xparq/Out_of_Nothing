@@ -6,6 +6,9 @@
 //============================================================================
 class OON : public SimApp
 {
+protected:	
+	static constexpr int CFG_PAN_STEP = 5; // "SFML pixel"
+
 //------------------------------------------------------------------------
 // Model event hooks (callbacks)...
 //------------------------------------------------------------------------
@@ -34,10 +37,10 @@ public:
 	void  left_thruster_stop();
 	void right_thruster_stop();
 
-	auto pan_up()     { _OFFSET_Y -= CFG_PAN_STEP; }
-	auto pan_down()   { _OFFSET_Y += CFG_PAN_STEP; }
-	auto pan_left()   { _OFFSET_X -= CFG_PAN_STEP; }
-	auto pan_right()  { _OFFSET_X += CFG_PAN_STEP; }
+	auto pan_up(int delta = CFG_PAN_STEP)     { _OFFSET_Y -= delta; }
+	auto pan_down(int delta = CFG_PAN_STEP)   { _OFFSET_Y += delta; }
+	auto pan_left(int delta = CFG_PAN_STEP)   { _OFFSET_X -= delta; }
+	auto pan_right(int delta = CFG_PAN_STEP)  { _OFFSET_X += delta; }
 	auto pan_reset()  { _OFFSET_X = _OFFSET_Y = 0; }
 	void _pan_adjust_after_zoom() { /* !!?? */ }
 
@@ -54,8 +57,8 @@ public:
 
 	virtual bool poll_and_process_controls() override; // true if there was any input
 
-	// Helpers...
 	bool _ctrl_update_thrusters(); // true if any engine is firing
+	bool _ctrl_update_continuous_pan();
 
 //------------------------------------------------------------------------
 // C++ mechanics...

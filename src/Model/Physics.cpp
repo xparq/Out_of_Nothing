@@ -32,14 +32,15 @@ float Physics::T_to_RGB_and_BV(float T, uint32_t* p_color/* = nullptr*/) // BV: 
 //! store this directly in the objects.
 {
 	float r = 0.f, g = 0.f, b = 0.f;
-	float bv;
+	float bv = MyNaN;
 	if (T < T_BV_MIN)
 		return MyNaN;
 	if (T > T_BV_MAX) {
 		r = b = g = 0.0f; // #138: "black holes" ;)
 	} else {
-		float t, bv = -0.4f + 2.4f * // normal BV range is 2.4
+		bv = -0.4f + 2.4f * // normal BV range is 2.4
 			            T / T_BV_MAX;
+		float t;
 		if (bv < -0.4f) bv = -0.4f; if ( bv > 2.0f) bv = 2.0f;
 		else if ((bv>= 0.00f)&&(bv<0.40f)) { t=(bv-0.00f)/(0.40f-0.00f); r=0.83f+(0.17f*t)           ; }
 			 if ((bv>=-0.40f)&&(bv<0.00f)) { t=(bv+0.40f)/(0.00f+0.40f); r=0.61f+(0.11f*t)+(0.1f*t*t); }

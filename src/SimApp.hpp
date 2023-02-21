@@ -19,7 +19,6 @@ public:
 	//!!(They will become props initialized from a real config!)
 	static constexpr float CFG_THRUST_FORCE = 6e34f; // N (kg*m/s^2)
 	static constexpr float CFG_DEFAULT_SCALE = 0.0000005f; //! This one also depends very much on the physics!
-	static constexpr float CFG_PAN_STEP = 10; // "SFML defaul pixel" :) (Not quite sure yet how it does coordinates...)
 	//! See also: World physics! The specific values here depend on the laws there,
 	//! so replacing the physics may very well invalidate these! :-o
 	//! The depencendies should be formalized e.g. via using virtual units

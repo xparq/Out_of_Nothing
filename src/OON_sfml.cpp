@@ -354,26 +354,14 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 					// [fix-setactive-fail] -> DON'T: window.close();
 					break;
 
-				case sf::Keyboard::Up:
-					//if (event.key.shift)
-						pan_down();
-					break;
-				case sf::Keyboard::Down:
-					//if (event.key.shift)
-						pan_up();
-					break;
-				case sf::Keyboard::Left:
-					//if (event.key.shift)
-						pan_right();
-					break;
-				case sf::Keyboard::Right:
-					//if (event.key.shift)
-						pan_left();
-					break;
-
-				case sf::Keyboard::Home: pan_reset(); break;
-
 				case sf::Keyboard::Pause: toggle_physics(); break;
+/* -> OON::_ctrl_update_continuous_pan()
+				case sf::Keyboard::W: pan_down(); break;
+				case sf::Keyboard::S: pan_up(); break;
+				case sf::Keyboard::A: pan_right(); break;
+				case sf::Keyboard::D: pan_left(); break;
+*/
+				case sf::Keyboard::Home: pan_reset(); break;
 
 				case sf::Keyboard::F1:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(1) : save_snapshot(1); break;
 				case sf::Keyboard::F2:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(2) : save_snapshot(2); break;
@@ -631,7 +619,7 @@ void OON_sfml::_setup_UI()
 
 	//------------------------------------------------------------------------
 	help_hud.add("------- Controls:");
-	help_hud.add("AWSD (or arrows): thrust");
+	help_hud.add("Arrows: thrust");
 	help_hud.add("Space:  exhaust trail");
 	help_hud.add("N:      add 100 objects (Shift+N: only 1)");
 	help_hud.add("R:      remove 100 objects (Shift+R: only 1)");
@@ -641,9 +629,9 @@ void OON_sfml::_setup_UI()
 //	help_hud.add("C:      chg. collision mode: pass/stick/bounce");
 	help_hud.add("Pause:  pause the physics");
 	help_hud.add("mouse wheel (or +/-): zoom");
-	help_hud.add("Shift + arrows: pan");
+	help_hud.add("AWSD:   pan");
 	help_hud.add("Shift:  autoscroll to follow player");
-	help_hud.add("Scroll Lock (or other Lock keys): toggle autoscroll");
+	help_hud.add("Scroll Lock: toggle autoscroll");
 	help_hud.add("H:      home in on the globe");
 	help_hud.add("Home:   go to the Home position (zoom not chg.)");
 	help_hud.add("------- Meta:"); //!!Find another label, like "Console" or "Admin"...
