@@ -23,10 +23,10 @@ and start crafting the fun bits. You can't wait! ;)
 Technical & other details: -> [doc/...](doc/)
 
 
-_(BTW the screenshots are getting obsolete fast, but I'm updating them 
-occasionally. However, they can't convey the fist-hand experience of actually
-manipulating the wolrd first-hand, or even just the mesmerizing flow and
-constant development of structures -- just like in the real universe.)_
+_(BTW, the screenshots are getting obsolete fast. I've been updating them 
+occasionally, however, they can't convey the fist-hand experience of actually
+manipulating the wolrd, or even just watching the mesmerizing flow and constant
+development of interesting superstructures -- just like in the real universe.)_
 
 ![screenshot](asset/image/screenshot/screenshot_10k_low_friction.png)
 ------------------------------------------------------------------------------
