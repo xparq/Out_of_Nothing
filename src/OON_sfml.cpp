@@ -363,7 +363,12 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 				case sf::Keyboard::F3:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(3) : save_snapshot(3); break;
 				case sf::Keyboard::F4:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(4) : save_snapshot(4); break;
 
-				case sf::Keyboard::Home: pan_reset(); break;
+				case sf::Keyboard::Home:
+					if (kbd_state[KBD_STATE::CTRL])
+						pan_reset(); //!!Should be "upgraded" to "Camera/view reset", also resetting the zoom
+					else
+						pan_center_body(globe_ndx);
+					break;
 
 				case sf::Keyboard::F12: toggle_huds(); break;
 				case sf::Keyboard::F11: toggle_fullscreen(); break;
@@ -380,7 +385,6 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
-				case 'h': pan_center_body(globe_ndx); break;
 				case 'm': toggle_music(); break;
 				case 'P': sw_fps_throttling(!sw_fps_throttling()); break;
 				case 'M': toggle_sound_fxs(); break;
@@ -628,13 +632,13 @@ void OON_sfml::_setup_UI()
 	help_hud.add("Tab:    toggle all-body interactions");
 	help_hud.add("F:      decrease (+Shift: incr.) drag (friction)");
 //	help_hud.add("C:      chg. collision mode: pass/stick/bounce");
-	help_hud.add("Pause:  pause the physics");
+	help_hud.add("Pause:  stop the physics");
 	help_hud.add("mouse wheel (or +/-): zoom");
 	help_hud.add("AWSD:   pan");
-	help_hud.add("Shift:  autoscroll to follow player");
+	help_hud.add("Shift:  autoscroll to follow player movement");
 	help_hud.add("Scroll Lock: toggle autoscroll");
-	help_hud.add("H:      home in on the globe");
-	help_hud.add("Home:   go to the Home position (zoom not chg.)");
+	help_hud.add("Home:   home in on the player globe");
+	help_hud.add("Ctrl+Home: reset view to Home pos. (not the zoom)");
 	help_hud.add("------- Meta:"); //!!Find another label, like "Console" or "Admin"...
 	help_hud.add("F1-F4:  save world snapshots (+Shift: load)");
 	help_hud.add("M:      (un)mute music (+Shift: same for the fx.)");
