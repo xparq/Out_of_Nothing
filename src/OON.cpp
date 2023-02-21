@@ -81,37 +81,16 @@ void OON::interaction_hook(Model::World* w, Model::World::Event event, Model::Wo
 
 
 //----------------------------------------------------------------------------
-void OON::spawn(size_t n)
+size_t OON::add_body(World::Body&& obj)
 {
-	add_bodies(n);
+	return world.add_body(std::forward<decltype(obj)>(obj));
 }
 
 //----------------------------------------------------------------------------
-void OON::exhaust_burst(size_t n/* = 50*/)
+void OON::remove_body(size_t ndx)
 {
-/*!! Too boring with all these small particles:
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.3;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 2;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 3; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-*/
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.5;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 5;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-	for (int i = 0; i++ < n;) {
-		add_body({
-			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
-					+ r_min,
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x - world.bodies[globe_ndx]->v.x * 0.1f,   //!!...jesus, that literal dt here! :-o
-			       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y - world.bodies[globe_ndx]->v.y * 0.1f }, //!!...jesus, that literal dt here! :-o
-			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
-			       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
-			.color = (uint32_t) (float)0xffffff * rand(),
-		});
-	}
+	world.remove_body(ndx);
 }
-
 
 //----------------------------------------------------------------------------
 size_t OON::add_body()
@@ -158,4 +137,46 @@ void OON::remove_bodies(size_t n/* = -1*/)
 {
 	if (n == (unsigned)-1) n = world.bodies.size();
 	while (n--) remove_body();
+}
+
+
+//----------------------------------------------------------------------------
+void OON::spawn(size_t n, size_t parent_ndx)
+//!!Should gradually become a method of the obect itself actually!
+{
+	assert(parent_ndx == globe_ndx); //!!invalid for multiplayer
+
+	// -> #41: Enable inheritance
+	auto const& parent = *(world.bodies[parent_ndx]);
+	for (size_t i = 0; i < n; ++i) {
+		auto ndx = add_body();
+		auto& newborn = *(world.bodies[ndx]);
+		newborn.T = parent.T; // #155: Inherit T
+	}
+}
+
+//----------------------------------------------------------------------------
+void OON::exhaust_burst(size_t n/* = 50*/)
+{
+/*!! Too boring with all these small particles:
+	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.3;
+	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 2;
+	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 3; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+*/
+	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.5;
+	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 5;
+	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+	for (int i = 0; i++ < n;) {
+		add_body({
+			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
+					+ r_min,
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x - world.bodies[globe_ndx]->v.x * 0.1f,   //!!...jesus, that literal dt here! :-o
+			       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y - world.bodies[globe_ndx]->v.y * 0.1f }, //!!...jesus, that literal dt here! :-o
+			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
+			       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
+			.color = (uint32_t) (float)0xffffff * rand(),
+		});
+	}
 }

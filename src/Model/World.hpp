@@ -101,7 +101,6 @@ public:
 	// partially initialized template obj as input:
 	size_t add_body(Body const& obj);
 	size_t add_body(Body&& obj);
-
 	void remove_body(size_t ndx);
 
 	bool is_colliding(const Body* obj1, const Body* obj2)

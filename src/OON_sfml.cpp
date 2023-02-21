@@ -459,7 +459,7 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 //----------------------------------------------------------------------------
 size_t OON_sfml::add_body(World::Body&& obj)
 {
-	auto ndx = world.add_body(std::forward<decltype(obj)>(obj));
+	auto ndx = OON::add_body(std::forward<decltype(obj)>(obj));
 	// Pre-cache shapes for rendering... (!! Likely pointless, but this is just what I started with...)
 	renderer.create_cached_body_shape(*this, obj, ndx);
 	return ndx;
@@ -468,7 +468,7 @@ size_t OON_sfml::add_body(World::Body&& obj)
 //----------------------------------------------------------------------------
 void OON_sfml::remove_body(size_t ndx)
 {
-	world.remove_body(ndx);
+	OON::remove_body(ndx);
 	renderer.delete_cached_body_shape(*this, ndx);
 }
 

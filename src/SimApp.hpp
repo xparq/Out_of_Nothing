@@ -13,7 +13,8 @@ class SimApp // "Controller"
 //----------------------------------------------------------------------------
 // Config (static)...
 //----------------------------------------------------------------------------
-public:
+protected:
+	static constexpr int CFG_PAN_STEP = 5; // "SFML pixel"
 	//!!Move the rest of these to the Model, too, for now:
 	//!!static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
 	//!!(They will become props initialized from a real config!)

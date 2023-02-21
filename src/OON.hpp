@@ -6,9 +6,6 @@
 //============================================================================
 class OON : public SimApp
 {
-protected:	
-	static constexpr int CFG_PAN_STEP = 5; // "SFML pixel"
-
 //------------------------------------------------------------------------
 // Model event hooks (callbacks)...
 //------------------------------------------------------------------------
@@ -21,7 +18,7 @@ public:
 public:
 	//------------------------------------------------------------------------
 	// Player (gameplay) actions:
-	virtual void spawn(size_t n = 1);
+	virtual void spawn(size_t n = 1, size_t parent_ndx = 0); //!! required: 0 === globe_ndx
 	virtual void exhaust_burst(size_t n = 50);
 
 	auto toggle_interact_all()  { world._interact_all = !world._interact_all; }
@@ -48,12 +45,13 @@ public:
 	// Internals: not even user actions (Well, some still are, basically for testing.)
 	//!!Make a proper distinction between these and the player/user actions!
 	//!!(One thing's that those tend/should go through the UI, whereas these shouldn't.)
+	virtual size_t add_body(Model::World::Body&& obj);
+//!!	virtual size_t add_body(Model::World::Body const& obj);
+	virtual void   remove_body(size_t ndx);
 	size_t add_body(); // add a random one
-	void   add_bodies(size_t n);
 	void   remove_body(); // delete a random one
+	void   add_bodies(size_t n);
 	void   remove_bodies(size_t n = -1); // -1 -> all
-	virtual size_t add_body(Model::World::Body&& obj) = 0;
-	virtual void   remove_body(size_t ndx) = 0;
 
 	virtual bool poll_and_process_controls() override; // true if there was any input
 
@@ -71,8 +69,10 @@ public:
 // Data / Internals...
 //------------------------------------------------------------------------
 protected:
-	float _SCALE = CFG_DEFAULT_SCALE;
+	float _SCALE = CFG_DEFAULT_SCALE; // -> SimApp
 	float _OFFSET_X = 0, _OFFSET_Y = 0;
+
+//	int pan_step = CFG_PAN_STEP; // will be reset when starting to pan
 
 	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
 	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
