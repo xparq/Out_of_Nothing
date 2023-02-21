@@ -191,8 +191,8 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 		}
 /*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
 		// Friction:
-		sfml::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
 		sfml::Vector2f dv = friction_decel * (dt);
+		sfml::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
 		body->v += dv;
 !!*/		
 //cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
@@ -203,13 +203,15 @@ end_interact_loop:
 dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 #endif
 
+	// All-inclusive postprocessing loop for friction [but why here? test what diff it makes if done in the pre-interact. loop],
+	// and actually updating the positions finally
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{
 		auto& body = bodies[i];
 
 		// Friction:
 		sfml::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
-		sfml::Vector2f dv = friction_decel * (dt);
+		sfml::Vector2f dv = friction_decel * dt;
 		body->v += dv;
 		
 		// And finally the positions:
