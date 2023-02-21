@@ -2,7 +2,7 @@
 
 namespace Model {
 
-static constexpr float T_BV_MIN = 3000;
+static constexpr float T_BV_MIN = 15000;
 static constexpr float T_BV_MAX = 200000;
 
 float Physics::T_to_BV(float T) //!! just faking something simple
