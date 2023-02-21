@@ -352,6 +352,8 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 
 				case sf::Keyboard::Pause: toggle_physics(); break;
 
+				case sf::Keyboard::Tab: toggle_interact_all(); break;
+
 				case sf::Keyboard::F1:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(1) : save_snapshot(1); break;
 				case sf::Keyboard::F2:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(2) : save_snapshot(2); break;
 				case sf::Keyboard::F3:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(3) : save_snapshot(3); break;
@@ -374,7 +376,6 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 				case 'n': spawn(100); break;
 				case 'R': OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
 				case 'r': remove_bodies(100); break;
-				case 'i': toggle_interact_all(); break;
 				case 'f': world.FRICTION -= 0.01f; break;
 				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
@@ -624,8 +625,8 @@ void OON_sfml::_setup_UI()
 	help_hud.add("N:      add 100 objects (Shift+N: only 1)");
 	help_hud.add("R:      remove 100 objects (Shift+R: only 1)");
 //	help_hud.add("------- Metaphysics:");
-	help_hud.add("I:      toggle all-body interactions");
-	help_hud.add("F:      decrease, Shift+F: increase friction");
+	help_hud.add("Tab:    toggle all-body interactions");
+	help_hud.add("F:      decrease (+Shift: incr.) drag (friction)");
 //	help_hud.add("C:      chg. collision mode: pass/stick/bounce");
 	help_hud.add("Pause:  pause the physics");
 	help_hud.add("mouse wheel (or +/-): zoom");
