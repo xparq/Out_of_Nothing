@@ -175,7 +175,7 @@ protected:
 	bool _terminated = false;
 	bool _paused = false;
 	//!!Migrate to the Metrics system:
-	RollingAverage<50> avg_frame_delay;
+	misc::RollingAverage<50> avg_frame_delay;
 
 	// Player-controls (transient state)
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
