@@ -1,9 +1,23 @@
 #include "Model/World.hpp"
 #include "SimApp.hpp"
 
-#include <cmath> // sqrt, pow?
-#include <iostream> // cerr
 #include <cassert>
+#include <cmath> // sqrt, pow?
+#include <fstream>
+	using std::ofstream, std::ifstream;
+#include <iomanip>
+	using std::quoted;
+#include <iostream>
+	using std::cerr;
+//!!NOT YET! Too cumbersome for the trivial alternative.
+//!!#include <optional>
+//!!	using std::optional, std::nullopt;
+#include <map>
+#include <string>
+	using std::stoi, std::stof;
+//#include <cstdlib> // strtof
+#include <utility>
+	using std::move;
 
 using namespace std;
 
@@ -236,6 +250,104 @@ World& World::_clone(World const& other)
 	}
 //cerr << "World cloned.\n";
 	return *this;
+}
+
+
+//----------------------------------------------------------------------------
+bool World::save(std::ostream& out)
+{
+	out << "MODEL_VERSION = " << Model::VERSION << endl;
+
+	out << "drag = " << FRICTION << endl;
+	out << "interactions = " << _interact_all << endl;
+	out << "objects = " << bodies.size() << endl; // Saving for verification + preallocation on load!
+	out << "- - -" << endl; //!! mandatory separator to not break the idiotic loader! :)
+	for (size_t ndx = 0; ndx < bodies.size(); ++ndx) {
+		//!!Doesn't work, in>> struggles with the binary data, can't deal with it basically...
+		out << ndx << " : " // not "=" in order to assist load() a bit...
+		                    // Also, the space is needed before the ':' to allow reading the index (even into an int)!
+		<< "\"";
+			if (!bodies[ndx]->save(out)) {
+				return false;
+			}
+		out << "\"" << endl; //! For *some* readability. (Whitespace will be skipped after the bin chunk.)
+	}
+
+	return true;
+}
+
+//!!optional<World> World::load(std::istream& in) // static (factory)
+//!!{
+//!!	optional<World> w0;
+//!!	return nullopt; //!! w0;
+//!!}
+bool World::load(std::istream& in, World* result/* = nullptr*/)
+{
+	// World properties...
+	map<string, string> props;
+    for (string name, eq, val; in && !in.bad()
+		&& (in >> name >> eq >> quoted(val)) && eq == "=";) {
+		props[name] = val;
+	}
+//for (auto& [n, v] : props) cerr << n << ": " << v << endl;
+
+	//!! Verify a prev. save assuming a locked state, so the world hasn't changed since.
+	//!! This might be a very stupid idea actually...
+	if (props["MODEL_VERSION"] != string(Model::VERSION)) {
+		cerr << "- ERROR: Unknown smapshot version \"" << props["MODEL_VERSION"] << "\"\n";
+		return false;
+	}
+	/*
+	if (stoul(props["interactions"]) > 1) {
+		cerr << "- ERROR: Inconsistent smapshot data (`interactions` is not bool?!)\n";
+		return false;
+	}*/
+	//!!
+	//!!...
+	//!!
+	//!!Phew, done checking... :))
+
+	if (!result) {
+		return true;
+	}
+
+	World& w_new = *result;
+
+	try { // stof & friends are throw-happy
+		w_new.FRICTION = stof(props["drag"]);
+		w_new._interact_all = stof(props["interactions"]);
+	} catch (...) {
+		cerr << "- ERROR: Invalid world property in loaded snapshot.\n";
+		return false;
+	}
+
+	// Load the objects, too...
+	auto obj_count = stoi(props["objects"].c_str());
+	w_new.bodies.reserve(obj_count);
+//cerr << obj_count << " ~ " << w_new.bodies.size() << endl;
+	for (size_t n = 0; in && !in.bad() && n < obj_count; ++n) {
+		size_t ndx; char c;
+		in >> ndx >> c;
+//cerr << "char after the index: '"<< c <<"'" <<endl;
+		assert(n == ndx);
+
+		string objdump;
+		in >> quoted(objdump, '"', '\\'); //! This can properly read broken lines,
+			//! and wouldn't need fixed "record sizes", but requires escaping any
+			//! stray quotes in the object's mem dump -- which also means a string
+			//! reallocation per every few dozen objects, BTW.
+//cerr << "["<<ndx<<"]" << c <<" \""<< objdump << "\"" << endl;
+
+		assert(sizeof(Body) == objdump.size());
+
+		Body template_obj;
+		memcpy((void*)&template_obj, objdump.data(), sizeof(template_obj));
+//!!THIS IS ALL BOGUS YET, THESE DIDN'T MATCH! :-o
+//!!cerr << "template_obj.T = " << template_obj.T << endl;
+		w_new.add_body(std::move(template_obj));
+	}
+
+	return true; //!! w0;
 }
 
 } // namespace Model

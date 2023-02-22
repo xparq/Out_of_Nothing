@@ -365,7 +365,7 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 
 				case sf::Keyboard::Home:
 					if (kbd_state[KBD_STATE::CTRL])
-						pan_reset(); //!!Should be "upgraded" to "Camera/view reset", also resetting the zoom
+						pan_reset(); //!!Should be "upgraded" to "Camera/view reset" -- also resetting the zoom?
 					else
 						pan_center_body(globe_ndx);
 					break;

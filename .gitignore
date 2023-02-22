@@ -24,3 +24,5 @@ import/
 
 *.lock
 cache/
+
+*.sav

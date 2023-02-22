@@ -6,6 +6,7 @@
 import Storage;
 
 #include <atomic>
+#include <format> // vformat
 
 //============================================================================
 class SimApp // "Controller"
@@ -49,8 +50,14 @@ public:
 	void set_world(Model::World const&);
 	void set_world(Model::World &);
 
-	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
-	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= SLOTS_MAX
+	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
+	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
+	//virtual bool save_snapshot(const char* filename);
+	//virtual bool load_snapshot(const char* filename);
+	template <typename... X>
+	std::string snapshot_filename(size_t slot_ndx = 1, const std::string& format = "snapshot_{}.sav", const X... args) {
+		return std::vformat(format, std::make_format_args(slot_ndx, args...));
+	}
 
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)

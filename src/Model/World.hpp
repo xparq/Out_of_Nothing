@@ -17,11 +17,16 @@
 
 #include <memory> // shared_ptr
 #include <vector>
+//!!No, not yet. It's just too cumbersome.
+//!!#include <optional> // for load()
 
 class SimApp; //! Sigh, must predeclare it here, outside the namespace...
-              //! Curiously, it's not in the "global" :: namespece either
-              //! by default, so ::SimApp; wouldn't work there either! :-o
+              //! Curiously, it's not in the "global" :: namespece, so ::SimApp;
+              //! wouldn't work from within the Model! :-o
 namespace Model {
+
+static constexpr char const* VERSION = "0.0.1";
+
 
 //============================================================================
 class World
@@ -39,11 +44,12 @@ public:
 public:
 	enum Event { None, Collision, Decay };
 
-	struct Body
+	struct Body //!! : public Serializable //! No: this would kill the C++ init list syntax!...
+	                                       //! So, just keep it a memcpy-able POD type for easy loading!
 	//! Inner class of World, because it depends on the physics (e.g. constants).
 	{
 		//!!ObjConfig cfg; // basically the obj. type
-		static constexpr float Unlimited = -1; //! Not an enum to avoid the World::Body::Enumname::... atrocity
+		static constexpr float Unlimited = -1; //! Not an enum to avoid the `World::Body::Enumname::Unlimited` atrocity
 		struct {
 			bool gravity_immunity = false;
 			bool free_color = false; // T doesn't affect color
@@ -59,8 +65,8 @@ public:
 
 		// Preset/recomputed:
 		uint32_t color = 0; // if left 0, it'll recalculated from T (if not 0)
-				// RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
-				// The reason is easier add_body() calls here.)
+			// RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
+			// The reason is easier add_body() calls here.)
 
 		// Always computed:
 		float mass;
@@ -81,7 +87,7 @@ public:
 		//! So... (see e.g. add_body()):
 		void recalc();
 		bool can_decay() { return lifetime > 0; }
-		void on_event(Event e, ...); // Alas, can't be virtual: that would kill the C++ initializer struct! :-o :-/
+		void on_event(Event e, ...); //! Alas, can't be virtual: that would kill the C++ init. list syntax! :-o :-/
 
 		// Ops.:
 		bool has_thrusters() { return thrust_up.thrust_level() != MyNaN; }
@@ -92,6 +98,10 @@ public:
 			thrust_right.thrust_level(0);
 		}
 		bool is_player() { return has_thrusters(); } // ;)
+
+		class std::ostream; class std::istream;
+		bool        save(std::ostream&);
+		static Body load(std::istream&);
 	};
 
 	//------------------------------------------------------------------------
@@ -135,6 +145,10 @@ public:
 
 	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
 
+	class std::ostream; class std::istream;
+	bool        save(std::ostream& out);
+	static bool load(std::istream& in, World* result = nullptr); // Verifies only (comparing to *this) if null
+//!! std::optional<World> load(std::istream& in);
 
 //------------------------------------------------------------------------
 // C++ mechanics...

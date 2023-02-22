@@ -1,6 +1,8 @@
 #ifndef __ROLLING_AVG__
 #define __ROLLING_AVG__
 
+//!!namespace misc {
+
 template<int MAX>
 struct RollingAverage
 {
@@ -19,5 +21,7 @@ struct RollingAverage
 	operator float() { return sum / n; }
 	operator int() { return (int)(sum / n); }
 };
+
+//!!};
 
 #endif __ROLLING_AVG__
