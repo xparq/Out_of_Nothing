@@ -36,7 +36,7 @@ if [ ! -d "${sz_out_dir}" ]; then
 	exit 1
 fi
 
-# Note the ; separators, which would fail with GCC... on everywhere, but Windows... :-/
-export INCLUDE="${sz_src_dir};${sfml_libroot}/include;${INCLUDE}"
+# Note the ; separators, which would fail with GCC on everything, but Windows (MinGW-like?)...
+export INCLUDE="${sz_src_dir};extern/sfw/include;${sfml_libroot}/include;${sz_prjdir};${INCLUDE}"
 export LIB="${sfml_libroot}/lib;${LIB}"
 export PATH="${sz_prjdir}/tooling;${sfml_libroot}/bin;${PATH}"

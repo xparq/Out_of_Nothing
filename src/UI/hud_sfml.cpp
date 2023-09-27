@@ -126,7 +126,7 @@ string HUD::render_watched_item_to(std::stringstream& out)
 //----------------------------------------------------------------------------
 void HUD_SFML::append_line(const char* utf8_str)
 {
-	lines_to_draw.emplace_back(utf8_str, font, DEFAULT_LINE_HEIGHT);
+	lines_to_draw.emplace_back(font, utf8_str, DEFAULT_LINE_HEIGHT);
 	auto& line = lines_to_draw[line_count()-1];
 	line.setPosition({
 			(float)_panel_left + DEFAULT_PADDING,

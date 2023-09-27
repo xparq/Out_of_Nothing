@@ -9,7 +9,7 @@ rem !! These could crash horrendously, if e.g. the existing value has & in it et
 rem !!
 
 if "%sz_prjdir%"=="" set sz_prjdir=%~dp0..
-if "%sfml_libroot%"=="" set sfml_libroot=%sz_prjdir%/../../SW/devel/lib/sfml/current
+if "%sfml_libroot%"=="" set sfml_libroot=%sz_prjdir%/extern/sfml
 
 set sz_src_dir=%sz_prjdir%/src
 set sz_asset_subdir=asset
@@ -25,6 +25,6 @@ cd "%sz_prjdir%"
 
 if not exist "%sz_out_dir%" md "%sz_out_dir%"
 
-set INCLUDE=%sz_src_dir%;%sfml_libroot%/include;%INCLUDE%
+set INCLUDE=%sz_src_dir%;extern/sfw/include;%sfml_libroot%/include;%sz_prjdir%;%INCLUDE%
 set LIB=%sfml_libroot%/lib;%LIB%
 set PATH=%sz_prjdir%/tooling;%sfml_libroot%/bin;%PATH%

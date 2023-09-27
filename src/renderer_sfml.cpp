@@ -1,4 +1,5 @@
 #include "renderer_sfml.hpp"
+#include "sfw/GUI.hpp"  // Theme.hpp is not enough, it doesn't include sfw::Text!
 
 #include "OON_sfml.hpp" //!!This stinks: should only use the Model,
                         //!!perhaps *some* of the _generic_ OON stuff,
@@ -59,15 +60,14 @@ void Renderer_SFML::draw(OON_sfml& game)
 //!!MOVE TO UI::Widget::Notice!
 void Renderer_SFML::draw_paused_banner(OON_sfml& game)
 {
-	sf::Font font;
-	if (!font.loadFromFile("asset/font/default.font")) {
+	if (!sfw::Theme::loadFont("asset/font/default.font")) {
 		//! SFML does print errors to the console.
 		return;
 	}
 
 	auto TXT_WIDTH = 300u;
 	auto TXT_HEIGHT = 80u;
-	sf::Text banner("PAUSED", font, TXT_HEIGHT);
+	sfw::Text banner("PAUSED", TXT_HEIGHT);
 	banner.setPosition({
 		(float)game.window.getSize().x/2 - TXT_WIDTH/2,
 		(float)game.window.getSize().y/2 - TXT_HEIGHT/2 - 16 //!!fuckup offset

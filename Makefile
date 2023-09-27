@@ -28,7 +28,7 @@ appname=$(SZ_APPNAME)
 
 
 !if "$(src_dir)" == "" || "$(out_dir)" == ""
-!error - Build env. not initialized (correctly)!
+!error - Build env. not properly initialized. Use `build.cmd`!
 !endif
 
 EXE=$(out_dir)/$(appname).exe
@@ -71,19 +71,24 @@ INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h \
 #!!Ugh... A little hamfisted; see #118!
 CPP_MODULE_SOURCES=$(src_dir)/*.ixx
 
+
+#!!This should really be adjusted to match the build options! :-/
+EXT_LIBS=extern/sfw/lib/msvc/sfw.lib
+
 #-----------------------------------------------------------------------------
 #CC_FLAGS=$(CC_FLAGS) -nologo
-CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc
+CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc -c
 # For GH #15 (don't rely on manually including cfg.h):
 CC_FLAGS=$(CC_FLAGS) -FI cfg.h
 
 CC_OUTDIR_FLAGS_=-Fo$(out_dir)/ -Fd$(out_dir)/
-CC_FLAGS_=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_) -c
+#! Mind the trailing '_':
+CC_FLAGS_=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_)
 
 CC_OUTDIR_FLAGS_World=-Fo$(out_dir)/$(World_subdir)/ -Fd$(out_dir)/$(World_subdir)/
 CC_OUTDIR_FLAGS_UI=-Fo$(out_dir)/$(UI_subdir)/ -Fd$(out_dir)/$(UI_subdir)/
-CC_FLAGS_World=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_World) -c
-CC_FLAGS_UI=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_UI) -c
+CC_FLAGS_World=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_World)
+CC_FLAGS_UI=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_UI)
 
 #!! No subdirs for modules yet:
 CC_FLAGS_CPPMODULES= -ifcOutput $(out_dir)/ -ifcSearchDir $(out_dir)/
@@ -161,6 +166,10 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMO
 
 #-----------------------------------------------------------------------------
 # Rules, finally...
+#
+# AFAIK, NMAKE can't suport multi-tag subpaths in inf. rules (only single-depth
+# subdirs), so each dir has to have its distinct rule... :-/ (I hope I'm wrong!)
+#
 
 #!!?? I'm not sure if this is actually the sane way:
 {$(src_dir)/}.ixx{$(out_dir)/}.ifc::
@@ -183,8 +192,6 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMO
 #!!Alas, this doesn't seem to work in inference rules:
 #!!	$(ECHO) SOURCE DRIVE + PATH: $(%|dpF)<
 	$(CC_CMD) $(CC_FLAGS_UI) $<
-
-
 
 ## This non-batch alternative for attempting to generate .h* deps is futile...
 ## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
@@ -218,6 +225,8 @@ MAIN::
 	@$(MKDIR) $(out_dir)/$(World_subdir)
 	@$(MKDIR) $(out_dir)/$(UI_subdir)
 
+## MAIN:: $(out_dir)/$(UI_subdir)/sfw.lib
+
 MAIN:: $(HASH_INCLUDE_FILE)
 
 MAIN:: $(CPP_MODULE_IFCS)
@@ -225,6 +234,8 @@ MAIN:: $(CPP_MODULE_IFCS)
 MAIN:: $(CPP_MODULES)
 
 MAIN:: $(EXE)
+
+## !include src/UI/sfw/Makefile.msvc
 
 #-----------------------------------------------------------------------------
 clean:
@@ -240,8 +251,8 @@ clean:
 # ...Oh no!... It really is! (Yeah, I did consider that we are running inside BB sh,
 # but assumed it would reset it when launching a "foreign" process like CMD... :-o )
 	@set BB_GLOBBING=1
-	@for %x in ($(CLEANED_OUTPUT_EXT)) do \
-		@$(BB) find "$(out_dir)" -type f -name "*%x" -exec $(BB) rm "{}" ^;
+	for %x in ($(CLEANED_OUTPUT_EXT)) do \
+		$(BB) find "$(out_dir)" -type f -name "*%x" -exec $(BB) rm "{}" ^;
 #! This didn't work, as `rm -r dir/*x` is too dumb to recurse below dir despite -r
 #! (no matter the BB_GLOBBING state):
 #		@if exist "$(out_dir)/*%x" \
@@ -249,7 +260,7 @@ clean:
 
 #-----------------------------------------------------------------------------
 $(EXE):: $(OBJS)
-	$(LINK_CMD) $(LINK_FLAGS_DEBUGMODE) /out:$(EXE) $(OBJS) $(LIBS)
+	$(LINK_CMD) $(LINK_FLAGS_DEBUGMODE) -out:$(EXE) $(OBJS) $(LIBS) $(EXT_LIBS)
 
 
 #=============================================================================
