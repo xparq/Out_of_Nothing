@@ -1,7 +1,7 @@
 @echo off
 
-# We are supposed to be in the repo's work-tree root; at least
-# that seems to be the case when run from a GH Action...
+:: We are supposed to be in the repo's work-tree root; at least
+:: that seems to be the case when run from a GH Action...
 
 pushd .
 call :main
@@ -37,8 +37,12 @@ rem set SFML
 
 ::
 echo Download...
-::
-%~dp0busybox wget -P %_SFML_DOWNLOAD_DIR% %_SFML_DOWNLOAD_URL%
+::!!
+::!! BusyBox stopped working for this! :-/
+::!! %~dp0busybox wget -P %_SFML_DOWNLOAD_DIR% %_SFML_DOWNLOAD_URL%
+::!!	ssl_client: TLS error from peer (alert code 40): handshake failure
+::!!	wget: error getting response
+wget -q -P %_SFML_DOWNLOAD_DIR% %_SFML_DOWNLOAD_URL%
 
 if not exist "%_SFML_DOWNLOADED_PACK%" (
 	echo - ERROR: Failed to download package.

@@ -17,7 +17,7 @@ Which I'm chock-full of already, and can hardly wait to get through some
 boring and/or daunting architectural design + low-level tech hurdles first,
 and start crafting the fun bits. You can't wait! ;)
 
-![screenshot](asset/image/screenshot/8k1.png)
+![screenshot](doc/image/screenshot/8k1.png)
 ------------------------------------------------------------------------------
 
 Technical & other details: -> [doc/...](doc/)
@@ -28,8 +28,8 @@ occasionally, however, they can't convey the fist-hand experience of actually
 manipulating the wolrd, or even just watching the mesmerizing flow and constant
 development of interesting superstructures -- just like in the real universe.)_
 
-![screenshot](asset/image/screenshot/screenshot_10k_low_friction.png)
+![screenshot](doc/image/screenshot/screenshot_10k_low_friction.png)
 ------------------------------------------------------------------------------
-![screenshot](asset/image/screenshot/screenshot_5000_void_sphere_zoomout_1.png)
+![screenshot](doc/image/screenshot/screenshot_5000_void_sphere_zoomout_1.png)
 ------------------------------------------------------------------------------
-![screenshot](asset/image/screenshot/13k-vari-friction-1024.png)
+![screenshot](doc/image/screenshot/13k-vari-friction-1024.png)

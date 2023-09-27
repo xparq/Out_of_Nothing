@@ -43,13 +43,14 @@ public:
 	void toggle_music() override;
 	void toggle_sound(size_t ndx) override;
 
-	Audio_SFML()
+	Audio_SFML(): _dummy_soundbuffer_for_SFML(), _sound(_dummy_soundbuffer_for_SFML)
 	{
 		// Add an empty element so if add() returns 0 for errors it could still
 		// be used as an index, pointing to a safe & silent spot.
 		sounds.resize(1); //! Remember the implicit copy ctor call here (no matter what)! :-o (-> also: add_sound!)
 	}
 private:
+	sf::SoundBuffer _dummy_soundbuffer_for_SFML; //! Sigh, SFML/9cbcd56... :-(
 	sf::Sound _sound; //!! only this one single player object yet!
 	sf::Music _music; //!! only this one single player object yet!
 };

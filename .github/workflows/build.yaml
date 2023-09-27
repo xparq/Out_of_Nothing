@@ -45,6 +45,9 @@ jobs:
 #      run: wget -h
 # WELL: NOT installed! (So much about lots of download actions on the marketplace...)
 
+    - name: Install prerequisites (wget...)
+      run: choco install wget
+
     - name: Setup SFML...
       shell: cmd
       run: tooling/sfml_dl+unzip.cmd
