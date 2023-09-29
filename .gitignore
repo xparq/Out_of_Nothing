@@ -13,6 +13,7 @@ out/
 !tooling/*.exe
 
 *.code-workspace
+*.vscode
 
 asset/music/*
 !asset/music/README.*

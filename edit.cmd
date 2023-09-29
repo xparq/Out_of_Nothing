@@ -1,1 +1,1 @@
-start /min cmd /c "C:\Program Files (x86)\VSCodium\VSCodium.exe" %*
+start /min cmd /c C:\sz\SW\cmd\vscode.cmd %*

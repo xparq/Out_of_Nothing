@@ -15,6 +15,7 @@ set sz_src_dir=%sz_prjdir%/src
 set sz_asset_subdir=asset
 set sz_asset_dir=%sz_prjdir%/%sz_asset_subdir%
 set sz_out_dir=%sz_prjdir%/out
+set sz_run_dir=%sz_prjdir%/run
 set sz_tmp_dir=%sz_prjdir%/tmp
 set sz_release_dir=%sz_tmp_dir%/release
 

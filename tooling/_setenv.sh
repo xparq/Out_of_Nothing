@@ -22,6 +22,7 @@ export sz_src_dir=${sz_prjdir}/src
 export sz_asset_subdir=asset
 export sz_asset_dir=${sz_prjdir}/${sz_asset_subdir}
 export sz_out_dir=${sz_prjdir}/out
+export sz_run_dir=${sz_prjdir}/run
 export sz_tmp_dir=${sz_prjdir}/tmp
 export sz_release_dir=${sz_prjdir}/release
 
