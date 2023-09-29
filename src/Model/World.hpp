@@ -11,7 +11,7 @@
 	//! been ripped out of it and copied here, because it's nicely self-containing,
 	//! so we can keep using it, while still detaching from the *entire* lib itself!
 	//! To avoid duplicate definitions and confusiion, the local version has changed
-	//! the `sf` namespace from to `sfml`!)
+	//! from the `sf` namespace to `sfml`!)
 	//! The actual types are of course syntactically incompatible though, so some
 	//! awkward manual (compile-time) fiddling might still be required occasionally.
 
@@ -160,6 +160,27 @@ public:
 	//!!Say sg. about move, too! I guess they are inhibited by the above now.
 
 	World& _clone(World const& other);
+}; // class World
+
+
+struct View
+/* View-local coord. sys.:
+       +y
+        |
+  -x -- 0 -- +x
+        |
+       -y
+
+  It's origin is supposed to be aligned to the center of the screen (window, view pane...).
+*/
+{
+	static constexpr auto CFG_DEFAULT_ZOOM = 0.0000005f; //! This one also depends very much on the physics!
+
+	sfml::Vector2f world_to_view_coord(sfml::Vector2f p) const { return p * zoom + offset; }
+	sfml::Vector2f world_to_view_coord(float x, float y) const { return { x * zoom + offset.x, y * zoom + offset.y }; }
+
+	float zoom = CFG_DEFAULT_ZOOM;
+	sfml::Vector2f offset = {0, 0}; // in World-coordinates
 };
 
 } // namespace

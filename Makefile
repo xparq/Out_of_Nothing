@@ -62,8 +62,8 @@ OBJS=\
 	$(out_dir)/$(World_subdir)/World.obj \
 	$(out_dir)/renderer_sfml.obj \
 	$(out_dir)/$(UI_subdir)/hud_sfml.obj \
+	$(out_dir)/$(UI_subdir)/TGUI-Clipping.obj \
 	$(out_dir)/audio_sfml.obj \
-	$(out_dir)/TGUI-Clipping.obj \
 
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h \
 	$(src_dir)/$(World_subdir)/*.hpp $(src_dir)/$(UI_subdir)/*.hpp $(src_dir)/misc/*.hpp
@@ -252,7 +252,7 @@ clean:
 # but assumed it would reset it when launching a "foreign" process like CMD... :-o )
 	@set BB_GLOBBING=1
 	for %x in ($(CLEANED_OUTPUT_EXT)) do \
-		$(BB) find "$(out_dir)" -type f -name "*%x" -exec $(BB) rm "{}" ^;
+		@$(BB) find "$(out_dir)" -type f -name "*%x" -exec $(BB) rm "{}" ^;
 #! This didn't work, as `rm -r dir/*x` is too dumb to recurse below dir despite -r
 #! (no matter the BB_GLOBBING state):
 #		@if exist "$(out_dir)/*%x" \

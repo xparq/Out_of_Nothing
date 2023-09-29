@@ -56,9 +56,23 @@ bool OON::_ctrl_update_thrusters()
 }
 
 //----------------------------------------------------------------------------
-void OON::pan_x(int delta) { _OFFSET_X += delta; }
-void OON::pan_y(int delta) { _OFFSET_Y += delta; }
-void OON::pan_reset()  { _OFFSET_X = _OFFSET_Y = 0; }
+void OON::pan_reset()  { view.offset = {0, 0}; }
+void OON::pan(sfml::Vector2f delta) { pan_x(delta.x); pan_y(delta.y); }
+void OON::pan_x(float delta) { view.offset.x += delta; }
+void OON::pan_y(float delta) { view.offset.y += delta; }
+void OON::pan_to_entity(size_t id)
+{
+	const auto& body = world.bodies[id];
+	view.offset = - body->p * view.zoom;
+}
+
+void OON::zoom(float factor)
+{
+//!!pre_zoom_hook(factor);
+	view.zoom *= factor;
+	post_zoom_hook(factor);
+}
+
 
 bool OON::_ctrl_update_pan()
 {

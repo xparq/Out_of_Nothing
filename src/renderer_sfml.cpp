@@ -1,4 +1,6 @@
 #include "renderer_sfml.hpp"
+#include "misc/SFML-shim.hpp" // For converting OON vectors to SFML's sf::Vector
+
 #include "sfw/GUI.hpp"  // Theme.hpp is not enough, it doesn't include sfw::Text!
 
 #include "OON_sfml.hpp" //!!This stinks: should only use the Model,
@@ -35,11 +37,12 @@ void Renderer_SFML::render(OON_sfml& game)
 
 		auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
 
-//cerr << "shape.setPos -> x = " << VIEW_WIDTH/2  + (body->p.x - body->r) * game._SCALE + game._OFFSET_X
-//			       << ", y = " << VIEW_HEIGHT/2 + (body->p.y - body->r) * game._SCALE + game._OFFSET_Y <<endl;
-		trshape.setPosition(sf::Vector2f(
-			VIEW_WIDTH/2  + (body->p.x - body->r) * game._SCALE + game._OFFSET_X,
-			VIEW_HEIGHT/2 + (body->p.y - body->r) * game._SCALE + game._OFFSET_Y));
+//cerr << "shape.setPos -> x = " << VIEWPORT_WIDTH/2 + (body->p.x - body->r) * game.view.zoom + game.view.offset.x
+//			         << ", y = " << VIEWPORT_WIDTH/2 + (body->p.y - body->r) * game.view.zoom + game.view.offset.y <<endl;
+//		auto vpos = game.view.world_to_view_coord(body->p.x - body->r, body->p.y - body->r); //!! Make the centered origin an implicit default!
+//		trshape.setPosition({vpos.x + sf::Vector2f(VIEWPORT_WIDTH/2, vpos.y + VIEWPORT_HEIGHT/2)); //!! Make the centered origin an implicit default!
+		auto vpos = game.view.world_to_view_coord(body->p - sfml::Vector2f(body->r, body->r)); //!! Make the centered origin an implicit default!
+		trshape.setPosition(to_sfVector2(vpos) + sf::Vector2f(VIEWPORT_WIDTH/2, VIEWPORT_HEIGHT/2)); //!! Make the centered origin an implicit default!
 	}
 }
 
@@ -90,7 +93,7 @@ void Renderer_SFML::create_cached_body_shape(const OON_sfml& game, const Model::
 
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
-	auto shape = make_shared<sf::CircleShape>(body.r * game._SCALE);
+	auto shape = make_shared<sf::CircleShape>(body.r * game.view.zoom);
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
 

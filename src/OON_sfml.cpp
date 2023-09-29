@@ -84,7 +84,7 @@ enum SimApp::KBD_STATE KBD_XLAT_SFML[] = {
 //============================================================================
 OON_sfml::OON_sfml()
 		// Creating the window right away here (only) to support init-by-constr. for the HUDs:
-		: window(sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}), WINDOW_TITLE)
+		: window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), WINDOW_TITLE)
 		//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 		//!!??
 		//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
@@ -230,9 +230,6 @@ void OON_sfml::updates_for_next_frame()
 	clock.restart(); //! Must also be duly restarted on unpausing!
 	avg_frame_delay.update(frame_delay);
 
-	// Saving the old superglobe position for things like auto-scroll:
-	auto p0 = world.bodies[globe_ndx]->p;
-
 	world.recalc_next_state(frame_delay, *this);
 
 	// Auto-scroll to follow player movement...
@@ -240,25 +237,9 @@ void OON_sfml::updates_for_next_frame()
 	//! NOTE: THIS MUST COME AFTER RECALCULATING THE NEW STATE!
 	//!
 	if (kbd_state[KBD_STATE::SCROLL_LOCKED] || kbd_state[KBD_STATE::SHIFT]) {
-		pan_follow_body(globe_ndx, p0.x, p0.y);
+		pan_to_player();
 	}
 }
-
-//----------------------------------------------------------------------------
-void OON_sfml::pan_center_body(auto body_id)
-{
-	const auto& body = world.bodies[body_id];
-	_OFFSET_X = - body->p.x * _SCALE;
-	_OFFSET_Y = - body->p.y * _SCALE;
-}
-
-void OON_sfml::pan_follow_body(auto body_id, float old_x, float old_y)
-{
-	const auto& body = world.bodies[body_id];
-	_OFFSET_X -= (body->p.x - old_x) * _SCALE;
-	_OFFSET_Y -= (body->p.y - old_y) * _SCALE;
-}
-
 
 //----------------------------------------------------------------------------
 void OON_sfml::event_loop()
@@ -350,7 +331,7 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 					// [fix-setactive-fail] -> DON'T: window.close();
 					break;
 
-				case sf::Keyboard::Pause: toggle_physics(); break;
+				case sf::Keyboard::Pause: toggle_pause_physics(); break;
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
 
 				case sf::Keyboard::Insert: spawn(kbd_state[KBD_STATE::SHIFT] ? 1 : 100); break;
@@ -367,7 +348,7 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 					if (kbd_state[KBD_STATE::CTRL])
 						pan_reset(); //!!Should be "upgraded" to "Camera/view reset" -- also resetting the zoom?
 					else
-						pan_center_body(globe_ndx);
+						pan_to_player();
 					break;
 
 				case sf::Keyboard::F12: toggle_huds(); break;
@@ -497,8 +478,41 @@ bool OON_sfml::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 	obj1->recalc();
 	obj2->recalc();
 
-	return false; //!!this is not used yet, but I will forget this when it gets to be... :-/
+	return false; //!!Not yet used!
 }
+
+
+void OON_sfml::post_zoom_hook(float factor)
+{
+	renderer.resize_objects(factor);
+	_adjust_pan_after_zoom(factor);
+}
+
+//----------------------------------------------------------------------------
+void OON_sfml::_adjust_pan_after_zoom(float factor)
+{
+	auto vpos = view.world_to_view_coord(player_model()->p) - view.offset;
+	pan(-(vpos - vpos/factor));
+}
+
+/*
+	// If the new zoom level would put the player object out of view, reposition the view so that
+	// it would keep being visible; also roughly at the same view-offset as before!
+
+	auto visible_R = player_model()->r * view.zoom; //!! Not a terribly robust method to get that size...
+
+	if (abs(vpos.x) > Renderer_SFML::VIEWPORT_WIDTH/2  - visible_R ||
+	    abs(vpos.y) > Renderer_SFML::VIEWPORT_HEIGHT/2 - visible_R)
+	{
+cerr << "R-viewsize: " << view.zoom * plm->r
+	 << " abs(vpos.x): " << abs(vpos.x) << ", "
+     << " abs(vpos.u): " << abs(vpos.y) << endl;
+
+		pan_to_player(offset);
+		pan_to_entity(player_entity_ndx(), vpos * CFG_ZOOM_CHANGE_RATIO); // keep the on-screen pos!
+//		zoom_out(); //!! Shouldn't be an infinite zoom loop (even if moving way too fast, I think)
+	}
+*/
 
 
 //----------------------------------------------------------------------------
@@ -515,7 +529,7 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
 	is_full = !is_full;
 
 	window.create(
-		is_full ? sf::VideoMode::getDesktopMode() : sf::VideoMode({Renderer_SFML::VIEW_WIDTH, Renderer_SFML::VIEW_HEIGHT}),
+		is_full ? sf::VideoMode::getDesktopMode() : sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}),
 		WINDOW_TITLE,
 		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
 	);
@@ -587,14 +601,16 @@ void OON_sfml::_setup_UI()
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
 	//!!?? in this generic pointer passing context?!
-
-	auto ftos = [this](auto* px) { return [this, px]() { static constexpr size_t LEN = 15;
-		char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *px);
+	//!!
+	//!! "Evenfurthermore": why do all these insane `this` captures apparently survive
+	//!! all the obj recreation shenanigans (they *are* recreated, right??...) after
+	//!! a World reload?!?!?!
+	//!!
+	auto ftos = [this](auto* ptr_x) { return [this, ptr_x]() { static constexpr size_t LEN = 15;
+		char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *ptr_x);
 		return string(ec != std::errc() ? "???" : (*ptr = 0, buf));
-//		return ec != std::errc() ? "???" : string(string_view(buf, ptr)); // Or this...
 		};
 	};
-
 	debug_hud.add("FPS",        [this](){ return to_string(1 / (float)this->avg_frame_delay); });
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
 	debug_hud.add("Body interactions", &this->world._interact_all);
@@ -608,9 +624,9 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("      vx", ftos(&this->world.bodies[this->globe_ndx]->v.x));
 	debug_hud.add("      vy", ftos(&this->world.bodies[this->globe_ndx]->v.y));
 	debug_hud.add("");
-	debug_hud.add("VIEW SCALE", &_SCALE);
-	debug_hud.add("CAM. X", &_OFFSET_X);
-	debug_hud.add("CAM. Y", &_OFFSET_Y);
+	debug_hud.add("VIEW SCALE", &view.zoom);
+	debug_hud.add("CAM. X", &view.offset.x);
+	debug_hud.add("CAM. Y", &view.offset.y);
 /*	debug_hud.add("");
 	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
 	debug_hud.add("LSHIFT", (bool*)&kbd_state[KBD_STATE::LSHIFT]);

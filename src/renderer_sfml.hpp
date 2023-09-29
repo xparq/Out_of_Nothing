@@ -23,11 +23,16 @@ class OON_sfml;
 class Renderer_SFML : public Renderer// "View"
 {
 public:
-	static constexpr auto VIEW_WIDTH  = 1024;
-	static constexpr auto VIEW_HEIGHT = 768;
+	constexpr static auto WINDOW_WIDTH  = 1024;
+	constexpr static auto WINDOW_HEIGHT = 768;
 
-	static constexpr const auto ALPHA_ACTIVE = 255;
-	static constexpr auto ALPHA_INACTIVE = 127;
+	// Size of the view pane (viewport); NOT directly related to Model::View, but
+	// should obviously be mapped directly to display (viewport) coords, if at all possible.
+	constexpr static auto VIEWPORT_WIDTH  = WINDOW_WIDTH;
+	constexpr static auto VIEWPORT_HEIGHT = WINDOW_HEIGHT;
+
+	constexpr static auto ALPHA_ACTIVE = 255;
+	constexpr static auto ALPHA_INACTIVE = 127;
 
 // Ops
 	void render(OON_sfml& game); // can't keep it inline here: uses the game object!

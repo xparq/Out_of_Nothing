@@ -3,27 +3,28 @@
 
 #include "SimApp.hpp"
 
+#include <cassert>
+
 //============================================================================
 class OON : public SimApp
 {
-//------------------------------------------------------------------------
-// Model event hooks (callbacks)...
-//------------------------------------------------------------------------
-public:
-	void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
-
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // API Ops...
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 public:
+
+	auto&  player_model(unsigned player_id = 1) { assert(player_id == 1); return world.bodies[player_entity_ndx(player_id)]; }
+
 	//------------------------------------------------------------------------
-	// Player (gameplay) actions:
-	virtual void spawn(size_t n = 1, size_t parent_ndx = 0); //!! required: 0 === globe_ndx
+	// Player actions...
+
+	// - Gameplay:
+	virtual void spawn(size_t n = 1, size_t parent_ndx = 0); //!! required: 0 == globe_ndx
 	virtual void exhaust_burst(size_t n = 50);
 
 	auto toggle_interact_all()  { world._interact_all = !world._interact_all; }
 
-	//! These should be idempotent, to tolerate keyboard repeats (which could be disabled, but better be robust)!
+	//!!These should be idempotent, to tolerate keyboard repeats (which could be disabled but may be problematic)!
 	//!!Also -> #105: sanitize thrusters...
 	void    up_thruster_start();
 	void  down_thruster_start();
@@ -34,10 +35,16 @@ public:
 	void  left_thruster_stop();
 	void right_thruster_stop();
 
-	virtual void pan_x(int delta);
-	virtual void pan_y(int delta);
-	virtual void pan_reset();
-	void _pan_adjust_after_zoom() { /* !!?? */ }
+	// - View control:
+	void pan(sfml::Vector2f delta);
+	void pan_x(float delta);
+	void pan_y(float delta);
+	void pan_reset();
+	void pan_to_entity(size_t id);
+	void pan_to_player(unsigned player_id = 1) { assert(player_id == 1); return pan_to_entity(player_entity_ndx(player_id)); }
+	auto zoom_in  () { constexpr static auto factor =    1 + CFG_ZOOM_CHANGE_RATIO;  zoom(factor); }
+	auto zoom_out () { constexpr static auto factor = 1/(1 + CFG_ZOOM_CHANGE_RATIO); zoom(factor); }
+	void zoom(float factor);
 
 	//------------------------------------------------------------------------
 	// Internals: not even user actions (Well, some still are, basically for testing.)
@@ -51,29 +58,43 @@ public:
 	void   add_bodies(size_t n);
 	void   remove_bodies(size_t n = -1); // -1 -> all
 
+	size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const { assert(player_id == 1); return globe_ndx; }
+
 	virtual bool poll_and_process_controls() override; // true if there was any input
 
 	bool _ctrl_update_thrusters(); // true if any engine is firing
 	bool _ctrl_update_pan(); // true if panning was requested
 
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// Virtuals...
+//----------------------------------------------------------------------------
+private:
+	//------------------------------------------------------------------------
+	// - Implemented:
+
+	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
+	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
+
+	//------------------------------------------------------------------------
+	// - Introduced:
+	virtual void post_zoom_hook([[maybe_unused]] float factor) {}
+
+//----------------------------------------------------------------------------
 // C++ mechanics...
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 public:
 	OON() = default;
 	OON(const OON&) = delete;
 
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // Data / Internals...
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 protected:
-	static constexpr int CFG_PAN_STEP = 5; // "SFML pixel"
-
-	float _SCALE = CFG_DEFAULT_SCALE;
-	float _OFFSET_X = 0, _OFFSET_Y = 0;
+	constexpr static auto CFG_PAN_STEP = 5; // "SFML pixel"
+	constexpr static auto CFG_ZOOM_CHANGE_RATIO = 0.25f; // 25%
 
 	// These will be reset to +/-CFG_PAN_STEP whenever starting to pan:
-	int pan_step_x = 0, pan_step_y = 0;
+	float pan_step_x = 0, pan_step_y = 0;
 
 	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
 	size_t clack_sound = 0; // paranoid safety init (see _setup()!)

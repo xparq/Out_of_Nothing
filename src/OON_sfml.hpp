@@ -17,12 +17,6 @@ class OON_sfml : public OON
 friend class Renderer_SFML;
 
 //------------------------------------------------------------------------
-// Model event hooks (callbacks)...
-//------------------------------------------------------------------------
-public:
-	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
-
-//------------------------------------------------------------------------
 // API Op. Overrides...
 //------------------------------------------------------------------------
 public:
@@ -39,20 +33,6 @@ public:
 
 	//--------------------------------------------------------------------
 	// Player (gameplay) action overrides:
-
-	//--------------------------------------------------------------------
-	// "Semi-Meta" ops: still player actions, but not "core" gameplay:
-	void pan_center_body(auto body_id);
-	void pan_follow_body(auto body_id, float old_x, float old_y);
-
-	auto zoom_in()  { auto factor = 1.25f; _SCALE *= factor;
-		renderer.resize_objects(factor);
-		_pan_adjust_after_zoom();
-	}
-	auto zoom_out () { auto factor = 0.80f; _SCALE *= factor;
-		renderer.resize_objects(factor);
-		_pan_adjust_after_zoom();
-	}
 
 	virtual void pause_physics(bool state = true) override {
 		SimApp::pause_physics(state);
@@ -76,6 +56,18 @@ public:
 	void toggle_fullscreen();
 	bool sw_fps_throttling(int newstate = -1); // -1 means read; std::optional can't help with omitting it altogether
 
+
+//------------------------------------------------------------------------
+// Callback impl. (overrides)...
+//------------------------------------------------------------------------
+private:
+	// Model events
+	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
+
+	// Game control
+	virtual void post_zoom_hook(float factor) override;
+
+
 //------------------------------------------------------------------------
 // Internals...
 //------------------------------------------------------------------------
@@ -90,6 +82,13 @@ protected:
 
 	void _setup();
 	void _setup_UI();
+
+	// Misc...
+	// Compensate for zoom displacement when the player object is not centered;
+	// called by post_zoom_hook
+	void _adjust_pan_after_zoom(float factor); //!! A generic _adjust_pan(), and even _adjust_view() should exist, too, at least for consistency!
+		//!! This is not SFML-specific, BTW, but the post_zoom_hook override already is (for using the SFML-dependent renderer),
+		//!! so we're stuck here with this, due to that...
 
 //------------------------------------------------------------------------
 // C++ mechanics...
