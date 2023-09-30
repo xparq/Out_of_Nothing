@@ -69,15 +69,17 @@ OBJS=\
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h \
 	$(src_dir)/$(World_subdir)/*.hpp $(src_dir)/$(UI_subdir)/*.hpp  $(src_dir)/misc/*.hpp \
 	$(src_dir)/$(UI_subdir)/adapter/SFML\*.h* \
-	$(src_dir)/adapter/SFML/*.h*
+	$(src_dir)/adapter/SFML/*.h* \
 
 
 #!!Ugh... A little hamfisted; see #118!
 CPP_MODULE_SOURCES=$(src_dir)/*.ixx
 
 
-#!!This should really be adjusted to match the build options! :-/
-EXT_LIBS=extern/sfw/lib/msvc/sfw.lib
+#!!Should be adjusted to match the build options!
+EXT_LIBS=\
+	extern/sfw/lib/msvc/sfw.lib \
+	extern/zstd/msvc/zstd-MD.lib \
 
 #-----------------------------------------------------------------------------
 #CC_FLAGS=$(CC_FLAGS) -nologo

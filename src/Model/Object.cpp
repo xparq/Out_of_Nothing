@@ -61,9 +61,11 @@ bool World::Body::save(std::ostream& out)
 	return true;
 }
 
+/*!! Should be a (static) factory method:
 World::Body World::Body::load(std::istream& in) // static (factory)
 {
 	return World::Body();
 }
+!!*/
 
 }; // namespace

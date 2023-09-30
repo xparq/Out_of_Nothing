@@ -256,12 +256,12 @@ World& World::_clone(World const& other)
 //----------------------------------------------------------------------------
 bool World::save(std::ostream& out)
 {
-	out << "MODEL_VERSION = " << Model::VERSION << endl;
+	out << "MODEL_VERSION = " << Model::VERSION << '\n';
 
-	out << "drag = " << FRICTION << endl;
-	out << "interactions = " << _interact_all << endl;
-	out << "objects = " << bodies.size() << endl; // Saving for verification + preallocation on load!
-	out << "- - -" << endl; //!! mandatory separator to not break the idiotic loader! :)
+	out << "drag = " << FRICTION << '\n';
+	out << "interactions = " << _interact_all << '\n';
+	out << "objects = " << bodies.size() << '\n'; // Saving for verification + preallocation on load!
+	out << "- - -" << '\n'; //!! mandatory separator to not break the idiotic loader! :)
 	for (size_t ndx = 0; ndx < bodies.size(); ++ndx) {
 		//!!Doesn't work, in>> struggles with the binary data, can't deal with it basically...
 		out << ndx << " : " // not "=" in order to assist load() a bit...
@@ -270,10 +270,10 @@ bool World::save(std::ostream& out)
 			if (!bodies[ndx]->save(out)) {
 				return false;
 			}
-		out << "\"" << endl; //! For *some* readability. (Whitespace will be skipped after the bin chunk.)
+		out << "\"" << '\n'; //! For *some* readability. (Whitespace will be skipped after the bin chunk.)
 	}
 
-	return true;
+	return out && !out.bad();
 }
 
 //!!optional<World> World::load(std::istream& in) // static (factory)
