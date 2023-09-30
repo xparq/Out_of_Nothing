@@ -1,12 +1,12 @@
 #include "OON_sfml.hpp"
 import Storage;
 
+#include "UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
+
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Context.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Sleep.hpp>
-
-#include <windows.h> // GetKeyState for the ...Lock keys ignored by SFML
 
 #include <thread>
 #include <mutex>
@@ -38,48 +38,6 @@ namespace sync {
 	std::mutex Updating;
 };
 
-// SFML -> SimApp virt. keycode translation
-//!!
-//!! This is a quick, but VERY FRAGILE way to map to SFML keys -- codes can change at any time! :-o
-//!!
-//!! using SimApp::KBD_STATE; // <- can't do it outside of classes :-/
-enum SimApp::KBD_STATE KBD_XLAT_SFML[] = {
-	SimApp::KBD_STATE::A, SimApp::KBD_STATE::B, SimApp::KBD_STATE::C, SimApp::KBD_STATE::D, SimApp::KBD_STATE::E, SimApp::KBD_STATE::F, SimApp::KBD_STATE::G, SimApp::KBD_STATE::H,
-		SimApp::KBD_STATE::I, SimApp::KBD_STATE::J, SimApp::KBD_STATE::K, SimApp::KBD_STATE::L, SimApp::KBD_STATE::M, SimApp::KBD_STATE::N, SimApp::KBD_STATE::O, SimApp::KBD_STATE::P,
-	SimApp::KBD_STATE::Q, SimApp::KBD_STATE::R, SimApp::KBD_STATE::S, SimApp::KBD_STATE::T, SimApp::KBD_STATE::U, SimApp::KBD_STATE::V, SimApp::KBD_STATE::W, SimApp::KBD_STATE::X,
-		SimApp::KBD_STATE::Y, SimApp::KBD_STATE::Z, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::ESCAPE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::LCTRL, SimApp::KBD_STATE::LSHIFT, SimApp::KBD_STATE::LALT,
-		SimApp::KBD_STATE::WINDOWS, SimApp::KBD_STATE::RCTRL, SimApp::KBD_STATE::RSHIFT, SimApp::KBD_STATE::RALT, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::TILDE, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::SPACE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::TAB, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::LEFT,
-		SimApp::KBD_STATE::RIGHT, SimApp::KBD_STATE::UP, SimApp::KBD_STATE::DOWN, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::F1, SimApp::KBD_STATE::F2, SimApp::KBD_STATE::F3, SimApp::KBD_STATE::F4,
-		SimApp::KBD_STATE::F5, SimApp::KBD_STATE::F6, SimApp::KBD_STATE::F7, SimApp::KBD_STATE::F8, SimApp::KBD_STATE::F9, SimApp::KBD_STATE::F10, SimApp::KBD_STATE::F11, SimApp::KBD_STATE::F12,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::PAUSE, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-	SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-		SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL, SimApp::KBD_STATE::NUL,
-};
 
 //============================================================================
 OON_sfml::OON_sfml()
@@ -236,7 +194,7 @@ void OON_sfml::updates_for_next_frame()
 	//!
 	//! NOTE: THIS MUST COME AFTER RECALCULATING THE NEW STATE!
 	//!
-	if (kbd_state[KBD_STATE::SCROLL_LOCKED] || kbd_state[KBD_STATE::SHIFT]) {
+	if (keystate(SCROLL_LOCKED) || keystate(SHIFT)) {
 		pan_to_player();
 	}
 }
@@ -296,34 +254,17 @@ void OON_sfml::event_loop()
 			//!! game.inputs.push(event);
 			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
 
-			switch (event.type)
-			{
-			case sf::Event::KeyReleased:
-				if (event.key.code != -1) {
-					kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = false;
-				} else {
-//cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
-					// Emulate KeyReleased for the Locks:
-					kbd_state[KBD_STATE::CAPS_LOCK]   = kbd_state[KBD_STATE::CAPS_LOCKED] != (bool)((unsigned)GetKeyState(VK_CAPITAL) & 1);
-					kbd_state[KBD_STATE::NUM_LOCK]    = kbd_state[KBD_STATE::NUM_LOCKED] != (bool)((unsigned)GetKeyState(VK_NUMLOCK) & 1);
-					kbd_state[KBD_STATE::SCROLL_LOCK] = kbd_state[KBD_STATE::SCROLL_LOCKED] != (bool)((unsigned)GetKeyState(VK_SCROLL) & 1);
-				}
-				break;
+			UI::update_keys(event); // Using the SFML adapter (via #include UI/adapter/SFML/...)
+				//!! This should be generalized beyond keys, and should also make it possible
+				//!! to use abstracted event types/codes for dispatching (below)!
 
+			switch (event.type) //!! See above: morph into using abstracted events!
+			{
 			case sf::Event::KeyPressed:
 //!!See main.cpp:
-extern bool DEBUG_cfg_show_keycode;
-if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
-
-				if (event.key.code != -1) {
-					kbd_state[KBD_XLAT_SFML[(unsigned)event.key.code % (unsigned)KBD_STATE::__SIZE__]] = true;
-				} else {
-//cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
-					// Emulate KeyPressed for the Locks:
-					kbd_state[KBD_STATE::CAPS_LOCK]   = (unsigned)GetKeyState(VK_CAPITAL) & 0xff80;
-					kbd_state[KBD_STATE::NUM_LOCK]    = (unsigned)GetKeyState(VK_NUMLOCK) & 0xff80;
-					kbd_state[KBD_STATE::SCROLL_LOCK] = (unsigned)GetKeyState(VK_SCROLL) & 0xff80;
-				}
+#ifdef DEBUG
+extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
+#endif
 
 				switch (event.key.code) {
 				case sf::Keyboard::Escape: //!!Merge with Closed!
@@ -334,18 +275,18 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 				case sf::Keyboard::Pause: toggle_pause_physics(); break;
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
 
-				case sf::Keyboard::Insert: spawn(kbd_state[KBD_STATE::SHIFT] ? 1 : 100); break;
-//!!...			case sf::Keyboard::Insert: add_bodies(kbd_state[KBD_STATE::SHIFT] ? 1 : 100); break;
-				case sf::Keyboard::Delete: remove_bodies(kbd_state[KBD_STATE::SHIFT] ? 1 : 100); break;
+				case sf::Keyboard::Insert: spawn(keystate(SHIFT) ? 1 : 100); break;
+//!!...			case sf::Keyboard::Insert: add_bodies(keystate(SHIFT) ? 1 : 100); break;
+				case sf::Keyboard::Delete: remove_bodies(keystate(SHIFT) ? 1 : 100); break;
 //!!??			case sf::Keyboard::Delete: OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
 
-				case sf::Keyboard::F1:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(1) : save_snapshot(1); break;
-				case sf::Keyboard::F2:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(2) : save_snapshot(2); break;
-				case sf::Keyboard::F3:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(3) : save_snapshot(3); break;
-				case sf::Keyboard::F4:  kbd_state[KBD_STATE::SHIFT] ? load_snapshot(4) : save_snapshot(4); break;
+				case sf::Keyboard::F1:  keystate(SHIFT) ? load_snapshot(1) : save_snapshot(1); break;
+				case sf::Keyboard::F2:  keystate(SHIFT) ? load_snapshot(2) : save_snapshot(2); break;
+				case sf::Keyboard::F3:  keystate(SHIFT) ? load_snapshot(3) : save_snapshot(3); break;
+				case sf::Keyboard::F4:  keystate(SHIFT) ? load_snapshot(4) : save_snapshot(4); break;
 
 				case sf::Keyboard::Home:
-					if (kbd_state[KBD_STATE::CTRL])
+					if (keystate(CTRL))
 						pan_reset(); //!!Should be "upgraded" to "Camera/view reset" -- also resetting the zoom?
 					else
 						pan_to_player();
@@ -404,15 +345,6 @@ if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
 
 				break;
 			}
-
-			// Set some virtual key meta-states:
-			kbd_state[KBD_STATE::SHIFT] = kbd_state[KBD_STATE::LSHIFT] || kbd_state[KBD_STATE::RSHIFT]; //!! SFML/Windows BUG: https://github.com/SFML/SFML/issues/1301
-			kbd_state[KBD_STATE::CTRL]  = kbd_state[KBD_STATE::LCTRL]  || kbd_state[KBD_STATE::RCTRL];
-			kbd_state[KBD_STATE::ALT]   = kbd_state[KBD_STATE::LALT]   || kbd_state[KBD_STATE::RALT];
-			// These are ignored by SFML, must get manually:
-			kbd_state[KBD_STATE::CAPS_LOCKED]   = (unsigned)GetKeyState(VK_CAPITAL) & 1;
-			kbd_state[KBD_STATE::NUM_LOCKED]    = (unsigned)GetKeyState(VK_NUMLOCK) & 1;
-			kbd_state[KBD_STATE::SCROLL_LOCKED] = (unsigned)GetKeyState(VK_SCROLL) & 1;
 
 //cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
 
@@ -628,12 +560,12 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("CAM. X", &view.offset.x);
 	debug_hud.add("CAM. Y", &view.offset.y);
 /*	debug_hud.add("");
-	debug_hud.add("SHIFT", (bool*)&kbd_state[KBD_STATE::SHIFT]);
-	debug_hud.add("LSHIFT", (bool*)&kbd_state[KBD_STATE::LSHIFT]);
-	debug_hud.add("RSHIFT", (bool*)&kbd_state[KBD_STATE::RSHIFT]);
-	debug_hud.add("CAPS LOCK", (bool*)&kbd_state[KBD_STATE::CAPS_LOCK]);
-	debug_hud.add("SCROLL LOCK", (bool*)&kbd_state[KBD_STATE::SCROLL_LOCK]);
-	debug_hud.add("NUM LOCK", (bool*)&kbd_state[KBD_STATE::NUM_LOCK]);
+	debug_hud.add("SHIFT", (bool*)&_kbd_state[SHIFT]);
+	debug_hud.add("LSHIFT", (bool*)&_kbd_state[LSHIFT]);
+	debug_hud.add("RSHIFT", (bool*)&_kbd_state[RSHIFT]);
+	debug_hud.add("CAPS LOCK", (bool*)&_kbd_state[CAPS_LOCK]);
+	debug_hud.add("SCROLL LOCK", (bool*)&_kbd_state[SCROLL_LOCK]);
+	debug_hud.add("NUM LOCK", (bool*)&_kbd_state[NUM_LOCK]);
 */
 	debug_hud.add("");
 	debug_hud.add("Press ? for help...");

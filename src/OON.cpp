@@ -8,9 +8,8 @@
 #include <cassert>
 
 using namespace Model;
-//using namespace UI;
+using namespace UI;
 using namespace std;
-
 
 //----------------------------------------------------------------------------
 bool OON::poll_and_process_controls()
@@ -18,13 +17,13 @@ bool OON::poll_and_process_controls()
 	bool action = false;
 	if (_ctrl_update_thrusters()) {
 		action = true;
-//		if (kbd_state[KBD_STATE::SPACE]) {
+//		if (keystate(SPACE)) {
 //			action = true;
 //			exhaust_burst(5);
 //		}
 	}
 	// Allow this now irrespective of any engine firing:
-	if (kbd_state[KBD_STATE::SPACE]) {
+	if (keystate(SPACE)) {
 		action = true;
 		exhaust_burst(5);
 	}
@@ -48,10 +47,10 @@ void OON::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_
 bool OON::_ctrl_update_thrusters()
 {
 	auto drv = false;
-	if (kbd_state[KBD_STATE::UP])    { drv = true;    up_thruster_start(); } else    up_thruster_stop();
-	if (kbd_state[KBD_STATE::DOWN])  { drv = true;  down_thruster_start(); } else  down_thruster_stop();
-	if (kbd_state[KBD_STATE::LEFT])  { drv = true;  left_thruster_start(); } else  left_thruster_stop();
-	if (kbd_state[KBD_STATE::RIGHT]) { drv = true; right_thruster_start(); } else right_thruster_stop();
+	if (keystate(UP))    { drv = true;    up_thruster_start(); } else    up_thruster_stop();
+	if (keystate(DOWN))  { drv = true;  down_thruster_start(); } else  down_thruster_stop();
+	if (keystate(LEFT))  { drv = true;  left_thruster_start(); } else  left_thruster_stop();
+	if (keystate(RIGHT)) { drv = true; right_thruster_start(); } else right_thruster_stop();
 	return drv;
 }
 
@@ -78,10 +77,10 @@ bool OON::_ctrl_update_pan()
 {
 	auto action = false;
 
-	if (kbd_state[KBD_STATE::W]) { action = true; pan_step_y =  CFG_PAN_STEP; }
-	if (kbd_state[KBD_STATE::S]) { action = true; pan_step_y = -CFG_PAN_STEP; }
-	if (kbd_state[KBD_STATE::A]) { action = true; pan_step_x =  CFG_PAN_STEP; }
-	if (kbd_state[KBD_STATE::D]) { action = true; pan_step_x = -CFG_PAN_STEP; }
+	if (keystate(W)) { action = true; pan_step_y =  CFG_PAN_STEP; }
+	if (keystate(S)) { action = true; pan_step_y = -CFG_PAN_STEP; }
+	if (keystate(A)) { action = true; pan_step_x =  CFG_PAN_STEP; }
+	if (keystate(D)) { action = true; pan_step_x = -CFG_PAN_STEP; }
 
 	if (!action) {
 		if (pan_step_x) pan_step_x -= misc::sign(pan_step_x);
@@ -96,8 +95,8 @@ bool OON::_ctrl_update_pan()
 /*
 bool OON::_ctrl_driving()
 {
-	return ((kbd_state[KBD_STATE::UP] || kbd_state[KBD_STATE::DOWN] || kbd_state[KBD_STATE::LEFT] || kbd_state[KBD_STATE::RIGHT] || 
-				kbd_state[KBD_STATE::W] || kbd_state[KBD_STATE::S] || kbd_state[KBD_STATE::A] || kbd_state[KBD_STATE::D]);
+	return ((keystate(UP) || keystate(UI::DOWN) || keystate(LEFT) || keystate(RIGHT) ||
+			 keystate(W) || keystate(UI::S) || keystate(A) || keystate(D));
 }
 */
 

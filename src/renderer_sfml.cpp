@@ -1,5 +1,5 @@
 #include "renderer_sfml.hpp"
-#include "misc/SFML-shim.hpp" // For converting OON vectors to SFML's sf::Vector
+#include "adapter/SFML/vector.hpp"
 
 #include "sfw/GUI.hpp"  // Theme.hpp is not enough, it doesn't include sfw::Text!
 

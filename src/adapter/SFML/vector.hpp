@@ -1,5 +1,5 @@
-﻿#ifndef _SFML_shim_hpp_
-#define _SFML_shim_hpp_
+﻿#ifndef _SFML_vector_adapter_hpp_
+#define _SFML_vector_adapter_hpp_
 
 
 #include "Model/SFML/Vector2.hpp"
@@ -18,4 +18,4 @@ sf::Vector3<T> to_sfVector3(sfml::Vector3<T> v) { return sf::Vector3<T>(v.x, v.y
 !!*/
 
 
-#endif//_SFML_shim_hpp_
+#endif//_SFML_vector_adapter_hpp_
