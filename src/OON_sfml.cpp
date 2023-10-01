@@ -184,11 +184,16 @@ void OON_sfml::updates_for_next_frame()
 	// In addition to the async. event loop:
 	poll_and_process_controls();
 
-	auto frame_delay = clock.getElapsedTime().asSeconds();
+	//!! I guess this should come before processing the controls,
+	//!! so the controls & the updates can be in the same time frame!
+	//!! (Note: they're still in the same rendering frame tho, that's
+	//!! why I'm not sure if this matters at all.)
+	last_frame_delay = clock.getElapsedTime().asSeconds();
 	clock.restart(); //! Must also be duly restarted on unpausing!
-	avg_frame_delay.update(frame_delay);
 
-	world.recalc_next_state(frame_delay, *this);
+	avg_frame_delay.update(last_frame_delay);
+
+	world.recalc_next_state(last_frame_delay, *this);
 
 	// Auto-scroll to follow player movement...
 	//!
@@ -538,12 +543,18 @@ void OON_sfml::_setup_UI()
 	//!! all the obj recreation shenanigans (they *are* recreated, right??...) after
 	//!! a World reload?!?!?!
 	//!!
+
+	//!! Also: why did I make this a doulbe nested lambda?!
 	auto ftos = [this](auto* ptr_x) { return [this, ptr_x]() { static constexpr size_t LEN = 15;
 		char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *ptr_x);
 		return string(ec != std::errc() ? "???" : (*ptr = 0, buf));
 		};
 	};
-	debug_hud.add("FPS",        [this](){ return to_string(1 / (float)this->avg_frame_delay); });
+
+	debug_hud.add("FPS",         [this](){ return to_string(1 / (float)this->avg_frame_delay); });
+	debug_hud.add("Last frame dt", [this](){ return to_string(this->last_frame_delay * 1000.0f) + " ms"; });
+	//!!??WTF does this not compile? (The code makes no sense as the gauge won't update, but regardless!):
+	//!!??debug_hud.add(vformat("frame dt: {} ms", last_frame_delay));
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
 	debug_hud.add("Body interactions", &this->world._interact_all);
 	debug_hud.add("Drag", ftos(&this->world.FRICTION));
