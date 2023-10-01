@@ -8,6 +8,7 @@
 #include <cassert>
 
 using namespace Model;
+using namespace Math;
 using namespace UI;
 using namespace std;
 
@@ -56,7 +57,7 @@ bool OON::_ctrl_update_thrusters()
 
 //----------------------------------------------------------------------------
 void OON::pan_reset()  { view.offset = {0, 0}; }
-void OON::pan(sfml::Vector2f delta) { pan_x(delta.x); pan_y(delta.y); }
+void OON::pan(Vector2f delta) { pan_x(delta.x); pan_y(delta.y); }
 void OON::pan_x(float delta) { view.offset.x += delta; }
 void OON::pan_y(float delta) { view.offset.y += delta; }
 void OON::pan_to_entity(size_t id)

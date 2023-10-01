@@ -19,9 +19,10 @@
 #include <utility>
 	using std::move;
 
-using namespace std;
-
 namespace Model {
+
+using namespace std;
+using namespace Math;
 
 size_t World::add_body(Body const& obj)
 {
@@ -106,7 +107,7 @@ auto last_dt = dt;
 
 		// Thrust -- for objects with working thrusters...:
 		if (body->has_thrusters()) {
-			sfml::Vector2f F_thr( (-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
+			Vector2f F_thr( (-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
 							    (-body->thrust_up.thrust_level() + body->thrust_down.thrust_level()) * dt);
 			body->v += (F_thr / body->mass);
 		}
@@ -140,8 +141,8 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 			auto dx = other->p.x - body->p.x,
 			     dy = other->p.y - body->p.y;
 
-//			auto distance = distance_2d(body->p.x, body->p.y, other->p.x, other->p.y);
-			auto distance = distance_2d(dx, dy);
+//			auto distance = Math::distance2(body->p.x, body->p.y, other->p.x, other->p.y);
+			auto distance = Math::mag2(dx, dy);
 
 			//! Collision det. is crucial also for preventing 0 distance to divide by!
 			//!!Collision and "distance = 0" are not the samne things!
@@ -169,7 +170,7 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 
 				// Call this before processing the collision-induced speed changes,
 				// so that the calc. can take into consideration the relative speed!
-//!!			auto rel_dv = distance_2d(body->v.x, body->v.y, other->v.x, other->v.y);
+//!!			auto rel_dv = distance2(body->v.x, body->v.y, other->v.x, other->v.y);
 				static constexpr float EPS_COLLISION = CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
 				if (abs(distance - (body->r + other->r)) < EPS_COLLISION ) {
 //cerr << "Touch!\n";
@@ -196,17 +197,17 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 
 			} else if (!body->superpower.gravity_immunity) { // process gravity if not colliding
 				float g = Physics::G * other->mass / (distance * distance);
-				sfml::Vector2f gvect(dx * g, dy * g);
-				//!!should rather be: sfml::Vector2f gvect(dx / distance * g, dy / distance * g);
-				sfml::Vector2f dv = gvect * dt;
+				Vector2f gvect(dx * g, dy * g);
+				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
+				Vector2f dv = gvect * dt;
 				body->v += dv;
 //cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
 			}
 		}
 /*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
 		// Friction:
-		sfml::Vector2f dv = friction_decel * (dt);
-		sfml::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+		Vector2f dv = friction_decel * (dt);
+		Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
 		body->v += dv;
 !!*/		
 //cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
@@ -224,12 +225,12 @@ dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 		auto& body = bodies[i];
 
 		// Friction:
-		sfml::Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
-		sfml::Vector2f dv = friction_decel * dt;
+		Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+		Vector2f dv = friction_decel * dt;
 		body->v += dv;
 		
 		// And finally the positions:
-		sfml::Vector2f ds(body->v.x * dt, body->v.y * dt);
+		Vector2f ds(body->v.x * dt, body->v.y * dt);
 		body->p += ds;
 	}
 }
@@ -348,6 +349,6 @@ bool World::load(std::istream& in, World* result/* = nullptr*/)
 	}
 
 	return true; //!! w0;
-}
+} // load()
 
 } // namespace Model

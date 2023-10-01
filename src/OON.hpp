@@ -36,7 +36,7 @@ public:
 	void right_thruster_stop();
 
 	// - View control:
-	void pan(sfml::Vector2f delta);
+	void pan(Math::Vector2f delta);
 	void pan_x(float delta);
 	void pan_y(float delta);
 	void pan_reset();

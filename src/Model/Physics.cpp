@@ -2,6 +2,8 @@
 
 namespace Model {
 
+using namespace Math;
+
 static constexpr float T_BV_MIN = 15000;
 static constexpr float T_BV_MAX = 200000;
 

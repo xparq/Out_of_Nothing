@@ -1,7 +1,7 @@
 #ifndef __MODEL__PHYSICS__
 #define __MODEL__PHYSICS__
 
-#include "Maths.hpp"
+#include "Math.hpp"
 
 #include <cstdint> // uint32_t
 
@@ -30,6 +30,6 @@ struct Physics
 	static constexpr float DENSITY_ROCK = 2000.0f; // kg/m3
 };
 
-}; // namespace
+}; // namespace Model
 
 #endif // __MODEL__PHYSICS__

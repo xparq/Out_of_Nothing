@@ -1,4 +1,6 @@
 #include "renderer_sfml.hpp"
+
+#include "Model/Math/Vector2.hpp"
 #include "adapter/SFML/vector.hpp"
 
 #include "sfw/GUI.hpp"  // Theme.hpp is not enough, it doesn't include sfw::Text!
@@ -41,7 +43,7 @@ void Renderer_SFML::render(OON_sfml& game)
 //			         << ", y = " << VIEWPORT_WIDTH/2 + (body->p.y - body->r) * game.view.zoom + game.view.offset.y <<endl;
 //		auto vpos = game.view.world_to_view_coord(body->p.x - body->r, body->p.y - body->r); //!! Make the centered origin an implicit default!
 //		trshape.setPosition({vpos.x + sf::Vector2f(VIEWPORT_WIDTH/2, vpos.y + VIEWPORT_HEIGHT/2)); //!! Make the centered origin an implicit default!
-		auto vpos = game.view.world_to_view_coord(body->p - sfml::Vector2f(body->r, body->r)); //!! Make the centered origin an implicit default!
+		auto vpos = game.view.world_to_view_coord(body->p - Math::Vector2f(body->r, body->r)); //!! Make the centered origin an implicit default!
 		trshape.setPosition(to_sfVector2(vpos) + sf::Vector2f(VIEWPORT_WIDTH/2, VIEWPORT_HEIGHT/2)); //!! Make the centered origin an implicit default!
 	}
 }

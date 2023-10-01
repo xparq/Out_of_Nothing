@@ -1,23 +1,18 @@
 #ifndef __WORLD_SFML__
 #define __WORLD_SFML__
 
-#include "Maths.hpp"
-#include "Physics.hpp"
+
+#include "Physics.hpp" // #includes Math.hpp
+#include "Math/Vector2.hpp"
+//	using namespace Math;
+	using Math::MyNaN;
+
 #include "Object.hpp" //!!This just includes World.hpp back, intentionally! :)
                       //!!(Wouldn't be that way if World::Body{} could just be defined there, separetely.)
 
-#include "SFML/Vector2.hpp"
-	//! NOTE: despite the filename, it's NOT being included from SFML, but has
-	//! been ripped out of it and copied here, because it's nicely self-containing,
-	//! so we can keep using it, while still detaching from the *entire* lib itself!
-	//! To avoid duplicate definitions and confusiion, the local version has changed
-	//! from the `sf` namespace to `sfml`!)
-	//! The actual types are of course syntactically incompatible though, so some
-	//! awkward manual (compile-time) fiddling might still be required occasionally.
-
 #include <memory> // shared_ptr
 #include <vector>
-//!!No, not yet. It's just too cumbersome.
+//!!No, not yet. It's just too cumbersome, for too little gain:
 //!!#include <optional> // for load()
 
 class SimApp; //! Sigh, must predeclare it here, outside the namespace...
@@ -59,8 +54,8 @@ public:
 		float lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
 		float r = 0;
 		float density{Physics::DENSITY_ROCK / 2}; //!!low-density objects should look like Swiss cheese! ;)
-		sfml::Vector2f p{0, 0};
-		sfml::Vector2f v{0, 0};
+		Math::Vector2f p{0, 0};
+		Math::Vector2f v{0, 0};
 		float T = 0; // affected by various events; represented by color
 
 		// Preset/recomputed:
@@ -176,12 +171,13 @@ struct View
 {
 	static constexpr auto CFG_DEFAULT_ZOOM = 0.0000005f; //! This one also depends very much on the physics!
 
-	sfml::Vector2f world_to_view_coord(sfml::Vector2f p) const { return p * zoom + offset; }
-	sfml::Vector2f world_to_view_coord(float x, float y) const { return { x * zoom + offset.x, y * zoom + offset.y }; }
+	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * zoom + offset; }
+	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * zoom + offset.x, y * zoom + offset.y }; }
 
 	float zoom = CFG_DEFAULT_ZOOM;
-	sfml::Vector2f offset = {0, 0}; // in World-coordinates
+	Math::Vector2f offset = {0, 0}; // in World-coordinates
 };
 
-} // namespace
+} // namespace Model
+
 #endif // __WORLD_SFML__
