@@ -96,6 +96,8 @@ protected:
 protected:
 	bool _terminated = false;
 	bool _paused = false;
+	bool  _time_reversed = false;
+	float _time_scale = 1.0f; // > 0 (Decoupled from reversal, for better controls.)
 
 	//!!Migrate to the Metrics system:
 	float last_frame_delay;

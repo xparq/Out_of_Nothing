@@ -193,7 +193,13 @@ void OON_sfml::updates_for_next_frame()
 
 	avg_frame_delay.update(last_frame_delay);
 
-	world.recalc_next_state(last_frame_delay, *this);
+	auto dt = last_frame_delay; //!! Just an estimate: the last dt has nothing to do
+	                            //!! with the next one, strictly speaking! :-o
+
+	dt *= _time_scale;
+	if (_time_reversed) dt = -dt;
+
+	world.recalc_next_state(dt, *this);
 
 	// Auto-scroll to follow player movement...
 	//!
@@ -315,6 +321,9 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 				case 'm': toggle_music(); break;
 				case 'P': sw_fps_throttling(!sw_fps_throttling()); break;
 				case 'M': toggle_sound_fxs(); break;
+				case 'r': _time_reversed = !_time_reversed; break;
+				case 't': _time_scale *= 2.0f; break;
+				case 'T': _time_scale /= 2.0f; break;
 				case '?': toggle_help(); break;
 				}
 				break;
@@ -558,6 +567,8 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
 	debug_hud.add("Body interactions", &this->world._interact_all);
 	debug_hud.add("Drag", ftos(&this->world.FRICTION));
+	debug_hud.add("Time reversed", &_time_reversed);
+	debug_hud.add("Time scale", ftos(&this->_time_scale));
 	debug_hud.add("");
 	debug_hud.add("Globe T",  ftos(&this->world.bodies[this->globe_ndx]->T));
 	debug_hud.add("      R",  ftos(&this->world.bodies[this->globe_ndx]->r));
@@ -582,30 +593,33 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("Press ? for help...");
 
 	//------------------------------------------------------------------------
-	help_hud.add("------- Controls:");
-	help_hud.add("Arrows: thrust");
-	help_hud.add("Space:  exhaust trail");
-	help_hud.add("Ins:    add 100 objects (+Shift: only 1)");
-	help_hud.add("Del:    remove 100 objects (Shift+R: only 1)");
-//	help_hud.add("------- Metaphysics:");
-	help_hud.add("Tab:    toggle all-body interactions");
-	help_hud.add("F:      decrease (+Shift: incr.) drag (friction)");
-//	help_hud.add("C:      chg. collision mode: pass/stick/bounce");
-	help_hud.add("Pause:  stop the physics");
-	help_hud.add("mouse wheel (or +/-): zoom");
-	help_hud.add("AWSD:   pan");
-	help_hud.add("Shift:  autoscroll to follow player movement");
-	help_hud.add("Scroll Lock: toggle autoscroll");
-	help_hud.add("Home:   home in on the player globe");
-	help_hud.add("Ctrl+Home: reset view to Home pos. (not the zoom)");
-	help_hud.add("------- Meta:"); //!!Find another label, like "Console" or "Admin"...
-	help_hud.add("F1-F4:  save world snapshots (+Shift: load)");
-	help_hud.add("M:      (un)mute music (+Shift: same for the fx.)");
-	help_hud.add("Shft+P: toggle FPS throttling (lower CPU load)");
-	help_hud.add("F11:    toggle fullscreen");
-	help_hud.add("F12:    toggle HUDs");
+//	help_hud.add("--------- Controls:");
+	help_hud.add("Arrows:   Thrust");
+	help_hud.add("Space:    \"Exhaust\" trail");
+	help_hud.add("Ins:      Add 100 objects (+Shift: only 1)");
+	help_hud.add("Del:      Remove 100 objects (+Shift: only 1)");
+//	help_hud.add("--------- Metaphysics:");
+	help_hud.add("Tab:      Toggle object interactions");
+	help_hud.add("F:        Decrease (+Shift: incr.) friction");
+//	help_hud.add("C:        chg. collision mode: pass/stick/bounce");
+	help_hud.add("R:        Reverse time");
+	help_hud.add("T:        Time accel. (+Shift: decel.)");
+	help_hud.add("Pause:    Stop the physics (time)");
+	help_hud.add("--------- View:");
+	help_hud.add("+/- or mouse wheel: oom");
+	help_hud.add("A W S D:  Pan");
+	help_hud.add("Shift:    Auto-scroll to follow player movement");
+	help_hud.add("Scroll Lock: Toggle player-locked auto-scroll");
+	help_hud.add("Home:     Home in on the player globe");
+	help_hud.add("Ctrl+Home: Reset view to Home pos. (not the zoom)");
+	help_hud.add("--------- Admin:");
+	help_hud.add("F1-F4:    Save world snapshots (+Shift: load)");
+	help_hud.add("M:        (un)Mute music (+Shift: same for fx.)");
+	help_hud.add("Shft+P:   Toggle FPS throttling (lower CPU load)");
+	help_hud.add("F11:      Toggle fullscreen");
+	help_hud.add("F12:      Toggle HUDs");
 	help_hud.add("");
-	help_hud.add("Esc:    quit");
+	help_hud.add("Esc:      Quit");
 	help_hud.add("");
 	help_hud.add("Command-line options: oon.exe /?");
 
