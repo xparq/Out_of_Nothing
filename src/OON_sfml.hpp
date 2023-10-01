@@ -4,8 +4,10 @@
 #include "OON.hpp"
 
 #include "renderer_sfml.hpp"
-#include "UI/hud_sfml.hpp"
 #include "audio_sfml.hpp"
+
+#include "sfw/GUI.hpp"
+#include "UI/hud_sfml.hpp"
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
@@ -34,13 +36,7 @@ public:
 	//--------------------------------------------------------------------
 	// Player (gameplay) action overrides:
 
-	virtual void pause_physics(bool state = true) override {
-		SimApp::pause_physics(state);
-		//! Need to start from 0 when unpausing.
-		//! (The other reset, on pausing, is redundant, but keeping for simplicity.)
-		clock.restart();
-	}
-
+	virtual void pause_physics(bool state = true) override;
 	virtual bool load_snapshot(unsigned slot = 1) override;
 	//! The generic version of this is enough for now:
 	//virtual bool save_snapshot(unsigned slot = 1) override;
@@ -102,14 +98,14 @@ public:
 //------------------------------------------------------------------------
 protected:
 	sf::RenderWindow window;
-	sf::Clock clock;
-	Renderer_SFML renderer;
-
+	sfw::GUI gui;
 #ifndef DISABLE_HUD
 	UI::HUD_SFML    debug_hud;
 	UI::HUD_SFML    help_hud;
 	bool _show_huds = true;
 #endif
+	sf::Clock clock;
+	Renderer_SFML renderer;
 
 #ifndef DISABLE_AUDIO
 	Audio_SFML audio;

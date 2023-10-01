@@ -17,6 +17,7 @@
 #	DEBUG=0 (-> release)
 #
 # Macros set on the MAKE cmdline will override these defaults:
+CRTMODE=MD
 LINKMODE=static
 DEBUG=0
 
@@ -78,12 +79,12 @@ CPP_MODULE_SOURCES=$(src_dir)/*.ixx
 
 #!!Should be adjusted to match the build options!
 EXT_LIBS=\
-	extern/sfw/lib/msvc/sfw.lib \
-	extern/zstd/msvc/zstd-MD.lib \
+	extern/sfw/lib/msvc/sfw-$(CRTMODE).lib \
+	extern/zstd/msvc/zstd-$(CRTMODE).lib \
 
 #-----------------------------------------------------------------------------
 #CC_FLAGS=$(CC_FLAGS) -nologo
-CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -MD -EHsc -c
+CC_FLAGS=$(CC_FLAGS) -W4 -std:c++latest -$(CRTMODE) -EHsc -c
 # For GH #15 (don't rely on manually including cfg.h):
 CC_FLAGS=$(CC_FLAGS) -FI cfg.h
 

@@ -31,7 +31,7 @@ static constexpr auto WINDOW_TITLE = "Out of Nothing";
 namespace cfg {
 	static constexpr auto FPS_THROTTLE = 30; //!! Changing this changes the physics (by increasing resolution/precision)!!!
 	                                         //!! Things tend to be more interesting, with more "quantum-like" randomness,
-											 //!! with larger dt-s (less precision -> overshoots, tunnelling!)!
+	                                         //!! with larger dt-s (less precision -> overshoots, tunnelling!)!
 }
 
 namespace sync {
@@ -41,19 +41,25 @@ namespace sync {
 
 //============================================================================
 OON_sfml::OON_sfml()
-		// Creating the window right away here (only) to support init-by-constr. for the HUDs:
-		: window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), WINDOW_TITLE)
-		//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
-		//!!??
-		//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
-		//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
+	// Creating the window right away here (only) to support init-by-constr. for the HUDs:
+	: window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), WINDOW_TITLE)
+	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
+	//!!??
+	//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
+	//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
 
+	, gui(window, { .basePath = "asset/",
+		.textureFile = "gui/texture.png",
+		//!!?? .bgColor = sfw::hex2color("#ff8888ff") does nothing?! -> sfw/#333
+		.bgColor = sf::Color(0x602030d0),
+		.fontFile = "font/default.font",
+	  })
 #ifndef DISABLE_HUD
-			, debug_hud(window, -220)
-			, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
+	, debug_hud(window, -220)
+	, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
-		_setup();
+	_setup();
 }
 
 bool OON_sfml::run()
@@ -169,6 +175,8 @@ void OON_sfml::draw()
 	}
 #endif
 
+        gui.render(); // Draw last, as a translucent overlay!
+
 	window.display();
 }
 
@@ -209,6 +217,16 @@ void OON_sfml::updates_for_next_frame()
 		pan_to_player();
 	}
 }
+
+//----------------------------------------------------------------------------
+void OON_sfml::pause_physics(bool state)
+{
+	SimApp::pause_physics(state);
+	//! Need to start from 0 when unpausing.
+	//! (The other reset, on pausing, is redundant, but keeping for simplicity.)
+	clock.restart();
+}
+
 
 //----------------------------------------------------------------------------
 void OON_sfml::event_loop()
@@ -355,6 +373,8 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 				break;
 
 			default:
+				gui.process(event);
+
 				ui_event_state = UIEventState::IDLE;
 
 				break;
@@ -544,6 +564,14 @@ void OON_sfml::_setup()
 
 void OON_sfml::_setup_UI()
 {
+	using namespace sfw;
+	Theme::clearBackground = false; // false: the GUI is an overlay (bgColor not applied)
+	Theme::click.textColor = sf::Color(0xffffff); //!! "input" .textColor... YUCK!! And "click" for LABELS, too?!?!
+	auto form = gui.add(new Form, "Params");
+		form->add("Pause",    new CheckBox([&](auto*){ this->toggle_pause_physics(); }));
+		form->add("Help",     new CheckBox([&](auto*){ this->toggle_help(); }));
+		form->add("Overlays", new CheckBox([&](auto*){ this->toggle_huds(); }));
+
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
 	//!!?? in this generic pointer passing context?!

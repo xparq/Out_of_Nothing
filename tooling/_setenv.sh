@@ -12,7 +12,7 @@ if [ ! -e "${sz_prjdir}/tooling/_setenv.sh" ]; then
 	exit 1
 fi
 
-sfml_libroot=${sfml_libroot:-${sz_prjdir}/../../SW/devel/lib/sfml/current}
+sfml_libroot=${sfml_libroot:-${sz_prjdir}/extern/sfml/linux}
 
 #echo ${sz_prjdir}
 #echo ${sfml_libroot}
