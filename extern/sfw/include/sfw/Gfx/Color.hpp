@@ -1,5 +1,5 @@
-#ifndef SFW_COLOR_HPP
-#define SFW_COLOR_HPP
+#ifndef _SFW_COLOR_HPP_
+#define _SFW_COLOR_HPP_
 
 #include <cstdint>
 #include <string>
@@ -12,7 +12,47 @@
 
 namespace sfw {
 
-/*!! Move to Gfx and make it properly versatile!
+inline sf::Color Color(const std::string& hexcolor)
+{
+	assert(hexcolor.size() == 7 || hexcolor.size() == 4 || hexcolor.size() == 9 || hexcolor.size() == 5);
+	assert(hexcolor[0] == '#');
+
+	sf::Color color = sf::Color::Black;
+
+#define CCOMP(str, pos, width) (uint8_t)std::strtoul(hexcolor.substr(1 + (pos)*(width), width).c_str(), nullptr, 16)
+	switch (hexcolor.size())
+	{
+	case 7: // #rrggbb
+		color.r = CCOMP(hexcolor, 0, 2);
+		color.g = CCOMP(hexcolor, 1, 2);
+		color.b = CCOMP(hexcolor, 2, 2);
+		break;
+	case 4: // #rgb
+		color.r = CCOMP(hexcolor, 0, 1) * 17;
+		color.g = CCOMP(hexcolor, 1, 1) * 17;
+		color.b = CCOMP(hexcolor, 2, 1) * 17;
+		break;
+	case 9: // #rrggbbaa
+		color.r = CCOMP(hexcolor, 0, 2);
+		color.g = CCOMP(hexcolor, 1, 2);
+		color.b = CCOMP(hexcolor, 2, 2);
+		color.a = CCOMP(hexcolor, 3, 2);
+		break;
+	case 5: // #rgba
+		color.r = CCOMP(hexcolor, 0, 1) * 17;
+		color.g = CCOMP(hexcolor, 1, 1) * 17;
+		color.b = CCOMP(hexcolor, 2, 1) * 17;
+		color.a = CCOMP(hexcolor, 3, 1) * 17;
+		break;
+	default:;
+	}
+#undef CCOMP
+
+	return color;
+}
+
+/*!! Generalize, make it versatile etc.!
+
 struct Color //!!?? or: RGBAColor : Color
 {
 	enum : unsigned {
@@ -63,7 +103,7 @@ struct Color //!!?? or: RGBAColor : Color
 			color.r = (uint8_t)strtoul(csshexcolor.substr(1, 1).c_str(), nullptr, 16) * 17;
 			color.g = (uint8_t)strtoul(csshexcolor.substr(2, 1).c_str(), nullptr, 16) * 17;
 			color.b = (uint8_t)strtoul(csshexcolor.substr(3, 1).c_str(), nullptr, 16) * 17;
-		        color.a = (len == 5) ? (uint8_t)strtoul(csshexcolor.substr(4, 1).c_str(), nullptr, 16) * 17 : Opaque;
+			color.a = (len == 5) ? (uint8_t)strtoul(csshexcolor.substr(4, 1).c_str(), nullptr, 16) * 17 : Opaque;
 		}
 		else
 		{
@@ -90,24 +130,6 @@ struct Color //!!?? or: RGBAColor : Color
 };
 !!*/
 
-inline sf::Color hex2color(const std::string& hexcolor)
-{
-    sf::Color color = sf::Color::Black;
-    if (hexcolor.size() == 7) // #ffffff
-    {
-        color.r = (uint8_t)strtoul(hexcolor.substr(1, 2).c_str(), nullptr, 16);
-        color.g = (uint8_t)strtoul(hexcolor.substr(3, 2).c_str(), nullptr, 16);
-        color.b = (uint8_t)strtoul(hexcolor.substr(5, 2).c_str(), nullptr, 16);
-    }
-    else if (hexcolor.size() == 4) // #fff
-    {
-        color.r = (uint8_t)strtoul(hexcolor.substr(1, 1).c_str(), nullptr, 16) * 17;
-        color.g = (uint8_t)strtoul(hexcolor.substr(2, 1).c_str(), nullptr, 16) * 17;
-        color.b = (uint8_t)strtoul(hexcolor.substr(3, 1).c_str(), nullptr, 16) * 17;
-    }
-    return color;
-}
-
 } // namespace
 
-#endif // SFW_COLOR_HPP
+#endif // _SFW_COLOR_HPP_

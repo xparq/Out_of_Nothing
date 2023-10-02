@@ -50,10 +50,9 @@ OON_sfml::OON_sfml()
 
 	, gui(window, { .basePath = "asset/",
 		.textureFile = "gui/texture.png",
-		//!!?? .bgColor = sfw::hex2color("#ff8888ff") does nothing?! -> sfw/#333
-		.bgColor = sf::Color(0x602030d0),
+		.bgColor = sfw::Color("#302030d0"),
 		.fontFile = "font/default.font",
-	  })
+	  }, false) // Don't manage the window!
 #ifndef DISABLE_HUD
 	, debug_hud(window, -220)
 	, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
@@ -175,6 +174,11 @@ void OON_sfml::draw()
 	}
 #endif
 
+/*cerr << std::boolalpha
+	<< "wallpap? "<<gui.hasWallpaper() << ", "
+	<< "clea bg? "<<sfw::Theme::clearBackground << ", "
+	<< hex << sfw::Theme::bgColor.toInteger() << '\n';
+*/
         gui.render(); // Draw last, as a translucent overlay!
 
 	window.display();
@@ -565,8 +569,11 @@ void OON_sfml::_setup()
 void OON_sfml::_setup_UI()
 {
 	using namespace sfw;
-	Theme::clearBackground = false; // false: the GUI is an overlay (bgColor not applied)
-	Theme::click.textColor = sf::Color(0xffffff); //!! "input" .textColor... YUCK!! And "click" for LABELS, too?!?!
+	// The SFW GUI is used as a translucent (i.e. not entirely transparent!)
+	// overlay, so an alpha-enabled bgColor must be applied; i.e. clearBackground
+	// must be left at its default (true).
+	//Theme::clearBackground = false;
+	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
 	auto form = gui.add(new Form, "Params");
 		form->add("Pause",    new CheckBox([&](auto*){ this->toggle_pause_physics(); }));
 		form->add("Help",     new CheckBox([&](auto*){ this->toggle_help(); }));
