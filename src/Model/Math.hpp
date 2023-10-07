@@ -1,27 +1,28 @@
-#ifndef __MODEL__MATH__
-#define __MODEL__MATH__
+#ifndef _MODEL__MATH_
+#define _MODEL__MATH_
 
 /*
 	Math features here that are only used by the Model.
-	As soon as something becomes useful for -- and used by -- any other part
-	of the system, it should be "exported" out (to e.g. "misc" instead).
+	As soon as something becomes useful for -- and used by -- any other
+	part of the system, it should be "exported" out (to e.g. sz::).
 
-	IOW, this tries to remain an embedded, internal feature of the Model,
-	rather than an external depdendency. (As a matter of fact, it could go
-	even deeper, embedded into the -- replaceable -- physics, if that's the
-	only part actually using this!!)
+	But basically this still tries to remain an embedded, internal feature
+	of the Model, rather than an external depdendency. (As a matter of fact,
+	it could go even deeper, embedded into the -- replaceable -- physics,
+	if that's the only part actually using this!!)
 */
 
 //! Client code should include Math/* on its own, as needed!
 //#include "Math/Vector2.hpp"
 //#include "Math/Vector3.hpp"
-	//! NOTE: it's been ripped out of from SFML, so that I can keep using it, while
-	//! also having been nicely decoupled from SFML here.
-	//! To avoid duplicate definitions, the local version has changed the `sf`
-	//! namespace to `Math`.
-	//! Alas, that also means the actual types, albeit isomorphic, are now syntactically
-	//! incompatible, requiring awkward explicit conversions (with copies!), via e.g.
-	//! "adapter/SFML/vector.hpp"! :-/
+	//! NOTE: these have been ripped out from SFML, so I can keep using them,
+	//! while also having been nicely decoupled from SFML here.
+	//! To avoid duplicate definitions, the local version has changed the
+	//! `sf` namespace to `Math`.
+	//! Alas, that also means the actual types, albeit isomorphic, are now
+	//! syntactically incompatible, requiring awkward explicit conversions
+	//! (with copies!), via e.g. "adapter/SFML/vector.hpp"! :-/
+	//!! Those could be made implicit though, at least in some cases, right?!
 
 
 #include <cmath> // sqrt
@@ -43,4 +44,4 @@ template <typename T> T distance3(T x1, T y1, T z1, T x2, T y2, T z2) { return m
 
 } // namespace Math
 
-#endif // __MODEL__MATH__
+#endif // _MODEL__MATH_

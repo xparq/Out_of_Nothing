@@ -1,5 +1,5 @@
 #include "Object.hpp"
-#include "misc/stringtools.hpp"
+#include "sz/stringtools.hh"
 
 //#include <cassert>
 #include <fstream>
@@ -50,7 +50,8 @@ bool World::Body::save(std::ostream& out)
 
 	//!!out.write(BSIG, sizeof(BSIG));
 	string memdump(reinterpret_cast<char*>(this), sizeof(*this));
-	misc::escape_quotes(memdump);
+	sz::escape_quotes(&memdump); //! Prevent istream<< from messing up the load()...
+	                             //!!?? Why exactly ios::binary not enough, again?
 	try {
 		out.write(memdump.data(), memdump.size());
 		//!!?? if (out.bad()) {...

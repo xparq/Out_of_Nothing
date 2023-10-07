@@ -24,6 +24,7 @@ import Storage;
 
 using namespace Model;
 using namespace UI;
+using namespace sz;
 using namespace std;
 
 //
@@ -228,10 +229,10 @@ void OON_sfml::updates_for_next_frame()
 }
 
 //----------------------------------------------------------------------------
-void OON_sfml::on_pause_changed(bool newstate)
+void OON_sfml::on_pause_changed(bool)
 {
-	//! Need to start from 0 when unpausing.
-	//! (The other reset, on pausing, is redundant, but keeping for simplicity.)
+	//! As a quick hack, time must restart from 0 when unpausing...
+	//! (The other restart() on pausing is redundant; just keeping it simple...)
 	clock.restart();
 }
 
@@ -345,7 +346,7 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
 				case 'm': toggle_music(); break;
-				case 'P': sw_fps_throttling(!sw_fps_throttling()); break;
+				case 'P': fps_throttling(!fps_throttling()); break;
 				case 'M': toggle_sound_fxs(); break;
 				case 'r': _time_reversed = !_time_reversed; break;
 				case 't': _time_scale *= 2.0f; break;
@@ -507,7 +508,8 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
 		WINDOW_TITLE,
 		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
 	);
-	sw_fps_throttling(sw_fps_throttling()); // awkward way to reactivate the last thr. state
+	fps_throttling(fps_throttling()); //! Cryptic way to reactivate the last throttling state, because
+	                                  //! SFML has just killed it with that window.create() above... :-/
 
 	onResize();
 
@@ -523,17 +525,24 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
 }
 
 //----------------------------------------------------------------------------
-bool OON_sfml::sw_fps_throttling(int newstate/* = -1*/)
+unsigned OON_sfml::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 {
-	static bool state = true;
+	static unsigned fps_limit = 0; // 0: no limit
 
-	if (newstate != -1) {
-		state = newstate;
-		window.setFramerateLimit(state ? cfg::FPS_THROTTLE : 0);
+	if (new_fps_limit != (unsigned)-1) {
+		fps_limit = (unsigned)new_fps_limit;
+		window.setFramerateLimit(fps_limit); // 0: no limit for SFML, too
 	}
-	return state;
+	return fps_limit; // C++ converts it to false when 0 (no limit)
 }
 
+void OON_sfml::fps_throttling(bool onoff)
+{
+	fps_throttling(unsigned(onoff ? cfg::FPS_THROTTLE : 0));
+}
+
+
+//----------------------------------------------------------------------------
 void OON_sfml::onResize()
 {
 	debug_hud.onResize(window);
@@ -548,7 +557,7 @@ void OON_sfml::_setup()
 	//! But... it will also be recreated each time the fullscreen/windowed
 	//! mode is toggled, so this will need to be repeated after every
 	//! `window.create` call (i.e. in `toggle_fullscreen`):
-	sw_fps_throttling(true);
+	fps_throttling(On);
 
 	// Player Superglobe:
 	globe_ndx = add_player({.r = world.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
@@ -580,8 +589,8 @@ void OON_sfml::_setup_UI()
 	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
 	auto form = gui.add(new Form, "Params");
 		form->add("Pause",    new CheckBox([&](auto* w){ this->pause(w->checked()); }));
-		form->add("Help",     new CheckBox([&](auto* w){ this->toggle_help(); }));
-		form->add("Overlays", new CheckBox([&](auto* w){ this->toggle_huds(); }));
+		form->add("Help",     new CheckBox([&](auto*  ){ this->toggle_help(); }));
+		form->add("Overlays", new CheckBox([&](auto*  ){ this->toggle_huds(); }));
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,

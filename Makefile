@@ -68,9 +68,10 @@ OBJS=\
 	$(out_dir)/audio_sfml.obj \
 
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h \
-	$(src_dir)/$(World_subdir)/*.hpp $(src_dir)/$(UI_subdir)/*.hpp  $(src_dir)/misc/*.hpp \
-	$(src_dir)/$(UI_subdir)/adapter/SFML\*.h* \
-	$(src_dir)/adapter/SFML/*.h* \
+	$(src_dir)/$(World_subdir)/*.hpp $(src_dir)/$(UI_subdir)/*.hpp \
+	$(src_dir)/$(UI_subdir)/adapter/SFML/*.hpp \
+	$(src_dir)/adapter/SFML/*.hpp \
+	$(src_dir)/sz/*.hh \
 
 
 #!!Ugh... A little hamfisted; see #118!

@@ -1,5 +1,5 @@
-#ifndef __OON_SFML__
-#define __OON_SFML__
+#ifndef _OON_SFML_HPP_
+#define _OON_SFML_HPP_
 
 #include "OON.hpp"
 
@@ -50,7 +50,8 @@ public:
 	void toggle_music() { audio.toggle_music(); }
 	void toggle_sound_fxs() { audio.toggle_sound(clack_sound); }
 	void toggle_fullscreen();
-	bool sw_fps_throttling(int newstate = -1); // -1 means read; std::optional can't help with omitting it altogether
+	unsigned fps_throttling(unsigned fps = (unsigned)-1); // -1 means query mode; std::optional can't help with omitting it altogether
+	void     fps_throttling(bool onoff); // set default FPS if On, or 0.0 if Off
 
 
 //------------------------------------------------------------------------
@@ -114,4 +115,4 @@ protected:
 #endif
 };
 
-#endif // __OON_SFML__
+#endif // _OON_SFML_HPP_

@@ -1,5 +1,5 @@
 #include "OON.hpp"
-#include "misc/sign.hpp"
+#include "sz/sign.hh"
 
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
@@ -84,8 +84,8 @@ bool OON::_ctrl_update_pan()
 	if (keystate(D)) { action = true; pan_step_x = -CFG_PAN_STEP; }
 
 	if (!action) {
-		if (pan_step_x) pan_step_x -= misc::sign(pan_step_x);
-		if (pan_step_y) pan_step_y -= misc::sign(pan_step_y);
+		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x);
+		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y);
 	}
 	if (pan_step_x) pan_x(pan_step_x);
 	if (pan_step_y) pan_y(pan_step_y);

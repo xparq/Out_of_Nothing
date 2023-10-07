@@ -1,7 +1,7 @@
-#ifndef __SIGN_HPP__
-#define __SIGN_HPP__
+#ifndef _SIGN_HH_
+#define _SIGN_HH_
 
-namespace misc {
+namespace sz {
 
 template <typename T>
 T sign(T x) {
@@ -14,4 +14,4 @@ T sign(T x) {
 
 }; // namespace
 
-#endif __SIGN_HPP__
+#endif _SIGN_HH_

@@ -1,9 +1,11 @@
-#ifndef __SIMAPP__
-#define __SIMAPP__
+#ifndef _SIMAPP_HPP_
+#define _SIMAPP_HPP_
 
 #include "Model/World.hpp"
 #include "UI/Input.hpp"
-#include "misc/rolling_average.hpp"
+#include "sz/unilang.hh" // On/Off
+#include "sz/rolling_average.hh"
+
 import Storage;
 
 #include <atomic>
@@ -102,11 +104,11 @@ protected:
 
 	//!!Migrate to the Metrics system:
 	float last_frame_delay;
-	misc::RollingAverage<30> avg_frame_delay;
+	sz::RollingAverage<30> avg_frame_delay;
 
 	// Player-controls (transient state)
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
 };
 
-#endif // __SIMAPP__
+#endif // _SIMAPP_HPP_
