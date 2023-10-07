@@ -56,7 +56,7 @@ void Renderer_SFML::draw(OON_sfml& game)
 		game.window.draw(*entity);
 	}
 
-	if (game.physics_paused()) {
+	if (game.paused()) {
 		draw_paused_banner(game);
 	}
 }

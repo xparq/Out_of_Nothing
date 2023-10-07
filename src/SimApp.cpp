@@ -24,6 +24,13 @@
 	using std::cerr, std::endl;
 
 //============================================================================
+void SimApp::pause(bool newstate)
+{
+	_paused = newstate;
+	on_pause_changed(newstate);
+}
+
+
 //----------------------------------------------------------------------------
 //!!These sould be atomic/blocking, but... meh... ;)
 //!!These are being called currently from a locked section of the event loop anyway,

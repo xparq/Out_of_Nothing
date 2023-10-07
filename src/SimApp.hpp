@@ -33,9 +33,10 @@ public:
 
 	virtual bool poll_and_process_controls() { return false; }
 
-	auto toggle_pause_physics()  { _paused = !_paused; pause_physics(_paused); }
-	auto physics_paused()  { return _paused; }
-	virtual void pause_physics(bool state = true) { _paused = state; }; //! override to stop the actual world...
+	void pause(bool newstate = true);
+	auto paused() const { return _paused; }
+	auto toggle_pause()  { pause(!paused()); }
+	virtual void on_pause_changed(bool /*newstate*/) {} // Pausing might need support/followup
 
 	virtual size_t add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
 	                //!! But C++ doesn't have the covariance needed here.

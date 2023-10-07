@@ -193,7 +193,7 @@ void OON_sfml::draw()
 void OON_sfml::updates_for_next_frame()
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	if (physics_paused()) {
+	if (paused()) {
 		sf::sleep(sf::milliseconds(50)); //!!that direct 50 is gross, but...
 		return;
 	}
@@ -228,9 +228,8 @@ void OON_sfml::updates_for_next_frame()
 }
 
 //----------------------------------------------------------------------------
-void OON_sfml::pause_physics(bool state)
+void OON_sfml::on_pause_changed(bool newstate)
 {
-	SimApp::pause_physics(state);
 	//! Need to start from 0 when unpausing.
 	//! (The other reset, on pausing, is redundant, but keeping for simplicity.)
 	clock.restart();
@@ -310,7 +309,7 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 					// [fix-setactive-fail] -> DON'T: window.close();
 					break;
 
-				case sf::Keyboard::Pause: toggle_pause_physics(); break;
+				case sf::Keyboard::Pause: toggle_pause(); break;
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
 
 				case sf::Keyboard::Insert: spawn(keystate(SHIFT) ? 1 : 100); break;
@@ -580,9 +579,9 @@ void OON_sfml::_setup_UI()
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
 	auto form = gui.add(new Form, "Params");
-		form->add("Pause",    new CheckBox([&](auto*){ this->toggle_pause_physics(); }));
-		form->add("Help",     new CheckBox([&](auto*){ this->toggle_help(); }));
-		form->add("Overlays", new CheckBox([&](auto*){ this->toggle_huds(); }));
+		form->add("Pause",    new CheckBox([&](auto* w){ this->pause(w->checked()); }));
+		form->add("Help",     new CheckBox([&](auto* w){ this->toggle_help(); }));
+		form->add("Overlays", new CheckBox([&](auto* w){ this->toggle_huds(); }));
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,

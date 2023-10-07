@@ -36,7 +36,7 @@ public:
 	//--------------------------------------------------------------------
 	// Player (gameplay) action overrides:
 
-	virtual void pause_physics(bool state = true) override;
+	virtual void on_pause_changed(bool newstate) override;
 	virtual bool load_snapshot(unsigned slot = 1) override;
 	//! The generic version of this is enough for now:
 	//virtual bool save_snapshot(unsigned slot = 1) override;
