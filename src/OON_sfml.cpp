@@ -20,6 +20,8 @@ import Storage;
 	using std::cerr, std::endl;
 #include <cassert>
 
+#include "extern/iprof/iprof.hpp"
+
 using namespace Model;
 using namespace UI;
 using namespace std;
@@ -141,6 +143,9 @@ void OON_sfml::update_thread_main_loop()
 
 //cerr << "- releasing Events...\n";
 		//sync::EventsFreeToGo.release();
+
+	IPROF_SYNC;
+	IPROF_SYNC_THREAD;
 
 /* Doing it with setFramerateLimit() now!
 	//! If there's still time left from the frame slice:
@@ -641,7 +646,7 @@ void OON_sfml::_setup_UI()
 	help_hud.add("T:        Time accel. (+Shift: decel.)");
 	help_hud.add("Pause:    Stop the physics (time)");
 	help_hud.add("--------- View:");
-	help_hud.add("+/- or mouse wheel: oom");
+	help_hud.add("+/- or mouse wheel: Zoom");
 	help_hud.add("A W S D:  Pan");
 	help_hud.add("Shift:    Auto-scroll to follow player movement");
 	help_hud.add("Scroll Lock: Toggle player-locked auto-scroll");

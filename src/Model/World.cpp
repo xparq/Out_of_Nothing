@@ -19,6 +19,9 @@
 #include <utility>
 	using std::move;
 
+#include "extern/iprof/iprof.hpp"
+
+
 namespace Model {
 
 using namespace std;
@@ -52,6 +55,8 @@ void World::remove_body(size_t ndx)
 void World::recalc_next_state(float dt, SimApp& game)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
+IPROF_FUNC;
+
 //	static float t = 0; // s
 //
 //	t += dt;

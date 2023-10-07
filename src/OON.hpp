@@ -22,7 +22,8 @@ public:
 	virtual void spawn(size_t n = 1, size_t parent_ndx = 0); //!! required: 0 == globe_ndx
 	virtual void exhaust_burst(size_t n = 50);
 
-	auto toggle_interact_all()  { world._interact_all = !world._interact_all; }
+	auto interact_all(bool state = true)  { world._interact_all = state; }
+	auto toggle_interact_all()  { interact_all(!world._interact_all); }
 
 	//!!These should be idempotent, to tolerate keyboard repeats (which could be disabled but may be problematic)!
 	//!!Also -> #105: sanitize thrusters...

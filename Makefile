@@ -178,10 +178,6 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMO
 # subdirs), so each dir has to have its distinct rule... :-/ (I hope I'm wrong!)
 #
 
-#!!?? I'm not sure if this is actually the sane way:
-{$(src_dir)/}.ixx{$(out_dir)/}.ifc::
-	$(CC_CMD) $(CC_FLAGS_) $<
-
 #!!?? I'm not sure if this is actually needed (or is the sane way):
 {$(src_dir)/}.ixx{$(out_dir)/}.ifc::
 	$(CC_CMD) $(CC_FLAGS_) $<
@@ -199,6 +195,16 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMO
 #!!Alas, this doesn't seem to work in inference rules:
 #!!	$(ECHO) SOURCE DRIVE + PATH: $(%|dpF)<
 	$(CC_CMD) $(CC_FLAGS_UI) $<
+
+#
+# There should also be a generic case, like this, but this is futile, as
+# a) the output path may not exist yet, and CL won't auto-create it :-/
+# b) $(LINK_CMD) won't consider objects not already mentioned in $(OBJS)...
+#    (And AFAIK, there's no way to wildcard them in NMAKE.)
+#
+#.cpp.obj::
+#	$(CC_CMD) $(CC_FLAGS_) $<
+
 
 ## This non-batch alternative for attempting to generate .h* deps is futile...
 ## (Note: redirecting the -showIncludes output with > $*.dep won't work, as $* is 
