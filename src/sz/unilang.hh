@@ -1,5 +1,5 @@
-#ifndef _UNILANG_HH_
-#define _UNILANG_HH_
+#ifndef _SZ_UNILANG_HH_
+#define _SZ_UNILANG_HH_
 //
 // General language extensions (synonyms, synt. sugar, utilities etc.) for
 // ground-levelling across projects, platforms, impl. languages etc.
@@ -51,4 +51,4 @@ AUTOCONST Off = false, On = true; // Not the crippled C++ stock enum; autoconver
 //!!??enum { UseDefault = -1 };
 
 } // namespace
-#endif //_UNILANG_HH_
+#endif //_SZ_UNILANG_HH_

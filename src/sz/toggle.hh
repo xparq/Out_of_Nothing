@@ -1,5 +1,7 @@
-﻿#pragma once
+﻿#ifndef _SZ_TOGGLE_HH_
+#define _SZ_TOGGLE_HH_
 
+//#include <ostream> // The conv. op. should be enough!
 #include <cassert>
 
 namespace sz {
@@ -23,3 +25,4 @@ protected:
 inline bool toggle(Toggle* t) { assert(t); return t->toggle(); }
 
 } // namespace
+#endif // _SZ_TOGGLE_HH_

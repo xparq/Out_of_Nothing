@@ -1,5 +1,5 @@
-#ifndef _STRINGTOOLS_HPP_
-#define _STRINGTOOLS_HPP_
+#ifndef _SZ_STRINGTOOLS_HH_
+#define _SZ_STRINGTOOLS_HH_
 
 #include <string>
 #include <cstring>
@@ -35,5 +35,4 @@ bool escape_chars(std::string* str, const char* escapees, char escmark = '\\')
 }
 
 }; // namespace
-
-#endif // _STRINGTOOLS_HPP_
+#endif // _SZ_STRINGTOOLS_HH_

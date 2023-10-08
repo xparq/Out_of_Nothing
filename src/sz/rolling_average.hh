@@ -1,5 +1,5 @@
-#ifndef _ROLLING_AVG_HH_
-#define _ROLLING_AVG_HH_
+#ifndef _SZ_ROLLING_AVG_HH_
+#define _SZ_ROLLING_AVG_HH_
 
 namespace sz {
 
@@ -23,5 +23,4 @@ struct RollingAverage
 };
 
 }; // namespace
-
-#endif _ROLLING_AVG_HH_
+#endif _SZ_ROLLING_AVG_HH_

@@ -1,5 +1,5 @@
-#ifndef _SIGN_HH_
-#define _SIGN_HH_
+#ifndef _SZ_SIGN_HH_
+#define _SZ_SIGN_HH_
 
 namespace sz {
 
@@ -13,5 +13,4 @@ T sign(T x) {
 }
 
 }; // namespace
-
-#endif _SIGN_HH_
+#endif _SZ_SIGN_HH_
