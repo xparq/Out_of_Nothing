@@ -1,9 +1,9 @@
 #include "extern/Args.hpp"
 #include "OON_sfml.hpp"
 
-#include <string>
-#include <cstdlib> // atoi
+#include <string> // stoi
 #include <iostream> // cout
+#include <algorithm> // min
 
 #include "extern/iprof/iprof.hpp"
 #include "extern/iprof/iprof.cpp" //! Better than fiddling with the Makefile!... ;)
@@ -39,17 +39,18 @@ int main(int argc, char* argv[])
 		.moons = args("moons"),
 		.interat = ...,
 	});*/
-	if (args["moons"])
-		game.add_bodies( ::atoi(args("moons").c_str()) -2 ); // 2 were pre-created...
-	if (args["interact"])
+	if (args["moons"]) {
+		auto n = stoi(args("moons")) - 2; // 2 have been pre-created!...
+		game.add_bodies(n < 0 ? 0 : n); // Avoid possible overflow!
+	} if (args["interact"]) {
 		game.interact_all();
-	if (args["snd-fx"]) {
-		//!! Currently only this much we can do with --snd-fx=on/off:
-		//!! This is the only control we have, assuming it's on by default...
-		game.toggle_sound_fxs(); //!! game.switch_sound_fxs(args("snd-fx") == "on"));
-	}
-	if (args["zoom"]) {
-		float factor = stof(args("zoom").c_str());
+	} if (args["friction"]) {
+		float f = stof(args("friction"));
+		game.get_world().FRICTION = f;
+	} if (args["snd"]) {
+		game.audio.enabled(args("snd") != "off");
+	} if (args["zoom"]) {
+		float factor = stof(args("zoom"));
 		game.zoom(factor);
 	}
 

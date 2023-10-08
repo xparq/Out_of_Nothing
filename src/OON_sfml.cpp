@@ -61,11 +61,16 @@ OON_sfml::OON_sfml()
 	, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
-	_setup();
+	//!! THIS SHOULD BE IN _setup(), BUT IT MUST HAPPEN BEFORE CALLING add_bodies() IN main!...
+	// Player Superglobe:
+	globe_ndx = add_player({.r = world.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+	assert(world.bodies.size() > globe_ndx);
 }
 
 bool OON_sfml::run()
 {
+	_setup();
+
 	//! The event loop will block and sleep.
 	//! The update thread is safe to start before the event loop, but we should also draw something
 	//! already before the first event, so we have to release the SFML (OpenGL) Window (crucial!),
@@ -345,12 +350,13 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
-				case 'm': toggle_music(); break;
-				case 'P': fps_throttling(!fps_throttling()); break;
-				case 'M': toggle_sound_fxs(); break;
 				case 'r': _time_reversed = !_time_reversed; break;
 				case 't': _time_scale *= 2.0f; break;
 				case 'T': _time_scale /= 2.0f; break;
+				case 'm': toggle_muting(); break;
+				case 'M': toggle_music(); break;
+				case 'N': toggle_sound_fx(); break;
+				case 'P': fps_throttling(!fps_throttling()); break;
 				case '?': toggle_help(); break;
 				}
 				break;
@@ -524,6 +530,14 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
 //	}
 }
 
+
+//----------------------------------------------------------------------------
+void OON_sfml::toggle_muting() { audio.toggle_audio(); }
+
+void OON_sfml::toggle_music() { audio.toggle_music(); }
+
+void OON_sfml::toggle_sound_fx() { audio.toggle_sounds(); }
+
 //----------------------------------------------------------------------------
 unsigned OON_sfml::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 {
@@ -559,8 +573,6 @@ void OON_sfml::_setup()
 	//! `window.create` call (i.e. in `toggle_fullscreen`):
 	fps_throttling(On);
 
-	// Player Superglobe:
-	globe_ndx = add_player({.r = world.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
 	// moons:
 	add_body({.r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2},
 				.color = 0xff2020});
@@ -662,7 +674,8 @@ void OON_sfml::_setup_UI()
 	help_hud.add("Ctrl+Home: Reset view to Home pos. (not the zoom)");
 	help_hud.add("--------- Admin:");
 	help_hud.add("F1-F4:    Save world snapshots (+Shift: load)");
-	help_hud.add("M:        (un)Mute music (+Shift: same for fx.)");
+	help_hud.add("M:        Mute/unmute audio");
+	help_hud.add("Shift+M:  Mute/unmute music, Shift+N: sound fx");
 	help_hud.add("Shft+P:   Toggle FPS throttling (lower CPU load)");
 	help_hud.add("F11:      Toggle fullscreen");
 	help_hud.add("F12:      Toggle HUDs");

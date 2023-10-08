@@ -1,19 +1,25 @@
-#ifndef __AUDIO_SFML_
-#define __AUDIO_SFML_
+#ifndef _AUDIO_SFML_
+#define _AUDIO_SFML_
+
+#include "sz/toggle.hh"
 
 #include <cstddef> // size_t
 
 class Audio_Stub
 {
-protected:
-	bool audio_enabled = true;
 public:
-	void toggle_audio() { audio_enabled = !audio_enabled; }
+	sz::Toggle enabled = true; // all-audio override
+	sz::Toggle music_enabled = true;
+	sz::Toggle fx_enabled = true;
+public:
+	virtual bool   play_music(const char* filename) { filename; return false; }
 	virtual size_t add_sound(const char* filename)  { filename; return 0; }
 	virtual void   play_sound(size_t ndx)  { ndx; }
-	virtual bool   play_music(const char* filename) { filename; return false; }
-	virtual void   toggle_music()  {}
-	virtual void   toggle_sound(size_t) {}
+	virtual bool   toggle_audio()  { return sz::toggle(&enabled); }
+	virtual bool   toggle_music()  { return sz::toggle(&music_enabled); }
+	virtual bool   toggle_sounds(); // fx
+	virtual void   toggle_sound(size_t) {} // fx
+	virtual void   kill_sounds() {} // fx
 };
 
 #ifndef DISABLE_AUDIO // If disabled, only the stub class will be available.
@@ -37,11 +43,13 @@ class Audio_SFML : public Audio_Stub
 	std::vector<SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector> sounds;
 
 public:
+	bool   play_music(const char* filename) override;
 	size_t add_sound(const char* filename) override;
-	void play_sound(size_t ndx) override;
-	bool play_music(const char* filename) override;
-	void toggle_music() override;
-	void toggle_sound(size_t ndx) override;
+	void   play_sound(size_t ndx) override;
+	bool   toggle_audio() override;
+	bool   toggle_music() override;
+	void   toggle_sound(size_t ndx) override;
+	void   kill_sounds() override;
 
 	Audio_SFML(): _dummy_soundbuffer_for_SFML(), _sound(_dummy_soundbuffer_for_SFML)
 	{
@@ -57,4 +65,4 @@ private:
 
 #endif // DISABLE_AUDIO
 
-#endif // __AUDIO_SFML_
+#endif // _AUDIO_SFML_

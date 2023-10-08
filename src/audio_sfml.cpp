@@ -7,6 +7,29 @@
 #include <iostream>
 	using std::cerr, std::endl;
 
+//----------------------------------------------------------------------------
+
+bool Audio_Stub::toggle_sounds()
+{
+	if (!sz::toggle(&fx_enabled)) {
+		kill_sounds();
+	}
+	return fx_enabled;
+}
+
+//----------------------------------------------------------------------------
+
+bool Audio_SFML::toggle_audio()
+{
+	if (Audio_Stub::toggle_audio()) {
+		if (_music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started
+			if (music_enabled) _music.play();
+	} else {
+		_music.pause(); //! not stop()
+		kill_sounds();
+	}
+	return enabled;
+}
 
 size_t Audio_SFML::add_sound(const char* filename)
 {
@@ -30,7 +53,7 @@ void Audio_SFML::play_sound(size_t ndx)
 	if (ndx >= sounds.size()) {
 		return;
 	}
-	if (audio_enabled && !sounds[ndx].muted) {
+	if (enabled && fx_enabled && !sounds[ndx].muted) {
 		_sound.setBuffer(sounds[ndx]);
 		_sound.play();
 	}
@@ -42,21 +65,24 @@ bool Audio_SFML::play_music(const char* filename)
 cerr << "- Error loading music: " << filename << endl;
 		return false;
 	}
-	if (audio_enabled) {
-		_music.setLoop(true);
+	_music.setLoop(true);
+
+	if (enabled && music_enabled) {
 		_music.play();
 	}
 	return true;
 }
 
 //!!NOTE: This one pauses, vs. toggle_sound() mutes!
-void Audio_SFML::toggle_music()
+bool Audio_SFML::toggle_music()
 {
-	if (_music.getStatus() == sf::Music::Playing) {
-		_music.pause();
+	if (Audio_Stub::toggle_music()) {
+		if (enabled && _music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started?
+			_music.play();
 	} else {
-		_music.play();
+		_music.pause();
 	}
+	return music_enabled;
 }
 
 //!!NOTE: This one mutes, vs. toggle_music() pauses!
@@ -67,5 +93,14 @@ void Audio_SFML::toggle_sound(size_t ndx)
 	}
 	sounds[ndx].muted = !sounds[ndx].muted;
 }
+
+void Audio_SFML::kill_sounds()
+{
+//!!	for (auto& s : sounds) {
+//!!		s.stop();
+		_sound.stop(); //!! only this one player exists!
+//!!	}
+}
+
 
 #endif // DISABLE_AUDIO

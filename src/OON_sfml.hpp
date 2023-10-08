@@ -47,8 +47,9 @@ public:
 	auto toggle_huds()  { _show_huds = !_show_huds; }
 	auto toggle_help()  { help_hud.active(!help_hud.active()); }
 #endif
-	void toggle_music() { audio.toggle_music(); }
-	void toggle_sound_fxs() { audio.toggle_sound(clack_sound); }
+	void toggle_muting();
+	void toggle_music();
+	void toggle_sound_fx();
 	void toggle_fullscreen();
 	unsigned fps_throttling(unsigned fps = (unsigned)-1); // -1 means query mode; std::optional can't help with omitting it altogether
 	void     fps_throttling(bool onoff); // set default FPS if On, or 0.0 if Off
@@ -108,6 +109,7 @@ protected:
 	sf::Clock clock;
 	Renderer_SFML renderer;
 
+public:
 #ifndef DISABLE_AUDIO
 	Audio_SFML audio;
 #else
