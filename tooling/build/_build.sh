@@ -1,10 +1,10 @@
 # Keep the BOM removed, as sh won't find '#' otherwise... ;)
 # Also: orig. env var names from Windows are converted to upper case here! :-o
 
-make_exe="nmake /nologo"
+make_cmd_base="nmake /nologo /f Makefile.msvc"
 
-make_build_cmd="${make_exe} $*"
-make_clean_cmd="${make_exe} clean"
+make_build_cmd="${make_cmd_base} $*"
+make_clean_cmd="${make_cmd_base} clean"
 
 # As a heuristic hack, if `build clean` was explicitly called,
 # skip all the magic and just proceed to make...

@@ -30,3 +30,7 @@ import/
 cache/
 
 *.sav
+
+extern/*
+!extern/sfw/
+extern/sfw/lib/msvc/*-d.lib

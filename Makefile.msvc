@@ -1,59 +1,17 @@
-# Linkmode alternatives:
-CC_FLAGS_LINK_static=-DSFML_STATIC
-CC_FLAGS_LINK_dll=
-#!!NMAKE doesn't seem to support macros in macro names, so we have to dance the !ifs... :-/
-#CC_FLAGS_LINKMODE=$(CC_FLAGS_$(CC_FLAGS_LINKMODE))
-!if "$(LINKMODE)" == "static"
-CC_FLAGS_LINKMODE=$(CC_FLAGS_LINK_static)
-!else if "$(LINKMODE)" == "dll"
-CC_FLAGS_LINKMODE=$(CC_FLAGS_LINK_dll)
-!else
-!error Unknown link mode: $(LINKMODE)!
-!endif
-
-LIBS_static=\
-	sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
-	sfml-audio-s.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
-	opengl32.lib freetype.lib vorbis.lib vorbisfile.lib \
-	user32.lib kernel32.lib gdi32.lib winmm.lib advapi32.lib
-LIBS_dll=\
-	sfml-graphics.lib sfml-window.lib sfml-system.lib \
-	sfml-audio.lib ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
-	opengl32.lib
-#!!sigh... LIBS=$(LIBS$(LINKMODE))
-!if "$(LINKMODE)" == "static"
-LIBS=$(LIBS_static)
-!else if "$(LINKMODE)" == "dll"
-LIBS=$(LIBS_dll)
-!else
-!error Unknown link mode: $(LINKMODE)!
-!endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-#### MSVC Jumpstart Makefile, r12                              (Public Domain)
+#### MSVC Jumpstart Makefile -- heavily customized from r12!
 #### -> https://github.com/xparq/NMAKE-Jumpstart
 ####
 #### BEWARE! Uses recursive NMAKE invocations, so update the macro below if
 #### you rename this file:
-THIS_MAKEFILE=Makefile
+THIS_MAKEFILE=Makefile.msvc
 
 #-----------------------------------------------------------------------------
 # Config - Project layout
 #
-# Note: the cfg. options can't be set on the NMAKE command line, only here!
+# NOTE: Macros can't be set on the NMAKE command line, only here, because the
+#       recursion won't pass them along!... (But see custom_build_options!)
 #-----------------------------------------------------------------------------
-PRJ_NAME=example
+PRJ_NAME=$(SZ_APPNAME)
 # Use the lower-case (processed) path macros here:
 #main_lib=$(lib_dir)/$(PRJ_NAME)$(buildmode_suffix).lib
 main_exe=$(exe_dir)/$(PRJ_NAME)$(buildmode_suffix).exe
@@ -65,21 +23,41 @@ OUT_DIR=out
 LIB_DIR=$(OUT_DIR)
 EXE_DIR=$(OUT_DIR)
 OBJ_DIR=$(OUT_DIR)/obj
-CXX_MOD_IFC_DIR=$(OUT_DIR)/ifc
+CXX_MOD_IFC_DIR=$(OUT_DIR)
 # Put (only) these into the lib (relative to SRC_DIR; leave it empty for "all"):
 LIB_SRC_SUBDIR=
 
-# Source (translation unit) basename filter:
+# Source (translation unit) basename filter (CMD shell glob pattern):
 UNITS_PATTERN=*
+# Ignore-filter on full-path source names -> NMAKE `filterout` pattern list syntax!
+# Multiple patterns must be separated by spaces. Do NOT quote the list!
+UNITS_NO_COMPILE_PATTERN=.off .tmp
+# Ignore-filter on full-path source names -> `findstr` REGEX syntax!
+# Multiple patterns must be separated by spaces. Do NOT quote the list!
+UNITS_NO_AUTOLINK_PATTERN=main\.cpp \.off \.tmp sz/test sz\\test
+UNITS_NO_LIB_PATTERN=$(UNITS_NO_AUTOLINK_PATTERN)
 
+#!! Kludge until I find out the correct way:
+#!! Also done manually, coz no way to track the actual deps automatically...:
+OON_CPP_MODULE_IFCS=\
+	$(cxx_mod_ifc_dir)/Storage.ifc 
+
+#!Sz: Assuming being called from a script that has already set the path:
+BB=busybox
+ECHO=@$(BB) echo
+MKDIR=$(BB) mkdir -p
+# Print more (0, 1, 2)... This one can be overriden from the cmdline! (see custom_build_options!)
+VERBOSE_CMD=0
+
+#
 # External dependencies:
+#
 EXT_INCLUDE_DIRS=
 EXT_LIB_DIRS=
-#!!Should be adjusted to match the build options!
 EXT_LIBS=\
-	extern/sfw/lib/msvc/sfw-$(CRTMODE).lib \
-	extern/zstd/msvc/zstd-$(CRTMODE).lib \
-
+	$(SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
+	extern/sfw/lib/msvc/sfw$(_cflags_crt_linkmode)$(_buildmode_debug_file_suffix).lib \
+	extern/zstd/msvc/zstd$(_cflags_crt_linkmode).lib \
 
 #-----------------------------------------------------------------------------
 # Config - Build options
@@ -87,10 +65,11 @@ EXT_LIBS=\
 # Build alternatives (override from the command-line, too, if needed):
 DEBUG=0
 CRT=dll
+#!Sz: CRT=dll is always the case with the pre-built SFML libs, so not use changing it!
 # Custom build options can also be added:
-#OPT1 = opt1_default
+SFML=static
 # Custom build options need to be passed along for recursion explicitly:
-#custom_build_options = OPT1=$(OPT1) ...
+custom_build_options = SFML=$(SFML) VERBOSE_CMD=$(VERBOSE_CMD)
 
 # Comp. flags:
 CFLAGS=-W4 -Iinclude
@@ -100,15 +79,49 @@ CXXFLAGS=-std:c++latest
 # Output dir/file suffixes for build alternatives
 # NOTE: Must differ from their "no ..." counterparts to avoid code (linking)
 #       mismatches!
+#!Sz: CRT=dll is always the case with the pre-built SFML libs, so not use changing it! (See also at CRT=...)
 buildmode_crtdll_dir_suffix=.crtdll
 buildmode_crtdll_file_suffix=-crtdll
 buildmode_debug_dir_suffix=.DEBUG
 buildmode_debug_file_suffix=-d
 
+SFML_linkmode=$(SFML)
+buildmode_dir_suffix=.sfml-$(SFML_linkmode)
+
+#!-------------------------------------
+#!Sz Other custom options for OON...
+#!-------------------------------------
+!if "$(SFML)" == "static"
+CFLAGS=$(CFLAGS) -DSFML_STATIC
+!endif
+CXXFLAGS=-std:c++latest
+# Note: C++ compilation would use $(CFLAGS), too.
+
+# Adapt the various flavors of the SFML libs (as per the debug/link modes)...
+sfml_libs_static=sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
+	sfml-audio-s.lib
+
+sfml_libs_dll=sfml-graphics.lib sfml-window.lib sfml-system.lib \
+	sfml-audio.lib
+
+!if "$(SFML)" == "static"
+sfml_libs=$(sfml_libs_static)
+sfml_and_deps_libs=$(sfml_libs) opengl32.lib freetype.lib\
+	ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
+	user32.lib kernel32.lib gdi32.lib winmm.lib advapi32.lib
+!else if "$(SFML)" == "dll"
+sfml_libs=$(sfml_libs_dll)
+sfml_and_deps_libs=$(sfml_libs) opengl32.lib
+!endif
+
+!if defined(DEBUG) && $(DEBUG) == 1
+sfml_libs=$(substi .lib,-d.lib,$(sfml_libs))
+!endif
+
 #=============================================================================
 #                     NO EDITS NEEDED BELOW, NORMALLY...
 #=============================================================================
-obj_source_exts=cpp cxx c
+obj_source_exts=cpp cxx cc c
 
 #-----------------------------------------------------------------------------
 # Show current processing stage...
@@ -241,6 +254,8 @@ buildmode_file_suffix=$(buildmode_file_suffix)$(buildmode_crtdll_file_suffix)
 !endif
 
 !if "$(DEBUG)" == "1"
+_buildmode_debug_file_suffix=$(buildmode_debug_file_suffix)
+_buildmode_debug_dir_suffix=$(buildmode_debug_dir_suffix)
 buildmode_dir_suffix=$(buildmode_dir_suffix)$(buildmode_debug_dir_suffix)
 buildmode_file_suffix=$(buildmode_file_suffix)$(buildmode_debug_file_suffix)
 !endif
@@ -266,24 +281,30 @@ obj_dir=$(obj_dir)\$(DIR)
 # Can't direclty add $(patsubst %,.%,$(obj_source_exts)) to .SUFFIXES, as that
 # would trigger a syntax error! :-o Well, at least we have a descriptive name:
 _compilable_src_exts_=$(patsubst %,.%,$(obj_source_exts))
-.SUFFIXES: $(_compilable_src_exts_) .ixx
+.SUFFIXES:$(_compilable_src_exts_) .ixx .ifc .exe
+
 #-----------------------------------------------------------------------------
+!if "$(VERBOSE_CMD)" == "" || "$(VERBOSE_CMD)" == "0"
+_mute=@
+!endif
 {$(src_dir)}.c{$(obj_dir)}.obj::
-	$(CC) $(CFLAGS) -Fo$(obj_dir)\ $<
+	$(_mute)$(CC) $(CFLAGS) -Fo$(obj_dir)\ $<
 
 {$(src_dir)}.cpp{$(obj_dir)}.obj::
-	$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
-
+	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
 {$(src_dir)}.cxx{$(obj_dir)}.obj::
-	$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
+	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
+{$(src_dir)}.cc{$(obj_dir)}.obj::
+	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
 
 #!!?? This is probably not the way to compile mod. ifcs!...:
-#{$(src_dir)}.ixx{$(obj_dir)}.ifc::
-#	$(CXX) $(CFLAGS) $(CXXFLAGS) -ifcOutput $(cxx_mod_ifc_dir)\ $<
+{$(src_dir)}.ixx{$(cxx_mod_ifc_dir)}.ifc::
+	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -ifcOutput $(cxx_mod_ifc_dir)\ -Fo$(obj_dir)\ $<
+
 
 #-----------------------------------------------------------------------------
-# Default target - walk through the src tree dir-by-dir & build each,
-#                  plus do an initial and a final wrapping round
+# Default target - walk through the src tree dir-by-dir & compile all the
+#                  sources, plus do an initial & a final wrapping round...
 #-----------------------------------------------------------------------------
 traverse_src_tree: init
 	@cmd /v:on /c <<$(out_dir)\treewalk.cmd
@@ -296,26 +317,40 @@ traverse_src_tree: init
 	rem Do the root level first (preps + top-level sources)...
 	rem (Note: naming a (different) target would avoid inf. recursion!)
         for %%x in ($(obj_source_exts)) do (
+		if "$(VERBOSE_CMD)" GEQ "2" echo [!_dir_!/*.%%x]
 		if exist "$(src_dir)\*.%%x" !_make_! /c compiling SRC_EXT_=%%x $(custom_build_options) || if errorlevel 1 exit -1
 	)
 	rem Scan the rest of the source tree for sources...
-	for /f "delims=" %%i in ('dir /s /b /a:d "$(srcroot_fullpath)"') do (
-		rem It's *vital* to use a local name here, not dir (==DIR!!!):
-		set "_dir_=%%i"
-		set "_dir_=!_dir_:$(srcroot_fullpath)\=!"
-	        for %%x in ($(obj_source_exts)) do (
-			if exist %%i\*.%%x !_make_! /c compiling "DIR=!_dir_!" SRC_EXT_=%%x $(custom_build_options) || if errorlevel 1 exit -1
+	for /f "delims=" %%d in ('dir /s /b /a:d "$(srcroot_fullpath)"') do (
+		rem It's *vital* to use a local name here, not `dir` (== $(DIR)!!!):
+		set "_dir_=%%d"
+
+		echo !_dir_! | findstr /L "$(UNITS_NO_COMPILE_PATTERN)" > nul
+		if not errorlevel 1 (
+			if "$(VERBOSE_CMD)" GEQ "1" echo - EXCLUDE DIR: !_dir_!
+		) else (
+			set "_dir_=!_dir_:$(srcroot_fullpath)\=!"
+			for %%x in ($(obj_source_exts)) do (
+				if "$(VERBOSE_CMD)" GEQ "2" echo [!_dir_!/*.%%x]
+				if "$(VERBOSE_CMD)" GEQ "2" if exist "%%d\*.%%x" echo [-^> !_make_! /c compiling "DIR=!_dir_!" SRC_EXT_=%%x $(custom_build_options)]
+				rem ... !_make_! ... "DIR=!_dir_!" would FAIL! if the NMAKE path has spaces! :-ooo
+				if exist "%%d\*.%%x" !_make_! /c compiling DIR=!_dir_! SRC_EXT_=%%x $(custom_build_options)
+				if errorlevel 1 exit -1
+			)
 		)
 	)
 	!_make_! RECURSED_FOR_FINISHING=1 $(custom_build_options) finish
-<<
+<<keep
 
 #-----------------------------------------------------------------------------
 # "Tasks" (one-off and type-related high-level (meta/admin) rules)...
 #-----------------------------------------------------------------------------
-init: mk_main_target_dirs mk_main_lib_rule_inc
+init: mk_main_target_dirs compile_mod_ifcs mk_mainlib_or_mainexe_objdep_rule_inc
 
-compiling: mk_obj_dirs objs
+#!Sz: This doesn't have any subdir (precreation) support yet:
+compile_mod_ifcs: mk_obj_dir $(OON_CPP_MODULE_IFCS)
+
+compiling: mk_obj_dir compile_dir
 
 finish: $(BUILD)
 
@@ -326,38 +361,81 @@ mk_main_target_dirs:
 	@if not exist "$(exe_dir)" md "$(exe_dir)"
 #!!	@if not exist "$(cxx_mod_ifc_dir)" md "$(cxx_mod_ifc_dir)"
 
-mk_obj_dirs:
+mk_obj_dir:
 # These vary for each subdir, so can't be done just once at init:
 	@if not exist "$(obj_dir)" md "$(obj_dir)"
 
 !ifdef SRC_EXT_
-objs: $(src_dir)\$(UNITS_PATTERN).$(SRC_EXT_)
+compile_dir: $(src_dir)\$(UNITS_PATTERN).$(SRC_EXT_)
+!if "$(VERBOSE_CMD)" == "2"
+	@echo [[COMPILING *.$(SRC_EXT_) in """$(DIR)"""]: $(filterout $(UNITS_NO_COMPILE_PATTERN),$(patsubst $(src_dir)\\%,$(obj_dir)\\%, $(subst .$(SRC_EXT_),.obj,$**)))]]
+!endif
 	@$(MAKE_CMD) RECURSED_FOR_COMPILING=1 DIR=$(DIR) $(custom_build_options)\
-		$(patsubst $(src_dir)\\%,$(obj_dir)\\%, $(subst .$(SRC_EXT_),.obj,$**))
+		$(filterout $(UNITS_NO_COMPILE_PATTERN),$(patsubst $(src_dir)\\%,$(obj_dir)\\%, $(subst .$(SRC_EXT_),.obj,$**)))
 !endif
 
+
+obj_list_file=$(obj_dir)\obj.list
+mainlibexe_rule_inc=$(out_dir)\main_lib_or_exe_rule.inc
+#!! This would replace newlines with spaces, rendering the result invalid!... :-(
+_mainlibexe_rule_inc_cmd_body=\
+	@echo off\
+        for %%x in ($(obj_source_exts)) do (\
+		...\
+	)\
+	...
+
 !if "$(main_lib)" != ""
-mainlib_rule_inc=$(out_dir)\mainlib_rule.inc
-mk_main_lib_rule_inc:
+mk_mainlib_or_mainexe_objdep_rule_inc: mk_obj_dir
 	@cmd /v:on /c <<$(out_dir)\mklibrule.cmd
 	@echo off
-	for /r "$(src_dir)\$(lib_src_subdir)" %%o in ($(UNITS_PATTERN).c*) do  (
-		set "_o_=%%o"
-		set "_o_=!_o_:$(srcroot_fullpath)\=!"
-		for %%x in ($(obj_source_exts)) do (
-			set "_o_=!_o_:.%%x=.obj!"
+        for %%x in ($(obj_source_exts)) do (
+		set "_ext_=%%x"
+		for /r "$(src_dir)\$(lib_src_subdir)" %%o in ($(UNITS_PATTERN).!_ext_!) do (
+			set "_o_=%%o"
+			echo !_o_! | findstr /R "$(UNITS_NO_LIB_PATTERN)" > nul
+			if not errorlevel 1 (
+				if "$(VERBOSE_CMD)" GEQ "1" echo - EXCLUDE FROM LIB: !_o_!
+			) else (
+				set "_o_=!_o_:$(srcroot_fullpath)\=!"
+				for %%x in ($(obj_source_exts)) do (
+					set "_o_=!_o_:.%%x=.obj!"
+				)
+				set "objlist=!objlist! $(obj_dir)\!_o_!"
+			)
 		)
-		set "objlist=!objlist! $(obj_dir)\!_o_!"
 	)
-	echo $(main_lib): !objlist! > $(mainlib_rule_inc)
-<<
-# And this crap is separated here only because echo can't echo TABs:
-	@type << >> $(mainlib_rule_inc)
+	echo !objlist! > $(obj_list_file)
+	echo $(main_lib): !objlist! > $(mainlibexe_rule_inc)
+<<keep
+#	And this crap is separated here only because echo can't echo TABs:
+	@type << >> $(mainlibexe_rule_inc)
 	@echo Creating lib: $$@...
 	lib -nologo -out:$$@ $$**
-<<
+<<keep
 !else
-mk_main_lib_rule_inc:
+mk_mainlib_or_mainexe_objdep_rule_inc: mk_obj_dir
+	@cmd /v:on /c <<$(out_dir)\mklibrule.cmd
+	@echo off
+        for %%x in ($(obj_source_exts)) do (
+		set "_ext_=%%x"
+		for /r "$(src_dir)\$(lib_src_subdir)" %%o in ($(UNITS_PATTERN).!_ext_!) do (
+			set "_o_=%%o"
+			echo !_o_! | findstr /R "$(UNITS_NO_AUTOLINK_PATTERN)" > nul
+			if not errorlevel 1 (
+				if "$(VERBOSE_CMD)" GEQ "1" echo - EXCLUDE FROM AUTO-LINK: !_o_!
+			) else (
+				set "_o_=!_o_:$(srcroot_fullpath)\=!"
+				for %%x in ($(obj_source_exts)) do (
+					set "_o_=!_o_:.%%x=.obj!"
+				)
+				set "objlist=!objlist! $(obj_dir)\!_o_!"
+			)
+		)
+	)
+	echo !objlist! > $(obj_list_file)
+	echo $(main_exe):: !objlist! > $(mainlibexe_rule_inc)
+<<keep
 !endif
 
 clean:
@@ -366,6 +444,7 @@ clean:
 	@if not "$(abspath $(obj_dir))" == "$(abspath .\$(obj_dir))" echo - ERROR: Invalid object dir path: "$(obj_dir)" && exit -1
 # Stop listing all the deleted .obj files despite /q -> cmd /e:off (self-explanatory, right?)
 	@if exist "$(obj_dir)\*.obj" cmd /e:off /c del /s /q "$(obj_dir)\*.obj"
+	@if exist "$(obj_list_file)" cmd /e:off /c del $(obj_list_file)
 # To let the idiotic tools run at least, the dir must exist, so if it was deleted
 # in a previous run, we must recreate it just to be able to check and then delete
 # it right away again... Otherwise: "The system cannot find the file specified."):
@@ -395,6 +474,7 @@ clean_all:
 #-----------------------------------------------------------------------------
 # Actual (low-level) one-off build jobs...
 #-----------------------------------------------------------------------------
+
 #------------------------
 # Build the "main" lib
 #------
@@ -408,11 +488,41 @@ clean_all:
 # Build the "main" exe
 #------
 !if "$(main_exe)" != ""
-$(main_exe): $(obj_dir)\main.obj $(main_lib)
+$(main_exe):: $(obj_dir)\main.obj $(main_lib)
 	@echo Creating executable: $@...
-	link -nologo $(LINKFLAGS) -out:$@ $(EXT_LIBS) $**
+	link -nologo $(LINKFLAGS) -out:$@ @$(obj_list_file) $(EXT_LIBS) $**
 !endif
 
-MAIN:: $(HASH_INCLUDE_FILE)
-        echo BOOO! :-o
-	
+## Sorry, no autodeps. yet...
+#OON legacy: $(OBJS) $(CPP_MODULE_IFCS): $(INCLUDES) $(CPP_MODULE_SOURCES)
+
+## Especially for this one...:
+$(obj_dir)/main.obj: $(OON_HASH_INCLUDE_FILE)
+
+$(OON_HASH_INCLUDE_FILE):
+	$(ECHO) "	Make last commit ID available for #including..."
+	$(BB) sh tooling/git/_create_commit_hash_include_file.sh
+	$(ECHO)
+
+#-----------------------------------------------------------------------------
+# Some auto-remake support (-- the rest is in the OON build script!)
+# Changing the makefile triggers a full rebuild.
+#!! I'm sure there's a better way for this, but for now:
+OON_FULL_REBUILD_BY_MANUAL_DEPS=$(OON_CPP_MODULE_IFCS)
+
+!ifdef SRC_EXT_
+#!!I seriously don't understand why this is needed to trigger a full recomp.:
+OON_FULL_REBUILD_BY_MANUAL_DEPS=$(OON_FULL_REBUILD_BY_MANUAL_DEPS) $(src_dir)\$(UNITS_PATTERN).$(SRC_EXT_)
+!endif
+
+$(OON_FULL_REBUILD_BY_MANUAL_DEPS): $(THIS_MAKEFILE) $(OON_INCLUDES_MANUALDEP)
+
+#!! Sigh... No header autodep...
+OON_INCLUDES_MANUALDEP=$(src_dir)/*.hpp $(src_dir)/*.h \
+	$(src_dir)/$(World_subdir)/*.hpp \
+	$(src_dir)/$(View_subdir)/*.hpp \
+	$(src_dir)/$(UI_subdir)/*.hpp \
+	$(src_dir)/$(UI_subdir)/adapter/SFML/*.hpp \
+#	$(src_dir)/$(Platform_subdir)/*.hpp \
+	$(src_dir)/adapter/SFML/*.hpp \
+	$(src_dir)/sz/*.hh \

@@ -48,14 +48,14 @@ int main()
 
 	//-------------------------------------------------------------------
 	cerr << "\n\nAssign: operator=(-1u)\n\t";
-		cc.operator=( -1u); cerr << cc << ", ";
+		cc.operator=(unsigned(-1)); cerr << cc << ", ";
 	cerr << "\nAssign: x = -1u\n\t";
-		cc = -1u; cerr << cc << ", ";
+		cc = unsigned(-1); cerr << cc << ", ";
 
 	cerr << "\n\nAssign: operator=(-1)\n\t";
-		cc.operator=( -1); cerr << cc << ", ";
+		cc.operator=(unsigned(-1)); cerr << cc << ", ";
 	cerr << "\nAssign: x = -1\n\t";
-		cc = -1; cerr << cc << ", ";
+		cc = unsigned(-1); cerr << cc << ", ";
 
 	cerr << "\n\nAssign: copy op= cc2 (should be 20)\n\t";
 		cc = cc2; cerr << cc << ", ";

@@ -37,12 +37,9 @@ rem set SFML
 
 ::
 echo Download...
-::!!
-::!! BusyBox stopped working for this! :-/
-::!! %~dp0busybox wget -P %_SFML_DOWNLOAD_DIR% %_SFML_DOWNLOAD_URL%
-::!!	ssl_client: TLS error from peer (alert code 40): handshake failure
-::!!	wget: error getting response
-wget -q -P %_SFML_DOWNLOAD_DIR% %_SFML_DOWNLOAD_URL%
+::! Win10 ships with curl!
+curl -o %_SFML_DOWNLOADED_PACK% %_SFML_DOWNLOAD_URL%
+::! wget -q -P %_SFML_DOWNLOAD_DIR% %_SFML_DOWNLOAD_URL%
 
 if not exist "%_SFML_DOWNLOADED_PACK%" (
 	echo - ERROR: Failed to download package.
