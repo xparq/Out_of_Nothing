@@ -4,6 +4,7 @@
 #include "Model/World.hpp"
 #include "UI/Input.hpp"
 #include "sz/unilang.hh" // On/Off
+#include "sz/counter.hh"
 #include "sz/rolling_average.hh"
 
 import Storage;
@@ -32,6 +33,7 @@ protected:
 //----------------------------------------------------------------------------
 public:
 	virtual bool run() = 0;
+	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
 
 	virtual bool poll_and_process_controls() { return false; }
 
@@ -87,11 +89,18 @@ public:
 	virtual ~SimApp() = default;
 
 //------------------------------------------------------------------------
-// Data: Abstract (Generic) Game World (+ View) State...
+// Data: Abstract (Generic) Model World + View State, etc...
 //----------------------------------------------------------------------------
 protected:
-	Model::World world;
+	Model::World world; // -> get_/set_world()
 	Model::View view;
+
+public:
+	sz::CappedCounter<uint64_t> iterations; // # of model updates (from the start of the main (run) loop, or load, etc.)
+		// 1 calendar year = 3,784,320,000 cycles at 120 fps, so even 32 bits are quite enough!
+		// But for longer runs (on persistent-world servers), or for higher resolutions, let's go 64...
+
+	sz::Counter<int> stepthrough; // # of scheduled steps to advance/retrace, while in halt (paused) mode
 
 //------------------------------------------------------------------------
 // Data / Internals...
@@ -99,10 +108,10 @@ protected:
 protected:
 	bool _terminated = false;
 	bool _paused = false;
-	bool  _time_reversed = false;
-	float _time_scale = 1.0f; // > 0 (Decoupled from reversal, for better controls.)
 
-	//!!Migrate to the Metrics system:
+	bool  _time_reversed = false;
+	float _time_scale = 1.0f; // > 0 (Decoupled from reversal, for more flexible controls.)
+	//!!??Migrate to the Metrics system:
 	float last_frame_delay;
 	sz::RollingAverage<30> avg_frame_delay;
 

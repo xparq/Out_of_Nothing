@@ -24,6 +24,7 @@ friend class Renderer_SFML;
 public:
 
 	virtual bool run() override;
+	virtual void time_step(int steps) override;
 
 	//--------------------------------------------------------------------
 	// Config / Setup:
@@ -72,10 +73,8 @@ private:
 protected:
 	void event_loop();
 	void update_thread_main_loop();
-
 	void updates_for_next_frame();
 	void draw();
-
 	void onResize();
 
 	void _setup();

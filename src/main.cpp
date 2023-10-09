@@ -39,14 +39,16 @@ int main(int argc, char* argv[])
 		.moons = args("moons"),
 		.interat = ...,
 	});*/
-	if (args["moons"]) {
-		auto n = stoi(args("moons")) - 2; // 2 have been pre-created!...
+	if (args["bodies"]) {
+		auto n = stoi(args("bodies")) - 2; // 2 have been pre-created!...
 		game.add_bodies(n < 0 ? 0 : n); // Avoid possible overflow!
 	} if (args["interact"]) {
 		game.interact_all();
 	} if (args["friction"]) {
 		float f = stof(args("friction"));
 		game.get_world().FRICTION = f;
+	} if (args["loopcap"]) {
+		game.iterations.max(stoul(args("loopcap")));
 	} if (args["snd"]) {
 		game.audio.enabled(args("snd") != "off");
 	} if (args["zoom"]) {

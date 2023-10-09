@@ -100,6 +100,24 @@ bool OON_sfml::run()
 }
 
 //----------------------------------------------------------------------------
+//!! Move this to SimApp, but only together with its counterpart in the update loop!
+//!! Note that resetting the iter. counter and the model time should pro'ly be associated
+//!! with run(), which should then be non-empty in SimApp, and should also somehow
+//!! bring with it some main-loop logic to handle basic chores like time control & stepping!
+//!! Perhaps most of that ugly & brittle `update_thread_main_loop()` could be moved there,
+//!! and then updates_for_next_frame() could be an app callback (plus some new ones, handling
+//!! that SFML Context bullshit etc.), and its wrapping in SimApp could hopefully handle the timing stuff.
+void OON_sfml::time_step(int steps)
+{
+	// Override the loop count limit, if reached (this may not always be applicable tho!); -> #216
+	if (iterations.maxed())
+		++iterations.limit;
+
+	stepthrough = steps; //! See resetting it in updates_for_next_frame()!
+	assert(stepthrough == steps); // sz::Counter op= was very fiddly, I still don't trust it 100%!...
+}
+
+//----------------------------------------------------------------------------
 void OON_sfml::update_thread_main_loop()
 {
 	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
@@ -199,30 +217,44 @@ void OON_sfml::draw()
 void OON_sfml::updates_for_next_frame()
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	if (paused()) {
-		sf::sleep(sf::milliseconds(50)); //!!that direct 50 is gross, but...
-		return;
-	}
-
-	// In addition to the async. event loop:
-	poll_and_process_controls();
-
 	//!! I guess this should come before processing the controls,
 	//!! so the controls & the updates can be in the same time frame!
 	//!! (Note: they're still in the same rendering frame tho, that's
 	//!! why I'm not sure if this matters at all.)
+	//!!
+	//!! Also, the frame times should still be tracked (and, as a side-effect, the FPS gauge updated)
+	//!! even when paused (e.g. to support time-stepping etc.)!
 	last_frame_delay = clock.getElapsedTime().asSeconds();
 	clock.restart(); //! Must also be duly restarted on unpausing!
-
+	// Update the FPS gauge
 	avg_frame_delay.update(last_frame_delay);
 
+	if (paused()) {
+		if (!stepthrough) { // Are we single-stepping?
+			sf::sleep(sf::milliseconds(50)); //!! That 50 should drop the frame rate to ~15-20 FPS... But see #217! :-o
+			return;
+		}
+	}
+
+	//!!? Get some fresh immediate (continuous) input control state updates,
+	//!!? in addition to the async. event_loop()!...
+	poll_and_process_controls();
+
+	// Determine the size of the next time slice...
+	//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
 	auto dt = last_frame_delay; //!! Just an estimate: the last dt has nothing to do
 	                            //!! with the next one, strictly speaking! :-o
-
 	dt *= _time_scale;
-	if (_time_reversed) dt = -dt;
+	if (_time_reversed || stepthrough < 0) dt = -dt;
 
-	world.recalc_next_state(dt, *this);
+	//!! Move to a SimApp virtual, I guess (so at leat the counter capping can be implicitly done there; see also time_step()!):
+	if (!iterations.maxed()) {
+		world.recalc_next_state(dt, *this);
+		++iterations;
+	}
+
+	// One less step to make next time (if any):
+	if (stepthrough) if (stepthrough < 0 ) ++stepthrough; else --stepthrough;
 
 	// Auto-scroll to follow player movement...
 	//!
@@ -316,6 +348,9 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 					break;
 
 				case sf::Keyboard::Pause: toggle_pause(); break;
+				case sf::Keyboard::Enter: time_step(1); break;
+				case sf::Keyboard::Backspace: time_step(-1); break;
+
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
 
 				case sf::Keyboard::Insert: spawn(keystate(SHIFT) ? 1 : 100); break;
@@ -353,6 +388,7 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 				case 'r': _time_reversed = !_time_reversed; break;
 				case 't': _time_scale *= 2.0f; break;
 				case 'T': _time_scale /= 2.0f; break;
+				case 'h': toggle_pause(); break;
 				case 'm': toggle_muting(); break;
 				case 'M': toggle_music(); break;
 				case 'N': toggle_sound_fx(); break;
@@ -653,34 +689,36 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("Press ? for help...");
 
 	//------------------------------------------------------------------------
-//	help_hud.add("--------- Controls:");
-	help_hud.add("Arrows:   Thrust");
-	help_hud.add("Space:    \"Exhaust\" trail");
-	help_hud.add("Ins:      Add 100 objects (+Shift: only 1)");
-	help_hud.add("Del:      Remove 100 objects (+Shift: only 1)");
-//	help_hud.add("--------- Metaphysics:");
-	help_hud.add("Tab:      Toggle object interactions");
-	help_hud.add("F:        Decrease (+Shift: incr.) friction");
-//	help_hud.add("C:        chg. collision mode: pass/stick/bounce");
-	help_hud.add("R:        Reverse time");
-	help_hud.add("T:        Time accel. (+Shift: decel.)");
-	help_hud.add("Pause:    Stop the physics (time)");
-	help_hud.add("--------- View:");
+//	help_hud.add("---------- Controls:");
+	help_hud.add("Arrows:    Thrust");
+	help_hud.add("Space:     \"Exhaust\" trail");
+	help_hud.add("Ins:       Add 100 objects (+Shift: only 1)");
+	help_hud.add("Del:       Remove 100 objects (+Shift: only 1)");
+//	help_hud.add("---------- Metaphysics:");
+	help_hud.add("Tab:       Toggle object interactions");
+	help_hud.add("F:         Decrease (+Shift: incr.) friction");
+//	help_hud.add("C:         chg. collision mode: pass/stick/bounce");
+	help_hud.add("R:         Reverse time");
+	help_hud.add("T:         Time accel. (+Shift: decel.)");
+	help_hud.add("Pause/h:   Halt the physics (time)");
+	help_hud.add("Enter:     Step 1 time slice forward");
+	help_hud.add("Backspace: Step 1 time slice backward");
+	help_hud.add("---------- View:");
 	help_hud.add("+/- or mouse wheel: Zoom");
-	help_hud.add("A W S D:  Pan");
-	help_hud.add("Shift:    Auto-scroll to follow player movement");
+	help_hud.add("A W S D:   Pan");
+	help_hud.add("Shift:     Auto-scroll to follow player movement");
 	help_hud.add("Scroll Lock: Toggle player-locked auto-scroll");
-	help_hud.add("Home:     Home in on the player globe");
+	help_hud.add("Home:      Home in on the player globe");
 	help_hud.add("Ctrl+Home: Reset view to Home pos. (not the zoom)");
-	help_hud.add("--------- Admin:");
-	help_hud.add("F1-F4:    Save world snapshots (+Shift: load)");
-	help_hud.add("M:        Mute/unmute audio");
-	help_hud.add("Shift+M:  Mute/unmute music, Shift+N: sound fx");
-	help_hud.add("Shft+P:   Toggle FPS throttling (lower CPU load)");
-	help_hud.add("F11:      Toggle fullscreen");
-	help_hud.add("F12:      Toggle HUDs");
+	help_hud.add("---------- Admin:");
+	help_hud.add("F1-F4:     Save world snapshots (+Shift: load)");
+	help_hud.add("M:         Mute/unmute audio");
+	help_hud.add("Shift+M:   Mute/unmute music, Shift+N: sound fx");
+	help_hud.add("Shft+P:    Toggle FPS throttling (lower CPU load)");
+	help_hud.add("F11:       Toggle fullscreen");
+	help_hud.add("F12:       Toggle HUDs");
 	help_hud.add("");
-	help_hud.add("Esc:      Quit");
+	help_hud.add("Esc:       Quit");
 	help_hud.add("");
 	help_hud.add("Command-line options: oon.exe /?");
 
