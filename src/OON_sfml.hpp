@@ -3,7 +3,7 @@
 
 #include "OON.hpp"
 
-#include "renderer_sfml.hpp"
+#include "View/render_sfml.hpp"
 #include "audio_sfml.hpp"
 
 #include "sfw/GUI.hpp"
@@ -16,7 +16,7 @@
 //============================================================================
 class OON_sfml : public OON
 {
-friend class Renderer_SFML;
+friend class View::Renderer_SFML;
 
 //------------------------------------------------------------------------
 // API Op. Overrides...
@@ -106,7 +106,7 @@ protected:
 	bool _show_huds = true;
 #endif
 	sf::Clock clock;
-	Renderer_SFML renderer;
+	View::Renderer_SFML renderer;
 
 public:
 #ifndef DISABLE_AUDIO

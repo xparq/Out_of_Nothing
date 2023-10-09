@@ -1,5 +1,5 @@
-#ifndef __RENDERER_SFML__
-#define __RENDERER_SFML__
+#ifndef _RENDER_SFML_HPP_
+#define _RENDER_SFML_HPP_
 
 #include "Model/World.hpp"
 
@@ -10,6 +10,13 @@
 #include <memory> // shared_ptr
 
 
+class OON_sfml; //!! Sigh... Should really only depend on the generic app class,
+                //!! but then parallell polymorphic derivation (of both the app
+                //!! and the renderer) is a nightmare, involving also a Platform
+		//!! abstraction (or at least a Window -> Window_SFML wrapper)...
+
+namespace View {
+
 //----------------------------------------------------------------------------
 class Renderer
 {
@@ -18,7 +25,6 @@ public:
 };
 
 
-class OON_sfml;
 //----------------------------------------------------------------------------
 class Renderer_SFML : public Renderer// "View"
 {
@@ -73,6 +79,8 @@ protected:
 	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
 	//!!misnomer alert below! should be sg. like "body_images" (as they are not just any Transformables!!! -- these are linked to physical bodies!):
 	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
-};
 
-#endif // __RENDERER_SFML__
+}; // class Renderer_SFML
+
+} // namespace View
+#endif // _RENDER_SFML_HPP_

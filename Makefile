@@ -40,6 +40,8 @@ FULL_REBUILD_TRIGGER=$(OBJS) $(CPP_MODULE_IFCS)
 
 # The existing actual source subdir(s) should/will match the obj. subdir(s):
 World_subdir=Model
+View_subdir=View
+Platform_subdir=Platform
 UI_subdir=UI
 #! Note however, about CL /Fo (i.e. "Fuk output subdirs"):
 #!      "The specified directory must exist, or the compiler reports error D8003.
@@ -61,15 +63,18 @@ OBJS=\
 	$(out_dir)/$(World_subdir)/Physics.obj \
 	$(out_dir)/$(World_subdir)/Object.obj \
 	$(out_dir)/$(World_subdir)/World.obj \
-	$(out_dir)/renderer_sfml.obj \
+	$(out_dir)/$(View_subdir)/render_sfml.obj \
 	$(out_dir)/$(UI_subdir)/hud_sfml.obj \
 	$(out_dir)/$(UI_subdir)/TGUI-Clipping.obj \
 	$(out_dir)/$(UI_subdir)/Input.obj \
 	$(out_dir)/audio_sfml.obj \
 
 INCLUDES=$(src_dir)/*.hpp $(src_dir)/*.h \
-	$(src_dir)/$(World_subdir)/*.hpp $(src_dir)/$(UI_subdir)/*.hpp \
+	$(src_dir)/$(World_subdir)/*.hpp \
+	$(src_dir)/$(View_subdir)/*.hpp \
+	$(src_dir)/$(UI_subdir)/*.hpp \
 	$(src_dir)/$(UI_subdir)/adapter/SFML/*.hpp \
+#	$(src_dir)/$(Platform_subdir)/*.hpp \
 	$(src_dir)/adapter/SFML/*.hpp \
 	$(src_dir)/sz/*.hh \
 
@@ -94,8 +99,10 @@ CC_OUTDIR_FLAGS_=-Fo$(out_dir)/ -Fd$(out_dir)/
 CC_FLAGS_=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_)
 
 CC_OUTDIR_FLAGS_World=-Fo$(out_dir)/$(World_subdir)/ -Fd$(out_dir)/$(World_subdir)/
+CC_OUTDIR_FLAGS_View=-Fo$(out_dir)/$(View_subdir)/ -Fd$(out_dir)/$(View_subdir)/
 CC_OUTDIR_FLAGS_UI=-Fo$(out_dir)/$(UI_subdir)/ -Fd$(out_dir)/$(UI_subdir)/
 CC_FLAGS_World=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_World)
+CC_FLAGS_View=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_View)
 CC_FLAGS_UI=$(CC_FLAGS) $(CC_OUTDIR_FLAGS_UI)
 
 #!! No subdirs for modules yet:
@@ -178,6 +185,8 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMO
 # AFAIK, NMAKE can't suport multi-tag subpaths in inf. rules (only single-depth
 # subdirs), so each dir has to have its distinct rule... :-/ (I hope I'm wrong!)
 #
+#!!Alas, this doesn't seem to work in inference rules either:
+#!!	echo SOURCE DRIVE + PATH: %|dpF
 
 #!!?? I'm not sure if this is actually needed (or is the sane way):
 {$(src_dir)/}.ixx{$(out_dir)/}.ifc::
@@ -188,13 +197,12 @@ CC_FLAGS=$(CC_FLAGS) $(CC_FLAGS_LINKMODE) $(CC_FLAGS_DEBUGMODE) $(CC_FLAGS_CPPMO
 	$(CC_CMD) $(CC_FLAGS_) $<
 
 {$(src_dir)/$(World_subdir)/}.cpp{$(out_dir)/$(World_subdir)/}.obj::
-#!!Alas, this doesn't seem to work in inference rules:
-#!!	$(ECHO) SOURCE DRIVE + PATH: %|dpF
 	$(CC_CMD) $(CC_FLAGS_World) $<
 
+{$(src_dir)/$(View_subdir)/}.cpp{$(out_dir)/$(View_subdir)/}.obj::
+	$(CC_CMD) $(CC_FLAGS_View) $<
+
 {$(src_dir)/$(UI_subdir)/}.cpp{$(out_dir)/$(UI_subdir)/}.obj::
-#!!Alas, this doesn't seem to work in inference rules:
-#!!	$(ECHO) SOURCE DRIVE + PATH: $(%|dpF)<
 	$(CC_CMD) $(CC_FLAGS_UI) $<
 
 #
@@ -237,6 +245,8 @@ MAIN::
 #!! Make this hamfisted subdir creation less atrocious:
 #!! (Not that the rest of the "tree management" is any less lame!)
 	@$(MKDIR) $(out_dir)/$(World_subdir)
+	@$(MKDIR) $(out_dir)/$(View_subdir)
+	@$(MKDIR) $(out_dir)/$(Platform_subdir)
 	@$(MKDIR) $(out_dir)/$(UI_subdir)
 
 ## MAIN:: $(out_dir)/$(UI_subdir)/sfw.lib

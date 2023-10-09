@@ -1,4 +1,4 @@
-#include "renderer_sfml.hpp"
+#include "View/render_sfml.hpp"
 
 #include "Model/Math/Vector2.hpp"
 #include "adapter/SFML/vector.hpp"
@@ -17,6 +17,8 @@
 //#include <iostream>
 //	using std::cerr;
 
+
+namespace View {
 
 //----------------------------------------------------------------------------
 void Renderer_SFML::reset()
@@ -117,3 +119,5 @@ void Renderer_SFML::delete_cached_body_shape(const OON_sfml& game, size_t body_n
 		shapes_to_change.erase(shapes_to_change.begin() + body_ndx);
 	}
 }
+
+} // namespace View

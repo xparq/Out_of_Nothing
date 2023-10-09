@@ -23,6 +23,7 @@ import Storage;
 #include "extern/iprof/iprof.hpp"
 
 using namespace Model;
+using namespace View;
 using namespace UI;
 using namespace sz;
 using namespace std;
