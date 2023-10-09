@@ -77,11 +77,11 @@ struct Totals
 	}
 };
 
-typedef std::map<TagList, Totals> Stats;   // We lack hashes for unordered_map
+typedef std::map<TagList, Totals> Stats;   // LossyVector lacks hashing required by unordered_map
 typedef std::vector<Measurement> Measurements;
 
 extern iprof_thread_local Stats stats;
-extern iprof_thread_local Measurements measurements; //!!?? Why was this one not thread-local?
+extern iprof_thread_local Measurements measurements; //!!?? Why was this one not thread-local before?
 extern iprof_thread_local TagList currentScopePath;
 #ifndef IPROF_DISABLE_MULTITHREAD
 extern Stats allThreadStats;
@@ -158,7 +158,8 @@ std::ostream& operator<<(std::ostream& os, const iProf::Stats& stats);
 //!!# define IPROF_THREAD_STATS iProf::stats
 #endif
 !!*/
-#define IPROF_STATS        iProf::getStats() //!! AFAICU, this is not valid in multi-threaded runs: IPROF_SYNC_THREAD kills it!
+#define IPROF_STATS        iProf::getStats() // See #17: not just `stats`, to support implicit syncing...
+                                             //!! AFAICU, IPROF_STATS is invalid in multi-threaded runs: IPROF_SYNC_THREAD kills it!
 #define IPROF_ALL_THREAD_STATS iProf::allThreadStats
 #define IPROF_NOW          iProf::HRTime::now()
 #define IPROF_MICROSEC(x)  iProf::HRTime::MICROSEC(x)

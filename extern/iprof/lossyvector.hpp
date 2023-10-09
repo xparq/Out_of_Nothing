@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(DEBUG)
+#if defined(LOSSYVECTOR_DEBUG)
 # include <type_traits> // is_same
 # include <algorithm> // min
 # include <iostream> // cerr
@@ -91,13 +91,13 @@ public:
 	//! E.g. calling push_back("...") from inline functions in multiple
 	//! transl. units might increase the chance of this being a problem.
 
-#if defined(DEBUG)
+#if defined(LOSSYVECTOR_DEBUG)
 	~LossyVector()
 	{
 		if constexpr (std::is_same_v<T, const char*>)
 		{
 			thread_local bool done = false; if (done) return; else done = true;
-			constexpr size_type CHECK_MAX = min(CHECK_MAX, 100);
+			constexpr size_type CHECK_MAX = (size_type)std::min(MAX_SIZE, 100u);
 			// strcmp all combinations of unordered pairs (up to CHECK_MAX),
 			// to see if there are strings that compare the same despite !op==,
 			// and report (assert) them!
@@ -106,7 +106,7 @@ public:
 				for (size_type j = i + 1; j < std::min(capacity(), CHECK_MAX); ++j)
 					// Alas, assert() can't print those strings...
 					if (!(items[i] != items[j] && items[i] && items[j] &&
-					       0 == strcmp(items[i], items[j])))
+					       0 == std::strcmp(items[i], items[j])))
 					       std::cerr << "[LossyVector: items["<<i<<"] != items["<<j<<"] for the same strings: "
 					            << items[i] << " == " << items[j] << '\n';
 		}
