@@ -3,6 +3,11 @@
 
 make_cmd_base="nmake /nologo /f Makefile.msvc"
 
+if [ "$1" == "-N" ]; then
+	shift
+	direct_make=1
+fi
+
 make_build_cmd="${make_cmd_base} $*"
 make_clean_cmd="${make_cmd_base} clean"
 
@@ -10,6 +15,12 @@ make_clean_cmd="${make_cmd_base} clean"
 # skip all the magic and just proceed to make...
 if [ "$1" == "clean" ]; then
 	${make_clean_cmd}
+	exit $?
+fi
+
+# If `build -N ...` then also ignore the autobuild stuff and go straight to MAKE directly...
+if [ ! -z "direct_make" ]; then
+	${make_build_cmd}
 	exit $?
 fi
 
