@@ -1,6 +1,7 @@
 tmp/
 *.tmp
 *.off
+*.old
 *.wip
 *.WIP
 
