@@ -5,10 +5,14 @@
 #### you rename this file:
 THIS_MAKEFILE=Makefile.msvc
 #
-# NOTE: Macros can't be set on the NMAKE command line, only here, because the
-#       recursion won't pass them along!... (But see custom_build_options!)
+# NOTE: Custom macros can't be set on the NMAKE command line, only here, because
+#       the recursion won't pass them along, unless added to $custom_build_options!
 #
-VERBOSE=1	# 0 .. 4. This one *can* be overriden from the cmdline! (see custom_build_options!)
+
+BBB_VERBOSE=1	# 0 .. 4
+# Parts of the build procedure can be skipped:
+BBB_SKIP_CONFIGURE=0
+BBB_SKIP_BUILD=0
 
 #-----------------------------------------------------------------------------
 # Config - Project layout
@@ -25,6 +29,9 @@ OUT_DIR=out
 LIB_DIR=$(OUT_DIR)
 EXE_DIR=$(OUT_DIR)
 OBJ_DIR=$(OUT_DIR)/obj
+#!! This won't work as expected: both $(obj_dir) and then the ifc dir both get
+#!! prefixed, resulting in ././ at best, already failing a ./ inference rule!... :-o
+#!!CXX_MOD_IFC_DIR=$(obj_dir)
 CXX_MOD_IFC_DIR=$(OUT_DIR)
 # Put (only) these into the lib (relative to SRC_DIR; leave it empty for "all"):
 LIB_SRC_SUBDIR=
@@ -36,13 +43,8 @@ UNITS_PATTERN=*
 UNITS_NO_COMPILE_PATTERN=.off .tmp
 # Ignore-filter on full-path source names -> `findstr` REGEX syntax!
 # Multiple patterns must be separated by spaces. Do NOT quote the list!
-UNITS_NO_AUTOLINK_PATTERN=main\.cpp \.off \.tmp sz[/\\]test
-UNITS_NO_LIB_PATTERN=$(UNITS_NO_AUTOLINK_PATTERN)
-
-#!! Kludge until I find out the correct way:
-#!! Also done manually, coz no way to track the actual deps automatically...:
-OON_CPP_MODULE_IFCS=\
-	$(cxx_mod_ifc_dir)/Storage.ifc 
+UNITS_NO_LINK_PATTERN=\.off \.tmp sz[/\\]test counter.obj
+UNITS_NO_LIB_PATTERN=$(UNITS_NO_LINK_PATTERN)
 
 #!! Sigh... No header autodep... And no unified obj list either to use as a target! :-/
 #!! Also, must use a fixed path (not necessary absolute, but definitely not just .),
@@ -80,7 +82,7 @@ CRT=dll
 # Custom build options can also be added:
 SFML=static
 # Custom build options need to be passed along for recursion explicitly:
-custom_build_options = SFML=$(SFML) VERBOSE=$(VERBOSE)
+custom_build_options = SFML=$(SFML) BBB_VERBOSE=$(BBB_VERBOSE)
 
 # Custom Tools:
 #!Sz: Assuming being called from a script that has already set the path:
@@ -138,19 +140,9 @@ sfml_libs=$(substi .lib,-d.lib,$(sfml_libs))
 #=============================================================================
 #                     NO EDITS NEEDED BELOW, NORMALLY...
 #=============================================================================
-obj_source_exts=cpp cxx cc c
+obj_source_exts=ixx c cpp cxx cc
+obj_source_exts_dotted=$(patsubst %,.%,$(obj_source_exts))
 
-#-----------------------------------------------------------------------------
-# Show current processing stage...
-#-----------------------------------------------------------------------------
-!ifdef RECURSED_FOR_COMPILING
-!if "$(DIR)" == ""
-node=(main)
-!else
-node="$(DIR)"
-!endif
-!message Processing source dir: $(node)...
-!endif
 
 #-----------------------------------------------------------------------------
 # Normalize the (prj-local) paths before potentially passing them to any of
@@ -174,11 +166,13 @@ lib_dir         = $(prefixdir)\$(patsubst \\%,%,$(LIB_DIR:/=\))
 exe_dir         = $(prefixdir)\$(patsubst \\%,%,$(EXE_DIR:/=\))
 obj_dir         = $(prefixdir)\$(patsubst \\%,%,$(OBJ_DIR:/=\))
 cxx_mod_ifc_dir = $(prefixdir)\$(patsubst \\%,%,$(CXX_MOD_IFC_DIR:/=\))
+#! These are assumed to have been prefixed with some dirs already,
+#! but if still not, they'll just go to the current dir:
 !if "$(main_lib)" != ""
-main_lib        = $(prefixdir)\$(patsubst \\%,%,$(main_lib:/=\))
+main_lib        =              $(patsubst \\%,%,$(main_lib:/=\))
 !endif
 !if "$(main_exe)" != ""
-main_exe        = $(prefixdir)\$(patsubst \\%,%,$(main_exe:/=\))
+main_exe        =              $(patsubst \\%,%,$(main_exe:/=\))
 !endif
 # And this one is really a subdir, which will be prefixed internally with src_dir,
 # so don't mess it up with the same adjustment, just normalize the slashes:
@@ -201,12 +195,14 @@ src_dir_abspath=$(subst <FAKE_SPACE>,$(_SPACE_),$(abspath $(p)))
 # Set/adjust tool options (according to the config)...
 #-----------------------------------------------------------------------------
 # Preserve the original NMAKE flags & explicitly supported macros on recursion:
-MAKE_CMD=$(MAKE) /nologo /$(MAKEFLAGS) /f $(THIS_MAKEFILE) DEBUG=$(DEBUG) CRT=$(CRT)
+NMAKE_RECURSE_CMD="$(MAKE)" /nologo /$(MAKEFLAGS) /f $(THIS_MAKEFILE) DEBUG=$(DEBUG) CRT=$(CRT)
 
 CFLAGS=-nologo -c $(CFLAGS)
 CXXFLAGS=-EHsc $(CXXFLAGS)
 !if "$(cxx_mod_ifc_dir)" != ""
 CXXFLAGS=-ifcSearchDir $(cxx_mod_ifc_dir) $(CXXFLAGS)
+!else
+!error cxx_mod_ifc_dir is not set?!
 !endif
 
 #----------------------------
@@ -242,7 +238,6 @@ _linkflags_debugmode=$(linkflags_debug_0)
 
 CFLAGS=$(_cflags_debugmode) $(CFLAGS)
 LINKFLAGS=$(_linkflags_debugmode) $(LINKFLAGS)
-
 
 #---------------------------------------
 # Update the INCLUDE & LIB env. vars for external tools
@@ -292,11 +287,35 @@ src_dir=$(src_dir)\$(DIR)
 obj_dir=$(obj_dir)\$(DIR)
 !endif
 
+#-----------------------------------------------------------------------------
+!if $(BBB_VERBOSE) < 1
+_mute=@
+!else
+_mute=
+!endif
+
+
+
+#-----------------------------------------------------------------------------
+
+#...
+
+#!! SADLY...:
+#!!
+#!! We cannot construct the obj target list from the local sources (see compile_dir...), because
+#!! NMAKE can only process wildcards on rule lines, where it's too late for this... :-/
+#!!local_objs = $(no wildcard function!... )
+#!!
+#
+# Trigger the inference rules by changed headers, too!...
+#$(local_objs) : $(OBJ_DEPS_manually)
+
 
 #=============================================================================
 # Rules...
 #=============================================================================
 
+# This rule is implicitly selected as the default target on the first run:
 default: export_cfg bootstrap
 
 export_cfg:
@@ -304,17 +323,29 @@ export_cfg:
 # but they as well may not... If they have, no harm done by redundantly setting
 # them back to their (well, roughly...) original values.
 # Casing (i.e. NMAKE's auto toupper conv.) may be a problem though; define & doc. them properly!!
-	@set MAIN_MAKEFILE=$(THIS_MAKEFILE)
-	@set VERBOSE=$(VERBOSE)
+	@set BBB_MAIN_MAKEFILE=$(THIS_MAKEFILE)
+	@set BBB_NMAKE_RECURSE_CMD=$(NMAKE_RECURSE_CMD)
+	@set BBB_MAKEFLAGS=$(MAKEFLAGS)
+	@set BBB_VERBOSE=$(BBB_VERBOSE)
+	@set BBB_SKIP_CONFIGURE=$(BBB_SKIP_CONFIGURE)
+	@set BBB_SKIP_BUILD=$(BBB_SKIP_BUILD)
+#!! This should contain all the macros passed to the nmake cmdline:
+#!!	@set BBB_BUILD_CMD_OPTS=$(...all_build_options_for_cmdline)
+	@set BBB_BUILD_OPT_DEBUG=$(DEBUG)
+	@set BBB_BUILD_OPT_CRT=$(CRT)
+	@set BBB_CUSTOM_BUILD_OPTS=$(custom_build_options)
 	@set PRJ_ROOT=$(PRJ_ROOT)
 	@set OUT_DIR=$(out_dir)
 	@set OBJ_ROOT=$(obj_dir)
 	@set SRC_ROOT=$(src_dir)
 	@set IFC_ROOT=$(cxx_mod_ifc_dir)
-#	set OBJ_SRC_EXTS=$(OBJ_SRC_EXTS)
+	@set OBJ_SRC_EXTS=$(obj_source_exts_dotted)
+	@set UNITS_NO_COMPILE_PATH_PATTERN=$(UNITS_NO_COMPILE_PATH_PATTERN)
+	@set UNITS_NO_LINK_PATTERN=$(UNITS_NO_LINK_PATTERN)
 
 bootstrap:
 #	@cmd /c ..\NMAKE-Jumpstart\study\BBB\tooling\build\brutebuild-TEMPLATE.cmd
+#	@findstr FAIL4f3g4 <<$(out_dir)\bbb.cmd || echo [BBB: THE BUILD PREP. SCRIPT HAS BEEN LINKED, NOT EMBEDDED!]
 	@cmd /c <<$(out_dir)\bbb.cmd
 @echo off
 setlocal EnableExtensions
@@ -323,9 +354,12 @@ setlocal EnableDelayedExpansion
 ::call :_setd_test
 ::exit
 
-call :setd VERBOSE "%1"
-call :setd VERBOSE 1
+call :setd BBB_VERBOSE "%1"
+call :setd BBB_VERBOSE 1
 ::	0 - 4
+
+call :setd BBB_SKIP_CONFIGURE 0
+call :setd BBB_SKIP_BUILD 0
 
 ::============================================================================
 :: CONFIG
@@ -346,26 +380,26 @@ call :setd IFC_ROOT %OUT_DIR%\ifc
 call :setd OBJ_SRC_EXTS ".ixx .c .cpp .cc .cxx"
 
 :: Ignore-filter (applied to source file full paths) -> NMAKE `filterout` pattern list syntax!
-:: Multiple patterns must be separated by spaces. Do NOT quote the list!
+:: Multiple patterns must be separated by spaces.
+call :setd UNITS_NO_COMPILE_PATTERN ".off .tmp"
 
-set UNITS_NO_COMPILE_PATH_PATTERN=.off .tmp
 :: Ignore-filter on full-path source names -> `findstr` REGEX syntax!
 :: Multiple patterns must be separated by spaces. Do NOT quote the list!
 ::
 ::!!?? WHY DOES FINDSTR TREAT THESE AS REGEXES EVEN WITH /L????????? :-ooooooooooooo
 ::!! Alas, no nice link-time path filering when OBJ_DIR_FLAT... :-/
-::!!set UNITS_NO_AUTOLINK_PATH_PATTERN=\.off \.tmp sz[/\\]test
-set     UNITS_NO_AUTOLINK_PATH_PATTERN=\.off \.tmp sz[/\\]test counter.obj
+::!!set UNITS_NO_LINK_PATTERN=\.off \.tmp sz[/\\]test counter.obj
+call :setd UNITS_NO_LINK_PATTERN "\.off \.tmp"
 ::
-set UNITS_NO_LIB_PATH_PATTERN=%UNITS_NO_AUTOLINK_PATTERN%
+call :setd UNITS_NO_LIB_PATTERN "%UNITS_NO_LINK_PATTERN%"
 
 
 set BATCH_COMPILE=on
 ::set OBJ_DIR_FLAT=1
 	::!! No support for tree modes (normal per-file vs. batched-per-dir) yet!
 
-if %VERBOSE% GEQ 4 (
-	echo VERBOSE: [%VERBOSE%]
+if %BBB_VERBOSE% GEQ 4 (
+	echo BBB_VERBOSE: [%BBB_VERBOSE%]
 	echo PRJ_ROOT: [%PRJ_ROOT%]
 	echo OBJ_SRC_EXTS: [%OBJ_SRC_EXTS%]
 )
@@ -381,10 +415,29 @@ set "TAB=	"
 
 :: Since this can't be reliably detected (with a sane effort), it must be set
 :: by whoever has called us:
-if not defined MAIN_MAKEFILE (
-	echo - WARNING: Makefile has not been set, assuming "Makefile"...
-	MAIN_MAKEFILE=Makefile
+if not defined BBB_MAIN_MAKEFILE (
+	set BBB_MAIN_MAKEFILE=Makefile
+	echo - WARNING: Makefile has not been set, assuming "%BBB_MAIN_MAKEFILE%"...
+	pause
 )
+
+:: Propagate the original make option macros:
+if not defined BBB_NMAKE_RECURSE_CMD (
+	set "BBB_NMAKE_RECURSE_CMD=nmake /nologo /f %BBB_MAIN_MAKEFILE%"
+	echo - WARNING: BBB_NMAKE_RECURSE_CMD not set, conjuring up "%BBB_NMAKE_RECURSE_CMD%"
+	echo            ANY CUSTOM OPTIONS PASSED TO THE ORIGINAL nmake COMMAND WILL BE LOST!
+	echo            So, this is basically an error. But let's see the world collapse! ;-p
+	pause
+)
+
+::!! This should already be baked into BBB_NMAKE_RECURSE_CMD by the makefile,
+::!! but that's not yet implemented... :-/
+:: Propagate the original make option macros:
+set "BBB_BUILD_CMD_OPTS=!BBB_BUILD_CMD_OPTS! %BBB_CUSTOM_BUILD_OPTS%
+::echo BBB_BUILD_CMD_OPTS: [%BBB_BUILD_CMD_OPTS%]
+set BBB_NMAKE_RECURSE_CMD=!BBB_NMAKE_RECURSE_CMD! %BBB_BUILD_CMD_OPTS%
+::echo BBB_NMAKE_RECURSE_CMD: [%BBB_NMAKE_RECURSE_CMD%]
+::pause
 
 :: Force flat obj dirs (!!should only be done in batch-compile mode!...)
 set OBJ_DIR_FLAT=1
@@ -395,10 +448,14 @@ set "prj_root=%PRJ_ROOT%"
 call :addslash prj_root_ "%prj_root%"
 call :addslash out_dir_  "%OUT_DIR%"
 
-set "src_dir=%prj_root_%%SRC_ROOT%"
-set "obj_dir=%prj_root_%%OBJ_ROOT%"
-call :addslash src_dir_ "%prj_root_%%SRC_ROOT%"
-call :addslash obj_dir_ "%prj_root_%%OBJ_ROOT%"
+::!! This would incorrectly add PRJ_ROOT *AGAIN*, if we got them cooked!
+::!! SPECIFY WHAT ACTUALLY IS THE REQUIREMENT!...
+::!!set "src_dir=%prj_root_%%SRC_ROOT%"
+::!!set "obj_dir=%prj_root_%%OBJ_ROOT%"
+set "src_dir=%SRC_ROOT%"
+set "obj_dir=%OBJ_ROOT%"
+call :addslash src_dir_ "%src_dir%"
+call :addslash obj_dir_ "%obj_dir%"
 
 :: "Own" the source tree...
 call :check_dir "%src_dir%" src_dir_abs || exit 1
@@ -418,32 +475,44 @@ set "dirlist_file=%out_dir_%.src-dirs.tmp"
 set "srclist_file=%out_dir_%.src-sources.tmp"
 set "objlist_file=%out_dir_%.src-objects.tmp"
 
+
+::=====================================================================================
+::=====================================================================================
+::=====================================================================================
+::
+::   AUTO-CONFIGURE THE BUILD PROCEDURE...
+::
+::=====================================================================================
+::=====================================================================================
+::===================================================================================
+if %BBB_SKIP_CONFIGURE% EQU 1 goto :skip_configure
+
 ::----------------------------------------
 :: Collect candidate source subdirs...
 ::
-if "%VERBOSE%" GEQ "1" echo Preparing to build "%src_dir_abs%"...
+if "%BBB_VERBOSE%" GEQ "1" echo Preparing to build "%src_dir_abs%"...
 :: Add an empty line if more details are expected:
-if "%VERBOSE%" GEQ "2" echo.
+if "%BBB_VERBOSE%" GEQ "2" echo.
 
 	:: .ext list -> *.ext list:
 	set "src_ext_patterns=*%OBJ_SRC_EXTS%"
 	set "src_ext_patterns=%src_ext_patterns: .= *.%"
 
-call :create_dirlist "%dirlist_file%" "%src_dir%" "%src_ext_patterns%" "%UNITS_NO_COMPILE_PATH_PATTERN%"
-::	Note: UNITS_NO_COMPILE_PATH_PATTERN will only be applied to dir names in this stage!
-if "%VERBOSE%" GEQ "2" echo.
+call :create_dirlist "%dirlist_file%" "%src_dir%" "%src_ext_patterns%" "%UNITS_NO_COMPILE_PATTERN%"
+::	Note: UNITS_NO_COMPILE_PATTERN will only be applied to dir names in this stage!
+if "%BBB_VERBOSE%" GEQ "2" echo.
 
 ::----------------------------------------
 :: Collect candidate source files...
 ::
-if "%VERBOSE%" GEQ "2" echo Preparing file lists...
-if "%VERBOSE%" GEQ "2" echo.
-if "%VERBOSE%" GEQ "3" echo Scanning sources:
+if "%BBB_VERBOSE%" GEQ "2" echo Preparing file lists...
+if "%BBB_VERBOSE%" GEQ "2" echo.
+if "%BBB_VERBOSE%" GEQ "3" echo Scanning sources:
 if exist "%srclist_file%" DEL "%srclist_file%"
 if exist "%objlist_file%" DEL "%objlist_file%"
 for %%x in (%OBJ_SRC_EXTS%) do (
 	set _ext_=%%x
-if "%VERBOSE%" GEQ "2" echo Collecting *!_ext_!...
+if "%BBB_VERBOSE%" GEQ "2" echo Collecting *!_ext_!...
 rem	call :exec_each "%dirlist%" "if exist src\{}\*!_ext_! dir /b src\{}\*!_ext_!"
 
 	rem !! This + create_dirlist could be replaced with a combined routine
@@ -456,12 +525,12 @@ rem	call :exec_each "%dirlist%" "if exist src\{}\*!_ext_! dir /b src\{}\*!_ext_!
 	for /r "%src_dir%" %%f in (*!_ext_!) do ( set "_f_abs_=%%f"
 		set "_f_=!_f_abs_:%src_dir_abs%\=!"
 
-		echo !_f_! | findstr /R "%UNITS_NO_COMPILE_PATH_PATTERN%" > nul
+		echo !_f_! | findstr /R "%UNITS_NO_COMPILE_PATTERN%" > nul
 		if errorlevel 2 (
 			echo - ERROR: Failed to apply filter on^: "!_f_!"^^!
 			rem exit /b 1
 		) else if not errorlevel 1 (
-if "%VERBOSE%" GEQ "1" echo - SKIP FILE ^(%UNITS_NO_COMPILE_PATH_PATTERN%^): !_f_!
+if "%BBB_VERBOSE%" GEQ "1" echo - SKIP FILE ^(%UNITS_NO_COMPILE_PATTERN%^): !_f_!
 		) else (
 			rem No need to quote: each item is on its own line:
 			echo !_f_!>>   "%srclist_file%"
@@ -473,17 +542,17 @@ if "%VERBOSE%" GEQ "1" echo - SKIP FILE ^(%UNITS_NO_COMPILE_PATH_PATTERN%^): !_f
 			)
 
 			echo !_obj_!>> "%objlist_file%"
-if "%VERBOSE%" GEQ "2" echo + FILE:^ "!_f_!" %TAB%^(abs: "!_f_abs_!"^)
-if "%VERBOSE%" GEQ "3" echo Added obj.:^   "!_obj_!"
+if "%BBB_VERBOSE%" GEQ "2" echo + FILE:^ "!_f_!" %TAB%^(abs: "!_f_abs_!"^)
+if "%BBB_VERBOSE%" GEQ "3" echo Added obj.:^   "!_obj_!"
 		)
 	)
 rem	if errorlevel 1 exit -1
 )
-if "%VERBOSE%" GEQ "2" echo.
+if "%BBB_VERBOSE%" GEQ "2" echo.
 
 
 ::----------------------------------------------------------------------------
-:: Generate LINK/LIB dependency rules for inclusion from other makefiles...
+:: Generate LINK/LIB dependency rules for inclusion from the main makefile...
 ::-----------------------------------------
 
 	if exist "%BBB_MAKEFILE_TEMPLATE%" DEL "%BBB_MAKEFILE_TEMPLATE%"
@@ -512,28 +581,26 @@ if "%VERBOSE%" GEQ "2" echo.
 
 	::
 	:: Phony target to trigger compilation of "compilable" objs...
-	:: Note: "candidate sources" already excludes %UNITS_NO_COMPILE_PATH_PATTERN%!
+	:: Note: "candidate sources" already excludes %UNITS_NO_COMPILE_PATTERN%!
 	::
 	echo BBB_compile_all_filtered: \>> "%BBB_MAKEFILE_TEMPLATE%"
 	call :exec_each "%objlist_file%" "echo %TAB%%obj_dir%\{} \">> "%BBB_MAKEFILE_TEMPLATE%"
 	echo. >> "%BBB_MAKEFILE_TEMPLATE%"
 
 	::
-	:: Rule for the main target depending on all the "linkable" objs...
+	:: Rule for the main target depending on all the "linkable" objs + buildable libs...
 	::
 	:: (Alas, this can't be the same list as a @list file for the linker:
 	:: the trailing \ for the makefile lines is unknown to the MSVC tools!)
 	::
 	echo $$^(BBB_MAIN_TARGET^): \>> "%BBB_MAKEFILE_TEMPLATE%"
-		call :exec_each "%objlist_file%" "echo %TAB%%obj_dir%\{} \" "%UNITS_NO_AUTOLINK_PATH_PATTERN%" >> "%BBB_MAKEFILE_TEMPLATE%"
+		call :exec_each "%objlist_file%" "echo %TAB%%obj_dir%\{} \" "%UNITS_NO_LINK_PATTERN%" >> "%BBB_MAKEFILE_TEMPLATE%"
+rem		call :exec_each "%liblist_file%" "echo %TAB%%lib_dir%\{} \" "%LIBS_NO_LINK_PATTERN%" >> "%BBB_MAKEFILE_TEMPLATE%"
 	echo. >> "%BBB_MAKEFILE_TEMPLATE%"
 
-::-----------------------------------------
-:: Generate Makefile to see what changed...
-::-----------------------------------------
-	::
-	:: Inference rules:
-	::
+	::-------------------------------------------
+	:: Generate inference rules:
+	::---------------------------
 
 	echo .SUFFIXES: %OBJ_SRC_EXTS% >>  "%BBB_MAKEFILE_TEMPLATE%"
 
@@ -545,22 +612,28 @@ if "%VERBOSE%" GEQ "2" echo.
 		rem !! multi-line text, so the command block is passed via %__inference_commands__%...
 		set "__inference_commands__=$$^(BBB_CC_PROXY^)"
 		if "!_ext_!" == ".ixx" (
-rem			set "__inference_commands__=@echo $$^(CXX^) $$^(CFLAGS^) $$^(CXXFLAGS^) -Fo%obj_dir%\{}\ -ifcOutput %obj_dir%\{}\ $$^<"
+			set _outext_=.ifc
+			set _outdir_=%IFC_ROOT%
 		) else (
-rem			set "__inference_commands__=@echo $$^(CXX^) $$^(CFLAGS^) $$^(CXXFLAGS^) -Fo%obj_dir%\{}\ $$^<"
+			set _outext_=.obj
+			set _outdir_=%obj_dir%
 		)
 		echo.>> "%BBB_MAKEFILE_TEMPLATE%"
 		echo # Inference rules for *!_ext_!...>> "%BBB_MAKEFILE_TEMPLATE%"
 		echo.>> "%BBB_MAKEFILE_TEMPLATE%"
-		if defined OBJ_DIR_FLAT (
-			set "exec_arg=call :print_NMAKE_inference_batch_rule !_ext_! .obj %src_dir%\{} %obj_dir% DUMMY_CMD_PLACEHOLDER"
-		) else (
-			set "exec_arg=call :print_NMAKE_inference_batch_rule !_ext_! .obj %src_dir%\{} %obj_dir%\{} DUMMY_CMD_PLACEHOLDER"
+		if not _%OBJ_DIR_FLAT%_ == _1_ (
+			set _outdir_=!_outdir_!\{}
 		)
+
+		set "exec_arg=call :print_NMAKE_inference_batch_rule !_ext_! !_outext_! %src_dir%\{} !_outdir_! DUMMY_CMD_PLACEHOLDER"
+		rem See comments above why this (unused) DUMMY_CMD_PLACEHOLDER...
+
 ::		echo :exec_each "%dirlist_file%" "!exec_arg!"
 		call :exec_each "%dirlist_file%" "!exec_arg!">> "%BBB_MAKEFILE_TEMPLATE%"
 	)
 	endlocal
+
+:skip_configure
 
 
 ::=====================================================================================
@@ -572,12 +645,14 @@ rem			set "__inference_commands__=@echo $$^(CXX^) $$^(CFLAGS^) $$^(CXXFLAGS^) -F
 ::=====================================================================================
 ::=====================================================================================
 ::===================================================================================
+if %BBB_SKIP_BUILD% EQU 1 goto :skip_build
+
 
 ::!!HACK: Add an empty line if more details may have beeb printed above...:
-if "%VERBOSE%" GEQ "2" echo.
-if "%VERBOSE%" GEQ "1" echo Building...
+if "%BBB_VERBOSE%" GEQ "2" echo.
+if "%BBB_VERBOSE%" GEQ "1" echo Building...
 :: Add an empty line if more details are expected:
-if "%VERBOSE%" GEQ "2" echo.
+if "%BBB_VERBOSE%" GEQ "2" echo.
 
 ::For testing:
 ::(call :get_changed_sources "%srclist_file%") && type "%srclist_file%" && exit
@@ -595,18 +670,22 @@ if not exist %OBJ_ROOT% md %OBJ_ROOT%
 
 if "%BATCH_COMPILE%"=="on" (
 	set "nmake_batch_switch="
-	if "%VERBOSE%" GEQ "2" echo Batch-compiling: on
+	if "%BBB_VERBOSE%" GEQ "2" echo Batch-compiling: on
 ) else (
 	set "nmake_batch_switch=/Y"
-	if "%VERBOSE%" GEQ "2" echo Batch-compiling: off
+	if "%BBB_VERBOSE%" GEQ "2" echo Batch-compiling: off
 )
 
-if exist "%MAIN_MAKEFILE%" (
-	nmake /nologo %nmake_batch_switch% /f %MAIN_MAKEFILE% BBB_build
+if exist "%BBB_MAIN_MAKEFILE%" (
+	%BBB_NMAKE_RECURSE_CMD% %nmake_batch_switch% BBB_build
 ) else (
-	echo - ERROR: Makefile "%MAIN_MAKEFILE%" could not be found^!
+	echo - ERROR: Makefile "%BBB_MAIN_MAKEFILE%" could not be found^!
 )
+
+:skip_build
+
 goto :eof
+
 
 
 :: OPTIONAL:
@@ -623,7 +702,8 @@ goto :eof
 	call :empty_file "%srclist_file%"
 	::NOTE:: /C required for silencing it when "target is up-to-date", and
 	::       /Y for disabling batch mode (just to ensure one file per line):
-	nmake /c /nologo /Y /f %BBB_MAKEFILE_TEMPLATE% >> "%listfile%"
+	::       (Also, BBB_NMAKE_RECURSE_CMD is NOT to be used here!)
+	nmake /nologo /c /y /f %BBB_MAKEFILE_TEMPLATE% >> "%listfile%"
 	if errorlevel 1 exit 1
 	goto :eof
 
@@ -638,7 +718,7 @@ goto :eof
 ::!! included by the main makefile (similarly to the Jumpstart rule generation stuff)!
 ::
 set "linker_objlist_file=%OBJ_ROOT%\linkable_objects.tmp"
-call :exec_each "%objlist_file%" "echo %TAB%%obj_dir%\{}" "%UNITS_NO_AUTOLINK_PATH_PATTERN%"> "%linker_objlist_file%"
+call :exec_each "%objlist_file%" "echo %TAB%%obj_dir%\{}" "%UNITS_NO_LINK_PATTERN%"> "%linker_objlist_file%"
 
 goto :eof
 ::!!!--------------------------------------------------------------------------------
@@ -693,9 +773,9 @@ goto :eof
 
 	:: Regressions...
 
-	set _VERBOSE=3
-	(call :setd _VERBOSE "%1") && echo 10: [!_VERBOSE!] should be 3
-	(call :setd _VERBOSE 1) && echo 11: [!_VERBOSE!] should still be 3
+	set _BBB_VERBOSE=3
+	(call :setd _BBB_VERBOSE "%1") && echo 10: [!_BBB_VERBOSE!] should be 3
+	(call :setd _BBB_VERBOSE 1) && echo 11: [!_BBB_VERBOSE!] should still be 3
 
 	(call :setd var ".ixx .c .cpp .cc") && echo 12: [!var!] should be [.ixx .c .cpp .cc]
 
@@ -846,7 +926,7 @@ echo above
 		rem Fix double \\ in case of X:\
 		set "root_abspath=!root_abspath:\\=\!"
 	popd
-if "%VERBOSE%" GEQ "3" echo Scanning tree: %root_abspath%
+if "%BBB_VERBOSE%" GEQ "3" echo Scanning tree: %root_abspath%
 
 	rem Create the list file...
 	rem The first empty line is significant: it's for the root of %root%!
@@ -858,7 +938,7 @@ if "%VERBOSE%" GEQ "3" echo Scanning tree: %root_abspath%
 
 	for /d /r "%root_abspath%" %%d in (*) do ( set "_dir_abs_=%%d"
 rem Or:	for /f "delims=" %%d in ('dir /s /b /a:d "%root_abspath%"') do (
-if "%VERBOSE%" GEQ "3" echo Considering dir^: "!_dir_!" %TAB%^(abs: "!_dir_abs_!"^)
+if "%BBB_VERBOSE%" GEQ "3" echo Considering dir^: "!_dir_!" %TAB%^(abs: "!_dir_abs_!"^)
 		set "_dir_=!_dir_abs_:%root_abspath%=!"
 
 		rem ! Pathname filtering should be done before dir content globbing, but that
@@ -868,14 +948,14 @@ if "%VERBOSE%" GEQ "3" echo Considering dir^: "!_dir_!" %TAB%^(abs: "!_dir_abs_!
 		rem echo !_dir_! | findstr /R "%exclude_patterns%" > NUL
 		rem if not errorlevel 1 (
 		if 1==0 (
-if "%VERBOSE%" GEQ "2" echo - DIR: !_dir_! ^(filtered^)
+if "%BBB_VERBOSE%" GEQ "2" echo - DIR: !_dir_! ^(filtered^)
 		) else (
 			set "_has_src_="
 			for /f %%p in ("!_include_patterns_ml!") do ( set _fn_pattern_=%%p
 				if "!_has_src_!"=="" (
-if "%VERBOSE%" GEQ "4" echo - no matching files yet, trying: "!_dir_abs_!\!_fn_pattern_!"...
+if "%BBB_VERBOSE%" GEQ "4" echo - no matching files yet, trying: "!_dir_abs_!\!_fn_pattern_!"...
 					if exist "!_dir_abs_!\%%p" (
-if "%VERBOSE%" GEQ "2" echo + TAKE DIR: "!_dir_!"
+if "%BBB_VERBOSE%" GEQ "2" echo + TAKE DIR: "!_dir_!"
 						set "_has_src_=1"
 						echo !_dir_!>> %dirlistfile%
 						rem break; // alas, no such thing...
@@ -883,7 +963,7 @@ if "%VERBOSE%" GEQ "2" echo + TAKE DIR: "!_dir_!"
 				)
 			)
 			if "!_has_src_!"=="" (
-if "%VERBOSE%" GEQ "2" echo - SKIP DIR: "!_dir_!" ^(has no %include_patterns%^)
+if "%BBB_VERBOSE%" GEQ "2" echo - SKIP DIR: "!_dir_!" ^(has no %include_patterns%^)
 			)
 		)
 	)
@@ -895,7 +975,7 @@ if "%VERBOSE%" GEQ "2" echo - SKIP DIR: "!_dir_!" ^(has no %include_patterns%^)
 			exit /b 1
 		) else if not errorlevel 1 (
 			rem Some filtering occurred, report...
-if "%VERBOSE%" GEQ "1" (
+if "%BBB_VERBOSE%" GEQ "1" (
 			for /f %%d in ('findstr /R "%exclude_patterns%" "%dirlistfile%"') do (
 				set "xlist=!xlist!, %%d"
 				rem Quoting looked noisy & we have the comma anyway:
@@ -903,7 +983,7 @@ if "%VERBOSE%" GEQ "1" (
 			)
 			if defined xlist (
 				set "xlist=!xlist:~2!" &rem Remove leading sep.
-if "%VERBOSE%" GEQ "1"		echo - SKIP DIR^(S^) ^(%exclude_patterns%^): !xlist!
+if "%BBB_VERBOSE%" GEQ "1"		echo - SKIP DIR^(S^) ^(%exclude_patterns%^): !xlist!
 			)
 )
 			move /y "%tempfile%" "%dirlistfile%" > nul
@@ -939,7 +1019,7 @@ if "%VERBOSE%" GEQ "1"		echo - SKIP DIR^(S^) ^(%exclude_patterns%^): !xlist!
 				echo - ERROR: Failed to apply filter to^: "!_f_!"^^! >&2
 				rem exit /b 1
 			) else if not errorlevel 1 (
-if "%VERBOSE%" GEQ "2" echo - SKIP: !_f_! ^(matching %exclude_patterns%^) >&2
+if "%BBB_VERBOSE%" GEQ "2" echo - SKIP: !_f_! ^(matching %exclude_patterns%^) >&2
 				set _skip_=1
 			)
 		)
@@ -979,113 +1059,18 @@ if "%VERBOSE%" GEQ "2" echo - SKIP: !_f_! ^(matching %exclude_patterns%^) >&2
 
 	endlocal
 	goto :eof
-<<keep
+<<
 
 
+#!! Kludge until I find out the correct way:
+#!! Also done manually, coz no way to track the actual deps automatically...:
+OON_CPP_MODULE_IFCS=\
+	$(cxx_mod_ifc_dir)/Storage.ifc 
 
-
-#!! SADLY...:
-#!!
-#!! We cannot construct the obj target list from the local sources (see compile_dir...), because
-#!! NMAKE can only process wildcards on rule lines, where it's too late for this... :-/
-#!!local_objs = $(no wildcard function!... )
-#!!
-#
-# Trigger the inference rules by changed headers, too!...
-#$(local_objs) : $(OBJ_DEPS_manually)
 
 #-----------------------------------------------------------------------------
-# Inference rules for .obj compilation...
-# NOTE: The src & obj paths have been updated (see above) to match the subdir,
-#       where the tree traversal (recursion) is currently at.
+# LEGACY Workflow Control Rules (UNUSED, only for reference!)
 #-----------------------------------------------------------------------------
-# Can't direclty add $(patsubst %,.%,$(obj_source_exts)) to .SUFFIXES, as that
-# would trigger a syntax error! :-o Well, at least we have a descriptive name:
-_compilable_src_exts_=$(patsubst %,.%,$(obj_source_exts))
-.SUFFIXES:$(_compilable_src_exts_) .ixx .ifc .exe
-
-#-----------------------------------------------------------------------------
-!if "$(VERBOSE)" == "" || "$(VERBOSE)" == "0"
-_mute=@
-!endif
-{$(src_dir)}.c{$(obj_dir)}.obj::
-	$(_mute)$(CC) $(CFLAGS) -Fo$(obj_dir)\ $<
-
-{$(src_dir)}.cpp{$(obj_dir)}.obj::
-	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
-{$(src_dir)}.cxx{$(obj_dir)}.obj::
-	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
-{$(src_dir)}.cc{$(obj_dir)}.obj::
-	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -Fo$(obj_dir)\ $<
-
-#!!?? This is probably not the way to compile mod. ifcs!...:
-{$(src_dir)}.ixx{$(cxx_mod_ifc_dir)}.ifc::
-	$(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -ifcOutput $(cxx_mod_ifc_dir)\ -Fo$(obj_dir)\ $<
-
-
-#!message !! before treewaalk: abspath == $(src_dir_abspath), includes: $(OBJ_DEPS_manually)
-
-#-----------------------------------------------------------------------------
-# Default target - walk through the src tree dir-by-dir & compile all the
-#                  sources, plus do an initial & a final wrapping round...
-#-----------------------------------------------------------------------------
-traverse_src_tree: init
-	@cmd /v:on /c <<$(out_dir)\treewalk.cmd
-	@echo off
-	rem !!The make cmd. below fails to run without the extra shell! :-o
-	rem !!Also -> #8 why the env. var here can't be called just "make"!... ;)
-	set "_make_=cmd /c $(MAKE_CMD)"
-	:: echo $(src_dir)
-	:: echo !src_dir_abspath!
-	rem Do the root level first (preps + top-level sources)...
-	rem (Note: naming a (different) target would avoid inf. recursion!)
-	set _dir_=$(src_dir)
-        for %%x in ($(obj_source_exts)) do (
-		if "$(VERBOSE)" GEQ "2" echo [!_dir_!/*.%%x]
-		if "$(VERBOSE)" GEQ "2" echo if exist "$(src_dir)\*.%%x" echo [-^> !_make_! /c compiling SRC_EXT_=%%x $(custom_build_options)]
-		                                 if exist "$(src_dir)\*.%%x"           !_make_! /c compiling SRC_EXT_=%%x $(custom_build_options)
-		if errorlevel 1 exit -1
-	)
-	rem Scan the rest of the source tree for sources...
-	for /f "delims=" %%d in ('dir /s /b /a:d "$(src_dir_abspath)"') do (
-		rem It's *vital* to use a local name here, not `dir` (== $(DIR)!!!):
-		set "_dir_=%%d"
-
-		echo !_dir_! | findstr /L "$(UNITS_NO_COMPILE_PATTERN)" > nul
-		if not errorlevel 1 (
-			if "$(VERBOSE)" GEQ "1" echo - EXCLUDE DIR: !_dir_!
-		) else (
-			set "_dir_=!_dir_:$(src_dir_abspath)\=!"
-			for %%x in ($(obj_source_exts)) do (
-				if "$(VERBOSE)" GEQ "2" echo [!_dir_!/*.%%x]
-				if "$(VERBOSE)" GEQ "2" if exist "%%d\*.%%x" echo [-^> !_make_! /c compiling DIR=!_dir_! SRC_EXT_=%%x $(custom_build_options)]
-				rem  ... !_make_! ... "DIR=!_dir_!" would FAIL! if the NMAKE path has spaces! :-ooo
-				rem See #224!
-				                            if exist "%%d\*.%%x"           !_make_! /c compiling DIR=!_dir_! SRC_EXT_=%%x $(custom_build_options)
-				if errorlevel 1 exit -1
-			)
-		)
-	)
-	!_make_! RECURSED_FOR_FINISHING=1 $(custom_build_options) finish
-<<keep
-#! '
-#! This ' above is just to help the FAR Editor's syntax-highlighting to balance
-#! a prev. one... :-o :) (Find it, understand why it's all of natural, problematic,
-#! and fortunate, and appreciate this little gem like the interesting corpse
-#! of a poor little rare animal on a forest hike. :) )
-
-#-----------------------------------------------------------------------------
-# Workflow Control Rules
-#-----------------------------------------------------------------------------
-
-# This rule is implicitly selected as the default target, only on the first run:
-init: mk_main_target_dirs compile_mod_ifcs mk_mainlib_objdep_inc mk_mainexe_objdep_inc
-
-# This rule is explicitly selected on the command-line of recursive calls for subdirs:
-compiling: mk_obj_dir compile_dir
-
-# This rule is explicitly selected on the command-line after processing the entire tree:
-finish: $(BUILD)
 
 mk_main_target_dirs: # Pre-create the output dirs, as MSVC can't be bothered...
 	@if not exist "$(out_dir)" md "$(out_dir)"
@@ -1096,37 +1081,14 @@ mk_main_target_dirs: # Pre-create the output dirs, as MSVC can't be bothered...
 mk_obj_dir: # These vary for each subdir, so can't be done just once at init!
 	@if not exist "$(obj_dir)" md "$(obj_dir)"
 
-compile_mod_ifcs: mk_obj_dir $(OON_CPP_MODULE_IFCS)
+cpp_mod_ifcs: mk_obj_dir $(OON_CPP_MODULE_IFCS)
 #!! This doesn't have any modules-specific subdir (pre-creation) support yet,
 #!! so actually setting the modules dirs to anything would fail the 1st time!
 #!! (Even interface-only ones seem to generate .obj files, at least with MSVC!)
 
-# The main workhorse rule...
-#!! Albeit passing the targets on the cmd-line kill batch-mode inference rules in the child run,
-#!! it might still be work around if the file set would be passed as a macro, and then a plain dep.
-#!! rule using it could get inference working nominally again!...
-!ifdef SRC_EXT_
-compile_dir: $(OON_FULL_REBUILD_BY_MANUAL_DEPS) $(src_dir)\$(UNITS_PATTERN).$(SRC_EXT_)
-!if "$(VERBOSE)" == "2"
-	@$(ECHO) [[COMPILING *.$(SRC_EXT_) in """$(DIR)"""]: $(filterout $(UNITS_NO_COMPILE_PATTERN),$(patsubst $(src_dir)\\%,$(obj_dir)\\%, $(subst .$(SRC_EXT_),.obj,$**)))]]
-!endif
-	@$(MAKE_CMD) RECURSED_FOR_COMPILING=1 DIR=$(DIR) $(custom_build_options)\
-		$(filterout $(UNITS_NO_COMPILE_PATTERN),$(patsubst $(src_dir)\\%,$(obj_dir)\\%, $(subst .$(SRC_EXT_),.obj,$**)))
-!endif
 
-
-obj_list_file=$(obj_dir)\obj.list
 mainlib_rules_inc=$(out_dir)\main_lib_rules.inc
 mainexe_rules_inc=$(out_dir)\main_exe_rules.inc
-
-#!!DRY the duplicate scriptlets below!
-_mainlibexe_rules_inc_cmd_body=^
-	@echo off^
-	set "_TAB_=	"^
-        for %%x in ($(obj_source_exts)) do (^
-		...^
-	)^
-	...^
 
 !if "$(main_lib)" != ""
 mk_mainlib_objdep_inc: mk_obj_dir
@@ -1138,7 +1100,7 @@ mk_mainlib_objdep_inc: mk_obj_dir
 			set "_o_=%%o"
 			echo !_o_! | findstr /R "$(UNITS_NO_LIB_PATTERN)" > nul
 			if not errorlevel 1 (
-				if "$(VERBOSE)" GEQ "1" echo - EXCLUDE FROM LIB: !_o_!
+				if "$(BBB_VERBOSE)" GEQ "1" echo - EXCLUDE FROM LIB: !_o_!
 			) else (
 				set "_o_=!_o_:$(src_dir_abspath)\=!"
 				for %%x in ($(obj_source_exts)) do (
@@ -1165,9 +1127,9 @@ mk_mainexe_objdep_inc: mk_obj_dir
 		set "_ext_=%%x"
 		for /r "$(src_dir)\$(lib_src_subdir)" %%o in ($(UNITS_PATTERN).!_ext_!) do (
 			set "_o_=%%o"
-			echo !_o_! | findstr /R "$(UNITS_NO_AUTOLINK_PATTERN)" > nul
+			echo !_o_! | findstr /R "$(UNITS_NO_LINK_PATTERN)" > nul
 			if not errorlevel 1 (
-				if "$(VERBOSE)" GEQ "1" echo - EXCLUDE FROM AUTO-LINK: !_o_!
+				if "$(BBB_VERBOSE)" GEQ "1" echo - EXCLUDE FROM AUTO-LINK: !_o_!
 			) else (
 				set "_o_=!_o_:$(src_dir_abspath)\=!"
 				for %%x in ($(obj_source_exts)) do (
@@ -1243,34 +1205,8 @@ clean_all:
 #! and the commands can be here, while still considering the dependencies:
 $(main_lib):
 	@$(ECHO) Creating lib: $@...
-#!!Add VERBOSE support, but not with !if, but a $(mute)=@ cond. macro:
+#!!Add BBB_VERBOSE support, but not with !if, but a $(mute)=@ cond. macro:
 	lib -nologo -out:$@ $**
-!endif
-
-#------------------------
-# Build the "main" exe
-#------
-# !if "$(main_exe)" != ""
-# !ifdef RECURSED_FOR_FINISHING
-# !include $(mainexe_rules_inc)
-# !endif
-# #! See at main_lib: about implicitly combining the included deps.!
-# $(main_exe): $(obj_dir)\main.obj $(main_lib)
-# 	@$(ECHO) Creating executable: $@...
-# #!!Add VERBOSE support, but not with !if, but a $(mute)=@ cond. macro:
-# 	link -nologo $(LINKFLAGS) -out:$@ @$(obj_list_file) $(EXT_LIBS) $**
-# !endif
-
-## Especially for this one...:
-$(obj_dir)/main.obj: $(OON_HASH_INCLUDE_FILE)
-
-!if defined(OON_HASH_INCLUDE_FILE)
-$(OON_HASH_INCLUDE_FILE):
-	$(ECHO) "	Make last commit ID available for #including..."
-	$(BB) sh tooling/git/_create_commit_hash_include_file.sh
-	$(ECHO)
-!else
-!message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup not run?
 !endif
 
 #-----------------------------------------------------------------------------
@@ -1286,41 +1222,61 @@ OON_FULL_REBUILD_BY_MANUAL_DEPS=$(OON_CPP_MODULE_IFCS)
 #OON_FULL_REBUILD_BY_MANUAL_DEPS=$(OON_FULL_REBUILD_BY_MANUAL_DEPS) $(src_dir)\$(UNITS_PATTERN).$(SRC_EXT_)
 #!endif
 
-$(OON_FULL_REBUILD_BY_MANUAL_DEPS): $(THIS_MAKEFILE)
-
+#!!$(OON_FULL_REBUILD_BY_MANUAL_DEPS): $(THIS_MAKEFILE)
 
 #-----------------------------------------------------------------------------
-#!!
-#!! While prototyping, this is a mishmash of original NMAKE settings and the
-#!! faked dummy config of brutebild.cmd! Neither can rely on the other yet! :)
-#!!
-#!! The thing here should be generated by the BBild script! (Yes, in addition
-#!! to the previously generated interim dependency builder makefile, for now!)
-#!!
-BBB_build: BBB_init BBB_main
+# Custom build steps...
+#-----------------------------------------------------------------------------
+$(obj_dir)\main.obj: $(OON_HASH_INCLUDE_FILE)
 
-_mute=
+!if defined(OON_HASH_INCLUDE_FILE)
+$(OON_HASH_INCLUDE_FILE):
+	$(ECHO) "	Make last commit ID available for #including..."
+	$(BB) sh tooling/git/_create_commit_hash_include_file.sh
+	$(ECHO)
+!else
+!message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup not run?
+!endif
+
+
+#=============================================================================
+#!!
+#!! Things below should be generated by the BBild script! (Yes, in addition
+#!! to the previously generated interim makefile for dependencies + inference!)
+#!!
+
 # Set build params (main target name, per-file inference command to compiling etc.)...
-# NOTE: $(main_exe) would summon the eponymous OON target, too!
+BBB_CC_PROXY = $(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -ifcOutput $(cxx_mod_ifc_dir)\ -Fo$(OBJ_DIR_) $<
+
+!if "$(main_exe)" != ""
 BBB_MAIN_TARGET = $(main_exe)
 #!message BBB_MAIN_TARGET = $(BBB_MAIN_TARGET)
-BBB_CC_PROXY = $(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -ifcOutput $(cxx_mod_ifc_dir)\ -Fo$(OBJ_DIR_) $<
+!endif
 
 #!message include: $(BBB_MAKEFILE_TEMPLATE)
 !ifdef BBB_MAKEFILE_TEMPLATE
 !include $(BBB_MAKEFILE_TEMPLATE)
 !endif
 
+BBB_build: BBB_init BBB_main
+
 BBB_init:
 #	if not exist "$(IFC_ROOT)" md %IFC_ROOT%
 #	if not exist "$(OBJ_ROOT)" md %OBJ_ROOT%
 
-BBB_main: $(BBB_MAIN_TARGET)
+BBB_main: cpp_mod_ifcs $(BBB_MAIN_TARGET)  # See #45 for cpp_mod_ifcs!
 
-$(BBB_MAIN_TARGET):
+#------------------------
+# Build the "main" exe
+#------
+!if "$(main_exe)" != ""
 #! See at main_lib: about implicitly combining the included deps.!
-#! NOTE: That works only because $(ASK_NMAKE_MAKEFILE) is included above
+#! NOTE: works only because $(BBB_MAKEFILE_TEMPLATE) has been included above
+#!message main_exe: $(main_exe)
+$(main_exe):
 #$(main_exe): $(obj_dir)\main.obj $(main_lib)
-#	@$(ECHO) Creating executable: $@...
-#!!Add VERBOSE support, but not with !if, but a $(mute)=@ cond. macro:
+	@if %BBB_VERBOSE% GEQ 2 $(ECHO) Creating executable: $@...
+#	@if %BBB_VERBOSE% GEQ 4 $(ECHO) Creating executable `$@` from $**
+#!!Add better VERBOSE support to this, too:
 	$(_mute)link -nologo $(LINKFLAGS) -out:$@ $** $(main_lib) $(EXT_LIBS)
+!endif
