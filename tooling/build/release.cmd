@@ -11,7 +11,7 @@ git rev-parse --short=8 HEAD > %sz_tmp_dir%/last-commit.hash
 for /f %%i in (%sz_tmp_dir%/last-commit.hash) do set last_commit_hash=%%i
 popd
 
-set packname=%SZ_APPNAME%-%last_commit_hash%.zip
+set packname=%SZ_APP_NAME%-%last_commit_hash%.zip
 set packfile=%SZ_RELEASE_DIR%/%packname%
 rem Some cmds. (like DEL) might fail to see the file without / -> \ conv. :-o
 set "packfile=%packfile:/=\%"
@@ -41,7 +41,7 @@ if exist "%packfile%" (
 if not exist "%SZ_RELEASE_DIR%" md "%SZ_RELEASE_DIR%"
 
 pushd "%SZ_OUT_DIR%"
-zip %packfile% ./%SZ_APPNAME%.exe
+zip %packfile% ./%SZ_APP_NAME%.exe
 popd
 
 pushd "%SZ_SFML_LIBROOT%/bin"

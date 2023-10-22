@@ -2,7 +2,7 @@
 rem	This is expected to be called from a (temporary) process context, where
 rem	the env. vars won't persist, and won't clash with anything important!
 
-set SZ_APPNAME=oon
+set SZ_APP_NAME=oon
 
 rem !!
 rem !! These could crash horrendously, if e.g. the existing value has & in it etc...:
@@ -12,7 +12,7 @@ if "%SZ_PRJDIR%"=="" set SZ_PRJDIR=%~dp0..
 if "%SZ_SFML_LIBROOT%"=="" set SZ_SFML_LIBROOT=%SZ_PRJDIR%/extern/sfml/msvc
 
 set SZ_SRC_SUBDIR=src
-set SZ_OUT_SUBDIR=out
+set SZ_OUT_SUBDIR=build.out
 set SZ_IFC_SUBDIR=ifc
 set SZ_RUN_SUBDIR=test
 set SZ_ASSET_SUBDIR=asset
@@ -25,7 +25,7 @@ set SZ_ASSET_DIR=%SZ_PRJDIR%/%SZ_ASSET_SUBDIR%
 set SZ_TMP_DIR=%SZ_PRJDIR%/tmp
 set SZ_RELEASE_DIR=%SZ_TMP_DIR%/%SZ_RELEASE_SUBDIR%
 
-set OON_HASH_INCLUDE_FILE=%SZ_OUT_DIR%/commit_hash.inc
+set COMMIT_HASH_INCLUDE_FILE=%SZ_OUT_DIR%/commit_hash.inc
 
 rem CD to prj root for the rest of the process:
 cd "%SZ_PRJDIR%"

@@ -17,7 +17,7 @@ BBB_SKIP_BUILD=0
 #-----------------------------------------------------------------------------
 # Config - Project layout
 #-----------------------------------------------------------------------------
-PRJ_NAME=$(SZ_APPNAME)
+PRJ_NAME=$(SZ_APP_NAME)
 # Use the lower-case (processed) path macros here:
 #main_lib=$(lib_dir)/$(PRJ_NAME)$(buildmode_suffix).lib
 main_exe=$(exe_dir)/$(PRJ_NAME)$(buildmode_suffix).exe
@@ -373,7 +373,7 @@ call :setd PRJ_ROOT .
 
 :: These are relative to PRJ_ROOT:
 call :setd SRC_ROOT src
-call :setd OUT_DIR out
+call :setd OUT_DIR build.out
 call :setd OBJ_ROOT %OUT_DIR%\obj
 call :setd IFC_ROOT %OUT_DIR%\ifc
 
@@ -572,7 +572,7 @@ if "%BBB_VERBOSE%" GEQ "2" echo.
 	echo ^^!endif >>                     "%BBB_MAKEFILE_TEMPLATE%"
 
 	echo ^^!if ^^!defined^(BBB_MAIN_TARGET^) >> "%BBB_MAKEFILE_TEMPLATE%"
-	echo BBB_MAIN_TARGET = %SZ_APPNAME%>>       "%BBB_MAKEFILE_TEMPLATE%"
+	echo BBB_MAIN_TARGET = %SZ_APP_NAME%>>       "%BBB_MAKEFILE_TEMPLATE%"
 	echo ^^!endif >>                            "%BBB_MAKEFILE_TEMPLATE%"
 
 	::
@@ -1222,16 +1222,16 @@ OON_FULL_REBUILD_BY_MANUAL_DEPS=$(OON_CPP_MODULE_IFCS)
 #-----------------------------------------------------------------------------
 # Custom build steps...
 #-----------------------------------------------------------------------------
-$(obj_dir)\main.obj: $(OON_HASH_INCLUDE_FILE)
+$(obj_dir)\main.obj: $(COMMIT_HASH_INCLUDE_FILE)
 
-!if defined(OON_HASH_INCLUDE_FILE)
-$(OON_HASH_INCLUDE_FILE):
+!if defined(COMMIT_HASH_INCLUDE_FILE)
+$(COMMIT_HASH_INCLUDE_FILE):
 #	Using sh's echo explicitly, as this block is about calling an .sh script:
 	@$(SH) -c "echo 	Make last commit ID available for \#including..."
 	$(_mute)$(SH) "tooling/git/_create_commit_hash_include_file.sh"
 	@$(SH) -c echo
 !else
-!message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup not run?
+!message -ERROR: COMMIT_HASH_INCLUDE_FILE not defined. Env setup not run?
 !endif
 
 

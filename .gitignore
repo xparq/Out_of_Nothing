@@ -6,6 +6,7 @@ tmp/
 *.WIP
 
 out/
+build.out/
 
 # Stray items from accidental compilations outside "out"
 *.obj

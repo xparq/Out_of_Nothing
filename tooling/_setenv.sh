@@ -1,7 +1,7 @@
 # This is expected to be called from a (temporary) process context, where
 # the env. vars won't persist, and won't clash with anything important!
 
-export SZ_APPNAME=oon
+export SZ_APP_NAME=oon
 
 ##!!This $0 is incorrect if we're being sourced by another script in a different dir!!!
 export SZ_PRJDIR=${SZ_PRJDIR:-`dirname $0`/..}
@@ -12,14 +12,15 @@ if [ ! -e "${SZ_PRJDIR}/tooling/_setenv.sh" ]; then
 	exit 1
 fi
 
-SZ_SFML_LIBROOT=${SZ_SFML_LIBROOT:-${SZ_PRJDIR}/extern/sfml/linux}
+export SZ_SFML_LIBROOT=${SZ_SFML_LIBROOT:-${SZ_PRJDIR}/extern/sfml/msvc}
 
-#echo ${SZ_PRJDIR}
-#echo ${SZ_SFML_LIBROOT}
+#echo SZ_PRJDIR = ${SZ_PRJDIR}
+#echo SZ_SFML_LIBROOT = ${SZ_SFML_LIBROOT}
+#echo Press Enter to proceed...
 #read x
 
 export SZ_SRC_SUBDIR=src
-export SZ_OUT_SUBDIR=out
+export SZ_OUT_SUBDIR=build.out
 export SZ_IFC_SUBDIR=ifc
 export SZ_RUN_SUBDIR=test
 export SZ_ASSET_SUBDIR=asset
@@ -32,11 +33,16 @@ export SZ_ASSET_DIR=${SZ_PRJDIR}/${SZ_ASSET_SUBDIR}
 export SZ_TMP_DIR=${SZ_PRJDIR}/tmp
 export SZ_RELEASE_DIR=${SZ_TMP_DIR}/${SZ_RELEASE_SUBDIR}
 
-export HASH_INCLUDE_FILE=${SZ_OUT_DIR}/commit_hash.inc
+export COMMIT_HASH_INCLUDE_FILE=${SZ_OUT_DIR}/commit_hash.inc
 
-# CD to prj root for the rest of the process:
+# CD to prj root for the rest of the process/action:
 cd "$SZ_PRJDIR"
-#!! Abort on error, and normalize $SZ_PRJDIR if succeeded! (See the .cmd!)
+res=$?
+if [ $res -ne 0 ]; then
+	echo "- ERROR: Failed to enter project dir ($SZ_PRJDIR)?!"
+	exit $res
+fi
+
 
 if [ ! -d "${SZ_OUT_DIR}" ]; then mkdir "${SZ_OUT_DIR}"; fi
 if [ ! -d "${SZ_OUT_DIR}" ]; then

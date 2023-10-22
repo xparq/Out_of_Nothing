@@ -10,9 +10,8 @@
 
 using namespace std;
 
-//!!...
-#include "../out/commit_hash.inc"
-//!!Also:
+#include "commit_hash.inc" //!! Must be placed somewhere on the INCLUDE path by the build proc.!
+//!!Another "silent extern" hackery:
 bool DEBUG_cfg_show_keycode = false;
 
 //============================================================================
