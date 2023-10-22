@@ -1,4 +1,4 @@
-#### MSVC Jumpstart Makefile, new gen.
+#### MSVC Jumpstart Makefile, new gen., WIP
 #### -> https://github.com/xparq/NMAKE-Jumpstart
 ####
 #### BEWARE! Uses recursive NMAKE invocations, so update the macro below if
@@ -24,15 +24,15 @@ main_exe=$(exe_dir)/$(PRJ_NAME)$(buildmode_suffix).exe
 # Main targets to build:
 BUILD = $(main_lib) $(main_exe)
 
-SRC_DIR=src
-OUT_DIR=out
+SRC_DIR=$(SZ_SRC_SUBDIR)
+OUT_DIR=$(SZ_OUT_SUBDIR)
 LIB_DIR=$(OUT_DIR)
-EXE_DIR=$(OUT_DIR)
+EXE_DIR=$(SZ_RUN_SUBDIR)
 OBJ_DIR=$(OUT_DIR)/obj
 #!! This won't work as expected: both $(obj_dir) and then the ifc dir both get
 #!! prefixed, resulting in ././ at best, already failing a ./ inference rule!... :-o
-#!!CXX_MOD_IFC_DIR=$(obj_dir)
-CXX_MOD_IFC_DIR=$(OUT_DIR)
+#!!IFC_DIR=$(obj_dir)
+IFC_DIR=$(OUT_DIR)
 # Put (only) these into the lib (relative to SRC_DIR; leave it empty for "all"):
 LIB_SRC_SUBDIR=
 
@@ -67,7 +67,7 @@ OBJ_DEPS_manually=$(SRC_DIR)/*.hpp $(SRC_DIR)/cfg.h \
 EXT_INCLUDE_DIRS=
 EXT_LIB_DIRS=
 EXT_LIBS=\
-	$(SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
+	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
 	extern/sfw/lib/msvc/sfw$(_cflags_crt_linkmode)$(_buildmode_debug_file_suffix).lib \
 	extern/zstd/msvc/zstd$(_cflags_crt_linkmode).lib \
 
@@ -86,6 +86,8 @@ custom_build_options = SFML=$(SFML) BBB_VERBOSE=$(BBB_VERBOSE)
 
 # Custom Tools:
 #!Sz: Assuming being called from a script that has already set the path:
+SH = "C:\Program Files\Git\bin\sh.exe"
+#SH = busybox sh
 ECHO=@echo
 #! Unnecessary:
 #MKDIR=$(BB) mkdir -p
@@ -165,7 +167,7 @@ out_dir         = $(prefixdir)\$(patsubst \\%,%,$(OUT_DIR:/=\))
 lib_dir         = $(prefixdir)\$(patsubst \\%,%,$(LIB_DIR:/=\))
 exe_dir         = $(prefixdir)\$(patsubst \\%,%,$(EXE_DIR:/=\))
 obj_dir         = $(prefixdir)\$(patsubst \\%,%,$(OBJ_DIR:/=\))
-cxx_mod_ifc_dir = $(prefixdir)\$(patsubst \\%,%,$(CXX_MOD_IFC_DIR:/=\))
+ifc_dir         = $(prefixdir)\$(patsubst \\%,%,$(IFC_DIR:/=\))
 #! These are assumed to have been prefixed with some dirs already,
 #! but if still not, they'll just go to the current dir:
 !if "$(main_lib)" != ""
@@ -195,14 +197,14 @@ src_dir_abspath=$(subst <FAKE_SPACE>,$(_SPACE_),$(abspath $(p)))
 # Set/adjust tool options (according to the config)...
 #-----------------------------------------------------------------------------
 # Preserve the original NMAKE flags & explicitly supported macros on recursion:
-NMAKE_RECURSE_CMD="$(MAKE)" /nologo /$(MAKEFLAGS) /f $(THIS_MAKEFILE) DEBUG=$(DEBUG) CRT=$(CRT)
+NMAKE_RECURSE_CMD=$(MAKE) /nologo /$(MAKEFLAGS) /f $(THIS_MAKEFILE) DEBUG=$(DEBUG) CRT=$(CRT)
 
 CFLAGS=-nologo -c $(CFLAGS)
 CXXFLAGS=-EHsc $(CXXFLAGS)
-!if "$(cxx_mod_ifc_dir)" != ""
-CXXFLAGS=-ifcSearchDir $(cxx_mod_ifc_dir) $(CXXFLAGS)
+!if "$(ifc_dir)" != ""
+CXXFLAGS=-ifcSearchDir $(ifc_dir) $(CXXFLAGS)
 !else
-!error cxx_mod_ifc_dir is not set?!
+!error ifc_dir is not set?!
 !endif
 
 #----------------------------
@@ -338,7 +340,7 @@ export_cfg:
 	@set OUT_DIR=$(out_dir)
 	@set OBJ_ROOT=$(obj_dir)
 	@set SRC_ROOT=$(src_dir)
-	@set IFC_ROOT=$(cxx_mod_ifc_dir)
+	@set IFC_ROOT=$(ifc_dir)
 	@set OBJ_SRC_EXTS=$(obj_source_exts_dotted)
 	@set UNITS_NO_COMPILE_PATH_PATTERN=$(UNITS_NO_COMPILE_PATH_PATTERN)
 	@set UNITS_NO_LINK_PATTERN=$(UNITS_NO_LINK_PATTERN)
@@ -611,13 +613,10 @@ rem		call :exec_each "%liblist_file%" "echo %TAB%%lib_dir%\{} \" "%LIBS_NO_LINK_
 		rem !! CMD gets confused by its own idiotic quoting rules, let alone the challenge of passing
 		rem !! multi-line text, so the command block is passed via %__inference_commands__%...
 		set "__inference_commands__=$$^(BBB_CC_PROXY^)"
-		if "!_ext_!" == ".ixx" (
-			set _outext_=.ifc
-			set _outdir_=%IFC_ROOT%
-		) else (
-			set _outext_=.obj
-			set _outdir_=%obj_dir%
-		)
+
+		set _outext_=.obj
+		set _outdir_=%obj_dir%
+
 		echo.>> "%BBB_MAKEFILE_TEMPLATE%"
 		echo # Inference rules for *!_ext_!...>> "%BBB_MAKEFILE_TEMPLATE%"
 		echo.>> "%BBB_MAKEFILE_TEMPLATE%"
@@ -630,7 +629,18 @@ rem		call :exec_each "%liblist_file%" "echo %TAB%%lib_dir%\{} \" "%LIBS_NO_LINK_
 
 ::		echo :exec_each "%dirlist_file%" "!exec_arg!"
 		call :exec_each "%dirlist_file%" "!exec_arg!">> "%BBB_MAKEFILE_TEMPLATE%"
+
+
+rem Single-file C++ modules (.ixx) need rules for both their .ifc and .obj, to keep MAKE happy:
+		if "!_ext_!" == ".ixx" (
+			set _outext_=.ifc
+			set _outdir_=%IFC_ROOT%
+			set "exec_arg=call :print_NMAKE_inference_batch_rule !_ext_! !_outext_! %src_dir%\{} !_outdir_! DUMMY_CMD_PLACEHOLDER"
+			rem See comments above why this (unused) DUMMY_CMD_PLACEHOLDER...
+			call :exec_each "%dirlist_file%" "!exec_arg!">> "%BBB_MAKEFILE_TEMPLATE%"
+		)
 	)
+
 	endlocal
 
 :skip_configure
@@ -1059,39 +1069,24 @@ if "%BBB_VERBOSE%" GEQ "2" echo - SKIP: !_f_! ^(matching %exclude_patterns%^) >&
 
 	endlocal
 	goto :eof
-<<
+<<keep
 
 
 #!! Kludge until I find out the correct way:
 #!! Also done manually, coz no way to track the actual deps automatically...:
 OON_CPP_MODULE_IFCS=\
-	$(cxx_mod_ifc_dir)/Storage.ifc 
+	$(ifc_dir)/Storage.ifc 
 
 
 #-----------------------------------------------------------------------------
 # LEGACY Workflow Control Rules (UNUSED, only for reference!)
 #-----------------------------------------------------------------------------
 
-mk_main_target_dirs: # Pre-create the output dirs, as MSVC can't be bothered...
-	@if not exist "$(out_dir)" md "$(out_dir)"
-	@if not exist "$(lib_dir)" md "$(lib_dir)"
-	@if not exist "$(exe_dir)" md "$(exe_dir)"
-#!!	@if not exist "$(cxx_mod_ifc_dir)" md "$(cxx_mod_ifc_dir)"
-
-mk_obj_dir: # These vary for each subdir, so can't be done just once at init!
-	@if not exist "$(obj_dir)" md "$(obj_dir)"
-
-cpp_mod_ifcs: mk_obj_dir $(OON_CPP_MODULE_IFCS)
-#!! This doesn't have any modules-specific subdir (pre-creation) support yet,
-#!! so actually setting the modules dirs to anything would fail the 1st time!
-#!! (Even interface-only ones seem to generate .obj files, at least with MSVC!)
-
-
 mainlib_rules_inc=$(out_dir)\main_lib_rules.inc
 mainexe_rules_inc=$(out_dir)\main_exe_rules.inc
 
 !if "$(main_lib)" != ""
-mk_mainlib_objdep_inc: mk_obj_dir
+mk_mainlib_objdep_inc: "$(obj_dir)"
 	@cmd /v:on /c <<$(out_dir)\mklibrules.cmd
 	@echo off
         for %%x in ($(obj_source_exts)) do (
@@ -1120,7 +1115,7 @@ mk_mainlib_objdep_inc: mk_obj_dir
 mk_mainlib_objdep_inc:
 !endif
 !if "$(main_exe)" != ""
-mk_mainexe_objdep_inc: mk_obj_dir
+mk_mainexe_objdep_inc: "$(obj_dir)"
 	@cmd /v:on /c <<$(out_dir)\mkexerules.cmd
 	@echo off
         for %%x in ($(obj_source_exts)) do (
@@ -1231,9 +1226,10 @@ $(obj_dir)\main.obj: $(OON_HASH_INCLUDE_FILE)
 
 !if defined(OON_HASH_INCLUDE_FILE)
 $(OON_HASH_INCLUDE_FILE):
-	$(ECHO) "	Make last commit ID available for #including..."
-	$(BB) sh tooling/git/_create_commit_hash_include_file.sh
-	$(ECHO)
+#	Using sh's echo explicitly, as this block is about calling an .sh script:
+	@$(SH) -c "echo 	Make last commit ID available for \#including..."
+	$(_mute)$(SH) "tooling/git/_create_commit_hash_include_file.sh"
+	@$(SH) -c echo
 !else
 !message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup not run?
 !endif
@@ -1245,26 +1241,72 @@ $(OON_HASH_INCLUDE_FILE):
 #!! to the previously generated interim makefile for dependencies + inference!)
 #!!
 
+BBB_MKDIR_CMD=@if %BBB_VERBOSE% GEQ 4 ($(ECHO) Creating dir: $@) && if not exist $@ @md $@
+
 # Set build params (main target name, per-file inference command to compiling etc.)...
-BBB_CC_PROXY = $(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -ifcOutput $(cxx_mod_ifc_dir)\ -Fo$(OBJ_DIR_) $<
+BBB_CC_PROXY = $(_mute)$(CXX) $(CFLAGS) $(CXXFLAGS) -ifcOutput $(ifc_dir)\ -Fo$(OBJ_DIR_) $<
 
 !if "$(main_exe)" != ""
 BBB_MAIN_TARGET = $(main_exe)
 #!message BBB_MAIN_TARGET = $(BBB_MAIN_TARGET)
 !endif
 
+BBB_build: BBB_init BBB_main
+
+BBB_init: BBB_mk_output_dirs
+
+BBB_mk_output_dirs: "$(obj_dir)" "$(ifc_dir)" "$(lib_dir)" "$(exe_dir)"
+#	Use the "familiar" dir vars we've set here in the makefile,
+#	not the ones used in the script (except those created there)!
+	@if %BBB_VERBOSE% GEQ 3 $(ECHO) Pre-created missing target directories.
+
+#! Double :: for MAKE to go easy if some are the same!... Unfortunately, that
+#! also means giving up the very reason of getting it done by MAKE: the auto
+#! existence checking... :/
+#! Another con against using MAKE for this: can't output a nice diag. msg. with
+#! symbolic (macro name) tags (or anything) without giving up even more D.R.Y.:
+"$(ifc_dir)"::
+	$(BBB_MKDIR_CMD)
+"$(lib_dir)"::
+	$(BBB_MKDIR_CMD)
+"$(exe_dir)"::
+	$(BBB_MKDIR_CMD)
+#!! This will need to be taken care of at the inference rules in TREE_MODE,
+#!! so each subdir gets created. (In non-batch mode it'll hapen for each file, but no harm done...)
+"$(obj_dir)"::
+	$(BBB_MKDIR_CMD)
+
+#!! Old-style, less verbose, more D.R.Y., but also less flexible and "makey":
+#BBB_mk_output_dirs: # Pre-create the output dirs, as MSVC can't be bothered...
+#	@if %BBB_VERBOSE% GEQ 3 $(ECHO) Creating target directories (if missing)...
+##	Use the "familiar" dir vars we've set here in the makefile,
+##	not the ones used in the script (except those created there)!
+#	@if not exist "$(out_dir)" md "$(out_dir)"
+#	@if not exist "$(lib_dir)" md "$(lib_dir)"
+#	@if not exist "$(exe_dir)" md "$(exe_dir)"
+#	@if not exist "$(ifc_dir)" md "$(ifc_dir)"
+##!!	This will need to be taken care of at the inference rules in TREE_MODE,
+##!!	so each subdir gets created. (In non-batch mode it'll hapen for each file, but no harm done...)
+#	@if not exist "$(obj_dir)" md "$(obj_dir)"
+
+BBB_main: cpp_mod_ifcs $(BBB_MAIN_TARGET)  # See #45 for cpp_mod_ifcs!
+
+cpp_mod_ifcs: "$(obj_dir)" $(OON_CPP_MODULE_IFCS)
+#!! This doesn't have any modules-specific subdir (pre-creation) support yet,
+#!! so actually setting the modules dirs to anything would fail the 1st time!
+#!! (Even interface-only ones seem to generate .obj files, at least with MSVC!)
+
+
+
+#----------------------------------
+# Include the autogenerated rules
+#------
+# This *must* come after the default target has been defined above!
 #!message include: $(BBB_MAKEFILE_TEMPLATE)
 !ifdef BBB_MAKEFILE_TEMPLATE
 !include $(BBB_MAKEFILE_TEMPLATE)
 !endif
 
-BBB_build: BBB_init BBB_main
-
-BBB_init:
-#	if not exist "$(IFC_ROOT)" md %IFC_ROOT%
-#	if not exist "$(OBJ_ROOT)" md %OBJ_ROOT%
-
-BBB_main: cpp_mod_ifcs $(BBB_MAIN_TARGET)  # See #45 for cpp_mod_ifcs!
 
 #------------------------
 # Build the "main" exe

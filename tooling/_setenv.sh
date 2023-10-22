@@ -1,43 +1,50 @@
 # This is expected to be called from a (temporary) process context, where
 # the env. vars won't persist, and won't clash with anything important!
 
-export sz_appname=oon
+export SZ_APPNAME=oon
 
 ##!!This $0 is incorrect if we're being sourced by another script in a different dir!!!
-export sz_prjdir=${sz_prjdir:-`dirname $0`/..}
-sz_prjdir="`realpath ${sz_prjdir}`"
+export SZ_PRJDIR=${SZ_PRJDIR:-`dirname $0`/..}
+SZ_PRJDIR="`realpath ${SZ_PRJDIR}`"
 
-if [ ! -e "${sz_prjdir}/tooling/_setenv.sh" ]; then
-	echo "- ERROR: Failed to set the project dir (misplaced ${sz_prjdir}/tooling/_setenv.sh)!"
+if [ ! -e "${SZ_PRJDIR}/tooling/_setenv.sh" ]; then
+	echo "- ERROR: Failed to set the project dir (misplaced ${SZ_PRJDIR}/tooling/_setenv.sh)!"
 	exit 1
 fi
 
-sfml_libroot=${sfml_libroot:-${sz_prjdir}/extern/sfml/linux}
+SZ_SFML_LIBROOT=${SZ_SFML_LIBROOT:-${SZ_PRJDIR}/extern/sfml/linux}
 
-#echo ${sz_prjdir}
-#echo ${sfml_libroot}
+#echo ${SZ_PRJDIR}
+#echo ${SZ_SFML_LIBROOT}
 #read x
 
-export sz_src_dir=${sz_prjdir}/src
-export sz_asset_subdir=asset
-export sz_asset_dir=${sz_prjdir}/${sz_asset_subdir}
-export sz_out_dir=${sz_prjdir}/out
-export sz_run_dir=${sz_prjdir}/run
-export sz_tmp_dir=${sz_prjdir}/tmp
-export sz_release_dir=${sz_prjdir}/release
+export SZ_SRC_SUBDIR=src
+export SZ_OUT_SUBDIR=out
+export SZ_IFC_SUBDIR=ifc
+export SZ_RUN_SUBDIR=test
+export SZ_ASSET_SUBDIR=asset
+export SZ_RELEASE_SUBDIR=release
 
-export HASH_INCLUDE_FILE=${sz_out_dir}/commit_hash.inc
+export SZ_SRC_DIR=${SZ_PRJDIR}/${SZ_SRC_SUBDIR}
+export SZ_OUT_DIR=${SZ_PRJDIR}/${SZ_OUT_SUBDIR}
+export SZ_RUN_DIR=${SZ_PRJDIR}/${SZ_RUN_SUBDIR}
+export SZ_ASSET_DIR=${SZ_PRJDIR}/${SZ_ASSET_SUBDIR}
+export SZ_TMP_DIR=${SZ_PRJDIR}/tmp
+export SZ_RELEASE_DIR=${SZ_TMP_DIR}/${SZ_RELEASE_SUBDIR}
+
+export HASH_INCLUDE_FILE=${SZ_OUT_DIR}/commit_hash.inc
 
 # CD to prj root for the rest of the process:
-cd "$sz_prjdir"
+cd "$SZ_PRJDIR"
+#!! Abort on error, and normalize $SZ_PRJDIR if succeeded! (See the .cmd!)
 
-if [ ! -d "${sz_out_dir}" ]; then mkdir "${sz_out_dir}"; fi
-if [ ! -d "${sz_out_dir}" ]; then
-	echo "- ERROR: Failed to setup project env (${sz_out_dir} was not created)!"
+if [ ! -d "${SZ_OUT_DIR}" ]; then mkdir "${SZ_OUT_DIR}"; fi
+if [ ! -d "${SZ_OUT_DIR}" ]; then
+	echo "- ERROR: Failed to setup project env (${SZ_OUT_DIR} was not created)!"
 	exit 1
 fi
 
 # Note the ; separators, which would fail with GCC on everything, but Windows (MinGW-like?)...
-export INCLUDE="${sz_src_dir};extern/sfw/include;${sfml_libroot}/include;${sz_prjdir};${INCLUDE}"
-export LIB="${sfml_libroot}/lib;${LIB}"
-export PATH="${sz_prjdir}/tooling;${sfml_libroot}/bin;${PATH}"
+export INCLUDE="${SZ_SRC_DIR};extern/sfw/include;${SZ_SFML_LIBROOT}/include;${SZ_PRJDIR};${INCLUDE}"
+export LIB="${SZ_SFML_LIBROOT}/lib;${LIB}"
+export PATH="${SZ_PRJDIR}/tooling;${SZ_SFML_LIBROOT}/bin;${PATH}"

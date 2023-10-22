@@ -10,7 +10,7 @@ echo "But it must not just regenerate it every time, as it would trigger unneces
 
 # Need to set the project dir here, as _setenv.sh won't
 # be able find it ($0 doesn't work when sourced!)
-sz_prjdir=$(pwd)
+SZ_PRJDIR=$(pwd)
 . tooling/_setenv.sh
 	if [ $? != 0 ]; then exit 1; fi
 

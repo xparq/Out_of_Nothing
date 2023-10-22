@@ -2,30 +2,43 @@
 rem	This is expected to be called from a (temporary) process context, where
 rem	the env. vars won't persist, and won't clash with anything important!
 
-set sz_appname=oon
+set SZ_APPNAME=oon
 
 rem !!
 rem !! These could crash horrendously, if e.g. the existing value has & in it etc...:
 rem !!
 
-if "%sz_prjdir%"=="" set sz_prjdir=%~dp0..
-if "%sfml_libroot%"=="" set SFML_LIBROOT=%sz_prjdir%/extern/sfml/msvc
+if "%SZ_PRJDIR%"=="" set SZ_PRJDIR=%~dp0..
+if "%SZ_SFML_LIBROOT%"=="" set SZ_SFML_LIBROOT=%SZ_PRJDIR%/extern/sfml/msvc
 
-set sz_src_dir=%sz_prjdir%/src
-set sz_asset_subdir=asset
-set sz_asset_dir=%sz_prjdir%/%sz_asset_subdir%
-set sz_out_dir=%sz_prjdir%/out
-set sz_run_dir=%sz_prjdir%/run
-set sz_tmp_dir=%sz_prjdir%/tmp
-set sz_release_dir=%sz_tmp_dir%/release
+set SZ_SRC_SUBDIR=src
+set SZ_OUT_SUBDIR=out
+set SZ_IFC_SUBDIR=ifc
+set SZ_RUN_SUBDIR=test
+set SZ_ASSET_SUBDIR=asset
+set SZ_RELEASE_SUBDIR=release
 
-set OON_HASH_INCLUDE_FILE=%sz_out_dir%/commit_hash.inc
+set SZ_SRC_DIR=%SZ_PRJDIR%/%SZ_SRC_SUBDIR%
+set SZ_OUT_DIR=%SZ_PRJDIR%/%SZ_OUT_SUBDIR%
+set SZ_RUN_DIR=%SZ_PRJDIR%/%SZ_RUN_SUBDIR%
+set SZ_ASSET_DIR=%SZ_PRJDIR%/%SZ_ASSET_SUBDIR%
+set SZ_TMP_DIR=%SZ_PRJDIR%/tmp
+set SZ_RELEASE_DIR=%SZ_TMP_DIR%/%SZ_RELEASE_SUBDIR%
+
+set OON_HASH_INCLUDE_FILE=%SZ_OUT_DIR%/commit_hash.inc
 
 rem CD to prj root for the rest of the process:
-cd "%sz_prjdir%"
+cd "%SZ_PRJDIR%"
+if errorlevel 1 (
+	echo - ERROR: Failed to enter the project dir ^(%SZ_PRJDIR%^)^!
+	exit 1
+) else (
+	rem Normalize the prj. dir ^(well, stil backslashes, awkwardly differing from the rest...^)
+	set SZ_PRJDIR=%CD%
+)
 
-if not exist "%sz_out_dir%" md "%sz_out_dir%"
+if not exist "%SZ_OUT_DIR%" md "%SZ_OUT_DIR%"
 
-set INCLUDE=%sz_src_dir%;extern/sfw/include;%SFML_LIBROOT%/include;%sz_prjdir%;%INCLUDE%
-set LIB=%SFML_LIBROOT%/lib;%LIB%
-set PATH=%sz_prjdir%/tooling;%SFML_LIBROOT%/bin;%PATH%;extern/Microsoft.VC143.DebugCRT
+set INCLUDE=%SZ_SRC_DIR%;extern/sfw/include;%SZ_SFML_LIBROOT%/include;%SZ_PRJDIR%;%INCLUDE%
+set LIB=%SZ_SFML_LIBROOT%/lib;%LIB%
+set PATH=%SZ_PRJDIR%/tooling;%SZ_SFML_LIBROOT%/bin;%PATH%;extern/Microsoft.VC143.DebugCRT
