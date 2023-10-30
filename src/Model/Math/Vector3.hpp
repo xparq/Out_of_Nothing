@@ -1,3 +1,5 @@
+#ifndef _VECTOR3_HPP_
+#define _VECTOR3_HPP_
 ////////////////////////////////////////////////////////////
 //
 // SFML - Simple and Fast Multimedia Library
@@ -21,11 +23,6 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 ////////////////////////////////////////////////////////////
-
-#pragma once
-
-//#include <SFML/System/Export.hpp>
-#include "Export.hpp"
 
 #include <cassert>
 
@@ -78,7 +75,7 @@ public:
     /// If you are not interested in the actual length, but only in comparisons, consider using lengthSq().
     ///
     ////////////////////////////////////////////////////////////
-    SFML_SYSTEM_API T length() const;
+    T length() const;
 
     ////////////////////////////////////////////////////////////
     /// \brief Square of vector's length.
@@ -94,7 +91,7 @@ public:
     /// \pre \c *this is no zero vector.
     ///
     ////////////////////////////////////////////////////////////
-    [[nodiscard]] SFML_SYSTEM_API Vector3 normalized() const;
+    [[nodiscard]] Vector3 normalized() const;
 
     ////////////////////////////////////////////////////////////
     /// \brief Dot product of two 3D vectors.
@@ -364,3 +361,5 @@ using Vector3f = Vector3<float>;
 /// Note: for 2-dimensional vectors, see sf::Vector2.
 ///
 ////////////////////////////////////////////////////////////
+
+#endif // _VECTOR3_HPP_

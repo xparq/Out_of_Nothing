@@ -3,9 +3,9 @@
 # We are in the work tree now, Git promised...
 #
 
-echo "Post-commit code-generation for the next build..."
-echo "(BEWARE: \`build clean\` would delete it, so a normal build must also be able to regenerated it!"
-echo "But it must not just regenerate it every time, as it would trigger unnecessary rebuilds...)"
+echo "Post-commit code generation for the next build..."
+echo "(BEWARE: \`build clean\` would delete it, so a normal build must also be able to regenerate it!"
+echo "But then it mustn't just do that every time, as it would trigger unnecessary rebuilds...)"
 
 
 # Need to set the project dir here, as _setenv.sh won't

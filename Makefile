@@ -15,32 +15,37 @@ SZ_APP_NAME ?= test
 SZ_PRJ_DIR  ?= .
 SZ_SRC_SUBDIR ?= src
 SZ_OUT_SUBDIR ?= build.out
+#!! Can't be empty, for error-prone $(...DIR)/... concats (yet)!
 SZ_RUN_SUBDIR ?= .
 
-exe = $(exedir)/$(SZ_APP_NAME).exe
-srcdir = $(SZ_SRC_SUBDIR)
+exe = $(exedir)/$(SZ_APP_NAME)$(cflags_crt_linkmode_with_debug).exe
+
 outdir = $(SZ_OUT_SUBDIR)
-objdir = $(SZ_OUT_SUBDIR)
-ifcdir = $(objdir)/$(SZ_SRC_SUBDIR)
+#!!objdir = $(vroot)/obj
+#!!Alas...:
+objdir = $(vroot)/$(SZ_SRC_SUBDIR)
+#!!ifcdir = $(vroot)/ifc
+#!!Alas...:
+ifcdir = $(vroot)/$(SZ_SRC_SUBDIR)
 exedir = $(SZ_RUN_SUBDIR)
 
-SOURCES != busybox sh -c "find $(srcdir) -name '*.c' -o -name '*.cpp' -o -name '*.ixx'"
-#! No need for this hackery, since the entire src tree is replicated in $OUT!...
-#!!?? Can't get the BB find syntax right this way:
-#!!??SOURCES != find $(srcdir) -not \( -name 'tmp' -prune \) ...
-#SOURCES != busybox sh -c "find $(srcdir) -not \( -name $(SZ_OUT_SUBDIR) -prune \) -a \( -name '*.c' -o -name '*.cpp' -o -name '*.ixx' \)"
-#test:: ; @echo SOURCES: $(SOURCES)
-
 #!! Kludge until I find out the correct way to support C++ modules...
+#!!Use != ls -b or something *.ifc!
+#!!CPP_MODULE_IFCS = $(ifcdir)/*.ifc
+CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
 #!! Also, any module change will trigger full rebuild, coz no sane way
 #!! to auto-track actual deps yet (even less than headers)! :-/
-#!! (E.g. https://stackoverflow.com/questions/69190433/auto-generate-dependencies-for-modules)
-CPP_MODULE_IFCS = $(ifcdir)/*.ifc
+#!! (E.g. https://stackoverflow.com/questions/69190433/auto-generate-dependencies-for-modules,
+#!! https://github.com/premake/premake-core/issues/1735)
+#!! So, well, sigh... (or add a manaully updated list...):
+objs_using_modules = $(objs)
+
 
 EXT_LIBS =\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
-	extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode)$(buildmode_debug_file_tag).lib \
+	extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_dir_tag).lib \
 	extern/zstd/msvc/zstd$(cflags_crt_linkmode).lib \
+	user32.lib\
 
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
@@ -74,7 +79,7 @@ cflags_crt_linkmode_with_debug = $(_cflags_crt_linkmode_with_debug__$(DEBUG))
 #----------------------
 # DEBUG/RELEASE mode
 #------
-_cflags_debug__0 = -DNDEBUG
+_cflags_debug__0 = -DNDEBUG /O2
 _cflags_debug__1 = /DDEBUG /ZI /Od /Oy- /Ob0 /RTCsu /Fd$(objdir)/
 #	The -O...s above are borrowed from Dr. Memory's README/Quick start.
 #	-ZI enables edit-and-continue (but it only exists for Intel CPUs!).
@@ -108,7 +113,8 @@ _buildmode_debug_file_tag__0 =
 _buildmode_debug_file_tag__1 = -d
 buildmode_debug_file_tag     = $(_buildmode_debug_file_tag__$(DEBUG))
 
-buildmode_sfml_linkmode_dir_tag = .sfml-$(SFML_linkmode)
+buildmode_sfml_linkmode_dir_tag  = .sfml-$(SFML_linkmode)
+buildmode_sfml_linkmode_file_tag = -SFML$(SFML_linkmode)
 
 # All combined:
 buildmode_dir_tag  =  $(buildmode_crtdll_dir_tag)$(buildmode_sfml_linkmode_dir_tag)$(buildmode_debug_dir_tag)
@@ -123,52 +129,89 @@ sfml_libs := $(sfml_libs:%.lib=%$(buildmode_debug_file_tag).lib)
 #--- CUSTOMIZATIONS ----------------------------------------------------------
 CL   := cl /nologo
 CC   := $(CL) -c
-CCC  := $(CL) -c /EHsc
+CXX  := $(CL) -c /EHsc
 LINK := link.exe /nologo
 SH   := busybox sh
 
 
-# Not using += because we're prepending! (To support overriding!)
-CFLAGS := # Get dir of the default /O1 (but still allow overrides from the CMDLINE!)
-CFLAGS := /I$(objdir) $(cflags_crt_linkmode_with_debug) $(cflags_debug) $(CFLAGS)
-CFLAGS := /O2 $(CFLAGS) 
-CPPFLAGS := /std:c++latest /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/ $(CPPFLAGS)
-CPPFLAGS := $(cflags_sfml_linkmode) $(CPPFLAGS)
-LINKFLAGS := $(linkflags_debug) $(LINKFLAGS)
+# Not using += because we're prepending, to support overriding (e.g. from the CMDLINE)!
+#! Kludge: avoid recursive assignment, while still allowing deferred expansion!
+#_CFLAGS := $(CFLAGS)
+CFLAGS   = $(cflags_crt_linkmode_with_debug) $(cflags_debug)
+#!! Incomplatible with /RTCs if DEBUG, so moved back to the debug dispatching:
+#!!CFLAGS  += /O2
+# Add one also for including the commit hash file:
+CFLAGS  += /I$(objdir) /I$(outdir)
+CFLAGS  += $(_CFLAGS)
+#_CPPFLAGS := $(CPPFLAGS)
+CPPFLAGS   = $(CFLAGS) /std:c++latest /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/
+CPPFLAGS  += $(cflags_sfml_linkmode)
+CPPFLAGS  += $(_CPPFLAGS)
+#_LINKFLAGS := $(LINKFLAGS)
+LINKFLAGS   = $(linkflags_debug)
+LINKFLAGS  += $(linkflags_debug) $(_LINKFLAGS)
 
 
 #-----------------------------------------------------------------------------
 # BUILD "ENGINE"
 #-----------------------------------------------------------------------------
 
-# No need for such pattern shenanigans, as the current dir (./) seems to
-# have been appended by `find` all right! :)
+# Preparations...
+
+# This is the build-mode-specific (and accordingly tagged) "VPATH" root:
+vroot = $(SZ_OUT_SUBDIR)/v$(buildmode_dir_tag)
+
+SOURCES != busybox sh -c "find $(SZ_SRC_SUBDIR) -name '*.c' -o -name '*.cpp' -o -name '*.ixx'"
+#!!?? Couldn't get the BB `find` syntax right without the `sh -c` kludge! :-/
+SOURCES := $(SOURCES:$(SZ_SRC_SUBDIR)/%=%)
+#test:: ; @echo SOURCES: $(SOURCES)
+
+# No need for such pattern shenanigans, as the current dir (./) has
+# been appended by `find`
 #!!_src_prep := FPFX_PLACEHOLDER_$(SOURCES:%.c=FPFX_PLACEHOLDER_%.c)
-objs := $(SOURCES:%=$(outdir)/%)
-#test:: ; @echo objs: $(objs)
+objs := $(SOURCES:%=$(objdir)/%)
+#dump:; @echo objs: $(objs)
 objs := $(objs:%.c=%.obj)
 objs := $(objs:%.cpp=%.obj)
 objs := $(objs:%.ixx=%.obj)
-#test:: ; @echo objs: $(objs)
+#dump:; @echo objs: $(objs)
+#!! No idea how this would translate to 2-file module sources though:
+#!! CPP_MODULE_IFCS already has $(ifcdir), which is currently identical to $(objdir), so...
+objs_of_modules = $(CPP_MODULE_IFCS:%.ifc=%.obj)
+#dump:; @echo objs_of_modules: $(objs_of_modules)
 
+#-----------------------------------------------------------------------------
+# List the phonies so `make -t` won't create empty files for them:
+.PHONY: build collect_sources cpp_modules info mk_outdirs
 
-.SUFFIXES: .c .cpp .ixx
-
-build: info mk_outdirs collect_sources cpp_mod_ifcs $(exe);
+build: info mk_outdirs collect_sources cpp_modules $(exe);
 	@echo "Main target ready: $(exe)"
 info:
 	@echo "Build mode: DEBUG=$(DEBUG), CRT=$(CRT), SFML=$(SFML)"
 
-mk_outdirs: $(objdir) $(ifcdir) $(exedir); @#
-# Double colons to allow possibly identical dirs:
-$(objdir)::; @test -d $@ || mkdir $@
-$(ifcdir)::; @test -d $@ || mkdir $@
-$(exedir)::; @test -d $@ || mkdir $@
+_mkdir = test -d $@ || mkdir $@
+mk_outdirs: $(outdir) $(vroot) $(objdir) $(ifcdir) $(exedir); @#
+# Double colons in order to not fail on possibly identical dirs:
+$(outdir)::; @$(_mkdir)
+$(vroot)::;  @$(_mkdir)
+$(objdir)::; @$(_mkdir)
+$(ifcdir)::; @$(_mkdir)
+$(exedir)::; @$(_mkdir)
 
 collect_sources:
 	@echo Syncing the build cache...
-#	This only copies newer files (confirmed with -uia):
-	@cp -ufa $(srcdir) $(objdir)
+#	This (cp -u) only copies newer files (confirmed with -uia):
+	@cp -ufa $(SZ_SRC_SUBDIR) $(vroot)
+#	As cp can only add and overwrite but not delete existing files,
+#	the cached tree must be deleted from time to time to remove cruft!
+	@touch $(vroot)/.cached_src_age
+	@_cached_src_age=$$((`cat $(vroot)/.cached_src_age`)) &&\
+		if [ "$$_cached_src_age" != "10" ]; then\
+			echo "$$((_cached_src_age + 1))"> $(vroot)/.cached_src_age;\
+		else\
+			echo "[!!NOT IMPLEMENTED YET!!] Src cache too old, deleting...";\
+			echo 0> $(vroot)/.cached_src_age;\
+		fi
 #!! mv can't merge into non-empty dirs with same name, so the 2nd runs failed:
 #!! Resorting to keeping the entire src subtree under objdir...
 #	mv $(objdir)/$(srcdir)/* -t $(objdir)
@@ -177,11 +220,13 @@ collect_sources:
 #	cp -u $(SOURCES) $(objdir)/
 #	cp -u $(HEADERS) $(objdir)/
 
-cpp_mod_ifcs: $(CPP_MODULE_IFCS)
-	@#
+cpp_modules:: $(CPP_MODULE_IFCS) $(objs_of_modules)
 	@echo "C++ modules up-to-date."
-#	@echo SOURCES: $(SOURCES)
-#	@echo objs: $(objs)
+
+# (Sigh... See the issue at the def. of objs_using_modules!)
+#!!?? Is adding $(objs_of_modules) actually necessary?
+#!!??$(objs_using_modules) $(objs_of_modules): $(CPP_MODULE_IFCS)
+$(objs_using_modules): $(CPP_MODULE_IFCS)
 
 $(exe): $(objs)
 #	@echo LINK $?
@@ -190,28 +235,25 @@ $(exe): $(objs)
 #-----------------------------------------------------------------------------
 # Inference rules...
 #-----------------------------------------------------------------------------
+.SUFFIXES: .c .cpp .ixx
+
 .c.obj:
 	$(CC) $(CFLAGS) /Fo$(objdir)/ $<
 	@mv $(objdir)/`basename $@` -t `dirname $@`
 
 .cpp.obj:
-	$(CCC) $(CFLAGS) $(CPPFLAGS) /Fo$(objdir)/ $<
+	$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $<
 	@mv $(objdir)/`basename $@` -t `dirname $@`
 
-.ixx.ifc::
-	$(CCC) $(CFLAGS) $(CPPFLAGS) /Fo$(objdir)/ $<
+.ixx.ifc:
+	$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $<
 
-.ixx.obj::
-#	echo OBJ $(CCC) $(CFLAGS) $(CPPFLAGS) /Fo$(objdir)/ $<
+.ixx.obj:
+	$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $<
 	@mv $(objdir)/`basename $@` -t `dirname $@`
-
-#!!?? Why is this never triggered?!
-.c:
-	@echo .c: cp $< $(objdir)
-
 
 #-----------------------------------------------------------------------------
-# Custom build steps...
+# Custom rules...
 #-----------------------------------------------------------------------------
 ifdef COMMIT_HASH_INCLUDE_FILE
 # BB's pdpmake doesn't support abs. paths for targets! :-/
@@ -227,5 +269,5 @@ else
 #!! message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup was not run?
 endif
 
-$(objdir)/src/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
+$(outdir)/src/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
 
