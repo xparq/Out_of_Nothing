@@ -18,7 +18,7 @@ SZ_OUT_SUBDIR ?= build.out
 #!! Can't be empty, for error-prone $(...DIR)/... concats (yet)!
 SZ_RUN_SUBDIR ?= .
 
-exe = $(exedir)/$(SZ_APP_NAME)$(cflags_crt_linkmode_with_debug).exe
+exe = $(exedir)/$(SZ_APP_NAME)$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).exe
 
 outdir = $(SZ_OUT_SUBDIR)
 #!!objdir = $(vroot)/obj
@@ -40,28 +40,25 @@ CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
 #!! So, well, sigh... (or add a manaully updated list...):
 objs_using_modules = $(objs)
 
-
 EXT_LIBS =\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
-	extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_dir_tag).lib \
+	extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib \
 	extern/zstd/msvc/zstd$(cflags_crt_linkmode).lib \
 	user32.lib\
-
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
 SFML_linkmode=$(SFML)
 
-sfml_libs__static = sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib sfml-audio-s.lib
-sfml_libs__dll    = sfml-graphics.lib   sfml-window.lib   sfml-system.lib   sfml-audio.lib
-sfml_libs = $(sfml_libs__$(SFML_linkmode))
+_sfml_libs__static = sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib sfml-audio-s.lib
+_sfml_libs__dll    = sfml-graphics.lib   sfml-window.lib   sfml-system.lib   sfml-audio.lib
+sfml_libs = $(_sfml_libs__$(SFML_linkmode))
 
-sfml_and_deps_libs__static = $(sfml_libs) opengl32.lib freetype.lib\
+_sfml_and_deps_libs__static = $(sfml_libs) opengl32.lib freetype.lib\
 	ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
 	user32.lib kernel32.lib gdi32.lib winmm.lib advapi32.lib
-sfml_and_deps_libs__dll = $(sfml_libs) opengl32.lib
-sfml_and_deps_libs = $(sfml_and_deps_libs__$(SFML_linkmode))
-
-#debug:; @echo sfml_libs: $(sfml_libs)
+_sfml_and_deps_libs__dll = $(sfml_libs) opengl32.lib
+sfml_and_deps_libs = $(_sfml_and_deps_libs__$(SFML_linkmode))
+#debug:; @echo sfml_and_deps_libs: $(sfml_and_deps_libs)
 
 #----------------------------
 # Static/DLL CRT link mode
@@ -98,32 +95,33 @@ cflags_sfml_linkmode = $(_cflags_sfml_linkmode__$(SFML))
 
 # Output dir/file tags for build alternatives
 # NOTE: Must differ from their "no ..." counterparts to avoid code (linking) mismatches!
-#!Sz: CRT=dll is always the case with the pre-built SFML libs, so not use changing it! (See also at CRT=...)
-_buildmode_crtdll_dir_tag__static  =
-_buildmode_crtdll_dir_tag__dll     = .crtDLL
-buildmode_crtdll_dir_tag           = $(_buildmode_crtdll_dir_tag__$(CRT))
-_buildmode_crtdll_file_tag__static =
-_buildmode_crtdll_file_tag__dll    = -crtDLL
-buildmode_crtdll_file_tag          = $(_buildmode_crtdll_file_tag__$(CRT))
-
-_buildmode_debug_dir_tag__0  =
-_buildmode_debug_dir_tag__1  = .DEBUG
-buildmode_debug_dir_tag      = $(_buildmode_debug_dir_tag__$(DEBUG))
-_buildmode_debug_file_tag__0 =
-_buildmode_debug_file_tag__1 = -d
-buildmode_debug_file_tag     = $(_buildmode_debug_file_tag__$(DEBUG))
-
-buildmode_sfml_linkmode_dir_tag  = .sfml-$(SFML_linkmode)
-buildmode_sfml_linkmode_file_tag = -SFML$(SFML_linkmode)
+# Also: CRT=dll is always the case with the pre-built SFML libs, so no use changing it...
+##!!
+##!! Instead of the horror of having 3 sets of these macros (a generic tag,
+##!! a dir tag, a file tag -- where each must separately dispatch on their
+##!! parameter!), use a uniform format suitable for each purpose (as a suffix):
+##!!
+_buildmode_debug_tag__0 =
+_buildmode_debug_tag__1 = .d
+buildmode_debug_tag     = $(_buildmode_debug_tag__$(DEBUG))
+_buildmode_crtdll_tag__static =
+_buildmode_crtdll_tag__dll    = .crtdll
+buildmode_crtdll_tag          = $(_buildmode_crtdll_tag__$(CRT))
+_buildmode_sfml_linkmode_tag__static =
+_buildmode_sfml_linkmode_tag__dll    = .SFMLdll
+buildmode_sfml_linkmode_tag          = $(_buildmode_sfml_linkmode_tag__$(SFML_linkmode))
 
 # All combined:
-buildmode_dir_tag  =  $(buildmode_crtdll_dir_tag)$(buildmode_sfml_linkmode_dir_tag)$(buildmode_debug_dir_tag)
-buildmode_file_tag = $(buildmode_crtdll_file_tag)$(buildmode_sfml_linkmode_file_tag)$(buildmode_debug_file_tag)
+buildmode_dir_tag  = $(buildmode_crtdll_tag)$(buildmode_sfml_linkmode_tag)$(buildmode_debug_tag)
+buildmode_file_tag = $(buildmode_crtdll_tag)$(buildmode_sfml_linkmode_tag)$(buildmode_debug_tag)
 #debug:; @echo buildmode_dir_tag: $(buildmode_dir_tag)
 #debug:; @echo buildmode_file_tag: $(buildmode_file_tag)
 
-# This must come after all the shakes above (for the mandatory := here):
-sfml_libs := $(sfml_libs:%.lib=%$(buildmode_debug_file_tag).lib)
+_sfml_lib_debug_suffix__0 =
+_sfml_lib_debug_suffix__1 = -d
+sfml_lib_debug_suffix     = $(_sfml_lib_debug_suffix__$(DEBUG))
+# Mind the mandatory := here, to avoid macro recursion:
+sfml_libs := $(sfml_libs:%.lib=%$(sfml_lib_debug_suffix).lib)
 #debug:; @echo sfml_libs: $(sfml_libs)
 
 #--- CUSTOMIZATIONS ----------------------------------------------------------
@@ -228,8 +226,12 @@ cpp_modules:: $(CPP_MODULE_IFCS) $(objs_of_modules)
 #!!??$(objs_using_modules) $(objs_of_modules): $(CPP_MODULE_IFCS)
 $(objs_using_modules): $(CPP_MODULE_IFCS)
 
+# Strip the ugly paths from each object
+#!! Alas, can't be done without my path-inference hack to pdpmake:
+#!!$(exe): $(objs:$(objdir)/%=%)
+#!!	@echo LINK $?
+#!!	$(LINK) $(LINKFLAGS) /libpath:$(objdir) $(objs) $(EXT_LIBS) /out:$@
 $(exe): $(objs)
-#	@echo LINK $?
 	$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) /out:$@
 
 #-----------------------------------------------------------------------------
