@@ -132,22 +132,20 @@ LINK := link.exe /nologo
 SH   := busybox sh
 
 
+# The optional `...FLAGS_` macros can be passed via the cmdline for overriding!
 # Not using += because we're prepending, to support overriding (e.g. from the CMDLINE)!
 #! Kludge: avoid recursive assignment, while still allowing deferred expansion!
-#_CFLAGS := $(CFLAGS)
 CFLAGS   = $(cflags_crt_linkmode_with_debug) $(cflags_debug)
 #!! Incomplatible with /RTCs if DEBUG, so moved back to the debug dispatching:
 #!!CFLAGS  += /O2
-# Add one also for including the commit hash file:
+# Add a /I also for including the commit hash file:
 CFLAGS  += /I$(objdir) /I$(outdir)
-CFLAGS  += $(_CFLAGS)
-#_CPPFLAGS := $(CPPFLAGS)
+CFLAGS  += $(CFLAGS_)
 CPPFLAGS   = $(CFLAGS) /std:c++latest /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/
 CPPFLAGS  += $(cflags_sfml_linkmode)
-CPPFLAGS  += $(_CPPFLAGS)
-#_LINKFLAGS := $(LINKFLAGS)
+CPPFLAGS  += $(CPPFLAGS_)
 LINKFLAGS   = $(linkflags_debug)
-LINKFLAGS  += $(linkflags_debug) $(_LINKFLAGS)
+LINKFLAGS  += $(linkflags_debug) $(LINKFLAGS_)
 
 
 #-----------------------------------------------------------------------------
@@ -158,11 +156,20 @@ LINKFLAGS  += $(linkflags_debug) $(_LINKFLAGS)
 
 # This is the build-mode-specific (and accordingly tagged) "VPATH" root:
 vroot = $(SZ_OUT_SUBDIR)/v$(buildmode_dir_tag)
+#!!But... for a later hack to grep this out form /showInlcude outputs, and
+#!!for (surprisingly) pdpmake not being able to $(...:x=y) mid-word, we still
+#!!need one with \ not /...:
+vroot_bs = $(SZ_OUT_SUBDIR)\v$(buildmode_dir_tag)
+#dump:;@echo $(vroot)
 
-SOURCES != busybox sh -c "find $(SZ_SRC_SUBDIR) -name '*.c' -o -name '*.cpp' -o -name '*.ixx'"
+src_subdir=$(SZ_SRC_SUBDIR)
+SOURCES != busybox sh -c "find $(src_subdir) -name '*.c' -o -name '*.cpp' -o -name '*.ixx'"
 #!!?? Couldn't get the BB `find` syntax right without the `sh -c` kludge! :-/
-SOURCES := $(SOURCES:$(SZ_SRC_SUBDIR)/%=%)
+SOURCES := $(SOURCES:$(src_subdir)/%=%)
 #test:: ; @echo SOURCES: $(SOURCES)
+
+# Generated per-obj header auto-dep. includes are collected here:
+hdep_makinc_file = $(vroot)/hdeps.mak
 
 # No need for such pattern shenanigans, as the current dir (./) has
 # been appended by `find`
@@ -180,9 +187,9 @@ objs_of_modules = $(CPP_MODULE_IFCS:%.ifc=%.obj)
 
 #-----------------------------------------------------------------------------
 # List the phonies so `make -t` won't create empty files for them:
-.PHONY: build collect_sources cpp_modules info mk_outdirs
+.PHONY: build info mk_outdirs collect_sources cpp_modules
 
-build: info mk_outdirs collect_sources cpp_modules $(exe);
+build: info .WAIT mk_outdirs .WAIT collect_sources .WAIT cpp_modules .WAIT $(exe);
 	@echo "Main target ready: $(exe)"
 info:
 	@echo "Build mode: DEBUG=$(DEBUG), CRT=$(CRT), SFML=$(SFML)"
@@ -199,16 +206,16 @@ $(exedir)::; @$(_mkdir)
 collect_sources:
 	@echo Syncing the build cache...
 #	This (cp -u) only copies newer files (confirmed with -uia):
-	@cp -ufa $(SZ_SRC_SUBDIR) $(vroot)
+	@cp -ufa '$(src_subdir)' '$(vroot)'
 #	As cp can only add and overwrite but not delete existing files,
 #	the cached tree must be deleted from time to time to remove cruft!
-	@touch $(vroot)/.cached_src_age
-	@_cached_src_age=$$((`cat $(vroot)/.cached_src_age`)) &&\
+	@touch "$(vroot)/.cached_src_age"
+	@_cached_src_age=$$((`cat "$(vroot)/.cached_src_age"`)) &&\
 		if [ "$$_cached_src_age" != "10" ]; then\
-			echo "$$((_cached_src_age + 1))"> $(vroot)/.cached_src_age;\
+			echo "$$((_cached_src_age + 1))"> "$(vroot)/.cached_src_age";\
 		else\
 			echo "[!!NOT IMPLEMENTED YET!!] Src cache too old, deleting...";\
-			echo 0> $(vroot)/.cached_src_age;\
+			echo 0> "$(vroot)/.cached_src_age";\
 		fi
 #!! mv can't merge into non-empty dirs with same name, so the 2nd runs failed:
 #!! Resorting to keeping the entire src subtree under objdir...
@@ -217,6 +224,8 @@ collect_sources:
 #!! This (just like -t) would NOT preserve the src subdirs!
 #	cp -u $(SOURCES) $(objdir)/
 #	cp -u $(HEADERS) $(objdir)/
+	@echo -n "" > $(hdep_makinc_file)
+	@for o in $(objs:%.obj=%.obj.dep); do echo "-include $$o" >> "$(hdep_makinc_file)"; done
 
 cpp_modules:: $(CPP_MODULE_IFCS) $(objs_of_modules)
 	@echo "C++ modules up-to-date."
@@ -225,6 +234,9 @@ cpp_modules:: $(CPP_MODULE_IFCS) $(objs_of_modules)
 #!!?? Is adding $(objs_of_modules) actually necessary?
 #!!??$(objs_using_modules) $(objs_of_modules): $(CPP_MODULE_IFCS)
 $(objs_using_modules): $(CPP_MODULE_IFCS)
+
+# Include autodeps if present
+-include $(hdep_makinc_file)
 
 # Strip the ugly paths from each object
 #!! Alas, can't be done without my path-inference hack to pdpmake:
@@ -239,19 +251,58 @@ $(exe): $(objs)
 #-----------------------------------------------------------------------------
 .SUFFIXES: .c .cpp .ixx
 
+_cc_info = @echo Compiling $(<:$(vroot)/%=%)...
+_cc_out  = $(outdir)/.tool-output.tmp
+
+# Special fucked-up hack to work around the /showIncludes output of CL
+# incorrectly being sent to stdout -- AS WELL AS ITS ERRORS!!! :-O OMFG... :-/
+# Also make sure to fail on behalf of CL if there were errors...
+_CL_dephack = /showIncludes > $(_cc_out)
+_CL_dephack_sh = $(outdir)/.cl-stderr-fuckup.sh
+_CL_hdeps = $(outdir)/.hdeps.tmp
+_CL_dephack_errhandler =@\
+	echo "grep    \"Note: including file:\" $(_cc_out) > $(_CL_hdeps)" >  $(_CL_dephack_sh) &&\
+	echo "grep -v \"Note: including file:\" $(_cc_out)"                >> $(_CL_dephack_sh) &&\
+	echo "grep -q \".*: error\"             $(_cc_out) && exit 1"      >> $(_CL_dephack_sh) &&\
+	echo "exit 0"                                                      >> $(_CL_dephack_sh) &&\
+	. $(_CL_dephack_sh)
+
+#! Note: using $(outdir) instead of $(vroot), to not miss build-mode-
+#!       independent (e.g. generated) includes; see:
+#!		if (index($$0, "$(--> NOT: vroot <--)") != 0) print $$0 "\\" }\
+#!! IT WILL HAVE TO BE ADJUSTED AGAIN, WHEN ELIMINATING THE SRC TREE DUPLICATION!...
+_CL_dephack_procdep = @busybox awk -e 'BEGIN{print"$@:\\"}\
+	{ sub($$1 FS $$2 FS $$3 FS, ""); gsub(/\\/, "/", $$0);\
+		if (index($$0, "$(outdir)") != 0) print $$0 "\\" }\
+	END{print""}' "$(_CL_hdeps)" > $@.dep
+#!!?? WTF: this worked directly from the cmd (FAR) commandline, but not here:
+#!!??_teehack2 = busybox grep -iF $(vroot_bs)\$(src_subdir) $@.dep.tmp
+
 .c.obj:
-	$(CC) $(CFLAGS) /Fo$(objdir)/ $<
+	$(_cc_info)
+	-$(CC) $(CFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+		$(_CL_dephack_errhandler)
+	$(_CL_dephack_procdep)
 	@mv $(objdir)/`basename $@` -t `dirname $@`
 
 .cpp.obj:
-	$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $<
+	$(_cc_info)
+	-$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+		$(_CL_dephack_errhandler)
+	$(_CL_dephack_procdep)
 	@mv $(objdir)/`basename $@` -t `dirname $@`
 
 .ixx.ifc:
-	$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $<
+	$(_cc_info)
+	-$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+		$(_CL_dephack_errhandler)
+	$(_CL_dephack_procdep)
 
 .ixx.obj:
-	$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $<
+	$(_cc_info)
+	-$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+		$(_CL_dephack_errhandler)
+	$(_CL_dephack_procdep)
 	@mv $(objdir)/`basename $@` -t `dirname $@`
 
 #-----------------------------------------------------------------------------
@@ -272,4 +323,3 @@ else
 endif
 
 $(outdir)/src/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
-
