@@ -67,7 +67,7 @@ void Renderer_SFML::draw(OON_sfml& game)
 //!!MOVE TO UI::Widget::Notice!
 void Renderer_SFML::draw_paused_banner(OON_sfml& game)
 {
-	if (!sfw::Theme::loadFont("asset/font/default.font")) {
+	if (!sfw::Theme::loadFont(game.cfg.asset_dir + "font/default.font")) {
 		//! SFML does print errors to the console.
 		return;
 	}

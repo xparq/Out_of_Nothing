@@ -22,6 +22,8 @@
 //!! sense only there) should also be added, if they are generic enough (in
 //!! the context of that lang.) to make life easier across any projects.
 //!!
+//!! Also: there's no sharp distinction between lang. shims and a utility lib!
+//!!
 //!! (IOW, this is what others often call the "foundation" or even (slightly
 //!! confusingly) "platform" layer.)
 //!!

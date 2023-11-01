@@ -6,7 +6,7 @@
 
 namespace sz {
 
-bool escape_quotes(std::string* str, char quote = '"', char escmark = '\\')
+inline bool escape_quotes(std::string* str, char quote = '"', char escmark = '\\')
 // Intended to supplement istream >> std::quoted(...).
 // And then the escape char itself must also be escaped!...
 {
@@ -21,7 +21,7 @@ bool escape_quotes(std::string* str, char quote = '"', char escmark = '\\')
 	return changed;
 }
 
-bool escape_chars(std::string* str, const char* escapees, char escmark = '\\')
+inline bool escape_chars(std::string* str, const char* escapees, char escmark = '\\')
 {
 	bool changed = false;
 	for (size_t pos = 0; pos < str->size(); ++pos) { //! str may grow, so < size() is mandatory!

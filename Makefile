@@ -44,6 +44,7 @@ EXT_LIBS =\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
 	extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib \
 	extern/zstd/msvc/zstd$(cflags_crt_linkmode).lib \
+	extern/toml++/toml$(cflags_crt_linkmode).lib \
 	user32.lib\
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
@@ -140,6 +141,7 @@ CFLAGS   = $(cflags_crt_linkmode_with_debug) $(cflags_debug)
 #!!CFLAGS  += /O2
 # Add a /I also for including the commit hash file:
 CFLAGS  += /I$(objdir) /I$(outdir)
+CFLAGS  += /W4
 CFLAGS  += $(CFLAGS_)
 CPPFLAGS   = $(CFLAGS) /std:c++latest /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/
 CPPFLAGS  += $(cflags_sfml_linkmode)

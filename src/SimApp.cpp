@@ -2,9 +2,14 @@
 
 #include "SimApp.hpp"
 
-#include <cassert>
+#include "extern/toml++/sz-toml.hpp" // Proxy header with custom cfg.
+
 #include <string>
 	using std::string, std::to_string;
+#include <string_view>
+	using std::string_view;
+#include "sz/fs.hh"
+	using sz::dirname;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
 #ifdef SAVE_COMPRESSED
@@ -22,11 +27,40 @@
 	using std::format;
 #include <iostream>
 	using std::cerr, std::endl;
+#include <cassert>
 
 //============================================================================
+//----------------------------------------------------------------------------
+SimApp::SimApp(const char* cfgfile)
+{
+	if (!cfgfile || !*cfgfile)
+		cfgfile = DEFAULT_CFG_FILE;
+
+	// Relative paths will be rooted to the dir of 'cfgfile' by default,
+	// i.e. unless it's specifically set in the config
+	//!!Move to unilang:
+	cfg.cfg_dir = dirname(cfgfile);
+	//!!auto basename = fs::path(cfgfile).filename().string();
+
+	cfg.asset_dir = sz::getcwd() + "/asset/"; //!! Trailing / still required...
+
+	if (auto config = toml::parse_file(cfgfile); !config) {
+		cerr << "- FAILED to load or process config: '"<< cfgfile <<"'!\n"; }
+	else {
+		cfg.asset_dir = config["fs-layout"]["asset_dir"].value_or(cfg.asset_dir);
+		//int x = config["?"]["number"].value_or(0);
+	}
+
+cerr <<	"current dir: " << sz::getcwd() << "\n";
+cerr <<	"asset_dir: " << cfg.asset_dir << "\n";
+
+}
+
+
+//----------------------------------------------------------------------------
 void SimApp::pause(bool newstate)
 {
-	_paused = newstate;
+	_time_paused = newstate;
 	on_pause_changed(newstate);
 }
 

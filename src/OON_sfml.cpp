@@ -44,22 +44,25 @@ namespace sync {
 
 
 //============================================================================
-OON_sfml::OON_sfml()
+OON_sfml::OON_sfml(const char* cfgfile) :
+	OON(cfgfile),
 	// Creating the window right away here (only) to support init-by-constr. for the HUDs:
-	: window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), WINDOW_TITLE)
+	window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), WINDOW_TITLE),
 	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 	//!!??
 	//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
 	//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
 
-	, gui(window, { .basePath = "asset/",
-		.textureFile = "gui/texture.png",
-		.bgColor = sfw::Color("#302030d0"),
-		.fontFile = "font/default.font",
-	  }, false) // Don't manage the window!
+	gui(window, { .basePath = cfg.asset_dir.c_str(), //!! Must have a / suffix!
+	              .textureFile = "gui/texture.png",
+	              .bgColor = sfw::Color("#302030d0"),
+	              .fontFile = "font/default.font",
+	            },
+	    false // Don't manage the window
+	),
 #ifndef DISABLE_HUD
-	, debug_hud(window, -220)
-	, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
+	debug_hud(window, -220),
+	help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
 	//!! THIS SHOULD BE IN _setup(), BUT IT MUST HAPPEN BEFORE CALLING add_bodies() IN main!...
@@ -616,11 +619,11 @@ void OON_sfml::_setup()
 	add_body({.r = world.CFG_GLOBE_RADIUS/7,  .p = {-world.CFG_GLOBE_RADIUS * 1.6f, +world.CFG_GLOBE_RADIUS * 1.2f}, .v = {-world.CFG_GLOBE_RADIUS*1.8, -world.CFG_GLOBE_RADIUS*1.5},
 				.color = 0x3060ff});
 
-	clack_sound = audio.add_sound("asset/sound/clack.wav");
+	clack_sound = audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
 
-	audio.play_music("asset/music/default.ogg");
+	audio.play_music(string(cfg.asset_dir + "music/default.ogg").c_str());
 	/*
-	static sf::Music m2; if (m2.openFromFile("asset/music/extra sonic layer.ogg")) {
+	static sf::Music m2; if (m2.openFromFile(string(cfg.asset_dir + "music/extra sonic layer.ogg").c_str()) {
 		m2.setLoop(false); m2.play();
 	}
 	*/
