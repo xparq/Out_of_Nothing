@@ -6,6 +6,7 @@
 
 #include <string>
 	using std::string, std::to_string;
+	using namespace std::string_literals;
 #include <string_view>
 	using std::string_view;
 #include "sz/fs.hh"
@@ -27,7 +28,8 @@
 	using std::format;
 #include <iostream>
 	using std::cerr, std::endl;
-#include <cassert>
+#include <stdexcept>
+	using std::runtime_error;
 
 //============================================================================
 //----------------------------------------------------------------------------
@@ -45,14 +47,14 @@ SimApp::SimApp(const char* cfgfile)
 	cfg.asset_dir = sz::getcwd() + "/asset/"; //!! Trailing / still required...
 
 	if (auto config = toml::parse_file(cfgfile); !config) {
-		cerr << "- FAILED to load or process config: '"<< cfgfile <<"'!\n"; }
-	else {
+		throw runtime_error("Failed to load config: "s + cfgfile);
+	} else {
 		cfg.asset_dir = config["fs-layout"]["asset_dir"].value_or(cfg.asset_dir);
 		//int x = config["?"]["number"].value_or(0);
 	}
 
-cerr <<	"current dir: " << sz::getcwd() << "\n";
-cerr <<	"asset_dir: " << cfg.asset_dir << "\n";
+cerr <<	"DBG> current dir: " << sz::getcwd() << '\n';
+cerr <<	"DBG> asset_dir: " << cfg.asset_dir << '\n';
 
 }
 

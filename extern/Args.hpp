@@ -1,5 +1,5 @@
 // Tiny "functional" cmdline processor (-> github.com/xparq/Args)
-// v1.7
+// v1.9
 
 #include <string>
 #include <vector>
@@ -10,21 +10,33 @@
 
 class Args
 {
+public:
+	enum {	Defaults,
+		RepeatAppends = 1,   // for opts. expecting >1 params; default: override (replace) (GH #16)
+		//!! Not supported yet:
+		//RejectUnknown = 2,   // undefined options are treated as positional args; default: accept (GH #13)
+		//!! These are implicitly enforced by the current implementation (can't be disabled):
+		KeepInvalid   = 4,   // default: delete them (i.e. those with incorrect # of params) (GH #44)
+		NonGreedy     = 8 }; // undefined options don't try to take params; default: they do (GH #43)
+	unsigned flags = Defaults;
+
+	enum Error { None, ParameterMissing, Unimplemented = -1 }
+	     error = None;
+
 protected:
 	typedef std::map<std::string, int> Rules;
 
 	int argc;
 	char** argv;
-	Rules param_count; // entries: { "option_name", number_of_args }
-							// negative count means "at least n", until the next opt or EOS
-							// NOTE: nonexistent items will return 0 (map zero-inits primitive types)
-public:
-	enum Error { None, ParameterMissing, Unimplemented = -1 }
-	     error = None;
-
+	Rules param_count; // entries: { "option", nr_of_params_for_option }
+	                   // negative n means greedy: "at least n", until the next opt or EOS
+	                   // NOTE: nonexistent entries will return 0 (std::map zero-inits primitive types)
+//!!	const char* split_sep = ",;"; // split("option") will use this by default
 public:
 	Args(int argc_, char** argv_, const Rules& rules = {})
 		: argc(argc_), argv(argv_), param_count(rules) { proc_next("", 0); }
+	Args(int argc_, char** argv_, unsigned flags_, const Rules& rules = {})
+		: argc(argc_), argv(argv_), flags(flags_), param_count(rules) { proc_next("", 0); }
 	Args(const Args&) = default;
 	Args& operator=(const Args&) = default;
 
@@ -36,11 +48,11 @@ public:
 	                                                            ? "" : (named().at(argname).size() <= n
 	                                                                   ? "" : named().at(argname)[n]); }
 
-	const std::vector<std::string>&                        positional() const { return unnamed_params; }
+	const std::vector<std::string>& positional() const { return unnamed_params; }
 	//! Note: std::map[key] would want to create a key if not yet there,
 	//! so named()[...] would fail, if const! But constness it is... (for consistency).
 	//! Use the op() and op[] accessors for direct element access!
-	const std::map<std::string, std::vector<std::string>>& named()   const { return named_params; }
+	const std::map<std::string, std::vector<std::string>>& named() const { return named_params; }
 
 	// Remember: this is coming from the command that eventually launched the exe, so it
 	// could be "anything"... E.g. no guarantee that it ends with ".exe" on Windows etc.
@@ -82,32 +94,37 @@ protected:
 			std::string new_opt;
 			if (a[1] == '-' && a.size() > 2) { // likely --long-option, or junk like --$G@%F or ---...
 				new_opt = a.substr(2); // OK, we don't check now... ;)
-				// Go ahead, extract the =value (only one for now...) now,
-				// because the loop/next won't!
-				if (auto eqpos = new_opt.find_first_of(":=");
-					param_count[new_opt] && eqpos == std::string::npos) {
-					//error = ParameterMissing;
-					//! Not necessarily... Should `--opt val` be kept supported?
-					//! Simply ignoring this case would just work as before.
-				} else if (eqpos != std::string::npos) { //! This also allows `--unknown-opt=value` (no matter the rules)!
+				// Extract the =value right now (up to the next space; no quoting support yet),
+				// because the next loop cycle can't (even see it)!
+				auto eqpos = new_opt.find_first_of(":=");
+				if (eqpos == std::string::npos) {
+					values_to_take = param_count[new_opt];
+				} else { //! This also allows `--unknown-opt=value` (no matter the rules)!
 					new_opt = new_opt.substr(0, eqpos); // chop off the `=...`
+					if (!(flags & RepeatAppends)) named_params[new_opt].clear(); // Reset in case it's not actually new?...
 					if (a.size() > 2 + eqpos + 1) { // value after the `=`?
 	//std::cerr << "val: " << a.substr(2, eqpos) << "\n";
 						named_params[new_opt].emplace_back(a.substr(2 + eqpos+1)); //! don't crash on `--opt=`
+						auto pc = param_count[new_opt];
 						// We have taken the offered value regardless of the rules,
 						// but if there's indeed a rule, we're good, 'coz if = 0, then
 						// the value can just be ignored, and if != 0, then we've just
 						// started taking params anyway, the only thing left is to
 						// make sure to continue that if expecting more:
-						auto tmp = param_count[new_opt];
 	//std::cerr << tmp << " params expected for [" << new_opt << "]\n";
-						return proc_next(new_opt, tmp < -1 ? tmp+1 : tmp-1);
+						return proc_next(new_opt, pc < -1 ? pc+1 : (pc ? pc-1 : 0));
 					}
 				}
+
+				//!! CHECK ERRORS!
+				//!! ...
+				//!! Should `--opt val` be kept supported?
+				//!! ... error = ParameterMissing;
+
 			} else if (a[1] != a[0]) { // a real short opt, or short opt. aggregate
 				new_opt = a.substr(1, 1);
-			} else { // '--' or '//...' will be considered unnamed params
-				goto process_unnamed_param;
+			} else { // '--' or '//...' are considered positional args for now
+				goto process_unnamed;
 			}
 
 			// We have a new option, process it...
@@ -122,7 +139,7 @@ protected:
 			return proc_next(new_opt, param_count[new_opt]);
 		}
 
-	process_unnamed_param:
+	process_unnamed:
 	//std::cerr << "- adding unnamed param\n";
 		if (values_to_take < 0) {
 			named_params[last_opt].emplace_back(a);

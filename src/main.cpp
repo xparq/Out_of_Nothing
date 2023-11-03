@@ -1,12 +1,13 @@
 #include "extern/Args.hpp"
 #include "OON_sfml.hpp"
 
+#include "extern/iprof/iprof.hpp"
+#include "extern/iprof/iprof.cpp" //! Better than fiddling with the Makefile!... ;)
+
 #include <string> // stoi, stoul
 #include <iostream> // cout
 #include <algorithm> // min
-
-#include "extern/iprof/iprof.hpp"
-#include "extern/iprof/iprof.cpp" //! Better than fiddling with the Makefile!... ;)
+#include <stdexcept> // exception, runtime_error
 
 using namespace std;
 
@@ -20,8 +21,10 @@ int main(int argc, char* argv[])
 {
 try {
 	Args args(argc, argv, {
-	// Options with 1 param. don't need to be defined:
+	// Long options with 1 param. don't need to be defined:
 	//	{"moons", 1}, // number of moons to start with
+	// Short ones do, unfortunately (they're predicates by default, and don't have '=' to override):
+		{"C", 1},
 	});
 	//auto exename = args.exename();
 	if (args["?"] || args["h"] || args["help"]) {
@@ -44,6 +47,11 @@ try {
 	!!*/
 	string cfg = args("cfg");
 	if (cfg.empty()) cfg = args("C"); // OK if still empty
+	else if (!args("C").empty()) {
+		cerr << "- WARNING: Both -C and --cfg have been specified; ignoring \"-C "
+		     << args("C") << "\"!\n";
+	}
+
 	OON_sfml game(cfg.c_str());/*({
 		.moons = args("moons"),
 		.interat = ...,
@@ -74,6 +82,12 @@ try {
 
 	game.run();
 
+} catch (runtime_error& x) {
+	cerr << "- ERROR: " << x.what() << '\n';
+	return -1;
+} catch (exception& x) {
+	cerr << "- EXCEPTION: " << x.what() << '\n';
+	return -1;
 } catch (...) {
 	cerr << "- UNHANDLED EXCEPTION!\n";
 	return -1;
