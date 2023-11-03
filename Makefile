@@ -255,18 +255,19 @@ $(exe): $(objs)
 
 _cc_info = @echo Compiling $(<:$(vroot)/%=%)...
 _cc_out  = $(outdir)/.tool-output.tmp
+_cc_exitcode = $(outdir)/.tool-exitcode.tmp
 
 # Special fucked-up hack to work around the /showIncludes output of CL
 # incorrectly being sent to stdout -- AS WELL AS ITS ERRORS!!! :-O OMFG... :-/
 # Also make sure to fail on behalf of CL if there were errors...
-_CL_dephack = /showIncludes > $(_cc_out)
+_CL_dephack = /showIncludes > $(_cc_out); echo $$? > $(_cc_exitcode)
 _CL_dephack_sh = $(outdir)/.cl-stderr-fuckup.sh
 _CL_hdeps = $(outdir)/.hdeps.tmp
 _CL_dephack_errhandler =@\
-	echo "grep    \"Note: including file:\" $(_cc_out) > $(_CL_hdeps)" >  $(_CL_dephack_sh) &&\
-	echo "grep -v \"Note: including file:\" $(_cc_out)"                >> $(_CL_dephack_sh) &&\
-	echo "grep -q \".*: error\"             $(_cc_out) && exit 1"      >> $(_CL_dephack_sh) &&\
-	echo "exit 0"                                                      >> $(_CL_dephack_sh) &&\
+	echo "grep -v \"Note: including file:\" $(_cc_out)"                    >  $(_CL_dephack_sh) &&\
+	echo "grep -q \" error\" $(_cc_out) && exit `cat \"$(_cc_exitcode)\"`" >> $(_CL_dephack_sh) &&\
+	echo "grep    \"Note: including file:\" $(_cc_out) > $(_CL_hdeps)"     >> $(_CL_dephack_sh) &&\
+	echo "exit 0"                                                          >> $(_CL_dephack_sh) &&\
 	. $(_CL_dephack_sh)
 
 #! Note: using $(outdir) instead of $(vroot), to not miss build-mode-

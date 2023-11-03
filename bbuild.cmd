@@ -1,8 +1,7 @@
 @echo off
-:!
-:! For _setenv.sh to take effect (those vars can't propagate to the
-:! Windows env!...), the entire process must live in the same sh frame!
-:!
+call %~dp0tooling/_setenv.cmd
+:! Can't use _setenv.sh from a CMD script, even if the rest is basically
+:! all SH: those vars can't propagate to Windows, let alone back to SH again. :)
 
 busybox sh -c "export SZ_PRJDIR=. && . tooling/_setenv.sh && busybox make %*"
 
