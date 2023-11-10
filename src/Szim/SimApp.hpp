@@ -1,8 +1,13 @@
-#ifndef _SIMAPP_HPP_
-#define _SIMAPP_HPP_
+#ifndef _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
+#define _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
 
+#include "Config.hpp"
+#include "Time.hpp"
 #include "Model/World.hpp"
+
+//!!... This is gonna be tough to abstract...
 #include "UI/Input.hpp"
+
 #include "sz/unilang.hh" // On/Off
 #include "sz/counter.hh"
 #include "sz/rolling_average.hh"
@@ -13,25 +18,19 @@ import Storage;
 #include <format> // vformat
 #include <string>
 
+namespace Szim {
+
 //============================================================================
-class SimApp // "Controller"
+class SimApp // Universal Sim. App Base ("Engine Controller")
 {
 //----------------------------------------------------------------------------
-// Config (static)...
+// Config...
 //----------------------------------------------------------------------------
 protected:
 	static constexpr auto DEFAULT_CFG_FILE = "default.cfg";
-	//!!Move the rest of these to the Model, too, for now:
-	//!!static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
-	//!!(They will become props initialized from a real config!)
-	static constexpr float CFG_THRUST_FORCE = 6e34f; // N (kg*m/s^2)
-	//! See also: World physics! The specific values here depend on the laws there,
-	//! so replacing the physics may very well invalidate these! :-o
-	//! The depencendies should be formalized e.g. via using virtual units
-	//! provided by the physics there!
 
 //----------------------------------------------------------------------------
-// Base API...
+// API...
 //----------------------------------------------------------------------------
 public:
 	virtual bool run() = 0;
@@ -40,7 +39,7 @@ public:
 	virtual bool poll_and_process_controls() { return false; }
 
 	void pause(bool newstate = true);
-	auto paused() const { return _time_paused; }
+	auto paused() const { return time.paused; }
 	auto toggle_pause()  { pause(!paused()); }
 	virtual void on_pause_changed(bool /*newstate*/) {} // Pausing might need support/followup
 
@@ -86,7 +85,7 @@ public:
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	SimApp(const char* cfgfile = "");
+	SimApp(int argc, char** argv);
 
 	SimApp(const SimApp&) = delete;
 	virtual ~SimApp() = default;
@@ -94,18 +93,15 @@ public:
 //------------------------------------------------------------------------
 // Data: Abstract (Generic) Model World + View State, etc...
 //----------------------------------------------------------------------------
-protected:
-	struct Config //!! Weird, ehh? :) Just a reminder to get real instead...
-	{
-		std::string cfg_dir;
-		std::string asset_dir;
-	} cfg;
+public:
+	Config cfg;
 
+protected:
 	Model::World world; // -> get_/set_world()
 	Model::View view;
 
-public:
-	sz::CappedCounter<uint64_t> iterations; // # of model updates (from the start of the main (run) loop, or load, etc.)
+public://!! Still directly set from main, hence the public!
+	sz::CappedCounter<Szim::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
 		// 1 calendar year = 3,784,320,000 cycles at 120 fps, so even 32 bits are quite enough!
 		// But for longer runs (on persistent-world servers), or for higher resolutions, let's go 64...
 
@@ -121,12 +117,11 @@ protected:
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
 
 	// Time control
-	bool  _time_paused = false;
-	bool  _time_reversed = false;
-	float _time_scale = 1.0f; // > 0 (Decoupled from reversal, for more flexible controls.)
-	float last_frame_delay;
+	Time time;
 	//!!??Move to the Metrics system and resuse it from there:
+//!!	sz::SmoothRollingAverage<0.993f, 1/30.f> avg_frame_delay;
 	sz::RollingAverage<30> avg_frame_delay;
-};
 
-#endif // _SIMAPP_HPP_
+}; // class SimApp
+} // namespace Szim
+#endif // _LKLWSJHEWIOHFSDIUGWGHWRTW2245_

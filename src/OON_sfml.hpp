@@ -91,7 +91,7 @@ protected:
 // C++ mechanics...
 //------------------------------------------------------------------------
 public:
-	OON_sfml(const char* cfgfile = "");
+	OON_sfml(int argc, char** argv);
 	OON_sfml(const OON_sfml&) = delete;
 
 //------------------------------------------------------------------------

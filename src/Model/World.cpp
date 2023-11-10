@@ -1,5 +1,5 @@
 #include "Model/World.hpp"
-#include "SimApp.hpp"
+#include "Szim/SimApp.hpp"
 
 #include <cassert>
 #include <cmath> // sqrt, pow?
@@ -25,6 +25,7 @@
 namespace Model {
 
 using namespace std;
+using namespace Szim;
 using namespace Math;
 
 size_t World::add_body(Body const& obj)
@@ -52,7 +53,7 @@ void World::remove_body(size_t ndx)
 #define _SKIP_
 //#define _SKIP_INTERACTIONS_
 //----------------------------------------------------------------------------
-void World::recalc_next_state(float dt, SimApp& game)
+void World::update(float dt, SimApp& game)
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 IPROF_FUNC;

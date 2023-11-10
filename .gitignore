@@ -5,15 +5,18 @@ tmp/
 *.wip
 *.WIP
 
-out/
-build.out/
-
-# Stray items from accidental compilations outside "out"
+# Build artifacts
+out.*/
+*.out/
+build.*/
+# Accidental stray/leftower outputs elsewhere
 *.obj
 *.ifc
 *.pdb
 *.ilk
+*.exp
 *.exe
+
 !tooling/*.exe
 
 *.code-workspace

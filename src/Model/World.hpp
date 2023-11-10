@@ -15,9 +15,11 @@
 //!!No, not yet. It's just too cumbersome, for too little gain:
 //!!#include <optional> // for load()
 
+namespace Szim {
 class SimApp; //! Sigh, must predeclare it here, outside the namespace...
               //! Curiously, it's not in the "global" :: namespece, so ::SimApp;
               //! wouldn't work from within the Model! :-o
+}
 namespace Model {
 
 static constexpr char const* VERSION = "0.0.1";
@@ -100,7 +102,7 @@ public:
 	};
 
 	//------------------------------------------------------------------------
-	void recalc_next_state(float dt, SimApp& app); // ++world
+	void update(float dt, Szim::SimApp& app); // ++world
 
 //----------------------------------------------------------------------------
 // API Ops...

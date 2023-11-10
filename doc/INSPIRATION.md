@@ -50,6 +50,21 @@ Elite
   Oh, and such powerful ideas as "collecting free-floating cargo canisters
   and escape capsules liberated after the destruction of other ships"... :)
 
+Dwarf Fortress
+
+  OMG, what a lovely hackfest of a world sim! :) Never actually played it,
+  but what I've seen had enough radiation to feel inspired whenever I even
+  just think of it. I don't even know any of the details, mind you, but
+  still! :) Perhaps it's the myth around it... And the sheer magnitude of
+  the dev. effort, dedication etc.
+
+RDR1
+
+  Their love for the world they've created, and their passion for detail...
+  They had proper lip sync, gestures, body movement and all, even by 2010!
+
 Nature
 
-  Of course. You don't need a game/toy/story to be constantly in awe.
+  Well of course. You don't need a game or a story to be constantly in awe
+  just be existing, honestly...
+

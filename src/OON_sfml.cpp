@@ -44,8 +44,8 @@ namespace sync {
 
 
 //============================================================================
-OON_sfml::OON_sfml(const char* cfgfile) :
-	OON(cfgfile),
+OON_sfml::OON_sfml(int argc, char** argv) :
+	OON(argc, argv),
 	// Creating the window right away here (only) to support init-by-constr. for the HUDs:
 	window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), WINDOW_TITLE),
 	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
@@ -221,17 +221,24 @@ void OON_sfml::draw()
 void OON_sfml::updates_for_next_frame()
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	//!! I guess this should come before processing the controls,
-	//!! so the controls & the updates can be in the same time frame!
-	//!! (Note: they're still in the same rendering frame tho, that's
+	//!! I guess this should come before processing the controls, so
+	//!! the controls & their follow-up updates are not split across
+	//!! time frames -- but I'm not sure if that's actually important!...
+	//!! (Note: they're still in the same "rendering frame" tho, that's
 	//!! why I'm not sure if this matters at all.)
 	//!!
 	//!! Also, the frame times should still be tracked (and, as a side-effect, the FPS gauge updated)
-	//!! even when paused (e.g. to support time-stepping etc.)!
-	last_frame_delay = clock.getElapsedTime().asSeconds();
+	//!! even when paused (e.g. to support [dynamically accurate?] time-stepping etc.)!
+/*!!	time.last_frame_delay = time.Δt_since_last_query([](*this){
+		auto capture = clock.getElapsedTime().asSeconds();
+		clock.restart(); //! Must also be duly restarted on unpausing!
+		return capture;
+	});
+!!*/
+	time.last_frame_delay = clock.getElapsedTime().asSeconds();
 	clock.restart(); //! Must also be duly restarted on unpausing!
 	// Update the FPS gauge
-	avg_frame_delay.update(last_frame_delay);
+	avg_frame_delay.update(time.last_frame_delay);
 
 	if (paused()) {
 		if (!stepthrough) { // Are we single-stepping?
@@ -244,16 +251,28 @@ void OON_sfml::updates_for_next_frame()
 	//!!? in addition to the async. event_loop()!...
 	poll_and_process_controls();
 
+	//----------------------------
 	// Determine the size of the next time slice...
-	//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
-	auto dt = last_frame_delay; //!! Just an estimate: the last dt has nothing to do
-	                            //!! with the next one, strictly speaking! :-o
-	dt *= _time_scale;
-	if (_time_reversed || stepthrough < 0) dt = -dt;
+	//
+	Szim::Seconds Δt;
+	if (cfg.fixed_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
+		//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
+		Δt = cfg.fixed_dt;
+		assert(Δt == time.dt_last); // Should be initialized by the SimApp init!
+	} else {
+		Δt = time.dt_last = time.last_frame_delay;
+			// Just an estimate; the last Δt can't guarantee anything about the next one, obviously.
+	}
 
+	Δt *= time.scale;
+	if (time.reversed || stepthrough < 0) Δt = -Δt;
+
+	//----------------------------
+	// Update...
+	//
 	//!! Move to a SimApp virtual, I guess (so at leat the counter capping can be implicitly done there; see also time_step()!):
 	if (!iterations.maxed()) {
-		world.recalc_next_state(dt, *this);
+		world.update(Δt, *this);
 		++iterations;
 	}
 
@@ -389,9 +408,9 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 				case 'F': world.FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
-				case 'r': _time_reversed = !_time_reversed; break;
-				case 't': _time_scale *= 2.0f; break;
-				case 'T': _time_scale /= 2.0f; break;
+				case 'r': time.reversed = !time.reversed; break;
+				case 't': time.scale *= 2.0f; break;
+				case 'T': time.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
 				case 'm': toggle_muting(); break;
 				case 'M': toggle_music(); break;
@@ -661,14 +680,15 @@ void OON_sfml::_setup_UI()
 	};
 
 	debug_hud.add("FPS",         [this](){ return to_string(1 / (float)this->avg_frame_delay); });
-	debug_hud.add("Last frame dt", [this](){ return to_string(this->last_frame_delay * 1000.0f) + " ms"; });
+	debug_hud.add("Last frame dt", [this](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
+	debug_hud.add("cycle",   [this](){ return to_string(iterations); });
 	//!!??WTF does this not compile? (The code makes no sense as the gauge won't update, but regardless!):
-	//!!??debug_hud.add(vformat("frame dt: {} ms", last_frame_delay));
+	//!!??debug_hud.add(vformat("frame dt: {} ms", time.last_frame_delay));
 	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
 	debug_hud.add("Body interactions", &this->world._interact_all);
 	debug_hud.add("Drag", ftos(&this->world.FRICTION));
-	debug_hud.add("Time reversed", &_time_reversed);
-	debug_hud.add("Time scale", ftos(&this->_time_scale));
+	debug_hud.add("Time reversed", &time.reversed);
+	debug_hud.add("Time scale", ftos(&this->time.scale));
 	debug_hud.add("");
 	debug_hud.add("Globe T",  ftos(&this->world.bodies[this->globe_ndx]->T));
 	debug_hud.add("      R",  ftos(&this->world.bodies[this->globe_ndx]->r));
