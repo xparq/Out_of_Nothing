@@ -15,8 +15,10 @@
 #include <functional>
 	//using std::function;
 #include <string>
-	using std::string;
-# include <utility>
+	//using std::string;
+//!!#include <string_view>
+//!!	//using std::string_view;
+#include <utility>
 	//using std::exchange;
 
 
@@ -25,7 +27,7 @@ namespace UI {
 class HUD
 {
 public:
-	// (pixels)
+	// Note: all pixels below.
 	static constexpr int DEFAULT_LINE_HEIGHT = 13; //! Lots of obscure warnings if this was size_t! :-o
 	static constexpr int DEFAULT_PANEL_TOP = 4; // signed!
 	static constexpr int DEFAULT_PANEL_LEFT = -250; // signed!
@@ -35,29 +37,38 @@ public:
 
 
 protected: //public:? <- Questionable. Just a convenience typedef for very little gain:
-	using FPTR = string (*)(); // raw function ptr (see CALLBACK for functors/closures (capturing lambdas)!)
+	using FPTR = std::string (*)(); // raw function ptr (see CALLBACK for functors/closures (capturing lambdas)!)
 protected:
 	//!NOTE: "stateless" lambdas will (or just could?) also get auto-converted to plain old functions!
-	using CALLBACK = std::function<string()>; //! not a raw fn pointer, not a ptr at all, but a (stateful) function object, so not convertible to/from void*!
-	using WATCHER = std::tuple<string // typename
-	                                 , std::any // src* (data address or free function ptr), or CALLBACK _object_
-                                     , string>; // prompt
+	using CALLBACK = std::function<std::string()>; //! not a raw fn pointer, not a ptr at all, but a (stateful) function object, so not convertible to/from void*!
+
+	using _nametype_ = decltype(typeid(void).name());
+	using WATCHER = std::tuple<_nametype_ // type name
+	                         , std::any   // pointer to data, or free function ptr, or CALLBACK _object_
+                                 , std::string>;   // prompt
 
 public:
+	void add(const char* literal); // This is the only literal supported yet!
 
-	void add(const char* literal);
-
-	template <typename T> auto add(const char* prompt, T* var, const char* _tyepname = nullptr)
+	// Add a var. binding (+ a prompt)
+	// Helpers to avoid #include <type_traits> for std::remove_const...:
+	private: template <class T> struct _nonstd_remove_const          { typedef T type; };
+	private: template <class T> struct _nonstd_remove_const<const T> { typedef T type; };
+public:
+	template <typename T> auto add(const char* prompt, T* var, const char* type_name = nullptr)
 	{
-		if (!_tyepname) _tyepname = typeid(T).name();
-		std::any ptr; ptr.emplace<T*>(var); //!!?? would work incorrectly (crash?!) with .emplace<void*>(var) -- but why?!
-		watchers.push_back(make_tuple(
-			_tyepname,
-			ptr,
-			prompt && *prompt ? string(prompt) + prompt_suffix : default_prompt));
+		if (!type_name) type_name = typeid(std::remove_const_t<T>).name();
+		std::any ptr;
+		         ptr.emplace<typename _nonstd_remove_const<T>::type*>(
+		          const_cast<typename _nonstd_remove_const<T>::type*>(var));
+			//!!?? would work incorrectly (crash?!) with .emplace<void*>(var) -- but why?!
+		watchers.push_back(make_tuple(type_name, ptr,
+		                              prompt && *prompt ? std::string(prompt) + prompt_suffix : default_prompt));
+//!!?? [What did I mean below: shouldn't matter because I assumed they had the same size (they don't!),
+//!!   or shouldn't matter for some other reason I failed to add?!... :-/ ]
 //!!??Crashes if var is int*, as if sizeof int* < sizeof void* mattered, but it shouldn't:
-//!!??		std::cerr << _tyepname << " -> " << (void*)any_cast<void*>(ptr) << " added." << endl;
-//		std::cerr << _tyepname << " added." << endl;
+//!!??		std::cerr << type_name << " -> " << (void*)any_cast<void*>(ptr) << " added." << endl;
+//		std::cerr << type_name << " added." << endl;
 	}
 
 	//!!auto add(prompt, FPTR f) {...}
@@ -71,49 +82,41 @@ public:
 //std::cerr << "- unknown lambda catched...\n";
 		std::any functor; functor.emplace<CALLBACK>((CALLBACK)f);
 		watchers.push_back(make_tuple(functor_name, functor,
-							prompt && *prompt ? string(prompt) + prompt_suffix : default_prompt));
+		                              prompt && *prompt ? std::string(prompt) + prompt_suffix : default_prompt));
 	}
 
 	// "promptless watcher" call form (a bit too vague tho, but mostly works):
 //	template <typename T> auto add(T* var) { return add("", var); }
 
-	string render_watched_item_to(std::stringstream& out);
+friend	std::ostream& operator <<(std::ostream&, const WATCHER&);
 
-	std::vector<WATCHER> watchers;
-
-	string charptr_literal_name;
-	string fptr_name;
-	string functor_name;
-	string int_name;
-	string bool_name;
-	string float_name;
-	string double_name;
-	string char_name;
-	string charptr_name;
-	string string_name;
+	//!! FFS, thanks again, C++... If anything, this really should've been constexpr, but isn't:
+	//!! Also, not sure these could be auto, due to subtle const char* vs. char[...] mismatches...
+	// These types have their own add(), so we can "standardize" their names (if the C++ committee failed to do so ;) ):
+	static const _nametype_ charptr_literal_name;// = "string literal"; //!!?? Why did this work (why different from const char*): typeid("literal").name()?
+	static const _nametype_ fptr_name;//     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
+	static const _nametype_ functor_name;//  = "CALLBACK"; // synthetic name for <CALLBACK> functor objects
+	// For the generic add():
+	static const _nametype_ float_name;//   = typeid(float).name();
+	static const _nametype_ double_name;//  = typeid(double).name();
+	static const _nametype_ int_name;//     = typeid(int).name();
+	static const _nametype_ bool_name;//    = typeid(bool).name();
+	static const _nametype_ char_name;//    = typeid(char).name();
+	static const _nametype_ charptr_name;// = typeid(const char*).name(); //!!??
+	static const _nametype_ string_name;//  = typeid(std::string).name();
 
 protected:
-	string default_prompt = "";
-	string prompt_prefix =  "> ";
-	string prompt_suffix =  ": ";
+	std::vector<WATCHER> watchers;
+
+	std::string default_prompt = "";
+	std::string prompt_prefix =  "> ";
+	std::string prompt_suffix =  ": ";
 
 	bool _active = true;
 
 public:
-	HUD()
-	{
-		charptr_literal_name = "string literal"; //!!?? Why did this work (why different from const char*): typeid("literal").name()?
-		fptr_name     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
-		functor_name  = "CALLBACK"; // synthetic name for <CALLBACK> functor objects
-
-		float_name   = typeid(float).name();
-		double_name  = typeid(double).name();
-		int_name     = typeid(int).name();
-		bool_name    = typeid(bool).name();
-		char_name    = typeid(char).name();
-		charptr_name = typeid(const char*).name(); //!!??
-		string_name  = typeid(string).name();
-	}
+	void _static_init();
+	HUD() { _static_init(); }
 
 	bool active() const       { return _active; }
 	bool active(bool active)  { return std::exchange(_active, active); }
@@ -129,9 +132,9 @@ struct HUD_SFML : public HUD
 	static constexpr uint32_t DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
 	static constexpr uint32_t DEFAULT_BACKGROUND_COLOR = 0x00406050;
 
-	void clear_content() { lines_to_draw.clear(); }
-	auto line_count() const { return lines_to_draw.size(); }
-	void append_line(const char* utf8_str);
+	void clear_content() { elements.clear(); }
+	auto line_count() const { return elements.size(); }
+	void append_line(const char* str);
 	void draw(sf::RenderWindow& window);
 	void _setup(sf::RenderWindow& window);
 
@@ -148,7 +151,7 @@ public:
 	{ _setup(window); }
 
 protected:
-	std::vector<sf::Text> lines_to_draw;
+	std::vector<sf::Text> elements; // One per line, currently!
 	sf::Font font;
 
 	int req_panel_top;

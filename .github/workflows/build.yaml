@@ -8,14 +8,14 @@ on:
     branches: [ main ]
 
 #??  vars:
-#      SFML_LIBROOT: tmp/SFML
+#      SZ_SFML_LIBROOT: tmp/SFML
 #      _SFML_PACK_NAME: windows-vc17-64.zip
 #      _SFML_DOWNLOAD_PACK: https://artifacts.sfml-dev.org/by-branch/master/${{ env._SFML_PACK_NAME }}
 #      # NOTE: pkg. layout: ./<commit-hash>/[lib|include|...]
 #      _SFML_DOWNLOAD_TO: tmp
 
 env:
-  SFML_LIBROOT: tmp/SFML
+  SZ_SFML_LIBROOT: tmp/SFML
   #_SFML_PACK_NAME: windows-vc17-64.zip
 
 #!!?? _SFML_DOWNLOAD_PACK: https://artifacts.sfml-dev.org/by-branch/master/${{ _SFML_PACK_NAME }}
@@ -35,6 +35,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
     
     steps:
 
