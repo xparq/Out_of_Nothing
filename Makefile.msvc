@@ -69,6 +69,7 @@ EXT_LIB_DIRS=
 EXT_LIBS=\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
 	extern/sfw/lib/msvc/sfw$(_cflags_crt_linkmode)$(_buildmode_debug_file_suffix).lib \
+	extern/toml++/toml$(_cflags_crt_linkmode).lib \
 	extern/zstd/msvc/zstd$(_cflags_crt_linkmode).lib \
 
 
@@ -112,10 +113,13 @@ buildmode_dir_suffix=.sfml-$(SFML_linkmode)
 #!-------------------------------------
 #!Sz Other custom options for OON...
 #!-------------------------------------
+CFLAGS=$(CFLAGS) -DUSE_BACKEND_SFML
 !if "$(SFML)" == "static"
 CFLAGS=$(CFLAGS) -DSFML_STATIC
 !endif
 CXXFLAGS=-std:c++latest
+# Add a -I also for including the commit hash file:
+CFLAGS=$(CFLAGS) -I$(out_dir)
 # Note: C++ comp. commands would use $(CFLAGS), too! (!!Which may be stupid, and change later...!!)
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
@@ -688,6 +692,10 @@ if "%BATCH_COMPILE%"=="on" (
 
 if exist "%BBB_MAIN_MAKEFILE%" (
 	%BBB_NMAKE_RECURSE_CMD% %nmake_batch_switch% BBB_build
+:: These are critical here, actually: the fallthrough path DID lose the fckn ERRORLEVEL! :-o
+	IF ERRORLEVEL 2 EXIT 2
+	IF ERRORLEVEL 1 EXIT 1
+
 ) else (
 	echo - ERROR: Makefile "%BBB_MAIN_MAKEFILE%" could not be found^!
 )

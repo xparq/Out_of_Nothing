@@ -10,6 +10,11 @@ CRT = dll
 #	CRT=dll is always the case with the pre-built SFML libs, so not use changing it!
 SFML = static
 
+#!! Integrate these:
+CFLAGS_ = -DUSE_BACKEND_SFML
+# -DDISABLE_HUD
+# -DDISABLE_THREADS
+
 #--- PRJ DEFINITIONS ---------------------------------------------------------
 SZ_APP_NAME ?= test
 SZ_PRJ_DIR  ?= .
@@ -325,4 +330,4 @@ else
 #!! message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup was not run?
 endif
 
-$(outdir)/src/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
+$(outdir)/$(SZ_SRC_SUBDIR)/main.obj: $(COMMIT_HASH_INCLUDE_FILE)

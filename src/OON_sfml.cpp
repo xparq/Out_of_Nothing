@@ -1,4 +1,4 @@
-#include "OON_sfml.hpp"
+﻿#include "OON_sfml.hpp"
 import Storage;
 
 #include "UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
@@ -28,47 +28,39 @@ using namespace UI;
 using namespace sz;
 using namespace std;
 
-//
-// "App-local global" implementation-level (const) params...
-//
-static constexpr auto WINDOW_TITLE = "Out of Nothing";
-namespace cfg {
-	static constexpr auto FPS_THROTTLE = 30; //!! Changing this changes the physics (by increasing resolution/precision)!!!
-	                                         //!! Things tend to be more interesting, with more "quantum-like" randomness,
-	                                         //!! with larger dt-s (less precision -> overshoots, tunnelling!)!
-}
 
+//============================================================================
 namespace sync {
 	std::mutex Updating;
 };
 
 
 //============================================================================
-OON_sfml::OON_sfml(int argc, char** argv) :
-	OON(argc, argv),
+OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 	// Creating the window right away here (only) to support init-by-constr. for the HUDs:
-	window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), WINDOW_TITLE),
+	, window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), cfg.WINDOW_TITLE)
 	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
 	//!!??
 	//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
 	//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
 
-	gui(window, { .basePath = cfg.asset_dir.c_str(), //!! Must have a / suffix!
+	, gui(window, { .basePath = cfg.asset_dir.c_str(), //!! Must have a / suffix!
 	              .textureFile = "gui/texture.png",
 	              .bgColor = sfw::Color("#302030d0"),
 	              .fontFile = "font/default.font",
 	            },
 	    false // Don't manage the window
-	),
+	)
 #ifndef DISABLE_HUD
-	debug_hud(window, -220),
-	help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
+	, debug_hud(window, -220)
+	, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
 	//!! THIS SHOULD BE IN _setup(), BUT IT MUST HAPPEN BEFORE CALLING add_bodies() IN main!...
 	// Player Superglobe:
-	globe_ndx = add_player({.r = world.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
-	assert(world.bodies.size() > globe_ndx);
+	globe_ndx = add_player({.r = const_world().CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+	assert(const_world().bodies.size() > globe_ndx);
+	assert(player_entity_ndx() == globe_ndx);
 }
 
 bool OON_sfml::run()
@@ -272,7 +264,7 @@ void OON_sfml::updates_for_next_frame()
 	//
 	//!! Move to a SimApp virtual, I guess (so at leat the counter capping can be implicitly done there; see also time_step()!):
 	if (!iterations.maxed()) {
-		world.update(Δt, *this);
+		update_world(Δt);
 		++iterations;
 	}
 
@@ -289,10 +281,11 @@ void OON_sfml::updates_for_next_frame()
 }
 
 //----------------------------------------------------------------------------
-void OON_sfml::on_pause_changed(bool)
+void OON_sfml::pause_hook(bool)
 {
-	//! As a quick hack, time must restart from 0 when unpausing...
-	//! (The other restart() on pausing is redundant; just keeping it simple...)
+	//!! As a quick hack, time must restart from 0 when unpausing...
+	//!! (The other restart() on pausing is redundant; just keeping it simple...)
+cerr << "- INTERNAL: Main clock restarted on pause on/off (in the pause-hook)!\n";
 	clock.restart();
 }
 
@@ -304,6 +297,7 @@ void OON_sfml::event_loop()
 
 	std::unique_lock noproc_lock{sync::Updating, std::defer_lock};
 
+try {
 	while (window.isOpen() && !terminated()) {
 			sf::Event event;
 
@@ -376,7 +370,7 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
 
-				case sf::Keyboard::Insert: spawn(keystate(SHIFT) ? 1 : 100); break;
+				case sf::Keyboard::Insert: spawn(player_entity_ndx(), keystate(SHIFT) ? 1 : 100); break;
 //!!...			case sf::Keyboard::Insert: add_bodies(keystate(SHIFT) ? 1 : 100); break;
 				case sf::Keyboard::Delete: remove_bodies(keystate(SHIFT) ? 1 : 100); break;
 //!!??			case sf::Keyboard::Delete: OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
@@ -404,17 +398,17 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
-				case 'f': world.FRICTION -= 0.01f; break;
-				case 'F': world.FRICTION += 0.01f; break;
+				case 'f': world().FRICTION -= 0.01f; break;
+				case 'F': world().FRICTION += 0.01f; break;
 				case '+': zoom_in(); break;
 				case '-': zoom_out(); break;
 				case 'r': time.reversed = !time.reversed; break;
 				case 't': time.scale *= 2.0f; break;
 				case 'T': time.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
-				case 'm': toggle_muting(); break;
-				case 'M': toggle_music(); break;
-				case 'N': toggle_sound_fx(); break;
+				case 'M': toggle_muting(); break;
+				case 'm': toggle_music(); break;
+				case 'n': toggle_sound_fx(); break;
 				case 'P': fps_throttling(!fps_throttling()); break;
 				case '?': toggle_help(); break;
 				}
@@ -422,7 +416,7 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
 			case sf::Event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Button::Left) {
-					spawn(100);
+					spawn(globe_ndx, 100);
 				}
 				break;
 !!*/
@@ -469,6 +463,17 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 
 #endif			
 	} // while
+
+} catch (runtime_error& x) {
+	cerr << __FUNCTION__ " - ERROR: " << x.what() << '\n';
+	return;
+} catch (exception& x) {
+	cerr << __FUNCTION__ " - EXCEPTION: " << x.what() << '\n';
+	return;
+} catch (...) {
+	cerr << __FUNCTION__ " - UNKNOWN EXCEPTION!\n";
+	return;
+}
 }
 
 
@@ -509,7 +514,7 @@ void OON_sfml::remove_player(size_t ndx)
 bool OON_sfml::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 {w;
 	if (obj1->is_player() || obj2->is_player()) {
-		audio.play_sound(clack_sound);
+		backend.audio.play_sound(clack_sound);
 	}
 
 	obj1->T += 100;
@@ -570,7 +575,7 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
 
 	window.create(
 		is_full ? sf::VideoMode::getDesktopMode() : sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}),
-		WINDOW_TITLE,
+		cfg.WINDOW_TITLE,
 		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
 	);
 	fps_throttling(fps_throttling()); //! Cryptic way to reactivate the last throttling state, because
@@ -591,35 +596,35 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
 
 
 //----------------------------------------------------------------------------
-void OON_sfml::toggle_muting() { audio.toggle_audio(); }
-
-void OON_sfml::toggle_music() { audio.toggle_music(); }
-
-void OON_sfml::toggle_sound_fx() { audio.toggle_sounds(); }
+//!!Move to Szim!
+void OON_sfml::toggle_muting() { backend.audio.toggle_audio(); }
+void OON_sfml::toggle_music() { backend.audio.toggle_music(); }
+void OON_sfml::toggle_sound_fx() { backend.audio.toggle_sounds(); }
 
 //----------------------------------------------------------------------------
+//!!Move to Szim!
 unsigned OON_sfml::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 {
-	static unsigned fps_limit = 0; // 0: no limit
-
 	if (new_fps_limit != (unsigned)-1) {
-		fps_limit = (unsigned)new_fps_limit;
-		window.setFramerateLimit(fps_limit); // 0: no limit for SFML, too
+		time.fps_limit = new_fps_limit;
+		window.setFramerateLimit(time.fps_limit); // 0: no limit, for SFML, too!
 	}
-	return fps_limit; // C++ converts it to false when 0 (no limit)
+	return time.fps_limit; // C++ converts it to false when 0 (no limit)
 }
-
 void OON_sfml::fps_throttling(bool onoff)
 {
-	fps_throttling(unsigned(onoff ? cfg::FPS_THROTTLE : 0));
+	fps_throttling(unsigned(onoff ? cfg.fps_limit : 0));
 }
 
 
 //----------------------------------------------------------------------------
+//!!Move to Szim, make it a callback (and eventually just sink into the UI)!
 void OON_sfml::onResize()
 {
+#ifndef DISABLE_HUD
 	debug_hud.onResize(window);
 	help_hud.onResize(window);
+#endif
 }
 
 
@@ -632,15 +637,17 @@ void OON_sfml::_setup()
 	//! `window.create` call (i.e. in `toggle_fullscreen`):
 	fps_throttling(On);
 
+	const auto& w = const_world();
+
 	// moons:
-	add_body({.r = world.CFG_GLOBE_RADIUS/10, .p = {world.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -world.CFG_GLOBE_RADIUS * 2},
+	add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
 				.color = 0xff2020});
-	add_body({.r = world.CFG_GLOBE_RADIUS/7,  .p = {-world.CFG_GLOBE_RADIUS * 1.6f, +world.CFG_GLOBE_RADIUS * 1.2f}, .v = {-world.CFG_GLOBE_RADIUS*1.8, -world.CFG_GLOBE_RADIUS*1.5},
+	add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
 				.color = 0x3060ff});
 
-	clack_sound = audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
+	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
 
-	audio.play_music(string(cfg.asset_dir + "music/default.ogg").c_str());
+	backend.audio.play_music(string(cfg.asset_dir + "music/default.ogg").c_str());
 	/*
 	static sf::Music m2; if (m2.openFromFile(string(cfg.asset_dir + "music/extra sonic layer.ogg").c_str()) {
 		m2.setLoop(false); m2.play();
@@ -679,24 +686,24 @@ void OON_sfml::_setup_UI()
 		};
 	};
 
-	debug_hud.add("FPS",         [this](){ return to_string(1 / (float)this->avg_frame_delay); });
+	debug_hud.add("FPS", [this](){ return to_string(1 / (float)this->avg_frame_delay); });
 	debug_hud.add("Last frame dt", [this](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
-	debug_hud.add("cycle",   [this](){ return to_string(iterations); });
+	debug_hud.add("cycle", [this](){ return to_string(iterations); });
 	//!!??WTF does this not compile? (The code makes no sense as the gauge won't update, but regardless!):
 	//!!??debug_hud.add(vformat("frame dt: {} ms", time.last_frame_delay));
-	debug_hud.add("# of objs.", [this](){ return to_string(this->world.bodies.size()); });
-	debug_hud.add("Body interactions", &this->world._interact_all);
-	debug_hud.add("Drag", ftos(&this->world.FRICTION));
+	debug_hud.add("# of objs.", [this](){ return to_string(this->const_world().bodies.size()); });
+	debug_hud.add("Body interactions", &this->const_world()._interact_all);
+	debug_hud.add("Drag", ftos(&this->const_world().FRICTION));
 	debug_hud.add("Time reversed", &time.reversed);
 	debug_hud.add("Time scale", ftos(&this->time.scale));
 	debug_hud.add("");
-	debug_hud.add("Globe T",  ftos(&this->world.bodies[this->globe_ndx]->T));
-	debug_hud.add("      R",  ftos(&this->world.bodies[this->globe_ndx]->r));
-	debug_hud.add("      m",  ftos(&this->world.bodies[this->globe_ndx]->mass));
-	debug_hud.add("      x",  ftos(&this->world.bodies[this->globe_ndx]->p.x));
-	debug_hud.add("      y",  ftos(&this->world.bodies[this->globe_ndx]->p.y));
-	debug_hud.add("      vx", ftos(&this->world.bodies[this->globe_ndx]->v.x));
-	debug_hud.add("      vy", ftos(&this->world.bodies[this->globe_ndx]->v.y));
+	debug_hud.add("Globe T",  ftos(&this->const_world().bodies[this->globe_ndx]->T));
+	debug_hud.add("      R",  ftos(&this->const_world().bodies[this->globe_ndx]->r));
+	debug_hud.add("      m",  ftos(&this->const_world().bodies[this->globe_ndx]->mass));
+	debug_hud.add("      x",  ftos(&this->const_world().bodies[this->globe_ndx]->p.x));
+	debug_hud.add("      y",  ftos(&this->const_world().bodies[this->globe_ndx]->p.y));
+	debug_hud.add("      vx", ftos(&this->const_world().bodies[this->globe_ndx]->v.x));
+	debug_hud.add("      vy", ftos(&this->const_world().bodies[this->globe_ndx]->v.y));
 	debug_hud.add("");
 	debug_hud.add("VIEW SCALE", &view.zoom);
 	debug_hud.add("CAM. X", &view.offset.x);
@@ -736,8 +743,8 @@ void OON_sfml::_setup_UI()
 	help_hud.add("Ctrl+Home: Reset view to Home pos. (not the zoom)");
 	help_hud.add("---------- Admin:");
 	help_hud.add("F1-F4:     Save world snapshots (+Shift: load)");
-	help_hud.add("M:         Mute/unmute audio");
-	help_hud.add("Shift+M:   Mute/unmute music, Shift+N: sound fx");
+	help_hud.add("M:         Mute/unmute music, N: sound fx");
+	help_hud.add("Shift+M:   Mute/unmute all audio");
 	help_hud.add("Shft+P:    Toggle FPS throttling (lower CPU load)");
 	help_hud.add("F11:       Toggle fullscreen");
 	help_hud.add("F12:       Toggle HUDs");
@@ -759,7 +766,7 @@ bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 
 	//!! NOPE: set_world(world_snapshots[slot]);
 	//! Alas, somebody must resync the renderer, too!... :-/
-/* A cleaner, but slower way would be this:
+/* A cleaner, but slower way would be:
 	//! 1. Halt everything...
 	//     DONE, for now, by the event handler!
 	//! 2. Purge everything...
@@ -774,8 +781,8 @@ bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 	//! 2. Purge the renderer only...
 	renderer.reset();
 	//! 3. Recreate the shapes...
-	for (size_t n = 0; n < world.bodies.size(); ++n) {
-		renderer.create_cached_body_shape(*this, *world.bodies[n], n);
+	for (size_t n = 0; n < const_world().bodies.size(); ++n) {
+		renderer.create_cached_body_shape(*this, *world().bodies[n], n);
 	}
 cerr << "Game state restored from slot " << slot_id << ".\n";
 	return true;
