@@ -19,7 +19,6 @@ using namespace std;
 int main(int argc, char* argv[])
 //============================================================================
 {
-try {
 	Args args(argc, argv, {
 	// Long options with 1 param. don't need to be defined:
 	//	{"moons", 1}, // number of moons to start with
@@ -38,6 +37,7 @@ try {
 		DEBUG_cfg_show_keycode = true;
 	}
 
+try {
 	OON_sfml game(argc, argv);
 
 	   if (args["bodies"]) {
@@ -47,9 +47,9 @@ try {
 		game.interact_all();
 	}; if (args["friction"]) {
 		float f = stof(args("friction"));
-		game.get_world().FRICTION = f;
+		game.world().FRICTION = f;
 	}; if (args["snd"]) {
-		game.audio.enabled(args("snd") != "off");
+		game.backend.audio.enabled(args("snd") != "off");
 	}; if (args["zoom"]) {
 		float factor = stof(args("zoom"));
 		game.zoom(factor);
@@ -64,7 +64,7 @@ try {
 	cerr << "- EXCEPTION: " << x.what() << '\n';
 	return -1;
 } catch (...) {
-	cerr << "- UNHANDLED EXCEPTION!\n";
+	cerr << "- UNKNOWN EXCEPTION!\n";
 	return -1;
 }
 

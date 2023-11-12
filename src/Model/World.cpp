@@ -252,7 +252,7 @@ World& World::_clone(World const& other)
 	_interact_all = other._interact_all;
 
 	bodies.clear();
-	for (auto const& b : other.bodies) {
+	for (const auto& b : other.bodies) {
 		add_body(*b);
 	}
 //cerr << "World cloned.\n";

@@ -1,5 +1,11 @@
 #define SAVE_COMPRESSED
 
+#ifdef USE_BACKEND_SFML
+#   include "Backend/SFML.hpp"
+#else
+#   error Only the SFML backend is supported currently. (Define USE_BACKEND_SFML in your build procedure!)
+#endif
+
 #include "SimApp.hpp"
 
 #include <string>
@@ -36,7 +42,16 @@
 using namespace Szim;
 //============================================================================
 //----------------------------------------------------------------------------
-SimApp::SimApp(int argc, char** argv)
+SimApp::SimApp(int argc, char** argv) :
+	// Bootstrap the backend... (Could be done via the config in the future!)
+#ifdef USE_BACKEND_SFML
+	backend{Backend_SFML::create()}
+#else
+//!!	backend{Backend_...::create()}
+#   error Only the SFML backend is supported currently! (Define USE_BACKEND_SFML)
+#endif	
+
+
 {
 	//!!
 	//!! Cfg...
@@ -116,19 +131,20 @@ cerr <<	"DBG> cfg.fixed_dt: " << cfg.fixed_dt << '\n';
 void SimApp::pause(bool newstate)
 {
 	time.paused = newstate;
-	on_pause_changed(newstate);
+	pause_hook(newstate);
 }
 
-
 //----------------------------------------------------------------------------
-//!!These sould be atomic/blocking, but... meh... ;)
-//!!These are being called currently from a locked section of the event loop anyway,
-//!!but it's a crime relying on it here! Either document that this is not thread-safe,
-//!!or make it safe here (how exactly, not introducing (and then imposing) specifics?)!
-Model::World const& SimApp::get_world() const { return world; }
-Model::World& SimApp::get_world() { return world; }
-void SimApp::set_world(Model::World const& w) { world = w; }
-void SimApp::set_world(Model::World & w) { world = w; }
+//!! Updating is not yet (inherently) thread-safe!
+//!! These sould be atomic/blocking/mutex-protected/...!
+//!! (Delegating that to all the various World::mutators, and imposing deps.
+//!! on threading (etc.) mechanics there feels like a terrible idea!)
+//!! While update() and load() are called currently from a locked section of the
+//!! event loop anyway, it's a crime to rely on just that!
+      Model::World& SimApp::world()       { return _world; }
+const Model::World& SimApp::world() const { return _world; }
+const Model::World& SimApp::const_world() { return _world; }
+void SimApp::set_world(Model::World const& w) { _world = w; }
 
 //----------------------------------------------------------------------------
 bool SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
@@ -148,10 +164,10 @@ bool SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
 		cerr << "- WARNING: Overwriting previously saved state at slot #" << slot_id << "!...\n";
 	}
 
-	world_snapshots[slot] = get_world(); // :)
+	world_snapshots[slot] = world(); // :)
 	saved_slots |= slot_bit;
 */
-	Model::World snapshot = get_world();
+	Model::World snapshot = world();
 
 	string fname = snapshot_filename(slot_id);
 	string OVERALL_FAIL = "ERROR: Couldn't save snapshot to file \""; OVERALL_FAIL += fname + "\"\n";

@@ -26,7 +26,7 @@ static constexpr char const* VERSION = "0.0.1";
 
 
 //============================================================================
-class World
+class World // The model world
 {
 //----------------------------------------------------------------------------
 // API Config... (!!Parts being migrated from the "Controller"...)

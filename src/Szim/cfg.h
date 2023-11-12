@@ -6,8 +6,8 @@
 //! (Also, only defining them here if they haven't been already, to allow
 //! controlling them from the build.)
 
-#ifndef __CFG_H_
-#define __CFG_H_
+#ifndef _4059786V2MB67B5VB7I3C5_
+#define _4059786V2MB67B5VB7I3C5_
 
 
 #ifndef DISABLE_THREADS
@@ -23,4 +23,4 @@
 #endif
 
 
-#endif // __CFG_H_
+#endif // _4059786V2MB67B5VB7I3C5_

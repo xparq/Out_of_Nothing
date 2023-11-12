@@ -1,27 +1,24 @@
-#include "audio_sfml.hpp"
+#include "Audio_SFML.hpp"
 
-#ifndef DISABLE_AUDIO // Defined in cfg.h, which may come via the audio header, so the #include should be outside this #ifdef!... ;)
-
-#include <SFML/Audio/Sound.hpp>
+//============================================================================
+// SFML-BACKED AUDIO SUBSYSTEM - IMPLEMENTATION
+//============================================================================
 
 #include <iostream>
 	using std::cerr, std::endl;
 
 //----------------------------------------------------------------------------
-
-bool Audio_Stub::toggle_sounds()
+Audio& Audio_SFML::create()
 {
-	if (!sz::toggle(&fx_enabled)) {
-		kill_sounds();
-	}
-	return fx_enabled;
+	static Audio_SFML audio{};
+	return audio;
 }
 
-//----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
 bool Audio_SFML::toggle_audio()
 {
-	if (Audio_Stub::toggle_audio()) {
+	if (Audio::toggle_audio()) {
 		if (_music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started
 			if (music_enabled) _music.play();
 	} else {
@@ -31,6 +28,7 @@ bool Audio_SFML::toggle_audio()
 	return enabled;
 }
 
+//----------------------------------------------------------------------------
 size_t Audio_SFML::add_sound(const char* filename)
 {
 //!!	sounds.emplace_back(); //! Emplace would *STILL* call a copy ctor, if no args! :-o So fkn' disappointing! :(
@@ -46,6 +44,7 @@ cerr << "- Error loading sound: " << filename << endl;
 	return sounds.size() - 1;
 }
 
+//----------------------------------------------------------------------------
 void Audio_SFML::play_sound(size_t ndx)
 {
 	assert(ndx < sounds.size());
@@ -59,6 +58,7 @@ void Audio_SFML::play_sound(size_t ndx)
 	}
 }
 
+//----------------------------------------------------------------------------
 bool Audio_SFML::play_music(const char* filename)
 {
 	if (!_music.openFromFile(filename)) {
@@ -73,10 +73,11 @@ cerr << "- Error loading music: " << filename << endl;
 	return true;
 }
 
+//----------------------------------------------------------------------------
 //!!NOTE: This one pauses, vs. toggle_sound() mutes!
 bool Audio_SFML::toggle_music()
 {
-	if (Audio_Stub::toggle_music()) {
+	if (Audio::toggle_music()) {
 		if (enabled && _music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started?
 			_music.play();
 	} else {
@@ -85,6 +86,7 @@ bool Audio_SFML::toggle_music()
 	return music_enabled;
 }
 
+//----------------------------------------------------------------------------
 //!!NOTE: This one mutes, vs. toggle_music() pauses!
 void Audio_SFML::toggle_sound(size_t ndx)
 {
@@ -94,6 +96,7 @@ void Audio_SFML::toggle_sound(size_t ndx)
 	sounds[ndx].muted = !sounds[ndx].muted;
 }
 
+//----------------------------------------------------------------------------
 void Audio_SFML::kill_sounds()
 {
 //!!	for (auto& s : sounds) {
@@ -101,6 +104,3 @@ void Audio_SFML::kill_sounds()
 		_sound.stop(); //!! only this one player exists!
 //!!	}
 }
-
-
-#endif // DISABLE_AUDIO

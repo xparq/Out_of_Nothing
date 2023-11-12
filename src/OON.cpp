@@ -20,13 +20,13 @@ bool OON::poll_and_process_controls()
 		action = true;
 //		if (keystate(SPACE)) {
 //			action = true;
-//			exhaust_burst(5);
+//			exhaust_burst(player_entity_ndx(), 5);
 //		}
 	}
 	// Allow this now irrespective of any engine firing:
 	if (keystate(SPACE)) {
 		action = true;
-		exhaust_burst(5);
+		exhaust_burst(player_entity_ndx(), 5);
 	}
 
 	if (_ctrl_update_pan())
@@ -36,14 +36,14 @@ bool OON::poll_and_process_controls()
 }
 
 //----------------------------------------------------------------------------
-void OON::up_thruster_start()    { world.bodies[globe_ndx]->thrust_up.thrust_level(CFG_THRUST_FORCE); }
-void OON::down_thruster_start()  { world.bodies[globe_ndx]->thrust_down.thrust_level(CFG_THRUST_FORCE); }
-void OON::left_thruster_start()  { world.bodies[globe_ndx]->thrust_left.thrust_level(CFG_THRUST_FORCE); }
-void OON::right_thruster_start() { world.bodies[globe_ndx]->thrust_right.thrust_level(CFG_THRUST_FORCE); }
-void OON::up_thruster_stop()     { world.bodies[globe_ndx]->thrust_up.thrust_level(0); }
-void OON::down_thruster_stop()   { world.bodies[globe_ndx]->thrust_down.thrust_level(0); }
-void OON::left_thruster_stop()   { world.bodies[globe_ndx]->thrust_left.thrust_level(0); }
-void OON::right_thruster_stop()  { world.bodies[globe_ndx]->thrust_right.thrust_level(0); }
+void OON::up_thruster_start()    { entity(player_entity_ndx()).thrust_up.thrust_level(cfg.THRUST_FORCE); }
+void OON::down_thruster_start()  { entity(player_entity_ndx()).thrust_down.thrust_level(cfg.THRUST_FORCE); }
+void OON::left_thruster_start()  { entity(player_entity_ndx()).thrust_left.thrust_level(cfg.THRUST_FORCE); }
+void OON::right_thruster_start() { entity(player_entity_ndx()).thrust_right.thrust_level(cfg.THRUST_FORCE); }
+void OON::up_thruster_stop()     { entity(player_entity_ndx()).thrust_up.thrust_level(0); }
+void OON::down_thruster_stop()   { entity(player_entity_ndx()).thrust_down.thrust_level(0); }
+void OON::left_thruster_stop()   { entity(player_entity_ndx()).thrust_left.thrust_level(0); }
+void OON::right_thruster_stop()  { entity(player_entity_ndx()).thrust_right.thrust_level(0); }
 
 bool OON::_ctrl_update_thrusters()
 {
@@ -62,8 +62,7 @@ void OON::pan_x(float delta) { view.offset.x += delta; }
 void OON::pan_y(float delta) { view.offset.y += delta; }
 void OON::pan_to_entity(size_t id)
 {
-	const auto& body = world.bodies[id];
-	view.offset = - body->p * view.zoom;
+	view.offset = - entity(id).p * view.zoom;
 }
 
 void OON::zoom(float factor)
@@ -112,30 +111,32 @@ void OON::interaction_hook(Model::World* w, Model::World::Event event, Model::Wo
 //----------------------------------------------------------------------------
 size_t OON::add_body(World::Body&& obj)
 {
-	return world.add_body(std::forward<decltype(obj)>(obj));
+	return world().add_body(std::forward<decltype(obj)>(obj));
 }
 
 //----------------------------------------------------------------------------
 void OON::remove_body(size_t ndx)
 {
-	world.remove_body(ndx);
+	world().remove_body(ndx);
 }
 
 //----------------------------------------------------------------------------
 size_t OON::add_body()
 {
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 9;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 3;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 30;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-//cerr << "Adding new object #" << world.bodies.size() + 1 << "...\n";
+	const auto& cw = const_world();
+	auto constexpr r_min = cw.CFG_GLOBE_RADIUS / 9;
+	auto constexpr r_max = cw.CFG_GLOBE_RADIUS * 3;
+	auto constexpr p_range = cw.CFG_GLOBE_RADIUS * 30;
+	auto constexpr v_range = cw.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+//cerr << "Adding new object #" << cw.bodies.size() + 1 << "...\n";
+	const auto& player = const_entity(player_entity_ndx());
 	return add_body({
 		.r = (float) (((float)rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
 				+ r_min,
-		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x,
-		       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y },
-		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.05f,
-		       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.05f },
+		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + player.p.x,
+		       (rand() * p_range) / RAND_MAX - p_range/2 + player.p.y },
+		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + player.v.x * 0.05f,
+		       (rand() * v_range) / RAND_MAX - v_range/2 + player.v.y * 0.05f },
 		.color = 0xffffff & ((uint32_t) rand() * rand()),
 	});
 }
@@ -143,15 +144,16 @@ size_t OON::add_body()
 //----------------------------------------------------------------------------
 void OON::remove_body()
 {
-	if (world.bodies.size() < 2) { // Leave the "globe" (so not ".empty()")!
+	auto entities = entity_count();
+	if (entities < 2) { // Leave the player "superglobe", so not just checking for empty()!
 cerr <<	"No more \"free\" items to delete.\n";
 		return;
 	}
 
-	auto ndx = 1/*leave the globe!*/ + rand() * ((world.bodies.size()-1) / (RAND_MAX + 1));
+	auto ndx = 1/*leave the globe!*/ + rand() * ((entities-1) / (RAND_MAX + 1));
 //cerr << "Deleting object #"	 << ndx << "...\n";
-	assert(ndx > 0);
-	assert(ndx < world.bodies.size());
+	assert(ndx < entities); // Note: entity indexes are 0-based
+	assert(ndx > 0);        // Note: 0 is the player globe
 	remove_body(ndx);
 }
 
@@ -164,47 +166,50 @@ void OON::add_bodies(size_t n)
 //----------------------------------------------------------------------------
 void OON::remove_bodies(size_t n/* = -1*/)
 {
-	if (n == (unsigned)-1) n = world.bodies.size();
+	if (n == (unsigned)-1) n = entity_count();
 	while (n--) remove_body();
 }
 
 
 //----------------------------------------------------------------------------
-void OON::spawn(size_t n, size_t parent_ndx)
-//!!Should gradually become a method of the obect itself actually!
+void OON::spawn(size_t parent_ndx, size_t n)
+//!!??Should gradually become a method of the object itself
 {
-	assert(parent_ndx == globe_ndx); //!!invalid for multiplayer
+if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"<<parent_ndx<<" is spawning...\n";
 
 	// -> #41: Enable inheritance
-	auto const& parent = *(world.bodies[parent_ndx]);
+	const auto& parent = const_entity(parent_ndx);
 	for (size_t i = 0; i < n; ++i) {
 		auto ndx = add_body();
-		auto& newborn = *(world.bodies[ndx]);
+		auto& newborn = entity(ndx);
 		newborn.T = parent.T; // #155: Inherit T
 	}
 }
 
 //----------------------------------------------------------------------------
-void OON::exhaust_burst(size_t n/* = 50*/)
+void OON::exhaust_burst(size_t entity/* = 0*/, size_t n/* = 50*/)
 {
 /*!! Too boring with all these small particles:
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.3;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 2;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 3; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+	auto constexpr r_min = const_world().CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_max = const_world().CFG_GLOBE_RADIUS * 0.3;
+	auto constexpr p_range = const_world().CFG_GLOBE_RADIUS * 2;
+	auto constexpr v_range = const_world().CFG_GLOBE_RADIUS * 3; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
 */
-	auto constexpr r_min = world.CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = world.CFG_GLOBE_RADIUS * 0.5;
-	auto constexpr p_range = world.CFG_GLOBE_RADIUS * 5;
-	auto constexpr v_range = world.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+	const auto& cw = const_world();
+	auto constexpr r_min = cw.CFG_GLOBE_RADIUS / 10;
+	auto constexpr r_max = cw.CFG_GLOBE_RADIUS * 0.5;
+	auto constexpr p_range = cw.CFG_GLOBE_RADIUS * 5;
+	auto constexpr v_range = cw.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+	const auto& rocket = const_entity(entity);
 	for (int i = 0; i++ < n;) {
 		add_body({
-			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
+			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! Suppress warning "conversion from double to float..."
 					+ r_min,
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.x - world.bodies[globe_ndx]->v.x * 0.1f,   //!!...jesus, that literal dt here! :-o
-			       (rand() * p_range) / RAND_MAX - p_range/2 + world.bodies[globe_ndx]->p.y - world.bodies[globe_ndx]->v.y * 0.1f }, //!!...jesus, that literal dt here! :-o
-			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.x * 0.1f,
-			       (rand() * v_range) / RAND_MAX - v_range/2 + world.bodies[globe_ndx]->v.y * 0.1f },
+ 			//!!...Jesus, those literal pseudo dts here! :-o :)
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.x - rocket.v.x * 0.1f,
+			       (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.y - rocket.v.y * 0.1f },
+			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.x * 0.1f,
+			       (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.y * 0.1f },
 			.color = (uint32_t) (float)0xffffff * rand(),
 		});
 	}

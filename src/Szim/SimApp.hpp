@@ -1,6 +1,7 @@
-#ifndef _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
+﻿#ifndef _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
 #define _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
 
+#include "Backend.hpp"
 #include "Config.hpp"
 #include "Time.hpp"
 #include "Model/World.hpp"
@@ -41,29 +42,43 @@ public:
 	void pause(bool newstate = true);
 	auto paused() const { return time.paused; }
 	auto toggle_pause()  { pause(!paused()); }
-	virtual void on_pause_changed(bool /*newstate*/) {} // Pausing might need support/followup
-
-	virtual size_t add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
-	                //!! But C++ doesn't have the covariance needed here.
-	                //!! (Still added this cringy fn. for consistency.)
-	virtual void   remove_player(size_t ndx) = 0; //!this should then be virtual, too (like destructors)
+	virtual void pause_hook(bool /*newstate*/) {} // Pausing might need support/followup
 
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
 
-	Model::World const& get_world() const;
-	Model::World& get_world();
-	void set_world(Model::World const&);
-	void set_world(Model::World &);
+	      Model::World& world();
+	const Model::World& world() const;
+	const Model::World& const_world(); // Explicit const World& of non-const SimApp
+	void set_world(const Model::World&);
+
+	virtual void update_world(Szim::Seconds Δt) { world().update(Δt, *this); }
 
 	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
 	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
 	//virtual bool save_snapshot(const char* filename);
 	//virtual bool load_snapshot(const char* filename);
-	template <typename... X>
+	template <typename... X> // This convoluted way is to support multiple types AND have the 3rd arg optional
 	std::string snapshot_filename(size_t slot_ndx = 1, const std::string& format = "snapshot_{}.sav", const X... args) {
 		return std::vformat(format, std::make_format_args(slot_ndx, args...));
 	}
+
+	using Entity = Model::World::Body;
+	size_t entity_count() { return const_world().bodies.size(); }
+	// Thread-safe, slower access:
+	      Entity& entity(size_t index)       { return *world().bodies[index]; }
+	const Entity& entity(size_t index) const { return *world().bodies[index]; }
+	const Entity& const_entity(size_t index) { return *world().bodies[index]; }
+	//!! This might be misguided, but keeping it as a reminder...
+	// Unprotected, faster access (when already locked):
+	      Entity& _entity(size_t index)       { return *_world.bodies[index]; }
+	const Entity& _entity(size_t index) const { return *_world.bodies[index]; }
+	const Entity& _const_entity(size_t index) { return *_world.bodies[index]; }
+
+	virtual size_t add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
+	                //!! But C++ doesn't have the covariance needed here.
+	                //!! (Still added this cringy fn. for consistency.)
+	virtual void   remove_player(size_t ndx) = 0; //!this should then be virtual, too (like destructors)
 
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)
@@ -91,16 +106,18 @@ public:
 	virtual ~SimApp() = default;
 
 //------------------------------------------------------------------------
-// Data: Abstract (Generic) Model World + View State, etc...
+// Data: Abstract (Generic) Model World & View state etc...
 //----------------------------------------------------------------------------
 public:
 	Config cfg;
+	Backend& backend;
 
-protected:
-	Model::World world; // -> get_/set_world()
+private: // <- Forcing the use of accessors
+	Model::World _world; // See the *world() accessors!
+protected://!! This may need the same "rigor", as do some others...
 	Model::View view;
 
-public://!! Still directly set from main, hence the public!
+public://!! Still directly set from main, hence the public yet!
 	sz::CappedCounter<Szim::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
 		// 1 calendar year = 3,784,320,000 cycles at 120 fps, so even 32 bits are quite enough!
 		// But for longer runs (on persistent-world servers), or for higher resolutions, let's go 64...

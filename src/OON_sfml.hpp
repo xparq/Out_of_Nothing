@@ -4,7 +4,6 @@
 #include "OON.hpp"
 
 #include "View/render_sfml.hpp"
-#include "audio_sfml.hpp"
 
 #include "sfw/GUI.hpp"
 #include "UI/hud_sfml.hpp"
@@ -37,7 +36,7 @@ public:
 	//--------------------------------------------------------------------
 	// Player (gameplay) action overrides:
 
-	virtual void on_pause_changed(bool newstate) override;
+	virtual void pause_hook(bool newstate) override;
 	virtual bool load_snapshot(unsigned slot = 1) override;
 	//! The generic version of this is enough for now:
 	//virtual bool save_snapshot(unsigned slot = 1) override;
@@ -47,13 +46,16 @@ public:
 #ifndef DISABLE_HUD
 	auto toggle_huds()  { _show_huds = !_show_huds; }
 	auto toggle_help()  { help_hud.active(!help_hud.active()); }
+#else
+	auto toggle_huds()  {}
+	auto toggle_help()  {}
 #endif
 	void toggle_muting();
 	void toggle_music();
 	void toggle_sound_fx();
 	void toggle_fullscreen();
-	unsigned fps_throttling(unsigned fps = (unsigned)-1); // -1 means query mode; std::optional can't help with omitting it altogether
-	void     fps_throttling(bool onoff); // set default FPS if On, or 0.0 if Off
+	void     fps_throttling(bool onoff); // Apply configured FPS limit if true
+	unsigned fps_throttling(unsigned fps = (unsigned)-1); // -1 means query mode; std::optional couldn't help omit it altogether
 
 
 //------------------------------------------------------------------------
@@ -107,13 +109,6 @@ protected:
 #endif
 	sf::Clock clock;
 	View::Renderer_SFML renderer;
-
-public:
-#ifndef DISABLE_AUDIO
-	Audio_SFML audio;
-#else
-	Audio_Stub audio;
-#endif
 };
 
 #endif // _OON_SFML_HPP_

@@ -32,6 +32,7 @@ typedef float Seconds;
 //!!		Seconds dt_max;
 //!!		Seconds dt_avg100;
 		Seconds last_frame_delay; // In some modes it's not tied to Δt at all!
+		unsigned fps_limit = 0;   // 0: no limit; see: fps_throttling(), cfg.fps_limit
 
 //!!		seconds Δt_since_last_query(std::function<seconds(SimApp&)>) timer_snapshot_callback);
 
