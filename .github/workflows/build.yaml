@@ -1,4 +1,4 @@
-﻿name: build (NMake + SFML)
+﻿name: build (Windows/MSVC + SFML)
 
 on:
   workflow_dispatch:
@@ -66,7 +66,12 @@ jobs:
     - name: Setup MSVC/CLI dev. env.
       uses: ilammy/msvc-dev-cmd@v1.12.0
 
-    - name: Build the project
+    - name: Build with NMAKE + Jumpstart-NG
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
       run: build.cmd
+
+    - name: Build with BusyBox-w32 (pdpmake) + my univ. makefile
+      #working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: cmd
+      run: bbuild.cmd
