@@ -3,7 +3,7 @@
 
 #include "sz/toggle.hh"
 #include <cstddef> // size_t
-#include "Szim/Audio.hpp"
+#include "Engine/Audio.hpp"
 
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Audio/Sound.hpp>
@@ -13,7 +13,7 @@
 
 namespace Szim {
 
-class Audio_SFML : public Audio
+class SFML_Audio : public Audio
 {
 	struct SndBuf_NoCopy_Wrapper_thanksfornothing_std_vector : public sf::SoundBuffer {
 		bool muted = false;
@@ -34,7 +34,7 @@ public:
 	void   toggle_sound(size_t ndx) override;
 	void   kill_sounds() override;
 
-	Audio_SFML(): _dummy_soundbuffer_for_SFML{}, _sound{_dummy_soundbuffer_for_SFML}
+	SFML_Audio(): _dummy_soundbuffer_for_SFML{}, _sound{_dummy_soundbuffer_for_SFML}
 	{
 		// Add an empty element so if add() returns 0 for errors it could still
 		// be used as an index, pointing to a safe & silent spot.
@@ -47,9 +47,8 @@ private:
 
 
 public:
-	static Audio& create();	
-}; // class Audio_SFML
-
+	static Audio& get();
+}; // class SFML_Audio
 
 } // namespace Szim
 #endif // _XMHJ9UV5YW4985NVF46Y357KJ9_

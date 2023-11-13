@@ -53,7 +53,7 @@ int main()
 		cc = unsigned(-1); cerr << cc << ", ";
 
 	cerr << "\n\nAssign: operator=(-1)\n\t";
-		cc.operator=(unsigned(-1)); cerr << cc << ", ";
+	cc.operator=(unsigned(-1)); cerr << cc << ", ";
 	cerr << "\nAssign: x = -1\n\t";
 		cc = unsigned(-1); cerr << cc << ", ";
 

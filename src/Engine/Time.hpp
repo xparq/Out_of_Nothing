@@ -52,19 +52,6 @@ typedef float Seconds;
 			fixed / real-time
 		*/
 	};
-/*!!
-	class Stopwatch
-	{
-		enum Mode { Start, Hold, Stop, Reset } mode;
-		using callback_t std::function<seconds()>
-		callback_t capture_callback;
-	public:
-		Stopwatch(callback_t timer_snapshot_callback, Mode mode = Hold):
-			capture_callback(timer_snapshot_callback)
-		{
-		}
-		seconds stop(std::function<seconds(SimApp&)>) timer_snapshot_callback);
-	};
-!!*/
+
 } // namespace Szim
 #endif // _KJHWERHKWHQNCEURTHNY48_

@@ -24,7 +24,10 @@ public:
 	virtual bool   toggle_sounds() { if (!sz::toggle(&fx_enabled)) { kill_sounds(); } return fx_enabled; }
 
 	virtual ~Audio() = default;
-};
+
+	// Must be implemented by derived classes:
+	//static Audio* get() { static_assert(false, "::get() should be supplied by implementation classes!"); }
+}; // class Audio
 
 } // namespace Szim
 

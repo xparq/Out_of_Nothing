@@ -17,8 +17,8 @@ echo Counting lines in `realpath $dir`:
 #!! E.g. BB couldn't find build-gcc.sh, defs.sh etc.! :-ooooo
 #!!!
 echo "With $FIND:"
-	$FIND        $dir -type f -a \( -name '*.sh' -o -name '*.cmd' -o -name '*akefile*' -o -name 'run_*' \) -a -exec wc -l \{\} \; \
+	$FIND        $dir -type f -a \( -name '*.cpp' -o -name '*.hpp' -o -name '*.hh' -o -name '*.cc' \) -a -exec wc -l \{\} \; \
 	| awk '{ total += $1 } END{ print total }'
 echo "With BusyBox find:"
-	busybox find $dir -type f -a \( -name '*.sh' -o -name '*.cmd' -o -name '*akefile*' -o -name 'run_*' \) -a -exec wc -l \{\} \; \
+	busybox find $dir -type f -a \( -name '*.cpp' -o -name '*.hpp' -o -name '*.hh' -o -name '*.cc' \) -a -exec wc -l \{\} \; \
 	| awk '{ total += $1 } END{ print total }'

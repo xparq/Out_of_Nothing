@@ -1,7 +1,6 @@
 #ifndef __WORLD_SFML__
 #define __WORLD_SFML__
 
-
 #include "Physics.hpp" // #includes Math.hpp
 #include "Math/Vector2.hpp"
 //	using namespace Math;
@@ -23,7 +22,6 @@ class SimApp; //! Sigh, must predeclare it here, outside the namespace...
 namespace Model {
 
 static constexpr char const* VERSION = "0.0.1";
-
 
 //============================================================================
 class World // The model world
@@ -159,26 +157,6 @@ public:
 	World& _clone(World const& other);
 }; // class World
 
-
-struct View
-/* View-local coord. sys.:
-       +y
-        |
-  -x -- 0 -- +x
-        |
-       -y
-
-  It's origin is supposed to be aligned to the center of the screen (window, view pane...).
-*/
-{
-	static constexpr auto CFG_DEFAULT_ZOOM = 0.0000005f; //! This one also depends very much on the physics!
-
-	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * zoom + offset; }
-	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * zoom + offset.x, y * zoom + offset.y }; }
-
-	float zoom = CFG_DEFAULT_ZOOM;
-	Math::Vector2f offset = {0, 0}; // in World-coordinates
-};
 
 } // namespace Model
 

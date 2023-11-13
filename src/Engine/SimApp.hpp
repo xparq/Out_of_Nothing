@@ -1,13 +1,23 @@
 ﻿#ifndef _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
 #define _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
+#include "_build_cfg.h"
 
+//!!#include "extern/Args.hpp" //!! move to sz or absorb directly by Szim
+//!!??#include "sz/Args.hh"
+#include "Args.hpp"
 #include "Backend.hpp"
 #include "Config.hpp"
 #include "Time.hpp"
-#include "Model/World.hpp"
 
-//!!... This is gonna be tough to abstract...
+//!!... The UI and IO etc. are gonna be tough to abstract...
+//!!namespace sfw { class GUI; }
+#include "sfw/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
+                      //!! (mostly?) client .cpps that use should include it individually!)
+//!!#include "UI/HUD.hpp"
 #include "UI/Input.hpp"
+
+#include "Model/World.hpp"
+#include "View/ViewPort.hpp"
 
 #include "sz/unilang.hh" // On/Off
 #include "sz/counter.hh"
@@ -34,25 +44,24 @@ protected:
 // API...
 //----------------------------------------------------------------------------
 public:
-	virtual bool run() = 0;
+	bool run();
+
+	virtual bool init() { return true; }
+	virtual bool poll_and_process_controls() { return false; } // false: no inputs, nothing to do
+	virtual void update_world(Szim::Seconds Δt) { world().update(Δt, *this); }
 	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
-
-	virtual bool poll_and_process_controls() { return false; }
-
-	void pause(bool newstate = true);
-	auto paused() const { return time.paused; }
-	auto toggle_pause()  { pause(!paused()); }
-	virtual void pause_hook(bool /*newstate*/) {} // Pausing might need support/followup
 
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
+	void pause(bool newstate = true);
+	auto paused() const { return time.paused; }
+	auto toggle_pause()  { pause(!paused()); }
+	virtual void pause_hook(bool /*newstate*/) {} // Pausing might need followup actions in the mechanics
 
 	      Model::World& world();
 	const Model::World& world() const;
 	const Model::World& const_world(); // Explicit const World& of non-const SimApp
 	void set_world(const Model::World&);
-
-	virtual void update_world(Szim::Seconds Δt) { world().update(Δt, *this); }
 
 	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
 	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
@@ -64,7 +73,7 @@ public:
 	}
 
 	using Entity = Model::World::Body;
-	size_t entity_count() { return const_world().bodies.size(); }
+	size_t entity_count() const { return world().bodies.size(); }
 	// Thread-safe, slower access:
 	      Entity& entity(size_t index)       { return *world().bodies[index]; }
 	const Entity& entity(size_t index) const { return *world().bodies[index]; }
@@ -97,6 +106,17 @@ public:
 	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...);
 
 //------------------------------------------------------------------------
+// Internals...
+//------------------------------------------------------------------------
+protected:
+	//!! Migrate the Engine-ish impl. parts here and remove the `abstractness`:
+	virtual void event_loop() = 0;
+	virtual void update_thread_main_loop() = 0;
+	virtual void updates_for_next_frame() = 0;
+	virtual void draw() = 0;
+	virtual void onResize() {}
+
+//------------------------------------------------------------------------
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
@@ -109,13 +129,28 @@ public:
 // Data: Abstract (Generic) Model World & View state etc...
 //----------------------------------------------------------------------------
 public:
+	Args args;
 	Config cfg;
+
+//------------------------------------------------------
+//----- vvv BACKEND-SPECIFIC "VIRTUAL" PARTS BELOW! vvv
+
 	Backend& backend;
+
+//!!
+sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
+	              //!! -- e.g. via a unique_ptr!
+//!!	View::Renderer_SFML renderer; //! The SFML UI has its own, but sharing the same SFML window! :-o
+
+//----- ^^^ BACKEND-SPECIFIC "VIRTUAL" PARTS ABOVE! ^^^
+//------------------------------------------------------
 
 private: // <- Forcing the use of accessors
 	Model::World _world; // See the *world() accessors!
-protected://!! This may need the same "rigor", as do some others...
-	Model::View view;
+
+public://!! Alas, the renderer needs it... 
+        //!! Oh, but move the renderer here, and the ViewPort should be part of that!too, BTW! But it's both SFML *and* app dependent yet!... :-/
+	View::ViewPort view;
 
 public://!! Still directly set from main, hence the public yet!
 	sz::CappedCounter<Szim::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
@@ -130,6 +165,8 @@ public://!! Still directly set from main, hence the public yet!
 protected:
 	// Workflow/logic control
 	bool _terminated = false;
+	bool _show_huds = true;
+
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
 

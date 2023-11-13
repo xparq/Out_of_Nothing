@@ -1,4 +1,3 @@
-#include "extern/Args.hpp"
 #include "OON_sfml.hpp"
 
 #include "extern/iprof/iprof.hpp"
@@ -39,21 +38,6 @@ int main(int argc, char* argv[])
 
 try {
 	OON_sfml game(argc, argv);
-
-	   if (args["bodies"]) {
-		auto n = stoi(args("bodies")) - 2; // 2 have been pre-created!...
-		game.add_bodies(n < 0 ? 0 : n); // Avoid possible overflow!
-	}; if (args["interact"]) {
-		game.interact_all();
-	}; if (args["friction"]) {
-		float f = stof(args("friction"));
-		game.world().FRICTION = f;
-	}; if (args["snd"]) {
-		game.backend.audio.enabled(args("snd") != "off");
-	}; if (args["zoom"]) {
-		float factor = stof(args("zoom"));
-		game.zoom(factor);
-	}
 
 	game.run();
 

@@ -3,14 +3,10 @@
 
 #include "OON.hpp"
 
-#include "View/render_sfml.hpp"
-
+#include "View/render_sfml.hpp"//!!...
+//!!#include <SFML/Window/Event.hpp>
 #include "sfw/GUI.hpp"
 #include "UI/hud_sfml.hpp"
-
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/Window/Event.hpp>
-#include <SFML/System/Clock.hpp>
 
 //============================================================================
 class OON_sfml : public OON
@@ -21,8 +17,6 @@ friend class View::Renderer_SFML;
 // API Op. Overrides...
 //------------------------------------------------------------------------
 public:
-
-	virtual bool run() override;
 	virtual void time_step(int steps) override;
 
 	//--------------------------------------------------------------------
@@ -62,6 +56,9 @@ public:
 // Callback impl. (overrides)...
 //------------------------------------------------------------------------
 private:
+	bool init() override;
+	void onResize() override;
+
 	// Model events
 	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
@@ -73,13 +70,13 @@ private:
 // Internals...
 //------------------------------------------------------------------------
 protected:
-	void event_loop();
-	void update_thread_main_loop();
-	void updates_for_next_frame();
-	void draw();
-	void onResize();
+//!! Migrating to SimApp's backend-specific part:
+	void event_loop() override;
+	void update_thread_main_loop() override;
+	void updates_for_next_frame() override;
+	void draw() override;
+//!!	void onResize() override;
 
-	void _setup();
 	void _setup_UI();
 
 	// Misc...
@@ -93,22 +90,22 @@ protected:
 // C++ mechanics...
 //------------------------------------------------------------------------
 public:
-	OON_sfml(int argc, char** argv);
+//!!	using OON::OON;
+	OON_sfml(int atgc, char** argv);
 	OON_sfml(const OON_sfml&) = delete;
 
 //------------------------------------------------------------------------
 // Data / Internals...
 //------------------------------------------------------------------------
 protected:
-	sf::RenderWindow window;
-	sfw::GUI gui;
-#ifndef DISABLE_HUD
-	UI::HUD_SFML    debug_hud;
-	UI::HUD_SFML    help_hud;
-	bool _show_huds = true;
-#endif
-	sf::Clock clock;
 	View::Renderer_SFML renderer;
+#ifndef DISABLE_HUD
+//!!	UI::HUD& debug_hud;
+//!!	UI::HUD& help_hud;
+	UI::HUD_SFML debug_hud;
+	UI::HUD_SFML help_hud;
+#endif
+
 };
 
 #endif // _OON_SFML_HPP_

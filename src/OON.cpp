@@ -12,6 +12,51 @@ using namespace Math;
 using namespace UI;
 using namespace std;
 
+bool OON::init() // override
+{
+	const auto& w = const_world();
+		//!! The model world has been implicitly created in SimApp yet!...
+
+	// Add the "Player Superglobe" first
+	//!! THIS MUST COME BEFORE CALLING add_bodies()!
+	globe_ndx = add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+	assert(entity_count() > globe_ndx);
+	assert(player_entity_ndx() == globe_ndx);
+
+	// Add 2 "moons" with fixed parameters (mainly for testing):
+	add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+				.color = 0xff2020});
+	add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
+				.color = 0x3060ff});
+
+	// Game-related cmdline options...
+	// Note: the system-level options have been processed and applied already!
+  try {
+	   if (args["bodies"]) {
+		auto n = stoi(args("bodies")) - 2; // 2 have already been created
+		add_bodies(n < 0 ? 0 : n); // Avoid possible overflow!
+	}; if (args["interact"]) {
+		interact_all();
+	}; if (args["friction"]) {
+		float f = stof(args("friction"));
+		world().FRICTION = f;
+	}; if (args["snd"]) {
+		backend.audio.enabled(args("snd") != "off");
+	}; if (args["zoom"]) {
+		float factor = stof(args("zoom"));
+		zoom(factor);
+	}
+	return true;
+  } catch(...) {
+	cerr << __FUNCTION__ ": ERROR processing/applying cmdline args!\n";
+	return false;
+  }
+
+	// Init sounds (even if turned off; it may get turned back on by the user)
+	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
+	backend.audio.play_music(string(cfg.asset_dir + "music/default.ogg").c_str());
+}
+
 //----------------------------------------------------------------------------
 bool OON::poll_and_process_controls()
 {

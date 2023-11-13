@@ -1,7 +1,7 @@
 #ifndef __OON__
 #define __OON__
 
-#include "Szim/SimApp.hpp"
+#include "Engine/SimApp.hpp"
 
 #include <cassert>
 
@@ -74,9 +74,10 @@ public:
 //----------------------------------------------------------------------------
 // Virtuals...
 //----------------------------------------------------------------------------
-private:
+protected:
 	//------------------------------------------------------------------------
 	// - Implemented:
+	virtual bool init() override;
 
 	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
 	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;

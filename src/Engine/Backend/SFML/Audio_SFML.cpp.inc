@@ -7,16 +7,17 @@
 #include <iostream>
 	using std::cerr, std::endl;
 
+
 //----------------------------------------------------------------------------
-Audio& Audio_SFML::create()
+Audio& SFML_Audio::get()
 {
-	static Audio_SFML audio{};
+	static SFML_Audio audio{};
 	return audio;
 }
 
 
 //----------------------------------------------------------------------------
-bool Audio_SFML::toggle_audio()
+bool SFML_Audio::toggle_audio()
 {
 	if (Audio::toggle_audio()) {
 		if (_music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started
@@ -29,7 +30,7 @@ bool Audio_SFML::toggle_audio()
 }
 
 //----------------------------------------------------------------------------
-size_t Audio_SFML::add_sound(const char* filename)
+size_t SFML_Audio::add_sound(const char* filename)
 {
 //!!	sounds.emplace_back(); //! Emplace would *STILL* call a copy ctor, if no args! :-o So fkn' disappointing! :(
 //!!!!	sounds.resize(sounds.size() + 1); //! Oh, wow, *EVEN* this one will insist on copying!! :-o WTF?! :(
@@ -45,7 +46,7 @@ cerr << "- Error loading sound: " << filename << endl;
 }
 
 //----------------------------------------------------------------------------
-void Audio_SFML::play_sound(size_t ndx)
+void SFML_Audio::play_sound(size_t ndx)
 {
 	assert(ndx < sounds.size());
 	// Also check run-time, to be absolutely sure:
@@ -59,7 +60,7 @@ void Audio_SFML::play_sound(size_t ndx)
 }
 
 //----------------------------------------------------------------------------
-bool Audio_SFML::play_music(const char* filename)
+bool SFML_Audio::play_music(const char* filename)
 {
 	if (!_music.openFromFile(filename)) {
 cerr << "- Error loading music: " << filename << endl;
@@ -75,7 +76,7 @@ cerr << "- Error loading music: " << filename << endl;
 
 //----------------------------------------------------------------------------
 //!!NOTE: This one pauses, vs. toggle_sound() mutes!
-bool Audio_SFML::toggle_music()
+bool SFML_Audio::toggle_music()
 {
 	if (Audio::toggle_music()) {
 		if (enabled && _music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started?
@@ -88,7 +89,7 @@ bool Audio_SFML::toggle_music()
 
 //----------------------------------------------------------------------------
 //!!NOTE: This one mutes, vs. toggle_music() pauses!
-void Audio_SFML::toggle_sound(size_t ndx)
+void SFML_Audio::toggle_sound(size_t ndx)
 {
 	if (ndx >= sounds.size()) {
 		return;
@@ -97,7 +98,7 @@ void Audio_SFML::toggle_sound(size_t ndx)
 }
 
 //----------------------------------------------------------------------------
-void Audio_SFML::kill_sounds()
+void SFML_Audio::kill_sounds()
 {
 //!!	for (auto& s : sounds) {
 //!!		s.stop();

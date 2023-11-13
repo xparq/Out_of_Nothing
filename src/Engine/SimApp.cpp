@@ -1,11 +1,5 @@
 #define SAVE_COMPRESSED
 
-#ifdef USE_BACKEND_SFML
-#   include "Backend/SFML.hpp"
-#else
-#   error Only the SFML backend is supported currently. (Define USE_BACKEND_SFML in your build procedure!)
-#endif
-
 #include "SimApp.hpp"
 
 #include <string>
@@ -14,8 +8,6 @@
 	using namespace std::string_literals;
 #include <string_view>
 	using std::string_view;
-//!!#include "sz/Args.hh"
-#include "extern/Args.hpp" //!! move to sz or absorb directly by Szim
 #include "sz/fs.hh"
 	using sz::dirname;
 #include <fstream>
@@ -24,8 +16,6 @@
 #   include "extern/zstd/zstd.h"
 #   include <sstream>
     using std::ostringstream, std::stringstream;
-#   include <string_view>
-    using std::string_view;
 #   include <memory>
     using std::make_unique_for_overwrite;
 #   include <cstddef>
@@ -41,92 +31,6 @@
 
 using namespace Szim;
 //============================================================================
-//----------------------------------------------------------------------------
-SimApp::SimApp(int argc, char** argv) :
-	// Bootstrap the backend... (Could be done via the config in the future!)
-#ifdef USE_BACKEND_SFML
-	backend{Backend_SFML::create()}
-#else
-//!!	backend{Backend_...::create()}
-#   error Only the SFML backend is supported currently! (Define USE_BACKEND_SFML)
-#endif	
-
-
-{
-	//!!
-	//!! Cfg...
-	//!!
-
-	/*!! Normalize the config. process:
-	[ ] pass it all in one go to the game
-	[ ] preferably just the config file name!
-		[ ] SimApp should have the cfg loader already;
-			[ ] calling down to the real app impl. (OON)
-			    for any non-generic (i.e.: unknown) option (-> inih, too)
-	!!*/
-
-	Args args(argc, argv, {
-	// Long options with 1 param. don't need to be defined:
-	//	{"moons", 1}, // number of moons to start with
-	// Short ones do, unfortunately (they're predicates by default, and don't have '=' to override):
-		{"C", 1},
-	});
-
-	// 0. Check the cmdline to pick up a custom-config arg...
-	string cfgfile = args("cfg");
-	if (cfgfile.empty()) cfgfile = args("C"); // OK if still empty, we'll fall back to the default.
-	else if (!args("C").empty())
-		cerr << "- WARNING: Both -C and --cfg have been specified; ignoring \"-C " << args("C") << "\"!\n";
-	if (cfgfile.empty()) cfgfile = DEFAULT_CFG_FILE;
-
-	// Relative paths will be rooted to the dir of 'cfgfile' by default,
-	// i.e. unless it's specifically set in the config
-	//!!Move to unilang:
-	cfg.select(cfgfile);
-	//!!auto basename = fs::path(cfgfile).filename().string();
-
-	// 1. Preset hardcoded baseline defaults...
-	//!!?? Or just set them all in .value_or() (see below)?
-
-	// 2. Load cfg. to override those...
-	//!! This assignment is silly... cfg. should know how to set its own props! :)
-	cfg.asset_dir       = cfg.get("fs-layout/asset_dir", sz::getcwd() + "/asset/"); //!! Trailing / still required!
-	cfg.iteration_limit = cfg.get("sim/loopcap", -1);
-	cfg.fixed_dt        = cfg.get("sim/timing/fixed_dt", 0.f);
-
-	// 3. Process cmdline args to override again...
-//!! See also main.cpp, currently! And if main goes into Szim (making it essentially a framework, not a lib, BTW...),
-//!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's likely gonna be an app
-//!! composition layout, where the client retains its own main()!
-	if   (args["loopcap"]) {
-		try { cfg.iteration_limit = stoul(args("loopcap")); } catch(...) {
-			cerr << "- WRNING: --loopcap ignored! "<<args("loopcap")<<" must be a valid positive integer.\n";
-		}
-	} if (args["fixed_dt"]) {
-		try { cfg.fixed_dt = stof(args("fixed_dt")); } catch(...) {
-			cerr << "- WRNING: --fixed_dt ignored! "<<args("fixed_dt")<<" must be a valid floating-pont number.\n";
-		}
-	}
-
-	//!! 4. Fixup...
-	cfg.fixed_dt_enabled = cfg.fixed_dt != 0.f;
-
-	//!! 5. Apply the config...
-	iterations.max(cfg.iteration_limit);
-
-	if (cfg.fixed_dt_enabled) {
-		time.dt_last = cfg.fixed_dt; // Otherwise no one might ever init this...
-	}
-
-cerr <<	"DBG> current dir: " << sz::getcwd() << '\n';
-cerr <<	"DBG> cfg.iteration_limit: " << cfg.asset_dir << '\n';
-cerr <<	"DBG> cfg.asset_dir: " << cfg.asset_dir << '\n';
-cerr <<	"DBG> cfg.iteration_limit: " << cfg.iteration_limit << '\n';
-cerr <<	"DBG> cfg.fixed_dt_enabled: " << cfg.fixed_dt_enabled << '\n';
-cerr <<	"DBG> cfg.fixed_dt: " << cfg.fixed_dt << '\n';
-}
-
-
 //----------------------------------------------------------------------------
 void SimApp::pause(bool newstate)
 {

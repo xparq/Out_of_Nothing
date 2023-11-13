@@ -1,5 +1,8 @@
 #include "Model/World.hpp"
-#include "Szim/SimApp.hpp"
+
+//!! Shrink even this dependency: don't include the entire fucking SimApp,
+//!! only its modelling-related services that are actually used:
+#include "Engine/SimApp.hpp"
 
 #include <cassert>
 #include <cmath> // sqrt, pow?

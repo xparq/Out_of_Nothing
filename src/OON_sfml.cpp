@@ -1,4 +1,8 @@
 ﻿#include "OON_sfml.hpp"
+#include "Engine/Backend/SFML/Backend_SFML.hpp"
+#define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
+#define SFML_HUD(x) (((UI::HUD_SFML&)backend).SFML_window())
+
 import Storage;
 
 #include "UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
@@ -22,6 +26,8 @@ import Storage;
 
 #include "extern/iprof/iprof.hpp"
 
+using namespace Szim;
+
 using namespace Model;
 using namespace View;
 using namespace UI;
@@ -36,64 +42,16 @@ namespace sync {
 
 
 //============================================================================
+//----------------------------------------------------------------------------
 OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
-	// Creating the window right away here (only) to support init-by-constr. for the HUDs:
-	, window(sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}), cfg.WINDOW_TITLE)
-	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
-	//!!??
-	//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why is this needed, if SFML already draws into an OpenGL canvas?!
-	//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
-
-	, gui(window, { .basePath = cfg.asset_dir.c_str(), //!! Must have a / suffix!
-	              .textureFile = "gui/texture.png",
-	              .bgColor = sfw::Color("#302030d0"),
-	              .fontFile = "font/default.font",
-	            },
-	    false // Don't manage the window
-	)
 #ifndef DISABLE_HUD
-	, debug_hud(window, -220)
-	, help_hud(window, 10, HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
+	// NOTE: .cfg is also ready now!
+	, debug_hud(SFML_WINDOW(), -220)
+	, help_hud(SFML_WINDOW(), 10, UI::HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
-	//!! THIS SHOULD BE IN _setup(), BUT IT MUST HAPPEN BEFORE CALLING add_bodies() IN main!...
-	// Player Superglobe:
-	globe_ndx = add_player({.r = const_world().CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
-	assert(const_world().bodies.size() > globe_ndx);
-	assert(player_entity_ndx() == globe_ndx);
 }
-
-bool OON_sfml::run()
-{
-	_setup();
-
-	//! The event loop will block and sleep.
-	//! The update thread is safe to start before the event loop, but we should also draw something
-	//! already before the first event, so we have to release the SFML (OpenGL) Window (crucial!),
-	//! and unfreeze the update thread (which would wait on the first event by default).
-	if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-		cerr << "\n- [main] sf::setActive(false) failed, WTF?! Terminating.\n";
-		return false;
-	}
-
-	ui_event_state = SimApp::UIEventState::IDLE;
-
-#ifndef DISABLE_THREADS
-	std::thread game_state_updates(&OON_sfml::update_thread_main_loop, this);
-		//! NOTES:
-		//! - When it wasn't a member fn, the value vs ref. form was ambiguous and failed to compile!
-		//! - The thread ctor would *copy* its params (by default), which would be kinda wonky for the entire app. ;)
-#endif
-
-	event_loop();
-
-#ifndef DISABLE_THREADS
-//cerr << "TRACE - before threads join\n";
-	game_state_updates.join();
-#endif
-
-	return true;
-}
+#include "UI/HUD_sfml.hpp"
 
 //----------------------------------------------------------------------------
 //!! Move this to SimApp, but only together with its counterpart in the update loop!
@@ -116,7 +74,7 @@ void OON_sfml::time_step(int steps)
 //----------------------------------------------------------------------------
 void OON_sfml::update_thread_main_loop()
 {
-	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
+//	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
 	                     //!! The only change I can see is a different getActiveContext ID here, if this is enabled.
 
 	std::unique_lock proc_lock{sync::Updating, std::defer_lock};
@@ -137,7 +95,7 @@ void OON_sfml::update_thread_main_loop()
 			}
 			updates_for_next_frame();
 			//!!?? Why is this redundant?!
-			if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
+			if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [update_thread_main_loop] sf::setActive(true) failed!\n";
 //?				terminate();
 //?				return;
@@ -150,7 +108,7 @@ void OON_sfml::update_thread_main_loop()
 			//!! displaying (so we can release the update lock right after renedring)
 			//!! -- AND THEN ALSO IMPLEMENTING SYNCING BETWEEN THOSE TWO!...
 			draw();
-			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 //?				terminate();
 //?				return;
@@ -182,19 +140,19 @@ void OON_sfml::update_thread_main_loop()
 }
 
 //----------------------------------------------------------------------------
-void OON_sfml::draw()
+void OON_sfml::draw() // override
 {
 	renderer.render(*this);
 		// Was in updates_for_next_frame(), but pause should not stop UI updates.
 		//!!...raising the question: at which point should UI rendering be separated from world rendering?
 
-	window.clear();
+	SFML_WINDOW().clear();
 
 	renderer.draw(*this);
 #ifndef DISABLE_HUD
 	if (_show_huds) {
-		debug_hud.draw(window);
-		if (help_hud.active()) help_hud.draw(window); //!! the active-chk is redundant, the HUD does the same; TBD, who's boss!
+		debug_hud.draw(SFML_WINDOW());
+		if (help_hud.active()) help_hud.draw(SFML_WINDOW()); //!! the active-chk is redundant, the HUD does the same; TBD, who's boss!
 		                                              //!! "activity" may mean more than drawing. so... actually both can do it?
 	}
 #endif
@@ -206,7 +164,7 @@ void OON_sfml::draw()
 */
         gui.render(); // Draw last, as a translucent overlay!
 
-	window.display();
+	SFML_WINDOW().display();
 }
 
 //----------------------------------------------------------------------------
@@ -227,8 +185,8 @@ void OON_sfml::updates_for_next_frame()
 		return capture;
 	});
 !!*/
-	time.last_frame_delay = clock.getElapsedTime().asSeconds();
-	clock.restart(); //! Must also be duly restarted on unpausing!
+	time.last_frame_delay = backend.clock.get();
+	backend.clock.restart(); //! Must also be duly restarted on unpausing!
 	// Update the FPS gauge
 	avg_frame_delay.update(time.last_frame_delay);
 
@@ -286,7 +244,7 @@ void OON_sfml::pause_hook(bool)
 	//!! As a quick hack, time must restart from 0 when unpausing...
 	//!! (The other restart() on pausing is redundant; just keeping it simple...)
 cerr << "- INTERNAL: Main clock restarted on pause on/off (in the pause-hook)!\n";
-	clock.restart();
+	backend.clock.restart();
 }
 
 
@@ -298,11 +256,11 @@ void OON_sfml::event_loop()
 	std::unique_lock noproc_lock{sync::Updating, std::defer_lock};
 
 try {
-	while (window.isOpen() && !terminated()) {
+	while (SFML_WINDOW().isOpen() && !terminated()) {
 			sf::Event event;
 
 #ifndef DISABLE_THREADS
-		if (!window.waitEvent(event)) {
+		if (!SFML_WINDOW().waitEvent(event)) {
 			cerr << "- Event processing failed. WTF?! Terminating.\n";
 			exit(-1);
 		}
@@ -313,7 +271,7 @@ try {
 
 #else
 /*!!?? Why did this (always?) fail?!
-		if (!window.pollEvent(event)) {
+		if (!SFML_WINDOW().pollEvent(event)) {
 			cerr << "- Event processing failed. WTF?! Terminating.\n";
 			exit(-1);
 		}
@@ -322,12 +280,12 @@ try {
 		// This inner loop is only for non-threading mode, to prevent event processing
 		// (reaction) delays (or even loss) due to accumulating events coming faster
 		// than 1/frame (for a long enough period to cause noticable jam/stutter)!
-		for (; window.pollEvent(event);) {
+		for (; SFML_WINDOW().pollEvent(event);) {
 
 		ui_event_state = UIEventState::BUSY;
 //cerr << "- acquiring events...\n";
 #endif
-			if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
 //?				terminate();
 //?				return;
@@ -436,7 +394,7 @@ extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key cod
 			case sf::Event::Closed: //!!Merge with key:Esc!
 				terminate();
 //cerr << "BEGIN sf::Event::Closed\n"; //!!this frame is to trace an error from SFML/OpenGL
-				window.close();
+				SFML_WINDOW().close();
 //cerr << "END sf::Event::Closed\n";
 				break;
 
@@ -546,8 +504,8 @@ void OON_sfml::_adjust_pan_after_zoom(float factor)
 
 	auto visible_R = player_model()->r * view.zoom; //!! Not a terribly robust method to get that size...
 
-	if (abs(vpos.x) > Renderer_SFML::VIEWPORT_WIDTH/2  - visible_R ||
-	    abs(vpos.y) > Renderer_SFML::VIEWPORT_HEIGHT/2 - visible_R)
+	if (abs(vpos.x) > cfg.VIEWPORT_WIDTH/2  - visible_R ||
+	    abs(vpos.y) > cfg.VIEWPORT_HEIGHT/2 - visible_R)
 	{
 cerr << "R-viewsize: " << view.zoom * plm->r
 	 << " abs(vpos.x): " << abs(vpos.x) << ", "
@@ -567,15 +525,15 @@ void OON_sfml::toggle_fullscreen()
 
 	//! NOTE: We're being called here from a locked section of the event loop.
 
-	if (!window.setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+	if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
 	}
 
 	is_full = !is_full;
 
-	window.create(
-		is_full ? sf::VideoMode::getDesktopMode() : sf::VideoMode({Renderer_SFML::WINDOW_WIDTH, Renderer_SFML::WINDOW_HEIGHT}),
-		cfg.WINDOW_TITLE,
+	SFML_WINDOW().create(
+		is_full ? sf::VideoMode::getDesktopMode()
+		        : sf::VideoMode({cfg.WINDOW_WIDTH, cfg.WINDOW_HEIGHT}), cfg.window_title,
 		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
 	);
 	fps_throttling(fps_throttling()); //! Cryptic way to reactivate the last throttling state, because
@@ -583,7 +541,7 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
 
 	onResize();
 
-	if (!window.setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
+	if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
 cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
 	}
 
@@ -607,7 +565,7 @@ unsigned OON_sfml::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 {
 	if (new_fps_limit != (unsigned)-1) {
 		time.fps_limit = new_fps_limit;
-		window.setFramerateLimit(time.fps_limit); // 0: no limit, for SFML, too!
+		SFML_WINDOW().setFramerateLimit(time.fps_limit); // 0: no limit, for SFML, too!
 	}
 	return time.fps_limit; // C++ converts it to false when 0 (no limit)
 }
@@ -618,36 +576,18 @@ void OON_sfml::fps_throttling(bool onoff)
 
 
 //----------------------------------------------------------------------------
-//!!Move to Szim, make it a callback (and eventually just sink into the UI)!
-void OON_sfml::onResize()
+bool OON_sfml::init() // override
 {
-#ifndef DISABLE_HUD
-	debug_hud.onResize(window);
-	help_hud.onResize(window);
-#endif
-}
+	if (!OON::init()) {
+		return false; // It should've dealt with any dignotstics already
+	}
 
-
-//----------------------------------------------------------------------------
-void OON_sfml::_setup()
-{
 	//! Note: the window itself has just been created by the ctor.!
 	//! But... it will also be recreated each time the fullscreen/windowed
 	//! mode is toggled, so this will need to be repeated after every
 	//! `window.create` call (i.e. in `toggle_fullscreen`):
 	fps_throttling(On);
 
-	const auto& w = const_world();
-
-	// moons:
-	add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-				.color = 0xff2020});
-	add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
-				.color = 0x3060ff});
-
-	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
-
-	backend.audio.play_music(string(cfg.asset_dir + "music/default.ogg").c_str());
 	/*
 	static sf::Music m2; if (m2.openFromFile(string(cfg.asset_dir + "music/extra sonic layer.ogg").c_str()) {
 		m2.setLoop(false); m2.play();
@@ -655,6 +595,7 @@ void OON_sfml::_setup()
 	*/
 
 	_setup_UI();
+	return true;
 }
 
 void OON_sfml::_setup_UI()
@@ -756,6 +697,17 @@ void OON_sfml::_setup_UI()
 	help_hud.active(true);
 #endif
 }
+
+//----------------------------------------------------------------------------
+//!!Sink this into the UI!
+void OON_sfml::onResize() // override
+{
+#ifndef DISABLE_HUD
+	((UI::HUD_SFML&)debug_hud).onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)help_hud) .onResize(((SFML_Backend&)backend).SFML_window());
+#endif
+}
+
 
 bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 {

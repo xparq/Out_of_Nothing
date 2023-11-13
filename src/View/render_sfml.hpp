@@ -1,6 +1,8 @@
 #ifndef _RENDER_SFML_HPP_
 #define _RENDER_SFML_HPP_
 
+//!!#include "Engine/Renderer.hpp"
+
 #include "Model/World.hpp"
 
 #include <SFML/Graphics/Transformable.hpp>
@@ -10,11 +12,12 @@
 #include <memory> // shared_ptr
 
 
-class OON_sfml; //!! Sigh... Should really only depend on the generic app class,
+namespace Szim {
+class SimApp; //!! Sigh... Should really only depend on the generic app class,
                 //!! but then parallell polymorphic derivation (of both the app
                 //!! and the renderer) is a nightmare, involving also a Platform
 		//!! abstraction (or at least a Window -> Window_SFML wrapper)...
-
+}
 namespace View {
 
 //----------------------------------------------------------------------------
@@ -29,24 +32,23 @@ public:
 class Renderer_SFML : public Renderer// "View"
 {
 public:
-	constexpr static auto WINDOW_WIDTH  = 1024;
-	constexpr static auto WINDOW_HEIGHT = 768;
+//!!->cfg:
+//!!	constexpr static auto WINDOW_WIDTH  = 1024;
+//!!	constexpr static auto WINDOW_HEIGHT = 768;
 
 	// Size of the view pane (viewport); NOT directly related to Model::View, but
 	// should obviously be mapped directly to display (viewport) coords, if at all possible.
-	constexpr static auto VIEWPORT_WIDTH  = WINDOW_WIDTH;
-	constexpr static auto VIEWPORT_HEIGHT = WINDOW_HEIGHT;
 
 	constexpr static auto ALPHA_ACTIVE = 255;
 	constexpr static auto ALPHA_INACTIVE = 127;
 
 // Ops
-	void render(OON_sfml& game); // can't keep it inline here: uses the game object!
-	void draw(OON_sfml& game); // can't keep it inline here: uses the game object!
-	void draw_paused_banner(OON_sfml& game);
+	void render(Szim::SimApp& game); // can't keep it inline here: uses the game object!
+	void draw(Szim::SimApp& game); // can't keep it inline here: uses the game object!
+	void draw_paused_banner(Szim::SimApp& game);
 
-	void create_cached_body_shape(const OON_sfml& game, const Model::World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
-	void delete_cached_body_shape(const OON_sfml& game, size_t body_ndx);
+	void create_cached_body_shape(const Szim::SimApp& game, const Model::World::Body& body, size_t body_ndx = (size_t)-1); //!!that -1, ugh... sorry! ;)
+	void delete_cached_body_shape(const Szim::SimApp& game, size_t body_ndx);
 
 // Internals
 //!!protected: //!!STILL USED DIRECTLY BY THE GAME CONTROLLER CLASS! :-/
