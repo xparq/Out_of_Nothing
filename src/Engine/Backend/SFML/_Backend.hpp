@@ -3,9 +3,9 @@
 
 #include "Engine/Backend.hpp"
 // Adapters:
-#include "Clock_SFML.hpp"
-#include "HCI_SFML.hpp" // sf::Window, events etc.
-#include "Audio_SFML.hpp"
+#include "_Clock.hpp"
+#include "_HCI.hpp" // sf::Window, events etc.
+#include "_Audio.hpp"
 
 //!!TBD: These are not direct SFML deps., only they themselves depend on it...
 //!!??   How to deal with this cleanly?
