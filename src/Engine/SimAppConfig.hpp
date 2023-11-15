@@ -2,7 +2,8 @@
 #define _DF8M99506BFN4735R9686OK_
 
 #include "Config.hpp"
-#include "Args.hpp"
+
+class Args; // Enough to actually #include it in the .cpp
 
 namespace Szim {
 
