@@ -1,7 +1,13 @@
 //!!
-//!!	RENAME!...
-//!!	Not a subclass of SimApp, but the Backend-specific bits of SimApp itself!
+//!!	RENAME!!-> Not a subclass of SimApp, just the Backend-specific parts of it
+//!!	compiled separately, unlike most/all other backend-specific files here!!
+//!!	(See also e.g. _Audio.cpp.inc!...)
 //!!
+//!!	NOTE: Albeit this is a "safe place" for backend-specific details,
+//!!	      it's still best to delegate those to the virtual 'backend'
+//!!	      object instead, if possible!
+//!!
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #include "Engine/SimApp.hpp"
 #include "_Backend.hpp"
@@ -21,6 +27,7 @@
 	using std::cerr, std::endl;
 //#include <stdexcept>
 //	using std::runtime_error;
+
 
 using namespace Szim;
 //============================================================================
@@ -106,6 +113,7 @@ SimApp::SimApp(int argc, char** argv)
 }
 
 
+
 //----------------------------------------------------------------------------
 bool SimApp::run()
 {
@@ -141,4 +149,3 @@ bool SimApp::run()
 
 	return true;
 }
-

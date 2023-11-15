@@ -26,7 +26,7 @@ struct SFML_Backend_Props // -> base-from-member C++ idiom
 //!!... Back in SimApp.hpp, directly for now:
 //!!	sfw::GUI& gui; //!! like a sore thumb...
 
-	SFML_Backend_Props(const SimAppConfig& syscfg);
+	SFML_Backend_Props(SimAppConfig& syscfg);
 };
 
 class SFML_Backend : private SFML_Backend_Props, public Backend
@@ -39,16 +39,16 @@ public:
 	//------------------------------------------------------------------------
 	// SFML-SPECIFIC HELPERS...
 	//------------------------------------------------------------------------
-	sf::RenderWindow& SFML_window() { return sfml_hci.window(); }
+	sf::RenderWindow& SFML_window() { return sfml_hci.SFML_window(); }
 
 	//------------------------------------------------------------------------
 	// Plumbing...
 	//------------------------------------------------------------------------
 public:
-	static SFML_Backend& use(const SimAppConfig& syscfg);
+	static SFML_Backend& use(SimAppConfig& syscfg);
 //!!	static SFML_Backend& get() { return use(Config{}); } //! Dummy cfg to be ignored
 private:
-	SFML_Backend(const SimAppConfig& syscfg);
+	SFML_Backend(SimAppConfig& syscfg);
 }; // class SFML_Backend
 
 } // namespace Szim

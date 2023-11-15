@@ -49,6 +49,10 @@ public:
 	virtual void update_world(Szim::Seconds Δt) { world().update(Δt, *this); }
 	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
 
+	void     toggle_fullscreen();
+	void     fps_throttling(bool onoff); // Apply configured FPS limit if true
+	unsigned fps_throttling(unsigned fps = (unsigned)-1); // -1 means query mode; std::optional couldn't help omit it altogether
+
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
 	void pause(bool newstate = true);
@@ -127,26 +131,22 @@ public:
 //------------------------------------------------------------------------
 // Data: Abstract (Generic) Model World & View state etc...
 //----------------------------------------------------------------------------
-public:
+protected:
 	Args args;
+public://!! E.g. the renderer still needs these...
 	SimAppConfig cfg;
-
-//------------------------------------------------------
-//----- vvv BACKEND-SPECIFIC "VIRTUAL" PARTS BELOW! vvv
-
 	Backend& backend;
-
+protected:
+	bool is_fullscreen = false; //!! May need to move it into the backend!
+//--------------
 //!!
 sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
 	              //!! -- e.g. via a unique_ptr!
 //!!	View::Renderer_SFML renderer; //! The SFML UI has its own, but sharing the same SFML window! :-o
 
-//----- ^^^ BACKEND-SPECIFIC "VIRTUAL" PARTS ABOVE! ^^^
-//------------------------------------------------------
-
+//--------------
 private: // <- Forcing the use of accessors
 	Model::World _world; // See the *world() accessors!
-
 public://!! Alas, the renderer needs it... 
         //!! Oh, but move the renderer here, and the ViewPort should be part of that!too, BTW! But it's both SFML *and* app dependent yet!... :-/
 	View::ViewPort view;
@@ -164,7 +164,6 @@ public://!! Still directly set from main, hence the public yet!
 protected:
 	// Workflow/logic control
 	bool _terminated = false;
-	bool _show_huds = true;
 
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945

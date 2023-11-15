@@ -1,4 +1,9 @@
 ﻿#include "OON_sfml.hpp"
+
+//!! This could be "allowed" later directly in OON.cpp, too, after the backend selection
+//!! becomes more transparent/automatic (e.g. finishing what I've started in SFW),
+//!! because the goal here (on the app level) is only separating the source from the
+//!! backend dependencies ("write once"), not the compilation process!
 #include "Engine/Backend/SFML/_Backend.hpp"
 #define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
 #define SFML_HUD(x) (((UI::HUD_SFML&)backend).SFML_window())
@@ -51,7 +56,6 @@ OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 #endif
 {
 }
-#include "UI/HUD_sfml.hpp"
 
 //----------------------------------------------------------------------------
 //!! Move this to SimApp, but only together with its counterpart in the update loop!
@@ -451,40 +455,6 @@ void OON_sfml::remove_body(size_t ndx)
 	renderer.delete_cached_body_shape(*this, ndx);
 }
 
-//----------------------------------------------------------------------------
-size_t OON_sfml::add_player(World::Body&& obj)
-{
-	// These are the player modelling differences:
-	obj.add_thrusters();
-	obj.superpower.gravity_immunity = true;
-	obj.superpower.free_color = true;
-	obj/*.superpower*/.lifetime = World::Body::Unlimited; //!!?? Should this be a superpower instead?
-
-	return add_body(std::forward<World::Body>(obj));
-}
-
-void OON_sfml::remove_player(size_t ndx)
-{ndx;
-}
-
-
-//----------------------------------------------------------------------------
-bool OON_sfml::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
-{w;
-	if (obj1->is_player() || obj2->is_player()) {
-		backend.audio.play_sound(clack_sound);
-	}
-
-	obj1->T += 100;
-	obj2->T += 100;
-
-	obj1->recalc();
-	obj2->recalc();
-
-	return false; //!!Not yet used!
-}
-
-
 void OON_sfml::post_zoom_hook(float factor)
 {
 	renderer.resize_objects(factor);
@@ -516,63 +486,6 @@ cerr << "R-viewsize: " << view.zoom * plm->r
 //		zoom_out(); //!! Shouldn't be an infinite zoom loop (even if moving way too fast, I think)
 	}
 */
-
-
-//----------------------------------------------------------------------------
-void OON_sfml::toggle_fullscreen()
-{
-	static bool is_full = false;
-
-	//! NOTE: We're being called here from a locked section of the event loop.
-
-	if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
-	}
-
-	is_full = !is_full;
-
-	SFML_WINDOW().create(
-		is_full ? sf::VideoMode::getDesktopMode()
-		        : sf::VideoMode({cfg.WINDOW_WIDTH, cfg.WINDOW_HEIGHT}), cfg.window_title,
-		is_full ? sf::Style::Fullscreen|sf::Style::Resize : sf::Style::Resize
-	);
-	fps_throttling(fps_throttling()); //! Cryptic way to reactivate the last throttling state, because
-	                                  //! SFML has just killed it with that window.create() above... :-/
-
-	onResize();
-
-	if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
-	}
-
-//	if (!(is_full = !is_full) /* :) */) {
-//		// full
-//	} else {
-//		// windowed
-//	}
-}
-
-
-//----------------------------------------------------------------------------
-//!!Move to Szim!
-void OON_sfml::toggle_muting() { backend.audio.toggle_audio(); }
-void OON_sfml::toggle_music() { backend.audio.toggle_music(); }
-void OON_sfml::toggle_sound_fx() { backend.audio.toggle_sounds(); }
-
-//----------------------------------------------------------------------------
-//!!Move to Szim!
-unsigned OON_sfml::fps_throttling(unsigned new_fps_limit/* = -1u*/)
-{
-	if (new_fps_limit != (unsigned)-1) {
-		time.fps_limit = new_fps_limit;
-		SFML_WINDOW().setFramerateLimit(time.fps_limit); // 0: no limit, for SFML, too!
-	}
-	return time.fps_limit; // C++ converts it to false when 0 (no limit)
-}
-void OON_sfml::fps_throttling(bool onoff)
-{
-	fps_throttling(unsigned(onoff ? cfg.fps_limit : 0));
-}
 
 
 //----------------------------------------------------------------------------

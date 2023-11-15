@@ -22,8 +22,7 @@ public:
 	//--------------------------------------------------------------------
 	// Config / Setup:
 	//------------------------------------------------------------------------
-	virtual size_t add_player(Model::World::Body&& obj) override;
-	virtual void   remove_player(size_t ndx) override;
+
 	virtual size_t add_body(Model::World::Body&& obj) override;
 	virtual void   remove_body(size_t ndx) override;
 
@@ -44,12 +43,6 @@ public:
 	auto toggle_huds()  {}
 	auto toggle_help()  {}
 #endif
-	void toggle_muting();
-	void toggle_music();
-	void toggle_sound_fx();
-	void toggle_fullscreen();
-	void     fps_throttling(bool onoff); // Apply configured FPS limit if true
-	unsigned fps_throttling(unsigned fps = (unsigned)-1); // -1 means query mode; std::optional couldn't help omit it altogether
 
 
 //------------------------------------------------------------------------
@@ -58,9 +51,6 @@ public:
 private:
 	bool init() override;
 	void onResize() override;
-
-	// Model events
-	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
 	// Game control
 	virtual void post_zoom_hook(float factor) override;
@@ -104,6 +94,7 @@ protected:
 //!!	UI::HUD& help_hud;
 	UI::HUD_SFML debug_hud;
 	UI::HUD_SFML help_hud;
+	bool _show_huds = true;
 #endif
 
 };

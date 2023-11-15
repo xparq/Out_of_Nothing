@@ -57,6 +57,25 @@ bool OON::init() // override
 	return true;
 }
 
+
+//----------------------------------------------------------------------------
+size_t OON::add_player(World::Body&& obj)
+{
+	// These are the player modelling differences:
+	obj.add_thrusters();
+	obj.superpower.gravity_immunity = true;
+	obj.superpower.free_color = true;
+	obj/*.superpower*/.lifetime = World::Body::Unlimited; //!!?? Should this be a superpower instead?
+
+	return add_body(std::forward<World::Body>(obj));
+}
+
+void OON::remove_player(size_t ndx)
+{ndx;
+}
+
+
+
 //----------------------------------------------------------------------------
 bool OON::poll_and_process_controls()
 {
@@ -146,10 +165,33 @@ bool OON::_ctrl_driving()
 */
 
 //----------------------------------------------------------------------------
+//!!Move chores like this to Szim API!
+void OON::toggle_muting() { backend.audio.toggle_audio(); }
+void OON::toggle_music() { backend.audio.toggle_music(); }
+void OON::toggle_sound_fx() { backend.audio.toggle_sounds(); }
+
+
+//----------------------------------------------------------------------------
 void OON::interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...)
 {w, event, obj1, obj2;
-//		if (!obj1->is_player())
-//			obj1->color += 0x3363c3;
+//	if (!obj1->is_player())
+//		obj1->color += 0x3363c3;
+}
+
+//----------------------------------------------------------------------------
+bool OON::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
+{w;
+	if (obj1->is_player() || obj2->is_player()) {
+		backend.audio.play_sound(clack_sound);
+	}
+
+	obj1->T += 100;
+	obj2->T += 100;
+
+	obj1->recalc();
+	obj2->recalc();
+
+	return false; //!!Not yet used!
 }
 
 

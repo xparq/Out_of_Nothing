@@ -245,3 +245,32 @@ void SimApp::interaction_hook(Model::World* w, Model::World::Event event, Model:
 {w, event, obj1, obj2;
 	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 }
+
+
+//----------------------------------------------------------------------------
+void SimApp::toggle_fullscreen()
+{
+	is_fullscreen = !is_fullscreen;
+	backend.hci.switch_fullscreen(is_fullscreen);
+	onResize();
+//	if (!(is_full = !is_full) /* :) */) {
+//		// full
+//	} else {
+//		// windowed
+//	}
+}
+
+//----------------------------------------------------------------------------
+unsigned SimApp::fps_throttling(unsigned new_fps_limit/* = -1u*/)
+{
+	if (new_fps_limit != (unsigned)-1) {
+		time.fps_limit = new_fps_limit;
+		backend.hci.frame_rate_limit(time.fps_limit); // 0: no limit
+	}
+	return time.fps_limit; // C++ converts it to false when 0 (no limit)
+}
+
+void SimApp::fps_throttling(bool onoff)
+{
+	fps_throttling(unsigned(onoff ? cfg.fps_limit : 0));
+}

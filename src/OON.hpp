@@ -16,9 +16,13 @@ class OON : public Szim::SimApp
 // API...
 //----------------------------------------------------------------------------
 public:
-
-	
 	auto&  player_model(unsigned player_id = 1) { assert(player_id == 1); return world().bodies[player_entity_ndx(player_id)]; }
+
+	//--------------------------------------------------------------------
+	// Config / Setup
+
+	virtual size_t add_player(Model::World::Body&& obj) override;
+	virtual void   remove_player(size_t ndx) override;
 
 	//------------------------------------------------------------------------
 	// Player actions...
@@ -52,6 +56,11 @@ public:
 	auto zoom_out () { constexpr static auto factor = 1/(1 + CFG_ZOOM_CHANGE_RATIO); zoom(factor); }
 	void zoom(float factor);
 
+	// - Misc. controls:
+	void toggle_muting();
+	void toggle_music();
+	void toggle_sound_fx();
+
 	//------------------------------------------------------------------------
 	// Internals: not even user actions (Well, some still are, basically for testing.)
 	//!!Make a proper distinction between these and the player/user actions!
@@ -81,6 +90,7 @@ protected:
 
 	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
 	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
+	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
 	//------------------------------------------------------------------------
 	// - Introduced:
