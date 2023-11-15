@@ -36,12 +36,11 @@ using namespace Szim;
 //
 // NOTE: Most init must be done in the member init list, because the `backend`
 //      member is polymorphic, and our only chance to set it to the proper type
-//      is there. And it requires prior init. of the config, too. Which requires
+//      is there! And it requires prior init. of the config, too. Which requires
 //      `args` to be initialized as well. And then, if we are at it, I just put
 //      the GUI init there, too, for good measure...
 //      (The ctor still has work left to do, so its body is not empty though.)
 // 
-Args ___cpp_workaround_args; // Can't just capture 'args' in the member init list below. :-/
 SimApp::SimApp(int argc, char** argv)
 	: args(argc, argv, {
 		// Long options with 1 param. don't need to be defined:
@@ -51,19 +50,20 @@ SimApp::SimApp(int argc, char** argv)
 	  })
 	// Load & fixup the SimApp config...
 	, cfg(
-	      ( //! COMMA-OP. HACK TO PRESET CFG. DEFAULTS... (THX FOR NOTHING, C++ ;-p )
+	      ( // COMMA-OP. HACK TO PRESET CFG. DEFAULTS... (THX FOR NOTHING, C++ ;-p )
+	        //! Note: this default config here is just a pretty redundant placeholder,
+		//! as the fixup in the cfg ctor takes care of the defaults anyway!
 		Config::Defaults = R"(
-		app_name = "Don't put the app name to the config, FFS!"
+		app_name = "Don't put the app name to the config, FFS! ;) "
 		[appearance]
 		window_title = "OON <Running with hardcoded defaults!>"
 		)"s,
-		((___cpp_workaround_args = args) //! ANOTHER ASTONISHING HACK... -- COOL, HUH? ;)
-		                                ("cfg")).empty()
+		args("cfg").empty()
 		? args("C").empty() ? "" // Use the literal Defaults above now, not the old DEFAULT_CFG_FILE path!
 			            : args("C")
 		: args("cfg")
-/*		((___cpp_workaround_args = args) //! ANOTHER ASTONISHING HACK... -- COOL, HUH? ;)
-		                                ("cfg")).empty()
+/* For a pedantic warning:
+		args("cfg").empty()
 		? args("C").empty()
 			? DEFAULT_CFG_FILE
 			: args("C")
@@ -72,11 +72,9 @@ SimApp::SimApp(int argc, char** argv)
 			: (cerr << "- WARNING: Both -C and --cfg have been specified; ignoring \"-C " << args("C") << "\"!\n",
 			  args("C"))
 */
-	      ) //! END OF COMMA-OP. HACK
-	      , ___cpp_workaround_args
-	//!!Can't convert to SimAppConfig using this! (I had to add a custom SimAppConfig ctor):
-	//!!  , [/*args*/](SimAppConfig& cfg_ptr){ _cfg_postload_hook(*cfg_ptr, ___cpp_workaround_args); }
-	  )
+	      ) // END OF COMMA-OP. HACK
+	      , args
+	  ) // cfg()
 	// Bootstrap the backend...
 	, backend(SFML_Backend::use(cfg))
 	// Init the GUI...
