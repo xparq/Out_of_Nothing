@@ -12,16 +12,22 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	Config(cfg_path)
 {
 	// 1. Preset hardcoded baseline defaults...
-	//!!?? Or just set them all in .value_or() (see below)?
+	// ...Well, just default them in one step with loading; see below!
 
-	// 2. Override those from the loaded ..
+	// 2. Override from the config...
 
-	//!! Thse assignments are so silly... Either don't store them there (again!),
-	//!! but just use the queries [and the reason we're here is to fixup
-	//!! missing values with defaults... -- !!ALSO, THERE'S NO WAY TO GET
-	//!! VALUES WITHOUT ALWAYS SUPPLYING THEIR DEFAULTS, TOO, ALL THE TIME!...],
-	//!! or store (cache) them somewhere else (in the app inst.)!
-	asset_dir       = get("fs-layout/asset_dir", sz::getcwd() + "/asset/"); //!! Trailing / still required!
+	//!! These assignments are kinda silly... I don't like storing them here _again_,
+	//!! the direct cfg.get() queries could be used, too! Or cache them in the app inst.
+	//!! if still needed (for tight loops) -- for another kind of silly duplication. ;)
+	//!! Well, the reason we're here is to fixup the inputs, so no raw get() queries
+	//!! later!... But: the parsed TOML tables can be modified, too!...
+	//!!
+	//!!BTW: WITH get() THERE'S NO WAY TO GET VALUES WITHOUT ALWAYS SUPPLYING THE DEFAULTS, TOO! :-/
+	data_dir        = get("data_dir", ""); // "" is the same as sz::getcwd()
+	asset_dir       = get("asset_dir", "asset/");
+	window_title    = get("appearance/window_title", "Out of Nothing"); //!! USE A BUILT-IN APP_NAME RESOURCE/PROP (that's not a cfg option)!
+	default_font_file = get("appearance/default_font_file", "font/default.font");
+	hud_font_file   = get("appearance/HUD/font_file", default_font_file);
 	iteration_limit = get("sim/loopcap", -1);
 	fixed_dt        = get("sim/timing/fixed_dt", 0.f);
 
@@ -42,15 +48,12 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	//!! 4. Fixup...
 	//!! Decide & consolidate whether to go with normalized abs. paths, or keep them as-is,
 	//!! and rely on the CWD (which might need some explicit care)!
-	data_dir = sz::endslash_fixup(get("data_dir", ""));
-	asset_dir = get("fs-layout/asset_dir", sz::getcwd() + "/asset/"); //!! Trailing / still required!
-	
+	data_dir = sz::endslash_fixup(data_dir);
+	asset_dir = sz::endslash_fixup(asset_dir);
 	fixed_dt_enabled = fixed_dt != 0.f;
-	window_title = get("appearance/window_title", "Out of Nothing") //!! USE A BUILT-IN APP_NAME RESOURCE/PROP (that's not a cfg option)!
 #ifdef DEBUG	
-	+ " (DEBUG build)";
+	window_title += " (DEBUG build)";
 #endif	
-	;
 
 cerr <<	"DBG> current dir: " << sz::getcwd() << '\n';
 cerr <<	"DBG> current(): " << current() << '\n';

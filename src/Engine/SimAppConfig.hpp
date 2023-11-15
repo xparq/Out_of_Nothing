@@ -38,9 +38,11 @@ struct SimAppConfig : Config
 	//!! THESARE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
 	//!! Possibly move the post-load callback hook here!
 	// Sys.
-	std::string window_title;
-	std::string asset_dir;
 	std::string data_dir;
+	std::string asset_dir;
+	std::string window_title;
+	std::string default_font_file;
+	std::string hud_font_file;
 	// Sim.
 	CycleCount iteration_limit;
 	bool  fixed_dt_enabled;

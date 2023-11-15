@@ -8,7 +8,7 @@
 #include <stdexcept>
 	using std::runtime_error;
 #include <cassert>
-#include <iostream> // DEBUG ONLY!
+#include <iostream> // For config load/parse errors, when exceptions are disallowed
 
 using namespace Szim;
 using namespace std;
@@ -72,13 +72,16 @@ bool Config::select(const string& cfg_path, bool can_throw, const CALLBACK& post
 		assert(!result); //!! This may well be not how TOML++ works with exceptions enabled!
 	}
 	if (!result) {
-		if (can_throw) throw runtime_error("Failed to load config: "s + cfg_path);
-		else return false;
+		auto& err = (toml::parse_error&)result;
+		auto errmsg = "Failed to load config \""s + cfg_path;
+		errmsg += "\": \n    ";
+		errmsg += err.description();
+		errmsg += "\n        at line: ";
+		errmsg += std::to_string(err.source().begin.line);
+		if (can_throw) throw runtime_error(errmsg);
+		else { cerr << errmsg; return false; }
 	}
 	_config = result.table(); //!! Will not compile with exceptions enabled (I guess)!
-
-//cerr << "Active cfg: " << cfg_path << '\n';
-
 	_current_config = cfg_path;
 	_cfg_base_path = sz::dirname(cfg_path);
 

@@ -70,7 +70,7 @@ void Renderer_SFML::draw(SimApp& game)
 //!!MOVE TO UI::Widget::Notice!
 void Renderer_SFML::draw_paused_banner(SimApp& game)
 {
-	if (!sfw::Theme::loadFont(game.cfg.asset_dir + "font/default.font")) {
+	if (!sfw::Theme::loadFont(game.cfg.asset_dir + game.cfg.default_font_file)) {
 		//! SFML does print errors to the console.
 		return;
 	}

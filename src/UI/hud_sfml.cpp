@@ -23,10 +23,23 @@ using namespace std;
 
 using namespace UI;
 
+
+HUD_SFML::HUD_SFML(sf::RenderWindow& window, const string& font_file,
+	int xpos, int ypos, uint32_t fgcolor, uint32_t bgcolor)
+	:
+	_font_file(font_file),
+	req_panel_top(ypos),
+	req_panel_left(xpos),
+	_fgcolor(fgcolor),
+	_bgcolor(bgcolor)
+{
+	_setup(window);
+}
+
 //----------------------------------------------------------------------------
 void HUD_SFML::_setup(sf::RenderWindow& window)
 {
-	if (!font.loadFromFile(CFG_HUD_FONT_PATH)) {
+	if (!font.loadFromFile(_font_file)) {
 		//! SFML does print errors to the console.
 		active(false);
 	}

@@ -29,7 +29,6 @@ namespace UI {
 //----------------------------------------------------------------------------
 struct HUD_SFML : public HUD
 {
-	static constexpr auto CFG_HUD_FONT_PATH = "asset/font/HUD.font";
 	static constexpr uint32_t DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
 	static constexpr uint32_t DEFAULT_BACKGROUND_COLOR = 0x00406050;
 
@@ -42,16 +41,12 @@ struct HUD_SFML : public HUD
 	virtual void onResize(sf::RenderWindow& window);
 
 public:
-	HUD_SFML(sf::RenderWindow& window, int xpos = DEFAULT_PANEL_LEFT, int ypos = DEFAULT_PANEL_TOP,
-		uint32_t fgcolor = DEFAULT_TEXT_COLOR, uint32_t bgcolor = DEFAULT_BACKGROUND_COLOR)
-		:
-		req_panel_top(ypos),
-		req_panel_left(xpos),
-		_fgcolor(fgcolor),
-		_bgcolor(bgcolor)
-	{ _setup(window); }
+	HUD_SFML(sf::RenderWindow& window, const std::string& font_file,
+		int xpos = DEFAULT_PANEL_LEFT, int ypos = DEFAULT_PANEL_TOP,
+		uint32_t fgcolor = DEFAULT_TEXT_COLOR, uint32_t bgcolor = DEFAULT_BACKGROUND_COLOR);
 
 protected:
+	std::string _font_file;
 	std::vector<sf::Text> elements; // One per line, currently!
 	sf::Font font;
 

@@ -45,9 +45,9 @@ namespace sync {
 //----------------------------------------------------------------------------
 OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 #ifndef DISABLE_HUD
-	// NOTE: .cfg is also ready now!
-	, debug_hud(SFML_WINDOW(), -220)
-	, help_hud(SFML_WINDOW(), 10, UI::HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
+	// NOTE: .cfg is ready to use now!
+	, debug_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -220)
+	, help_hud( SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, 10, UI::HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
 }
