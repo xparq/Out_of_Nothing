@@ -317,7 +317,7 @@ try {
 			case sf::Event::KeyPressed:
 //!!See main.cpp:
 #ifdef DEBUG
-extern bool DEBUG_cfg_show_keycode; if (DEBUG_cfg_show_keycode) cerr << "key code: " << event.key.code << "\n";
+	if (cfg.DEBUG_show_keycode) cerr << "key code: " << event.key.code << "\n";
 #endif
 
 				switch (event.key.code) {

@@ -96,7 +96,6 @@ protected:
 	UI::HUD_SFML help_hud;
 	bool _show_huds = true;
 #endif
-
 };
 
 #endif // _OON_SFML_HPP_

@@ -48,6 +48,8 @@ struct SimAppConfig : Config
 	CycleCount iteration_limit;
 	bool  fixed_dt_enabled;
 	float fixed_dt;
+	// Misc.
+	bool DEBUG_show_keycode = false;
 
 	//----------------------------------------------------------------------------
 	SimAppConfig(const std::string& cfg_path, const Args& args);

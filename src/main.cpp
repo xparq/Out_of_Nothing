@@ -3,42 +3,41 @@
 #include "extern/iprof/iprof.hpp"
 #include "extern/iprof/iprof.cpp" //! Better than fiddling with the Makefile!... ;)
 
-#include <string>
-#include <iostream> // cout
-#include <algorithm> // min
-#include <stdexcept> // exception, runtime_error
+#include <iostream>
+	using std::cout, std::cerr;
+#include <stdexcept>
+	using std::exception, std::runtime_error;
 
-using namespace std;
 
-#include "commit_hash.inc" //!! Must be placed somewhere on the INCLUDE path by the build proc.!
-//!!Another "silent extern" hackery:
-/*EXPORT*/ bool DEBUG_cfg_show_keycode = false;
+// LAST_COMMIT_HASH is defined here:
+#include "commit_hash.inc"
+	//!! Must be placed somewhere on the INCLUDE path by the build proc.!
+
 
 //============================================================================
 int main(int argc, char* argv[])
 //============================================================================
 {
-	Args args(argc, argv, {
-	// Long options with 1 param. don't need to be defined:
-	//	{"moons", 1}, // number of moons to start with
-	// Short ones do, unfortunately (they're predicates by default, and don't have '=' to override):
-		{"C", 1},
-	});
-	//auto exename = args.exename();
+	Args args(argc, argv); // Just a prelim. "preview" :) parse for -h -V etc.
 	if (args["?"] || args["h"] || args["help"]) {
-		cout << "Usage: " << args.exename() << " [-V] [--moons=n] [-K]"
-			<< endl;
+		cout << "Usage: " << args.exename() << " [-V] [-C cfgfile] [...lots more undoc. yet, sorry!]\n";
 		return 0;
 	} else if (args["V"]) {
-		cout << "Version: " << LAST_COMMIT_HASH << endl;
+		cout
+			<< "Version: " << LAST_COMMIT_HASH
+//!! The build proc. should just send the VDIR tag in a macro! -> #254
+#ifdef DEBUG
+			<< "-DEBUG"
+#endif
+#ifdef SFML_STATIC
+			<< "-SFML_STATIC"
+#endif
+			<< '\n';
 		return 0;
-	} else if (args["K"]) {
-		DEBUG_cfg_show_keycode = true;
 	}
 
 try {
 	OON_sfml game(argc, argv);
-
 	game.run();
 
 } catch (runtime_error& x) {
@@ -56,4 +55,3 @@ try {
 
 	return 0;
 }
-//----------------------------------------------------------------------------

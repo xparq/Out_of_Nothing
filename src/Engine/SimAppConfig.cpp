@@ -13,6 +13,13 @@ using namespace std;
 SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	Config(cfg_path)
 {
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!! NOTE:
+	//!!
+	//!! NOT ALL OPTIONS CAN BE SET BOTH IN THE CFG. AND ON THE CMD-LINE!
+	//!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 	// 1. Preset hardcoded baseline defaults...
 	// ...Well, just default them in one step with loading; see below!
 
@@ -33,6 +40,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	iteration_limit = get("sim/loopcap", -1);
 	fixed_dt        = get("sim/timing/fixed_dt", 0.f);
 
+	DEBUG_show_keycode = get("debug/show_key_codes", false);
+
 	// 3. Process cmdline args to override again...
 //!! See also main.cpp, currently! And if main goes into Szim [turning all this essentially into a framework, not a lib, BTW...],
 //!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's also likely gonna be an app
@@ -45,6 +54,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 		try { fixed_dt = stof(args("fixed_dt")); } catch(...) {
 			cerr << "- WRNING: --fixed_dt ignored! "<<args("fixed_dt")<<" must be a valid floating-pont number.\n";
 		}
+	} if (args["dbg-keys"]) {
+		DEBUG_show_keycode = true;
 	}
 
 	//!! 4. Fixup...
