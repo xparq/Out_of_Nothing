@@ -8,7 +8,7 @@ call %~dp0tooling\_setenv.cmd
 :: * --loopcap=-1 means no cycle limit
 
 :: Just run the latest test/oon*.exe, whatever flavor it is...
-for /f %%f in ('dir /b /a-d /t:w "%SZ_RUN_DIR%\oon*exe"') do (
+for /f %%f in ('dir /b /o-d /t:w "%SZ_RUN_DIR%\oon*exe"') do (
 	set "latest_exe=%%f"
 	goto :break
 )

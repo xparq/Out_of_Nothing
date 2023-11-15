@@ -38,8 +38,8 @@ No Man's Sky
   I honestly have 0 idea whatsoever about the specifics of this game.
   I've only seen a [reddit post](https://www.reddit.com/r/NoMansSkyTheGame/comments/6umfoe/help_stranded_on_a_dead_planet/) with someone asking for help in a
   pretty uninspiring situation, and I haven't even read any of the answers
-  there -- but I've received strong meta signals telling me what to do. :)
-  Also as a reminder of Elite... ;)
+  there -- but I've received strong meta signals, whispering what to do! :)
+  Also, as a reminder of Elite...
 
 Elite
 
@@ -53,17 +53,33 @@ Elite
 Dwarf Fortress
 
   OMG, what a lovely hackfest of a world sim! :) Never actually played it,
-  but what I've seen had enough radiation to feel inspired whenever I even
-  just think of it. I don't even know any of the details, mind you, but
-  still! :) Perhaps it's the myth around it... And the sheer magnitude of
-  the dev. effort, dedication etc.
+  but what I've seen has enough radiation to make me feel inspired whenever
+  I even just think of it. I don't even know any of the details, but still...
+  And it's partly exactly that: the myth around it. And the sheer magnitude
+  of the effort, dedication etc. Oh, and all that with basically no graphics!
 
 RDR1
 
   Their love for the world they've created, and their passion for detail...
-  They had proper lip sync, gestures, body movement and all, even by 2010!
+  They had proper lip sync, gestures, body movement and all, even by 2010,
+  and that doesn't even begin to describe the level of accuracy. They didn't
+  even care how much of it the player can actually experience. There are
+  mods dedicated to emphasizing features you basically can't even really
+  notice in the original, let alone enjoy... (It's super high-tech though,
+  so that must be considered when trying to learn from it.)
 
-Nature
+The Witness
+
+  The aura of mystery and exploration (again...). And those lustful colors,
+  and sunshine, and greenery, and the atmosphere of some of the scenery...
+  Orsi Spanyol, and Mr. Blow & the others, great job! :) Also, the general
+  attention to detail, and the correctness of how things work (and are
+  implemented). Note: not sure how much of that applies here, but the appeal
+  of the game -- again -- doesn't come from any high-end tech. It's <2015
+  tech anyway. (And it appeal certainly doesn't come from its Zen Buddhist
+  diatribes either, BTW. :) )
+
+Nature, IRL...
 
   Well of course. You don't need a game or a story to be constantly in awe
   just be existing, honestly...

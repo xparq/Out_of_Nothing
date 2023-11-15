@@ -34,7 +34,7 @@ import/
 *.lock
 cache/
 
-*.sav
+*.sav*
 
 extern/*
 !extern/sfw/
