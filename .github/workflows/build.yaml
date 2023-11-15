@@ -69,7 +69,7 @@ jobs:
     - name: Build with NMAKE + Jumpstart-NG
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
-      run: build.cmd
+      run: nbuild.cmd
 
     - name: Build with BusyBox-w32 (pdpmake) + my univ. makefile
       #working-directory: ${{env.GITHUB_WORKSPACE}}

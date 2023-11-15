@@ -14,11 +14,20 @@
 //!!No, not yet. It's just too cumbersome, for too little gain:
 //!!#include <optional> // for load()
 
+//!!class std::ostream; class std::istream;
+//!! MSVC accepted fw-declaring them, but only inside the classes (below)!
+//!! It actually crashed, when I moved them here!... :-o (-> https://github.com/xparq/Out_of_Nothing/issues/195)
+//!! GCC really freaked out from those declarations, though...
+//!! AND CRASHED TOO (albeit in Audio.cpp, half an hour before MSVC)! :D (-> https://github.com/xparq/Out_of_Nothing/issues/195)
+//!! OK, fuck it...:
+#include <iostream>
+
 namespace Szim {
 class SimApp; //! Sigh, must predeclare it here, outside the namespace...
               //! Curiously, it's not in the "global" :: namespece, so ::SimApp;
               //! wouldn't work from within the Model! :-o
 }
+
 namespace Model {
 
 static constexpr char const* VERSION = "0.0.1";
@@ -94,7 +103,7 @@ public:
 		}
 		bool is_player() { return has_thrusters(); } // ;)
 
-		class std::ostream; class std::istream;
+//!!		class std::ostream; class std::istream;
 		bool        save(std::ostream&);
 		static Body load(std::istream&);
 	};
@@ -111,10 +120,10 @@ public:
 	size_t add_body(Body&& obj);
 	void remove_body(size_t ndx);
 
-	bool is_colliding(const Body* obj1, const Body* obj2)
+	bool is_colliding([[maybe_unused]] const Body* obj1, [[maybe_unused]] const Body* obj2)
 	// Takes the body shape into account.
 	// Note: a real coll. calc. (e.g. bounding box intersect.) may not need to the distance to be calculated.
-	{obj1, obj2;
+	{
 		//auto distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
 		return false;
 	}
@@ -140,7 +149,7 @@ public:
 
 	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
 
-	class std::ostream; class std::istream;
+//!!	class std::ostream; class std::istream;
 	bool        save(std::ostream& out);
 	static bool load(std::istream& in, World* result = nullptr); // Verifies only (comparing to *this) if null
 //!! std::optional<World> load(std::istream& in);

@@ -13,8 +13,8 @@ public://!! <- protected
 	sz::Toggle music_enabled = true;
 	sz::Toggle fx_enabled = true;
 public:
-	virtual bool   play_music(const char* filename) { filename; return false; }
-	virtual size_t add_sound(const char* filename)  { filename; return 0; }
+	virtual bool   play_music(const char* /*filename*/) { return false; }
+	virtual size_t add_sound(const char* /*filename*/)  { return 0; }
 	virtual void   play_sound(size_t) {}
 	virtual void   toggle_sound(size_t) {}
 	virtual void   kill_sounds() {}

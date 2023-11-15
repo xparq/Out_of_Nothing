@@ -11,11 +11,13 @@ out.*/
 build.*/
 # Accidental stray/leftower outputs elsewhere
 *.obj
+*.o
 *.ifc
 *.pdb
 *.ilk
 *.exp
 *.exe
+gcm.cache
 
 !tooling/*.exe
 
