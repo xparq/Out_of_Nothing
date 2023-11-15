@@ -2,7 +2,7 @@
 #define _SA37H6FGFGH50V6BC2370_
 
 #include "Engine/HCI.hpp"
-#include "Engine/Config.hpp"
+#include "Engine/SimAppConfig.hpp"
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/VideoMode.hpp>
@@ -27,7 +27,7 @@ struct SFML_HCI : HCI
 
 	/*SFML_HCI::*/Window& window() override { return _main_window; }
 
-	SFML_HCI(const Config& cfg)
+	SFML_HCI(const SimAppConfig& cfg)
 		: _main_window(cfg.WINDOW_WIDTH, cfg.WINDOW_HEIGHT, cfg.window_title)
 
 		//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):

@@ -1,3 +1,5 @@
+# Optional, if you want to precompile TOML++, instead of using it in header-only mode
+
 # Must use what the stock SFML lib also uses, i.e. -MD[d]:
 MSVC_CRT_LINKMODE = MD
 

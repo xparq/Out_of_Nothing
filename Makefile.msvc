@@ -69,7 +69,7 @@ EXT_LIB_DIRS=
 EXT_LIBS=\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
 	extern/sfw/lib/msvc/sfw$(_cflags_crt_linkmode)$(_buildmode_debug_file_suffix).lib \
-	extern/toml++/toml$(_cflags_crt_linkmode).lib \
+#	extern/toml++/toml$(_cflags_crt_linkmode).lib \
 	extern/zstd/msvc/zstd$(_cflags_crt_linkmode).lib \
 
 

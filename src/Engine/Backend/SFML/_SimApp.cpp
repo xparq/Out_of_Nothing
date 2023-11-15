@@ -8,12 +8,11 @@
 
 #include <string>
 	using std::string, std::to_string;
-	using std::stoul, std::stof;
 	using namespace std::string_literals;
 #include <string_view>
 	using std::string_view;
 #include "sz/fs.hh"
-	using sz::dirname;
+	using sz::dirname, sz::endslash_fixup;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
 #include <format>
@@ -25,54 +24,6 @@
 
 using namespace Szim;
 //============================================================================
-//----------------------------------------------------------------------------
-static void _cfg_postload_hook(Config& cfg, const Args& args)
-{
-	// 1. Preset hardcoded baseline defaults...
-	//!!?? Or just set them all in .value_or() (see below)?
-
-	// 2. Override those from the loaded cfg...
-
-	//!! Thse assignments are so silly... Either don't store them there (again!),
-	//!! but just use the queries [and the reason we're here is to fixup
-	//!! missing values with defaults... -- !!ALSO, THERE'S NO WAY TO GET
-	//!! VALUES WITHOUT ALWAYS SUPPLYING THEIR DEFAULTS, TOO, ALL THE TIME!...],
-	//!! or store (cache) them somewhere else (in the app inst.)!
-	cfg.asset_dir       = cfg.get("fs-layout/asset_dir", sz::getcwd() + "/asset/"); //!! Trailing / still required!
-	cfg.iteration_limit = cfg.get("sim/loopcap", -1);
-	cfg.fixed_dt        = cfg.get("sim/timing/fixed_dt", 0.f);
-
-	// 3. Process cmdline args to override again...
-//!! See also main.cpp, currently! And if main goes into Szim [turning all this essentially into a framework, not a lib, BTW...],
-//!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's also likely gonna be an app
-//!! configuration/layout/mode, where the client retains its own main()!
-	if   (args["loopcap"]) {
-		try { cfg.iteration_limit = stoul(args("loopcap")); } catch(...) {
-			cerr << "- WRNING: --loopcap ignored! "<<args("loopcap")<<" must be a valid positive integer.\n";
-		}
-	} if (args["fixed_dt"]) {
-		try { cfg.fixed_dt = stof(args("fixed_dt")); } catch(...) {
-			cerr << "- WRNING: --fixed_dt ignored! "<<args("fixed_dt")<<" must be a valid floating-pont number.\n";
-		}
-	}
-
-	//!! 4. Fixup...
-	cfg.fixed_dt_enabled = cfg.fixed_dt != 0.f;
-	cfg.window_title = cfg.get("appearance/window_title", "Out of Nothing") //!! USE A BUILT-IN APP_NAME RESOURCE/PROP (that's not a cfg option)!
-#ifdef DEBUG	
-	+ " (DEBUG build)";
-#endif	
-	;
-
-cerr <<	"DBG> current dir: " << sz::getcwd() << '\n';
-cerr <<	"DBG> cfg.current(): " << cfg.current() << '\n';
-cerr <<	"DBG> cfg.base_path(): " << cfg.base_path() << '\n';
-cerr <<	"DBG> cfg.asset_dir: " << cfg.asset_dir << '\n';
-cerr <<	"DBG> cfg.iteration_limit: " << cfg.iteration_limit << '\n';
-cerr <<	"DBG> cfg.fixed_dt_enabled: " << cfg.fixed_dt_enabled << '\n';
-cerr <<	"DBG> cfg.fixed_dt: " << cfg.fixed_dt << '\n';
-}
-
 //----------------------------------------------------------------------------
 // SimApp ctor.
 //
@@ -91,7 +42,7 @@ SimApp::SimApp(int argc, char** argv)
 		// Short ones do, unfortunately (they're predicates by default, and don't have '=' to override):
 		{"C", 1},
 	  })
-	// Load the config...
+	// Load & fixup the SimApp config...
 	, cfg(
 	      ( //! COMMA-OP. HACK TO PRESET CFG. DEFAULTS... (THX FOR NOTHING, C++ ;-p )
 		Config::Defaults = R"(
@@ -104,7 +55,7 @@ SimApp::SimApp(int argc, char** argv)
 		? args("C").empty() ? "" // Use the literal Defaults above now, not the old DEFAULT_CFG_FILE path!
 			            : args("C")
 		: args("cfg")
-/*!!		((___cpp_workaround_args = args) //! ANOTHER ASTONISHING HACK... -- COOL, HUH? ;)
+/*		((___cpp_workaround_args = args) //! ANOTHER ASTONISHING HACK... -- COOL, HUH? ;)
 		                                ("cfg")).empty()
 		? args("C").empty()
 			? DEFAULT_CFG_FILE
@@ -113,17 +64,17 @@ SimApp::SimApp(int argc, char** argv)
 			? args("cfg")
 			: (cerr << "- WARNING: Both -C and --cfg have been specified; ignoring \"-C " << args("C") << "\"!\n",
 			  args("C"))
-!!*/
+*/
 	      ) //! END OF COMMA-OP. HACK
-
-		, [/*args*/](auto cfg_ptr){ _cfg_postload_hook(*cfg_ptr, ___cpp_workaround_args); }
+	      , ___cpp_workaround_args
+	//!!Can't convert to SimAppConfig using this! (I had to add a custom SimAppConfig ctor):
+	//!!  , [/*args*/](SimAppConfig& cfg_ptr){ _cfg_postload_hook(*cfg_ptr, ___cpp_workaround_args); }
 	  )
 	// Bootstrap the backend...
 	, backend(SFML_Backend::use(cfg))
 	// Init the GUI...
 	, gui( ((SFML_Backend&)backend).SFML_window(), {
-//!!NOT YET:	.basePath = cfg.asset_dir.c_str(), //!! Must have a / suffix!
-		.basePath = cfg.get("asset_dir", sz::getcwd() + "/asset/").c_str(), //!! Trailing / still required!
+		.basePath = cfg.asset_dir.c_str(), // Trailing / provided by the cfg. fixup!
 		.textureFile = "gui/texture.png",
 		.bgColor = sfw::Color("#302030d0"),
 		.fontFile = "font/default.font",

@@ -6,13 +6,13 @@
 using namespace Szim;
 
 //-------------------------------------
-SFML_Backend_Props::SFML_Backend_Props(const Config& syscfg)
+SFML_Backend_Props::SFML_Backend_Props(const SimAppConfig& syscfg)
 	: sfml_hci(syscfg)
 {
 }
 
 //-------------------------------------
-SFML_Backend::SFML_Backend(const Config& syscfg)
+SFML_Backend::SFML_Backend(const SimAppConfig& syscfg)
 	: SFML_Backend_Props(syscfg)
 	, Backend(
 		sfml_clock,
@@ -24,7 +24,7 @@ cerr << "Hi. SFML backend initialized.\n";
 }
 
 //-------------------------------------
-SFML_Backend& SFML_Backend::use(const Config& syscfg)
+SFML_Backend& SFML_Backend::use(const SimAppConfig& syscfg)
 {
 	static SFML_Backend sfml_backend{syscfg};
 	return sfml_backend;

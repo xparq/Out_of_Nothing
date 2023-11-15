@@ -6,7 +6,7 @@
 //!!??#include "sz/Args.hh"
 #include "Args.hpp"
 #include "Backend.hpp"
-#include "Config.hpp"
+#include "SimAppConfig.hpp"
 #include "Time.hpp"
 
 //!!... The UI and IO etc. are gonna be tough to abstract...
@@ -67,9 +67,10 @@ public:
 	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
 	//virtual bool save_snapshot(const char* filename);
 	//virtual bool load_snapshot(const char* filename);
-	template <typename... X> // This convoluted way is to support multiple types AND have the 3rd arg optional
-	std::string snapshot_filename(size_t slot_ndx = 1, const std::string& format = "snapshot_{}.sav", const X... args) {
-		return std::vformat(format, std::make_format_args(slot_ndx, args...));
+	template <typename... X> // This convoluted way is to support all kinds of things that I forgot... :)
+	std::string snapshot_filename(size_t slot_ndx = 1, const std::string& format = "{}snapshot_{}.sav", const X... args) {
+		return std::vformat(format, std::make_format_args(
+			cfg.data_dir, slot_ndx, args...)); //!! if data_dir is not empty, it must have a trailing /
 	}
 
 	using Entity = Model::World::Body;
@@ -130,7 +131,7 @@ public:
 //----------------------------------------------------------------------------
 public:
 	Args args;
-	Config cfg;
+	SimAppConfig cfg;
 
 //------------------------------------------------------
 //----- vvv BACKEND-SPECIFIC "VIRTUAL" PARTS BELOW! vvv

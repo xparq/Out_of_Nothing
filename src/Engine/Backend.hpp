@@ -1,7 +1,7 @@
 #ifndef _VIY6OUAOIN4378G135Y_
 #define _VIY6OUAOIN4378G135Y_
 
-#include "Config.hpp"
+#include "SimAppConfig.hpp"
 #include "Clock.hpp"
 #include "HCI.hpp"
 #include "Audio.hpp"

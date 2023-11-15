@@ -46,7 +46,6 @@ bool OON::init() // override
 		float factor = stof(args("zoom"));
 		zoom(factor);
 	}
-	return true;
   } catch(...) {
 	cerr << __FUNCTION__ ": ERROR processing/applying cmdline args!\n";
 	return false;
@@ -55,6 +54,7 @@ bool OON::init() // override
 	// Init sounds (even if turned off; it may get turned back on by the user)
 	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
 	backend.audio.play_music(string(cfg.asset_dir + "music/default.ogg").c_str());
+	return true;
 }
 
 //----------------------------------------------------------------------------
