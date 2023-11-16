@@ -51,9 +51,11 @@ bool OON::init() // override
 	return false;
   }
 
-	// Init sounds (even if turned off; it may get turned back on by the user)
+	// Init sounds (even if turned off; it may be turned back from the UI!)
 	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
-	backend.audio.play_music(string(cfg.asset_dir + "music/default.ogg").c_str());
+
+	backend.audio.play_music(cfg.background_music.c_str());
+
 	return true;
 }
 

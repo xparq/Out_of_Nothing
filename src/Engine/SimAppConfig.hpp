@@ -44,6 +44,7 @@ struct SimAppConfig : Config
 	std::string window_title;
 	std::string default_font_file;
 	std::string hud_font_file;
+	std::string background_music;
 	// Sim.
 	CycleCount iteration_limit;
 	bool  fixed_dt_enabled;

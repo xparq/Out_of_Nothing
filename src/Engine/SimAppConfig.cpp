@@ -36,7 +36,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	asset_dir       = get("asset_dir", "asset/");
 	window_title    = get("appearance/window_title", "Out of Nothing"); //!! USE A BUILT-IN APP_NAME RESOURCE/PROP (that's not a cfg option)!
 	default_font_file = get("appearance/default_font_file", "font/default.font");
-	hud_font_file   = get("appearance/HUD/font_file", default_font_file);
+	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
+	background_music  = get("audio/background_music", "music/background.ogg");
 	iteration_limit = get("sim/loopcap", -1);
 	fixed_dt        = get("sim/timing/fixed_dt", 0.f);
 
@@ -59,10 +60,19 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	}
 
 	//!! 4. Fixup...
+
 	//!! Decide & consolidate whether to go with normalized abs. paths, or keep them as-is,
 	//!! and rely on the CWD (which might need some explicit care)!
-	data_dir = sz::endslash_fixup(data_dir);
+
+	//!! Frivolous quick hack until #251 to allow unprefixed abs. paths:
+	auto prefix_if_rel = [](const auto& prefix, auto path) -> string {
+		return (path.length() > 2 && (path[0] == '/' || path[0] == '\\' || path[1] == ':'))
+			? path : prefix + path;
+	};
+
+	data_dir  = sz::endslash_fixup(data_dir);
 	asset_dir = sz::endslash_fixup(asset_dir);
+	background_music = prefix_if_rel(asset_dir, background_music);
 	fixed_dt_enabled = fixed_dt != 0.f;
 #ifdef DEBUG	
 	window_title += " (DEBUG build)";
