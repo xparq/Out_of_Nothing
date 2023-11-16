@@ -12,12 +12,16 @@ build.*/
 # Accidental stray/leftower outputs elsewhere
 *.obj
 *.o
+# Add tracked libs selectively with add -f!
+*.lib
 *.ifc
 *.pdb
 *.ilk
 *.exp
 *.exe
 gcm.cache
+# Something tends to create a small .lib alongside the .exe:
+#test/*.lib
 
 !tooling/*.exe
 
