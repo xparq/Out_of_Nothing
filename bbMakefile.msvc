@@ -271,7 +271,7 @@ _CL_hdeps = $(outdir)/.hdeps.tmp
 _CL_dephack_errhandler =@\
 	echo "grep -v \"Note: including file:\" $(_cc_out)"                    >  $(_CL_dephack_sh) &&\
 	echo "grep -q \" error\" $(_cc_out) && exit `cat \"$(_cc_exitcode)\"`" >> $(_CL_dephack_sh) &&\
-	echo "grep    \"Note: including file:\" $(_cc_out) > $(_CL_hdeps)"     >> $(_CL_dephack_sh) &&\
+	echo "grep    \"Note: including file:\" $(_cc_out) > $(_CL_hdeps) || true" >> $(_CL_dephack_sh) &&\
 	echo "exit 0"                                                          >> $(_CL_dephack_sh) &&\
 	. $(_CL_dephack_sh)
 
@@ -330,4 +330,4 @@ else
 #!! message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup was not run?
 endif
 
-$(outdir)/$(SZ_SRC_SUBDIR)/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
+$(objdir)/main.obj: $(COMMIT_HASH_INCLUDE_FILE)

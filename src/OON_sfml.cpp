@@ -499,7 +499,7 @@ bool OON_sfml::init() // override
 	//! But... it will also be recreated each time the fullscreen/windowed
 	//! mode is toggled, so this will need to be repeated after every
 	//! `window.create` call (i.e. in `toggle_fullscreen`):
-	fps_throttling(On);
+	fps_throttling(ON);
 
 	/*
 	static sf::Music m2; if (m2.openFromFile(string(cfg.asset_dir + "music/extra sonic layer.ogg").c_str()) {

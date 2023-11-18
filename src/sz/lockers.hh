@@ -1,10 +1,7 @@
-﻿#ifndef _3986GH78F786D102D75426748GB_
-#define _3986GH78F786D102D75426748GB_
-
-//#define DEBUG
+﻿//#define DEBUG
 /*
-Constant-time (free-list) resource manager/allocator/container
-	
+Constant-time (free-list) resource manager/allocator/container 0.1.0
+
 	Clients can request "keys" (opaque handles) of "locker slots" (cells)
 	from a managed pool (as long as there are free ones left), and then
 	return those keys to the container, when no longer needed, to free
@@ -64,10 +61,13 @@ NOTES:
 	     (in DEBUG mode).
 */
 
+#ifndef _3986GH78F786D102D75426748GB_
+#define _3986GH78F786D102D75426748GB_
+
 #include <cstdint> // size_t
 #include <cassert>
 
-namespace Sz {
+namespace sz {
 
 template <typename T, size_t MAX>
 class lockers
@@ -124,7 +124,8 @@ public:
 	bool empty()      const { assert(_end_free_i <= _capacity); return _end_free_i == _capacity; }
 	bool full()       const { return _end_free_i == 0; } 
 	size_t size()     const { return _capacity - _end_free_i; }
-	size_t capacity() const { return _capacity; }
+	size_t capacity() const { assert(_capacity == MAX); // a) for now..., b) Unbelievable: fails with MSVC /DBDEBUG! :-o
+	                          return _capacity; }
 
 	const T* pool()   const { return _slots; } 
 	      T* pool()         { return _slots; } 
@@ -148,7 +149,6 @@ public:
 
 		assert(empty());
 		assert(size() == 0);
-		assert(_end_free_i == _capacity);
 		assert(_end_free_i == _capacity);
 
 #ifdef DEBUG
@@ -250,14 +250,14 @@ protected:
 	using iterator = safe_forward_iterator;
 !!*/
 }; // class lockers
-} // namespace Sz
+} // namespace sz
 
 
 //----------------------------------------------------------------------------
 #ifdef UNIT_TEST
 #include <iostream>
 using namespace std;
-using namespace Sz;
+using namespace sz;
 
 template <class T>
 auto dump_state = [](const T& lockers){
@@ -285,17 +285,18 @@ int main()
 	assert(slots.empty());
 	dump_state<L>(slots);
 
-	assert((a = slots.get()) != L::ERROR);
-	assert((b = slots.store('B')) != L::ERROR);
-	assert((c = slots.get()) != L::ERROR);
-	assert((d = slots.get()) != L::ERROR);
+	a = slots.get();      assert(a != L::ERROR);
+	b = slots.store('B'); assert(b != L::ERROR);
+	c = slots.get();      assert(c != L::ERROR);
+	d = slots.get();      assert(d != L::ERROR);
 
 	assert(slots.full());
-	assert((err = slots.get()) == L::ERROR); // Now fail!
-	assert(slots.store('X') == L::ERROR); // Ditto
+	err = slots.get();      assert(err == L::ERROR); // Now fail!
+	err = slots.store('X'); assert(err == L::ERROR); // Ditto
 
 	cout << slots.store(d, 'd') << '\n';
 	cout << (slots[a] = 'a') << '\n';
+	cout << "capacity: " << slots.capacity() << '\n';
 	dump_state<L>(slots);
 
 	cout << (slots[b] = 'b') << '\n';
@@ -315,4 +316,4 @@ int main()
 	dump_state<L>(slots);
 }
 #endif // UNIT_TEST
-#endif // #ifndef _3986GH78F786D102D75426748GB_
+#endif // _3986GH78F786D102D75426748GB_

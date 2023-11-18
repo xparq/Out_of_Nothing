@@ -1,34 +1,13 @@
-#ifndef _SZ_UNILANG_HH_
-#define _SZ_UNILANG_HH_
-//
-// General language extensions (synonyms, synt. sugar, utilities etc.) for
-// ground-levelling across projects, platforms, impl. languages etc.
-//
-//!! (Amazingly, after ~30 years in SW engineering, I find myself writing
-//!! this memo to myself, as a reminder, or focusing aid... It's like a
-//!! craftsman recognizing the importance of a toolbox... I have no words.)
-//!!
-//!! This should grow into my own personal "stdlib" that can be used by
-//!! default (i.e.: without thinking twice) in any new C++ project of mine.
-//!! (Model: Jan Haller's Aurora; among infinite others...)
-//!!
-//!! Also: the "language" (concepts, IDs, features) defined here should be
-//!! independent of C++ by nature, even tnough in this particular version
-//!! (i.e. "unilang for C++") they obviously aren't. But it should still be
-//!! considered in the context of the bigger picture, as a unified abstract
-//!! language, independent of any particular *approximation* of it.
-//!!
-//!! OTOH, for any particular impl. language, specific extensions (that make
-//!! sense only there) should also be added, if they are generic enough (in
-//!! the context of that lang.) to make life easier across any projects.
-//!!
-//!! Also: there's no sharp distinction between lang. shims and a utility lib!
-//!!
-//!! (IOW, this is what others often call the "foundation" or even (slightly
-//!! confusingly) "platform" layer.)
-//!!
-//!! -> https://github.com/x1ab/cpp/blob/main/WISHLIST.txt
-//
+/*****************************************************************************
+  My personal C++ "dialect add-on" and simple extensions 0.0.3
+
+  (Syntactic sugar, types, utilities etc. for ground-levelling across
+  projects, platforms, even programming languages etc.)
+
+*****************************************************************************/
+
+#ifndef _90RKLJHGT45M764V6B5NC2GHDNXK86Y35J_
+#define _90RKLJHGT45M764V6B5NC2GHDNXK86Y35J_
 
 //!!#include "a proper enum..."
 
@@ -37,20 +16,31 @@
 //!! Shim for missing #warning...
 //!! ...
 
-#define AUTOCONST constexpr static auto
+#define AUTO_CONST constexpr static const auto
+//#define auto_const AUTO_CONST // #daredef
 
-namespace sz // `using namespace Sz;` is encouraged... The client code's also mine, after all! ;)
-{
+#define OUT   // ⍄ // Can't do lower-case, for collisions without context-aware parsing! :-/
+#define INOUT // ⍃⍄
+//#define IN    // ⍃ <-- Whoever itches to mark an arg. "in" should seek medical help.
 
 //
-// `fallthrough` control-flow statement (macroless version):
+// `fallthrough` (macroless version of the non-existant control-flow statement):
 //
-constexpr static class{} fallthrough [[maybe_unused]];
+//static volatile int FALLTHROUGH [[maybe_unused]]; // `volatile` is redundant though
+//#define fallthrough FALLTHROUGH // #daredef -- NOPE: There's [[fallthrough]] since c++17...
 
-// On/Off synonyms for true/false
-//!!ProperEnum { Off, On };
-AUTOCONST Off = false, On = true; // Not the crippled C++ stock enum; autoconvert needed!
+// Synonyms for true/false
+AUTO_CONST  ON  = true;
+AUTO_CONST  OFF = false;
+// Legacy:
+//auto_const On = ON, Off = OFF;
+// #daredef
+//auto_const on = ON, off = OFF;
+
+
+//----------------------------------------------------------------------------
+// CRUFT...
+
 //!!??enum { UseDefault = -1 };
 
-} // namespace
-#endif //_SZ_UNILANG_HH_
+#endif // _90RKLJHGT45M764V6B5NC2GHDNXK86Y35J_

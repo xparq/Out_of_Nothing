@@ -1,7 +1,7 @@
 #include "SimAppConfig.hpp"
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/fs.hh"
-	using sz::dirname, sz::endslash_fixup;
+	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
 #include <string>
 #include <string_view>
 #include <iostream>
@@ -64,15 +64,9 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	//!! Decide & consolidate whether to go with normalized abs. paths, or keep them as-is,
 	//!! and rely on the CWD (which might need some explicit care)!
 
-	//!! Frivolous quick hack until #251 to allow unprefixed abs. paths:
-	auto prefix_if_rel = [](const auto& prefix, auto path) -> string {
-		return (path.length() > 2 && (path[0] == '/' || path[0] == '\\' || path[1] == ':'))
-			? path : prefix + path;
-	};
-
-	data_dir  = sz::endslash_fixup(data_dir);
-	asset_dir = sz::endslash_fixup(asset_dir);
-	background_music = prefix_if_rel(asset_dir, background_music);
+	sz::endslash_fixup(&data_dir);
+	sz::endslash_fixup(&asset_dir);
+	background_music = sz::prefix_if_rel(asset_dir, background_music);
 	fixed_dt_enabled = fixed_dt != 0.f;
 #ifdef DEBUG	
 	window_title += " (DEBUG build)";

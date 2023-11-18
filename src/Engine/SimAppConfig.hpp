@@ -2,6 +2,7 @@
 #define _DF8M99506BFN4735R9686OK_
 
 #include "Config.hpp"
+#include "sz/unilang.hh" // AUTO_CONST
 
 class Args; // Enough to actually #include it in the .cpp
 
@@ -11,21 +12,16 @@ struct SimAppConfig : Config
 {
 	//--------------------------------------------------------------------
 	// CUSTOM PROPS...
-	constexpr static auto DEFAULT_WINDOW_WIDTH  = 1024; // unsigned in SFML
-	constexpr static auto DEFAULT_WINDOW_HEIGHT = 768;  // unsigned in SFML
-	const unsigned WINDOW_WIDTH  = DEFAULT_WINDOW_WIDTH; // unsigned also in SFML
-	const unsigned WINDOW_HEIGHT = DEFAULT_WINDOW_HEIGHT;  // unsigned also in SFML
-	const unsigned VIEWPORT_WIDTH  = DEFAULT_WINDOW_WIDTH;
-	const unsigned VIEWPORT_HEIGHT = DEFAULT_WINDOW_HEIGHT;
+	AUTO_CONST DEFAULT_WINDOW_WIDTH  = 1024u; // unsigned in SFML
+	AUTO_CONST DEFAULT_WINDOW_HEIGHT = 768u;  // unsigned in SFML
+	AUTO_CONST WINDOW_WIDTH    = DEFAULT_WINDOW_WIDTH;
+	AUTO_CONST WINDOW_HEIGHT   = DEFAULT_WINDOW_HEIGHT;
+	AUTO_CONST VIEWPORT_WIDTH  = DEFAULT_WINDOW_WIDTH;
+	AUTO_CONST VIEWPORT_HEIGHT = DEFAULT_WINDOW_HEIGHT;
 
-	constexpr static auto DEFAULT_FPS_LIMIT = 30;
-	unsigned fps_limit = DEFAULT_FPS_LIMIT; // 0: no limit
-	        //!! Changing the frame rate would change the physics (in non-fixed-dt mode)
-		//!! by increasing the resolution/precision)!!!
-	        //!! (Things tend to be more interesting, with more "quantum-like" randomness,
-	        //!! with larger dt-s (less precision -> overshoots, tunnelling...)!)
+	AUTO_CONST DEFAULT_FPS_LIMIT = 30;
 
-	constexpr static float THRUST_FORCE = 6e34f; // N (kg*m/s^2)
+	AUTO_CONST THRUST_FORCE = 6.0e34f; // N (kg*m/s^2)
 		//!!Move the rest of these to the Model, too, for now:
 		//!!static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
 		//!!(They will become props initialized from a real config!)
@@ -49,6 +45,12 @@ struct SimAppConfig : Config
 	CycleCount iteration_limit;
 	bool  fixed_dt_enabled;
 	float fixed_dt;
+	unsigned fps_limit = DEFAULT_FPS_LIMIT; // 0: no limit
+	        //!! Changing the frame rate would change the physics (in non-fixed-dt mode)
+		//!! by increasing the resolution/precision)!!!
+	        //!! (Things tend to be more interesting, with more "quantum-like" randomness,
+	        //!! with larger dt-s (less precision -> overshoots, tunnelling...)!)
+
 	// Misc.
 	bool DEBUG_show_keycode = false;
 

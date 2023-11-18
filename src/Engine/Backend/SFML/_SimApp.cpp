@@ -18,7 +18,7 @@
 #include <string_view>
 	using std::string_view;
 #include "sz/fs.hh"
-	using sz::dirname, sz::endslash_fixup;
+	using sz::dirname;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
 #include <format>

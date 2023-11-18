@@ -52,8 +52,8 @@ public:
 	void pan_reset();
 	void pan_to_entity(size_t id);
 	void pan_to_player(unsigned player_id = 1) { assert(player_id == 1); return pan_to_entity(player_entity_ndx(player_id)); }
-	auto zoom_in  () { constexpr static auto factor =    1 + CFG_ZOOM_CHANGE_RATIO;  zoom(factor); }
-	auto zoom_out () { constexpr static auto factor = 1/(1 + CFG_ZOOM_CHANGE_RATIO); zoom(factor); }
+	auto zoom_in  () { AUTO_CONST factor =    1 + CFG_ZOOM_CHANGE_RATIO;  zoom(factor); }
+	auto zoom_out () { AUTO_CONST factor = 1/(1 + CFG_ZOOM_CHANGE_RATIO); zoom(factor); }
 	void zoom(float factor);
 
 	// - Misc. controls:
