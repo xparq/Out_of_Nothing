@@ -150,7 +150,10 @@ void OON_sfml::draw() // override
 		// Was in updates_for_next_frame(), but pause should not stop UI updates.
 		//!!...raising the question: at which point should UI rendering be separated from world rendering?
 
-	SFML_WINDOW().clear();
+//#ifdef DEBUG
+	if (!(keystate(ALT) && keystate(CTRL) /*&& keystate(Z)*/)) // -> #225
+//#endif
+		SFML_WINDOW().clear();
 
 	renderer.draw(*this);
 #ifndef DISABLE_HUD
@@ -350,7 +353,13 @@ try {
 					break;
 
 				case sf::Keyboard::F12: toggle_huds(); break;
-				case sf::Keyboard::F11: toggle_fullscreen(); break;
+				case sf::Keyboard::F11:
+					while (!SFML_WINDOW().setActive(true));
+						//!!Investigating the switching problem (#190)...
+						//!! - this "being careful" makes no diff.:
+					toggle_fullscreen();
+					SFML_WINDOW().setActive(false); // Don't loop this one, we'd get stuck here!
+					break;
 
 //				default:
 //cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
