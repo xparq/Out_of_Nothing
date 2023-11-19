@@ -34,7 +34,7 @@ struct HUD_SFML : public HUD
 
 	void clear_content() { elements.clear(); }
 	auto line_count() const { return elements.size(); }
-	void append_line(const char* str);
+	void append_line(const std::string& str);
 	void draw(sf::RenderWindow& window);
 	void _setup(sf::RenderWindow& window);
 

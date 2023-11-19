@@ -1,5 +1,7 @@
 #include "hud_sfml.hpp"
 
+#include "sfw/util/shim/sfml.hpp" // UTF8 conv.
+
 #include <SFML/Graphics/RectangleShape.hpp>
 
 //!!Struggling with doing a cliprect... (-> draw())
@@ -53,9 +55,9 @@ void HUD_SFML::_setup(sf::RenderWindow& window)
 
 
 //----------------------------------------------------------------------------
-void HUD_SFML::append_line(const char* str)
+void HUD_SFML::append_line(const string& str)
 {
-	elements.emplace_back(font, str, DEFAULT_LINE_HEIGHT);
+	elements.emplace_back(font, stdstring_to_SFMLString(str), DEFAULT_LINE_HEIGHT);
 	auto& line = elements[line_count()-1];
 	line.setPosition({
 			(float)_panel_left + DEFAULT_PADDING,
@@ -92,7 +94,7 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 		ss << prompts[i] << watchers[i];// << "\n";
 	}
 	for (std::string line; std::getline(ss, line);) {
-		append_line(line.c_str());
+		append_line(line);
 	}
 
 	// OK, finally draw something...
