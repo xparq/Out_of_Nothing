@@ -70,6 +70,8 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 {
 	if (!active()) return;
 
+#if 0 // SFML3 has now got some clipping support! Check/use it! And DELETE the cruft below!
+
     //https://en.sfml-dev.org/forums/index.php?topic=25552.0
 //!!Why the offset?!
 //!!	tgui::Clipping clipview(window, sf::RenderStates::Default, //!!??
@@ -81,10 +83,14 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 	vw.setViewport(sf::FloatRect({(float)_panel_left, (float)_panel_top}, {1.f, 1.f}));
 	window.setView(vw);
 !!*/
-	clear_content();
+#endif //0
+	clear_content(); // Because it's volatile (by default)!
 	std::stringstream ss;
-	for (const Binding& x : watchers) ss << x;
 	//!! Each element goes to a new line currently! :-/
+//	for (const Binding& x : watchers) ss << x;
+	for (size_t i = 0; i < watchers.size(); ++i) {
+		ss << prompts[i] << watchers[i];// << "\n";
+	}
 	for (std::string line; std::getline(ss, line);) {
 		append_line(line.c_str());
 	}

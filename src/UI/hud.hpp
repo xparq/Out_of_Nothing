@@ -28,8 +28,8 @@ public:
 	public:
 	template <typename T> auto add(const char* prompt, T* var, const char* type_name = nullptr)
 	{
-		watchers.emplace_back(prompt && *prompt ? std::string(prompt) + prompt_suffix : default_prompt,
-		                      var, type_name);
+		prompts.emplace_back(prompt && *prompt ? std::string(prompt) : "");
+		watchers.emplace_back(var, type_name);
 //!!?? [What did I mean below: shouldn't matter because I assumed they had the same size (they don't!),
 //!!   or shouldn't matter for some other reason I failed to add?!... :-/ ]
 //!!??Crashes if var is int*, as if sizeof int* < sizeof void* mattered, but it shouldn't:
@@ -46,8 +46,8 @@ public:
 	template <typename F> auto add(const char* prompt, F f)
 	{
 //std::cerr << "- unknown lambda catched...\n";
-		watchers.emplace_back(prompt && *prompt ? std::string(prompt) + prompt_suffix : default_prompt,
-		                      std::forward<F>(f));
+		prompts.emplace_back(prompt && *prompt ? std::string(prompt): "");
+		watchers.emplace_back(std::forward<F>(f));
 	}
 
 	// "promptless watcher" call form (a bit too vague tho, but mostly works):
@@ -55,10 +55,7 @@ public:
 
 protected:
 	std::vector<Binding> watchers;
-
-	std::string default_prompt = "";
-	std::string prompt_prefix =  "> ";
-	std::string prompt_suffix =  ": ";
+	std::vector<std::string> prompts;
 
 	bool _active = true;
 
