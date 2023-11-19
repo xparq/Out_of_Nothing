@@ -384,7 +384,10 @@ try {
 				case 'm': toggle_music(); break;
 				case 'n': toggle_sound_fx(); break;
 				case 'P': fps_throttling(!fps_throttling()); break;
-				case 'x': toggle_fixed_dt(); break;
+				case 'x': toggle_fixed_dt();
+					((sfw::CheckBox*)gui.recall("Fixed model Δt"))
+						->set(cfg.fixed_dt_enabled);
+					break;
 				case '?': toggle_help(); break;
 				}
 				break;
@@ -533,9 +536,8 @@ void OON_sfml::_setup_UI()
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
 	auto form = gui.add(new Form, "Params");
-		form->add("Pause",    new CheckBox([&](auto* w){ this->pause(w->checked()); }));
-		form->add("Help",     new CheckBox([&](auto*  ){ this->toggle_help(); }));
-		form->add("Overlays", new CheckBox([&](auto*  ){ this->toggle_huds(); }));
+		form->add("Fixed model Δt", new CheckBox([&](auto*){ this->toggle_fixed_dt(); },
+		                                         cfg.fixed_dt_enabled));
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
