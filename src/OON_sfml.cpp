@@ -192,8 +192,10 @@ void OON_sfml::updates_for_next_frame()
 		return capture;
 	});
 !!*/
+	//!! Most of this should be done by Time itself!
 	time.last_frame_delay = backend.clock.get();
-	backend.clock.restart(); //! Must also be duly restarted on unpausing!
+	time.session_time += time.last_frame_delay;
+	backend.clock.restart(); //! Must also be restarted on unpausing, because Pause stops it!
 	// Update the FPS gauge
 	avg_frame_delay.update(time.last_frame_delay);
 
@@ -552,6 +554,7 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("FPS: ", [this](){ return to_string(1 / (float)this->avg_frame_delay); });
 	debug_hud.add("\nLast frame dt: ", [this](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
 	debug_hud.add("\ncycle: ", [this](){ return to_string(iterations); });
+	debug_hud.add(    ", t: ", &time.session_time);
 	//!!??WTF does this not compile? (The code makes no sense as the gauge won't update, but regardless!):
 	//!!??debug_hud.add(vformat("frame dt: {} ms", time.last_frame_delay));
 	debug_hud.add("\n# of objs.: ", [this](){ return to_string(this->const_world().bodies.size()); });

@@ -26,7 +26,7 @@ typedef float Seconds;
 		float scale = 1.0f; // > 0 (Decoupled from time reversal, for more flexible controls.)
 
 	// State
-//!!		Seconds session_time; // life-time of this Time instance
+		Seconds session_time = 0; // life-time of this Time instance
 		Seconds dt_last; // ...and here's a Δ for copy-pasting :)
 //!!		Seconds dt_min;
 //!!		Seconds dt_max;
