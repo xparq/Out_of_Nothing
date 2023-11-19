@@ -83,7 +83,7 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 !!*/
 	clear_content();
 	std::stringstream ss;
-	for (const WATCHER& x : watchers) ss << x;
+	for (const Binding& x : watchers) ss << x;
 	//!! Each element goes to a new line currently! :-/
 	for (std::string line; std::getline(ss, line);) {
 		append_line(line.c_str());
