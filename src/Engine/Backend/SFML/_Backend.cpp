@@ -20,7 +20,7 @@ SFML_Backend::SFML_Backend(SimAppConfig& syscfg)
 		sfml_audio
 	)
 {
-cerr << "Hi. SFML backend initialized.\n";
+cerr << "DBG> SFML backend initialized.\n";
 }
 
 //-------------------------------------

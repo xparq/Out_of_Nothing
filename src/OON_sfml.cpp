@@ -217,7 +217,8 @@ void OON_sfml::updates_for_next_frame()
 	if (cfg.fixed_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
 		//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
 		Δt = cfg.fixed_dt;
-		assert(Δt == time.dt_last); // Should be initialized by the SimApp init!
+		//!!Don't check: won't be true if changing cfg.fixed_dt_enabled at run-time!
+		//!!assert(Δt == time.dt_last); // Should be initialized by the SimApp init!
 	} else {
 		Δt = time.dt_last = time.last_frame_delay;
 			// Just an estimate; the last Δt can't guarantee anything about the next one, obviously.
@@ -383,6 +384,7 @@ try {
 				case 'm': toggle_music(); break;
 				case 'n': toggle_sound_fx(); break;
 				case 'P': fps_throttling(!fps_throttling()); break;
+				case 'x': toggle_fixed_dt(); break;
 				case '?': toggle_help(); break;
 				}
 				break;
@@ -551,13 +553,15 @@ void OON_sfml::_setup_UI()
 		};
 	};
 
-	debug_hud.add("FPS: ", [this](){ return to_string(1 / (float)this->avg_frame_delay); });
-	debug_hud.add("\nLast frame dt: ", [this](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
-	debug_hud.add("\ncycle: ", [this](){ return to_string(iterations); });
+	debug_hud.add("FPS: ", [=](){ return to_string(1 / (float)this->avg_frame_delay); });
+	debug_hud.add("\nlast frame Δt: ", [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
+	debug_hud.add("\nmodel Δt: ", &time.dt_last);
+	debug_hud.add(" ms", [=](){ return cfg.fixed_dt_enabled ? "(fixed)" : ""; });
+	debug_hud.add("\ncycle: ", [=](){ return to_string(iterations); });
 	debug_hud.add(    ", t: ", &time.session_time);
 	//!!??WTF does this not compile? (The code makes no sense as the gauge won't update, but regardless!):
 	//!!??debug_hud.add(vformat("frame dt: {} ms", time.last_frame_delay));
-	debug_hud.add("\n# of objs.: ", [this](){ return to_string(this->const_world().bodies.size()); });
+	debug_hud.add("\n# of objs.: ", [=](){ return to_string(this->const_world().bodies.size()); });
 	debug_hud.add("\nBody interactions: ", &this->const_world()._interact_all);
 	debug_hud.add("\nDrag: ", ftos(&this->const_world().FRICTION));
 	debug_hud.add("\nTime reversed: ", &time.reversed);
@@ -599,6 +603,7 @@ void OON_sfml::_setup_UI()
 //	help_hud.add("C:         chg. collision mode: pass/stick/bounce\n");
 	help_hud.add("R:         Reverse time\n");
 	help_hud.add("T:         Time accel. (+Shift: decel.)\n");
+	help_hud.add("X:         Toggle fixed Δt for model updates\n");
 	help_hud.add("Pause/h:   Halt the physics (time)\n");
 	help_hud.add("Enter:     Step 1 time slice forward\n");
 	help_hud.add("Backspace: Step 1 time slice backward\n");
@@ -613,7 +618,7 @@ void OON_sfml::_setup_UI()
 	help_hud.add("F1-F4:     Save world snapshots (+Shift: load)\n");
 	help_hud.add("M:         Mute/unmute music, N: sound fx\n");
 	help_hud.add("Shift+M:   Mute/unmute all audio\n");
-	help_hud.add("Shft+P:    Toggle FPS throttling (lower CPU load)\n");
+	help_hud.add("Shift+P:   Toggle FPS throttling (lower CPU load)\n");
 	help_hud.add("F11:       Toggle fullscreen\n");
 	help_hud.add("F12:       Toggle HUDs\n");
 	help_hud.add("\n");

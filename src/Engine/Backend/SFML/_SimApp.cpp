@@ -101,15 +101,22 @@ SimApp::SimApp(int argc, char** argv)
 	cfg.select(cfgfile);
 	//!!auto basename = fs::path(cfgfile).filename().string();
 !!*/
+	this->SimApp::init(); // Our own internal init is "secretly" called even if overridden...
+	                      // (Note: the qualifier isn't strictly necessary, as ctors won't dispatch virtuals anyway.)
+}
 
+bool SimApp::init()
+{
 	// Apply the config...
 	iterations.max(cfg.iteration_limit);
 
 	if (cfg.fixed_dt_enabled) {
 		time.dt_last = cfg.fixed_dt; // Otherwise no one might ever init this...
 	}
-}
 
+cerr << "Sim. engine initialized. Good luck with your mission! :)\n";
+	return true;
+}
 
 
 //----------------------------------------------------------------------------

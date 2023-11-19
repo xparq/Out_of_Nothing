@@ -44,7 +44,7 @@ protected:
 public:
 	bool run();
 
-	virtual bool init() { return true; }
+	virtual bool init();
 	virtual bool poll_and_process_controls() { return false; } // false: no inputs, nothing to do
 	virtual void update_world(Szim::Seconds Δt) { world().update(Δt, *this); }
 	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
@@ -57,8 +57,10 @@ public:
 	auto terminated()  { return _terminated; }
 	void pause(bool newstate = true);
 	auto paused() const { return time.paused; }
-	auto toggle_pause()  { pause(!paused()); }
+	bool toggle_pause(); // Returns the new state
 	virtual void pause_hook(bool /*newstate*/) {} // Pausing might need followup actions in the mechanics
+
+	bool toggle_fixed_dt(); // Returns the new state
 
 	      Model::World& world();
 	const Model::World& world() const;

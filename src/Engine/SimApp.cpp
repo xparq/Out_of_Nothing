@@ -38,6 +38,21 @@ void SimApp::pause(bool newstate)
 	pause_hook(newstate);
 }
 
+bool SimApp::toggle_pause() { pause(!paused()); return paused(); }
+
+bool SimApp::toggle_fixed_dt()
+{
+	//!!! THREADING !!!
+
+	cfg.fixed_dt_enabled = !cfg.fixed_dt_enabled;
+
+	//!! + this, but only to support the debug HUD! :) :-o
+	if (cfg.fixed_dt_enabled) time.dt_last = cfg.fixed_dt;
+
+	return cfg.fixed_dt_enabled;
+}
+
+
 //----------------------------------------------------------------------------
 //!! Updating is not yet (inherently) thread-safe!
 //!! These sould be atomic/blocking/mutex-protected/...!
