@@ -52,10 +52,12 @@ CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
 #!! So, well, sigh... (or add a manaully updated list...):
 objs_using_modules = $(objs)
 
+EXT_LIB_SFW = extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib
+EXT_LIB_ZSTD = extern/zstd/msvc/zstd$(cflags_crt_linkmode).lib
 EXT_LIBS =\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
-	extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib \
-	extern/zstd/msvc/zstd$(cflags_crt_linkmode).lib \
+	$(EXT_LIB_SFW) \
+	$(EXT_LIB_ZSTD) \
 #	extern/toml++/toml$(cflags_crt_linkmode).lib \
 	user32.lib\
 
@@ -255,7 +257,7 @@ $(objs_using_modules): $(CPP_MODULE_IFCS)
 #!!$(exe): $(objs:$(objdir)/%=%)
 #!!	@echo LINK $?
 #!!	$(LINK) $(LINKFLAGS) /libpath:$(objdir) $(objs) $(EXT_LIBS) /out:$@
-$(exe): $(objs)
+$(exe): $(objs) $(EXT_LIB_SFW) $(EXT_LIB_ZSTD)
 	$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) -o $@
 
 #-----------------------------------------------------------------------------

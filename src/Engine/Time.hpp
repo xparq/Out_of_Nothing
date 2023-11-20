@@ -1,4 +1,4 @@
-#ifndef _KJHWERHKWHQNCEURTHNY48_
+﻿#ifndef _KJHWERHKWHQNCEURTHNY48_
 #define _KJHWERHKWHQNCEURTHNY48_
 
 #include "sz/stats/collect.hh" // generic min/max/avg perf. counter
