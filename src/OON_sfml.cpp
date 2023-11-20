@@ -53,7 +53,7 @@ OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 	// NOTE: .cfg is ready to use now!
 	, timing_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -250, 10)
 	, debug_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -250, 260, 0x90e040ff, 0x90e040ff/4)
-	, help_hud( SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, 10, 50, 0x40d040ff, 0x40f040ff/4) // left = 10
+	, help_hud( SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, 10, 10, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
 }
@@ -384,17 +384,19 @@ try {
 				case 't': time.scale *= 2.0f; break;
 				case 'T': time.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
-				case 'M': toggle_muting(); break;
+				case 'M': toggle_muting();
+					((sfw::CheckBox*)gui.recall("Audio: "))->set(backend.audio.enabled);
+					break;
 				case 'm': toggle_music(); break;
-				case 'n': toggle_sound_fx(); break;
+				case 'n': toggle_sound_fx();
+					((sfw::CheckBox*)gui.recall(" - FX: "))->set(backend.audio.fx_enabled);
+					break;
 				case 'P': fps_throttling(!fps_throttling()); break;
 				case 'x': toggle_fixed_model_dt();
-					((sfw::CheckBox*)gui.recall("Fixed model Δt"))
-						->set(cfg.fixed_model_dt_enabled);
+					((sfw::CheckBox*)gui.recall("Fixed model Δt"))->set(cfg.fixed_model_dt_enabled);
 					break;
 				case '?': toggle_help();
-					((sfw::CheckBox*)gui.recall("Show Help"))
-						->set(help_hud.active());
+					((sfw::CheckBox*)gui.recall("Show Help"))->set(help_hud.active());
 					break;
 				}
 				break;
@@ -542,12 +544,21 @@ void OON_sfml::_setup_UI()
 	// must be left at its default (true).
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
+	gui.setPosition(10, cfg.WINDOW_HEIGHT-150);
 	auto form = gui.add(new Form, "Params");
+		form->add("Show Help", new CheckBox([&](auto*){ this->toggle_help(); }, help_hud.active()));
 		form->add("Fixed model Δt", new CheckBox([&](auto*){ this->toggle_fixed_model_dt(); },
 		                                         cfg.fixed_model_dt_enabled));
-		form->add("Show Help", new CheckBox([&](auto*){ this->toggle_help(); }, help_hud.active()));
 
 	gui.recall("Show Help")->setTooltip("Press [?] to toggle the Help panel");
+
+	auto volrect = gui.add(new Form, "VolForm");
+	volrect->add("Volume", new Slider({/*.orientation = Vertical*/}, 70), "volume slider")
+		->setCallback([&](auto* w){backend.audio.volume(w->get());})
+		->update(75); // %
+	auto audio_onoff = gui.add(new Form, "AudioOnOffForm");
+	audio_onoff->add("Audio: ", new CheckBox([&](auto*){backend.audio.toggle_audio();}, backend.audio.enabled));
+	audio_onoff->add(" - FX: ", new CheckBox([&](auto*){backend.audio.toggle_sounds();}, backend.audio.fx_enabled));
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,

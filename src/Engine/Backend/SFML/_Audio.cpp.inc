@@ -55,6 +55,7 @@ void SFML_Audio::play_sound(size_t ndx)
 	}
 	if (enabled && fx_enabled && !sounds[ndx].muted) {
 		_sound.setBuffer(sounds[ndx]);
+		_sound.setVolume(_master_volume);
 		_sound.play();
 	}
 }
@@ -104,4 +105,20 @@ void SFML_Audio::kill_sounds()
 //!!		s.stop();
 		_sound.stop(); //!! only this one player exists!
 //!!	}
+}
+
+
+//----------------------------------------------------------------------------
+void SFML_Audio::volume(float vol)
+{
+	_master_volume = vol;
+	_music.setVolume(_master_volume);
+}
+
+
+//----------------------------------------------------------------------------
+float SFML_Audio::volume() const
+{
+	return _master_volume;
+	//!! Not this, as this might be adjusted/normalized: return _music.getVolume();
 }

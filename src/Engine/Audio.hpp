@@ -18,6 +18,8 @@ public:
 	virtual void   play_sound(size_t) {}
 	virtual void   toggle_sound(size_t) {}
 	virtual void   kill_sounds() {}
+	virtual void   volume(float)  {}
+	virtual float  volume() const { return 0; }
 
 	virtual bool   toggle_audio()  { return sz::toggle(&enabled); }
 	virtual bool   toggle_music()  { return sz::toggle(&music_enabled); }
