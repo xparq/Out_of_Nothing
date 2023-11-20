@@ -22,6 +22,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 
 	// 1. Preset hardcoded baseline defaults...
 	// ...Well, just default them in one step with loading; see below!
+	window_title = "Out of Nothing"; //!! USE A BUILT-IN APP_NAME RESOURCE/PROP
 
 	// 2. Override from the config...
 
@@ -34,12 +35,13 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	//!!BTW: WITH get() THERE'S NO WAY TO GET VALUES WITHOUT ALWAYS SUPPLYING THE DEFAULTS, TOO! :-/
 	data_dir        = get("data_dir", ""); // "" is the same as sz::getcwd()
 	asset_dir       = get("asset_dir", "asset/");
-	window_title    = get("appearance/window_title", "Out of Nothing"); //!! USE A BUILT-IN APP_NAME RESOURCE/PROP (that's not a cfg option)!
+	window_title    = get("appearance/window_title", window_title); //!! not really a cfg option...
 	default_font_file = get("appearance/default_font_file", "font/default.font");
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
 	background_music  = get("audio/background_music", "music/background.ogg");
-	iteration_limit = get("sim/loopcap", -1);
-	fixed_dt        = get("sim/timing/fixed_dt", 0.f);
+	iteration_limit  = get("sim/loopcap", -1);
+	fixed_model_dt   = get("sim/timing/fixed_dt", 0.0333f);
+	fixed_model_dt_enabled = get("sim/timing/fixed_dt_enabled", false);
 
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 
@@ -52,7 +54,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 			cerr << "- WRNING: --loopcap ignored! "<<args("loopcap")<<" must be a valid positive integer.\n";
 		}
 	} if (args["fixed_dt"]) {
-		try { fixed_dt = stof(args("fixed_dt")); } catch(...) {
+		try { fixed_model_dt = stof(args("fixed_dt")); } catch(...) {
 			cerr << "- WRNING: --fixed_dt ignored! "<<args("fixed_dt")<<" must be a valid floating-pont number.\n";
 		}
 	} if (args["dbg-keys"]) {
@@ -67,7 +69,6 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	sz::endslash_fixup(&data_dir);
 	sz::endslash_fixup(&asset_dir);
 	background_music = sz::prefix_if_rel(asset_dir, background_music);
-	fixed_dt_enabled = fixed_dt != 0.f;
 #ifdef DEBUG	
 	window_title += " (DEBUG build)";
 #endif	
@@ -78,6 +79,6 @@ cerr <<	"DBG> base_path(): " << base_path() << '\n';
 cerr <<	"DBG> asset_dir: " << asset_dir << '\n';
 cerr <<	"DBG> data_dir: " << data_dir << '\n';
 cerr <<	"DBG> iteration_limit: " << iteration_limit << '\n';
-cerr <<	"DBG> fixed_dt_enabled: " << fixed_dt_enabled << '\n';
-cerr <<	"DBG> fixed_dt: " << fixed_dt << '\n';
+cerr <<	"DBG> fixed_model_dt_enabled: " << fixed_model_dt_enabled << '\n';
+cerr <<	"DBG> fixed_model_dt: " << fixed_model_dt << '\n';
 }

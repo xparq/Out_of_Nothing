@@ -5,7 +5,7 @@
 #include <SFML/System/Time.hpp>
 #include <SFML/System/Clock.hpp>
 
-namespace Szim {
+namespace Szim::Time {
 
 struct SFML_Clock : Clock
 {
@@ -35,5 +35,5 @@ struct SFML_Clock : Clock
 	};
 !!*/
 
-} // namespace Szim
+} // namespace Szim::Time
 #endif // _MD09245876B87GV4456CN6B7_

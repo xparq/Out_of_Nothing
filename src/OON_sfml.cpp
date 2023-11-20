@@ -51,8 +51,9 @@ namespace sync {
 OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 #ifndef DISABLE_HUD
 	// NOTE: .cfg is ready to use now!
-	, debug_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -220)
-	, help_hud( SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, 10, UI::HUD::DEFAULT_PANEL_TOP, 0x40d040ff, 0x40f040ff/4) // left = 10
+	, timing_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -250, 10)
+	, debug_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -250, 260, 0x90e040ff, 0x90e040ff/4)
+	, help_hud( SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, 10, 50, 0x40d040ff, 0x40f040ff/4) // left = 10
 #endif
 {
 }
@@ -64,15 +65,15 @@ OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 //!! bring with it some main-loop logic to handle basic chores like time control & stepping!
 //!! Perhaps most of that ugly & brittle `update_thread_main_loop()` could be moved there,
 //!! and then updates_for_next_frame() could be an app callback (plus some new ones, handling
-//!! that SFML Context bullshit etc.), and its wrapping in SimApp could hopefully handle the timing stuff.
+//!! that Window Context bullshit etc.), and its wrapping in SimApp could hopefully handle the timing stuff.
 void OON_sfml::time_step(int steps)
 {
 	// Override the loop count limit, if reached (this may not always be applicable tho!); -> #216
 	if (iterations.maxed())
 		++iterations.limit;
 
-	stepthrough = steps; //! See resetting it in updates_for_next_frame()!
-	assert(stepthrough == steps); // sz::Counter op= was very fiddly, I still don't trust it 100%!...
+	timestepping = steps; //! See resetting it in updates_for_next_frame()!
+	assert(timestepping == steps); // sz::Counter op= was very fiddly, I still don't quite trust it 100%!...
 }
 
 //----------------------------------------------------------------------------
@@ -158,6 +159,7 @@ void OON_sfml::draw() // override
 	renderer.draw(*this);
 #ifndef DISABLE_HUD
 	if (_show_huds) {
+		timing_hud.draw(SFML_WINDOW());
 		debug_hud.draw(SFML_WINDOW());
 		if (help_hud.active()) help_hud.draw(SFML_WINDOW()); //!! the active-chk is redundant, the HUD does the same; TBD, who's boss!
 		                                              //!! "activity" may mean more than drawing. so... actually both can do it?
@@ -194,13 +196,13 @@ void OON_sfml::updates_for_next_frame()
 !!*/
 	//!! Most of this should be done by Time itself!
 	time.last_frame_delay = backend.clock.get();
-	time.session_time += time.last_frame_delay;
+	time.real_session_time += time.last_frame_delay;
 	backend.clock.restart(); //! Must also be restarted on unpausing, because Pause stops it!
 	// Update the FPS gauge
 	avg_frame_delay.update(time.last_frame_delay);
 
 	if (paused()) {
-		if (!stepthrough) { // Are we single-stepping?
+		if (!timestepping) { // Are we single-stepping?
 			sf::sleep(sf::milliseconds(50)); //!! That 50 should drop the frame rate to ~15-20 FPS... But see #217! :-o
 			return;
 		}
@@ -211,21 +213,23 @@ void OON_sfml::updates_for_next_frame()
 	poll_and_process_controls();
 
 	//----------------------------
-	// Determine the size of the next time slice...
+	// Determine the size of the next model iteration time slice...
 	//
-	Szim::Seconds Δt;
-	if (cfg.fixed_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
+	Time::Seconds Δt;
+	if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
 		//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
-		Δt = cfg.fixed_dt;
-		//!!Don't check: won't be true if changing cfg.fixed_dt_enabled at run-time!
-		//!!assert(Δt == time.dt_last); // Should be initialized by the SimApp init!
+		Δt = cfg.fixed_model_dt;
+		//!!Don't check: won't be true if changing cfg.fixed_model_dt_enabled at run-time!
+		//!!assert(Δt == time.last_model_Δt); // Should be initialized by the SimApp init!
 	} else {
-		Δt = time.dt_last = time.last_frame_delay;
-			// Just an estimate; the last Δt can't guarantee anything about the next one, obviously.
+		Δt = time.last_model_Δt = time.last_frame_delay;
+			// Just an estimate; the last frame time can't guarantee anything about the next one, obviously.
 	}
 
 	Δt *= time.scale;
-	if (time.reversed || stepthrough < 0) Δt = -Δt;
+	if (time.reversed || timestepping < 0) Δt = -Δt;
+
+	time.model_Δt_stats.update(Δt);
 
 	//----------------------------
 	// Update...
@@ -237,7 +241,7 @@ void OON_sfml::updates_for_next_frame()
 	}
 
 	// One less step to make next time (if any):
-	if (stepthrough) if (stepthrough < 0 ) ++stepthrough; else --stepthrough;
+	if (timestepping) if (timestepping < 0 ) ++timestepping; else --timestepping;
 
 	// Auto-scroll to follow player movement...
 	//!
@@ -384,11 +388,14 @@ try {
 				case 'm': toggle_music(); break;
 				case 'n': toggle_sound_fx(); break;
 				case 'P': fps_throttling(!fps_throttling()); break;
-				case 'x': toggle_fixed_dt();
+				case 'x': toggle_fixed_model_dt();
 					((sfw::CheckBox*)gui.recall("Fixed model Δt"))
-						->set(cfg.fixed_dt_enabled);
+						->set(cfg.fixed_model_dt_enabled);
 					break;
-				case '?': toggle_help(); break;
+				case '?': toggle_help();
+					((sfw::CheckBox*)gui.recall("Show Help"))
+						->set(help_hud.active());
+					break;
 				}
 				break;
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
@@ -536,8 +543,11 @@ void OON_sfml::_setup_UI()
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
 	auto form = gui.add(new Form, "Params");
-		form->add("Fixed model Δt", new CheckBox([&](auto*){ this->toggle_fixed_dt(); },
-		                                         cfg.fixed_dt_enabled));
+		form->add("Fixed model Δt", new CheckBox([&](auto*){ this->toggle_fixed_model_dt(); },
+		                                         cfg.fixed_model_dt_enabled));
+		form->add("Show Help", new CheckBox([&](auto*){ this->toggle_help(); }, help_hud.active()));
+
+	gui.recall("Show Help")->setTooltip("Press [?] to toggle the Help panel");
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
@@ -560,25 +570,15 @@ void OON_sfml::_setup_UI()
 //!! - well, rejected indeed, but only "fortunately", and NOT by my static_assert!... :-/
 //!!	debug_hud.add("DBG>", string("debug"));
 	static const auto const_debug = "CONST STRING "s;
-	debug_hud.add("DBG>", &const_debug);
+//	debug_hud.add("DBG>", &const_debug);
 //!!shouldn't compile:	debug_hud.add("DBG>", const_debug);
 	static auto debug = "STR "s;
-	debug_hud.add("DBG>", &debug);
+//	debug_hud.add("DBG>", &debug);
 //!!shouldn't compile:	debug_hud.add("DBG>", debug);
 #endif
-	debug_hud.add("FPS: ", [=](){ return to_string(1 / (float)this->avg_frame_delay); });
-	debug_hud.add("\nlast frame Δt: ", [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
-	debug_hud.add("\nmodel Δt: ", [=](){ return to_string(this->time.dt_last * 1000.0f) + " ms"; });
-	debug_hud.add(           " ", [=](){ return cfg.fixed_dt_enabled ? "(fixed)" : ""; });
-	debug_hud.add("\ncycle: ", [=](){ return to_string(iterations); });
-	debug_hud.add(    ", t: ", &time.session_time);
-	//!!??WTF does this not compile? (The code makes no sense as the gauge won't update, but regardless!):
-	//!!??debug_hud.add(vformat("frame dt: {} ms", time.last_frame_delay));
-	debug_hud.add("\n# of objs.: ", [=](){ return to_string(this->const_world().bodies.size()); });
+	debug_hud.add("# of objs.: ", [=](){ return to_string(this->const_world().bodies.size()); });
 	debug_hud.add("\nBody interactions: ", &this->const_world()._interact_all);
 	debug_hud.add("\nDrag: ", ftos(&this->const_world().FRICTION));
-	debug_hud.add("\nTime reversed: ", &time.reversed);
-	debug_hud.add("\nTime scale: ", ftos(&this->time.scale));
 	debug_hud.add("\n");
 	debug_hud.add("\nPlayer Globe #1:");
 	debug_hud.add("\n  T: ",  ftos(&this->const_world().bodies[this->globe_ndx]->T));
@@ -601,8 +601,30 @@ void OON_sfml::_setup_UI()
 	debug_hud.add("\nSCROLL LOCK", (bool*)&_kbd_state[SCROLL_LOCK]);
 	debug_hud.add("\nNUM LOCK", (bool*)&_kbd_state[NUM_LOCK]);
 */
-	debug_hud.add("\n");
-	debug_hud.add("\nPress ? for help...");
+//	debug_hud.add("\n");
+//	debug_hud.add("\nPress ? for help...");
+
+	//------------------------------------------------------------------------
+	timing_hud.add("FPS: ", [=](){ return to_string(1 / (float)this->avg_frame_delay); });
+	timing_hud.add("\nlast frame Δt: ", [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
+	timing_hud.add("\nmodel Δt: ", [=](){ return to_string(this->time.last_model_Δt * 1000.0f) + " ms"; });
+	timing_hud.add(           " ", [=](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; });
+	timing_hud.add("\ncycle: ", [=](){ return to_string(iterations); });
+	timing_hud.add("\nReal elapsed time: ", &time.real_session_time);
+	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
+	//!!??timing_hud.add(vformat("frame dt: {} ms", time.last_frame_delay));
+	timing_hud.add("\nTime reversed: ", &time.reversed);
+	timing_hud.add("\nTime scale: ", ftos(&this->time.scale));
+	timing_hud.add("\nModel timing stats:");
+//	timing_hud.add("\n    updates: ", &time.model_Δt_stats.samples);
+	timing_hud.add("\n    total t: ", &time.model_Δt_stats.total);
+	timing_hud.add("\n  Δt:");
+//	timing_hud.add("\n    last: ", &time.model_Δt_stats.last);
+	timing_hud.add("\n    min abs: ", &time.model_Δt_stats.umin);
+	timing_hud.add("\n    max abs: ", &time.model_Δt_stats.umax);
+	timing_hud.add("\n    min: ", &time.model_Δt_stats.min);
+	timing_hud.add("\n    max: ", &time.model_Δt_stats.max);
+	timing_hud.add("\n    avg.: ", [=]{ return to_string(this->time.model_Δt_stats.average());});
 
 	//------------------------------------------------------------------------
 //	help_hud.add("---------- Controls:\n");

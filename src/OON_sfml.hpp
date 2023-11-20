@@ -92,6 +92,7 @@ protected:
 #ifndef DISABLE_HUD
 //!!	UI::HUD& debug_hud;
 //!!	UI::HUD& help_hud;
+	UI::HUD_SFML timing_hud;
 	UI::HUD_SFML debug_hud;
 	UI::HUD_SFML help_hud;
 	bool _show_huds = true;

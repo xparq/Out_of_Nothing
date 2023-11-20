@@ -19,7 +19,7 @@ namespace Szim {
 
 struct SFML_Backend_Props // -> base-from-member C++ idiom
 {
-	SFML_Clock sfml_clock;
+	Time::SFML_Clock sfml_clock;
 	SFML_HCI   sfml_hci;
 	SFML_Audio sfml_audio;
 

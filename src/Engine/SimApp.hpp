@@ -46,21 +46,28 @@ public:
 
 	virtual bool init();
 	virtual bool poll_and_process_controls() { return false; } // false: no inputs, nothing to do
-	virtual void update_world(Szim::Seconds Δt) { world().update(Δt, *this); }
-	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
+	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
 
-	void     toggle_fullscreen();
-	void     fps_throttling(bool onoff); // Apply configured FPS limit if true
-	unsigned fps_throttling(unsigned fps = (unsigned)-1); // -1 means query mode; std::optional couldn't help omit it altogether
+	unsigned fps_throttling(unsigned fps = (unsigned)-1);
+		// Set or query the FPS limit (the default -1 means query)
+		//!! std::optional couldn't help eliminate it altogether
+
+	void fps_throttling(bool newstate);
+		// Enable/disable configured FPS limit
 
 	auto terminate()  { _terminated = true; }
 	auto terminated()  { return _terminated; }
+
 	void pause(bool newstate = true);
 	auto paused() const { return time.paused; }
 	bool toggle_pause(); // Returns the new state
 	virtual void pause_hook(bool /*newstate*/) {} // Pausing might need followup actions in the mechanics
 
-	bool toggle_fixed_dt(); // Returns the new state
+	void toggle_fullscreen();
+
+	bool toggle_fixed_model_dt(); // Returns the new state
+
+	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
 
 	      Model::World& world();
 	const Model::World& world() const;
@@ -154,11 +161,11 @@ public://!! Alas, the renderer needs it...
 	View::ViewPort view;
 
 public://!! Still directly set from main, hence the public yet!
-	sz::CappedCounter<Szim::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
+	sz::CappedCounter<Szim::Time::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
 		// 1 calendar year = 3,784,320,000 cycles at 120 fps, so even 32 bits are quite enough!
 		// But for longer runs (on persistent-world servers), or for higher resolutions, let's go 64...
 
-	sz::Counter<int> stepthrough; // # of scheduled steps to advance/retrace, while in halt (paused) mode
+	sz::Counter<int> timestepping; // # of scheduled steps to advance/retrace, while in halt (paused) mode
 
 //------------------------------------------------------------------------
 // Data / Internals...
@@ -171,7 +178,7 @@ protected:
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
 
 	// Time control
-	Time time;
+	Time::Control time;
 	//!!??Move to the Metrics system and resuse it from there:
 //!!	sz::SmoothRollingAverage<0.993f, 1/30.f> avg_frame_delay;
 	sz::RollingAverage<30> avg_frame_delay;

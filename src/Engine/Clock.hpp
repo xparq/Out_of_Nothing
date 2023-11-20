@@ -3,7 +3,7 @@
 
 #include "Time.hpp"
 
-namespace Szim {
+namespace Szim::Time {
 
 struct Clock
 {
@@ -31,5 +31,5 @@ struct Clock
 	};
 !!*/
 
-} // namespace Szim
+} // namespace Szim::Time
 #endif // _94857627NC4586BV987C4H_

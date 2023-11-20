@@ -2,6 +2,7 @@
 #define _DF8M99506BFN4735R9686OK_
 
 #include "Config.hpp"
+#include "Time.hpp"
 #include "sz/unilang.hh" // AUTO_CONST
 
 class Args; // Enough to actually #include it in the .cpp
@@ -42,9 +43,9 @@ struct SimAppConfig : Config
 	std::string hud_font_file;
 	std::string background_music;
 	// Sim.
-	CycleCount iteration_limit;
-	bool  fixed_dt_enabled;
-	float fixed_dt;
+	Time::CycleCount iteration_limit;
+	bool  fixed_model_dt_enabled;
+	float fixed_model_dt;
 	unsigned fps_limit = DEFAULT_FPS_LIMIT; // 0: no limit
 	        //!! Changing the frame rate would change the physics (in non-fixed-dt mode)
 		//!! by increasing the resolution/precision)!!!

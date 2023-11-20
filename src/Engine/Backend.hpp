@@ -27,7 +27,7 @@ public:
 	// (Initialized by the real (derived) backend ctor.)
 	//!! Could also be implemented via virtual accessors, like clock(), but
 	//!! that would also require a separate polymorphic (covariant) class pair! :-/
-	Clock& clock;
+	Time::Clock& clock;
 	HCI&   hci;
 	Audio& audio;
 
@@ -38,7 +38,7 @@ protected:
 	//!!?? - Still needed with an abstract base?
 	//!!?? - GCC/CLANG?
 	Backend(
-		Clock& system_clock,
+		Time::Clock& system_clock,
 		HCI&   HCI_subsystem,
 	        Audio& audio_subsystem
 	) :

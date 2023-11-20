@@ -1,10 +1,12 @@
 #ifndef _KJHWERHKWHQNCEURTHNY48_
 #define _KJHWERHKWHQNCEURTHNY48_
 
+#include "sz/stats/collect.hh" // generic min/max/avg perf. counter
+
 #include <cstdint>
 //!!#include <functional> // function<> (e.g. for timers)
 
-namespace Szim {
+namespace Szim::Time {
 
 // Update cycle counters
 // (e.g. for the number of update cycles, all throughout a long-running session)
@@ -18,23 +20,26 @@ typedef CycleCount_<sizeof(void*)>::type CycleCount;
 
 typedef float Seconds;
 
-	struct Time
+	struct Control
 	{
 	// Controls
 		bool  paused = false;
 		bool  reversed = false;
 		float scale = 1.0f; // > 0 (Decoupled from time reversal, for more flexible controls.)
 
-	// State
-		Seconds session_time = 0; // life-time of this Time instance
-		Seconds dt_last; // ...and here's a Δ for copy-pasting :)
-//!!		Seconds dt_min;
-//!!		Seconds dt_max;
-//!!		Seconds dt_avg100;
-		Seconds last_frame_delay; // In some modes it's not tied to Δt at all!
 		unsigned fps_limit = 0;   // 0: no limit; see: fps_throttling(), cfg.fps_limit
 
-//!!		seconds Δt_since_last_query(std::function<seconds(SimApp&)>) timer_snapshot_callback);
+	// State
+		Seconds last_frame_delay; // In some modes it's not tied to the model Δt at all!
+		Seconds real_session_time = 0; // (real-world) life-time of this Time instance
+
+		Seconds last_model_Δt;
+		//!! Should be kept in the model world!
+		//!! The app can come and go, while a persistent model is still up,
+		//!! and conversely: models can be loaded/reset, outside the view on
+		//!! this feeble class, at least as-is: it's not really in control yet!...
+		//!!Seconds total_model_time; // Age of the virtual universe (neg. time-stepping decreases it!)
+		sz::stats::last_total_min_max<Seconds> model_Δt_stats;
 
 		//!! Also keep a limited time series irrespective of the running avgs,
 		//!! so that it can be examined retrospectively for diagnistics.
@@ -53,5 +58,5 @@ typedef float Seconds;
 		*/
 	};
 
-} // namespace Szim
+} // namespace Szim::Time
 #endif // _KJHWERHKWHQNCEURTHNY48_

@@ -40,16 +40,16 @@ void SimApp::pause(bool newstate)
 
 bool SimApp::toggle_pause() { pause(!paused()); return paused(); }
 
-bool SimApp::toggle_fixed_dt()
+bool SimApp::toggle_fixed_model_dt()
 {
 	//!!! THREADING !!!
 
-	cfg.fixed_dt_enabled = !cfg.fixed_dt_enabled;
+	cfg.fixed_model_dt_enabled = !cfg.fixed_model_dt_enabled;
 
 	//!! + this, but only to support the debug HUD! :) :-o
-	if (cfg.fixed_dt_enabled) time.dt_last = cfg.fixed_dt;
+	if (cfg.fixed_model_dt_enabled) time.last_model_Δt = cfg.fixed_model_dt;
 
-	return cfg.fixed_dt_enabled;
+	return cfg.fixed_model_dt_enabled;
 }
 
 

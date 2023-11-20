@@ -110,8 +110,8 @@ bool SimApp::init()
 	// Apply the config...
 	iterations.max(cfg.iteration_limit);
 
-	if (cfg.fixed_dt_enabled) {
-		time.dt_last = cfg.fixed_dt; // Otherwise no one might ever init this...
+	if (cfg.fixed_model_dt_enabled) {
+		time.last_model_Δt = cfg.fixed_model_dt; // Otherwise no one might ever init this...
 	}
 
 cerr << "Sim. engine initialized. Good luck with your mission! :)\n";
