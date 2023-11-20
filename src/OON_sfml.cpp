@@ -555,10 +555,21 @@ void OON_sfml::_setup_UI()
 		};
 	};
 
+#ifdef DEBUG
+//!!Should be Rejected compile-time (with a static_assert):
+//!! - well, rejected indeed, but only "fortunately", and NOT by my static_assert!... :-/
+//!!	debug_hud.add("DBG>", string("debug"));
+	static const auto const_debug = "CONST STRING "s;
+	debug_hud.add("DBG>", &const_debug);
+//!!shouldn't compile:	debug_hud.add("DBG>", const_debug);
+	static auto debug = "STR "s;
+	debug_hud.add("DBG>", &debug);
+//!!shouldn't compile:	debug_hud.add("DBG>", debug);
+#endif
 	debug_hud.add("FPS: ", [=](){ return to_string(1 / (float)this->avg_frame_delay); });
 	debug_hud.add("\nlast frame Δt: ", [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
-	debug_hud.add("\nmodel Δt: ", &time.dt_last);
-	debug_hud.add(" ms", [=](){ return cfg.fixed_dt_enabled ? "(fixed)" : ""; });
+	debug_hud.add("\nmodel Δt: ", [=](){ return to_string(this->time.dt_last * 1000.0f) + " ms"; });
+	debug_hud.add(           " ", [=](){ return cfg.fixed_dt_enabled ? "(fixed)" : ""; });
 	debug_hud.add("\ncycle: ", [=](){ return to_string(iterations); });
 	debug_hud.add(    ", t: ", &time.session_time);
 	//!!??WTF does this not compile? (The code makes no sense as the gauge won't update, but regardless!):

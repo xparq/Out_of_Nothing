@@ -1,7 +1,7 @@
 #ifndef _XDJ8H37458B79V24657CVU8_
 #define _XDJ8H37458B79V24657CVU8_
 
-#include "var_binding.hpp"
+#include "Binding.hpp"
 
 #include <string>
 #include <utility> // std::exchange
@@ -18,13 +18,43 @@ public:
 	static constexpr size_t DEFAULT_PANEL_WIDTH = 0; //!! 0: fit-text - NOT IMPLEMENTED YET!
 	static constexpr size_t DEFAULT_PANEL_HEIGHT = 0; //!! 0: fit-text - NOT IMPLEMENTED YET!
 	static constexpr int DEFAULT_PADDING = 6;
-public:
-	void add(const char* literal); // This is the only literal supported yet!
 
-	// Add a var. binding (+ a prompt)
-	// Helpers to avoid #include <type_traits> for std::remove_const...:
-	private: template <class T> struct _nonstd_remove_const          { typedef T type; };
-	private: template <class T> struct _nonstd_remove_const<const T> { typedef T type; };
+public:
+
+	//-------------------------------------------------------------
+	// Add a string literal to the panel...
+	void add(const char* literal);
+	void add(const std::string* literal);
+
+	//-------------------------------------------------------------
+	// Add a string-returning fn. pointer...
+	//!! Can't template this, as stateless (captureless) lambdas wouldn't match without casting!
+	void add(Binding::STRING_F_PTR f);
+	//!!auto add(prompt, STRING_F_PTR f) {...}
+
+	//-------------------------------------------------------------
+	// Add a lambda/closure/functor...
+	// (Catch-all lambda matcher that needs no cast for lambdas, but we know nothing here...)
+	//!! IOW, this actually matches EVERYTHING, not just functors!
+	//!! Binding(T) is hoped to deal with that in a sensible way...
+	template <typename ShouldBeFunctor> auto add(const char* prompt, ShouldBeFunctor f)
+	{
+		//!!?? Why is this never triggered:
+		static_assert(!std::is_rvalue_reference_v<decltype(f)>, "Only lvalues are allowed for binding!");
+//std::cerr << "- unknown type -- hopefully a lambda/functor! :) -- catched...\n";
+		prompts.emplace_back(prompt && *prompt ? std::string(prompt): "");
+		watchers.emplace_back(std::forward<ShouldBeFunctor>(f));
+	}
+
+	// "promptless watcher" form (scary vague, but mostly works...):
+	//template <typename T> auto add(T* var) { return add("", var); }
+
+	//-------------------------------------------------------------
+	// Add any of tha above, with a prompt...
+
+		// Helpers to avoid including the monstrosity of <type_traits> just for std::remove_const:
+		private: template <class T> struct _nonstd_remove_const          { typedef T type; };
+		private: template <class T> struct _nonstd_remove_const<const T> { typedef T type; };
 	public:
 	template <typename T> auto add(const char* prompt, T* var, const char* type_name = nullptr)
 	{
@@ -36,22 +66,6 @@ public:
 //!!??		std::cerr << type_name << " -> " << (void*)any_cast<void*>(ptr) << " added." << endl;
 //		std::cerr << type_name << " added." << endl;
 	}
-
-	//!!auto add(prompt, FPTR f) {...}
-
-	// Can't template this, as stateless ("captureless") lambdas wouldn't match without casting!
-	void add(Binding::FPTR f);
-
-	// Catch-all lambda matcher (needs no cast for lambdas, but we know kinda nothing here...)
-	template <typename F> auto add(const char* prompt, F f)
-	{
-//std::cerr << "- unknown lambda catched...\n";
-		prompts.emplace_back(prompt && *prompt ? std::string(prompt): "");
-		watchers.emplace_back(std::forward<F>(f));
-	}
-
-	// "promptless watcher" call form (a bit too vague tho, but mostly works):
-//	template <typename T> auto add(T* var) { return add("", var); }
 
 protected:
 	std::vector<Binding> watchers;

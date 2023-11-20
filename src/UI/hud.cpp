@@ -24,7 +24,15 @@ void HUD::add(const char* literal)
 	watchers.emplace_back(literal);
 }
 
-void HUD::add(Binding::FPTR f)
+void HUD::add(const string* literal)
+{
+//cerr << "---> HUD: ADDING literal: "<<literal<<"\n";
+	prompts.emplace_back(""); // The binding will have the same string, and will << it too!
+	watchers.emplace_back(literal);
+}
+
+
+void HUD::add(Binding::STRING_F_PTR f)
 {
 //std::cerr << "adding " << fptr_name << ": "
 //		     << (void*)f << " -> " << f() << endl;

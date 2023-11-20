@@ -1,4 +1,4 @@
-#include "var_binding.hpp"
+#include "Binding.hpp"
 
 //#include <typeinfo>
 #include <string>
@@ -19,17 +19,17 @@ using namespace UI;
 //!! Should be moved further out into some separate cpp_type_bullshit_..._something object instead!
 //!! Also, not sure these could be auto, due to subtle const char* vs. char[...] mismatches...
 // These have their own add(...):
-/*static*/ const Binding::_nametype_ Binding::charptr_literal_name = "string literal";
-/*static*/ const Binding::_nametype_ Binding::fptr_name     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
-/*static*/ const Binding::_nametype_ Binding::functor_name  = "CALLBACK"; // synthetic name for <CALLBACK> functor Binding::objects
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::charptr_literal_name = "string literal";
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::fptr_name     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::functor_name  = "CALLBACK"; // synthetic name for <CALLBACK> functor Binding::objects
 // For the generic add():
-/*static*/ const Binding::_nametype_ Binding::float_name   = typeid(float).name();
-/*static*/ const Binding::_nametype_ Binding::double_name  = typeid(double).name();
-/*static*/ const Binding::_nametype_ Binding::int_name     = typeid(int).name();
-/*static*/ const Binding::_nametype_ Binding::bool_name    = typeid(bool).name();
-/*static*/ const Binding::_nametype_ Binding::char_name    = typeid(char).name();
-/*static*/ const Binding::_nametype_ Binding::charptr_name = typeid(const char*).name(); //!!??
-/*static*/ const Binding::_nametype_ Binding::string_name  = typeid(string).name();
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::float_name   = typeid(float).name();
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::double_name  = typeid(double).name();
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::int_name     = typeid(int).name();
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::bool_name    = typeid(bool).name();
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::char_name    = typeid(char).name();
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::charptr_name = typeid(const char*).name(); //!!??
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::string_name  = typeid(string).name();
 
 /*!! So, the above init exprs. are not constexpr, but "const enough" to appear there. OK...
 void Binding::_static_init()
@@ -50,14 +50,22 @@ void Binding::_static_init()
 !!*/
 
 //----------------------------------------------------------------------------
-Binding::Binding(const char* literal)
+Binding::Binding(const char* literal) :
+	_data_ptr(literal),
+	_type(Binding::charptr_literal_name)
 {
 //cerr << "---> HUD: ADDING literal: "<<literal<<"\n";
-	_binding = make_tuple(charptr_literal_name, (const char*)literal);
+}
+
+Binding::Binding(const std::string* literal) :
+	_data_ptr(literal),
+	_type(Binding::string_name)
+{
+//cerr << "---> HUD: ADDING literal: "<<literal<<"\n";
 }
 
 
-Binding::Binding(FPTR f) :
+Binding::Binding(Binding::STRING_F_PTR f) :
 	Binding((void*)f, fptr_name)
 {
 //std::cerr << "adding " << fptr_name << ": "
@@ -80,6 +88,7 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 
 #define _PTR(type) ( any_cast<type>(d.ref()) )
 
+	//!!MOVE THIS ENTIRE CAST-BACK PART TO A TEMPLATED AUTO-CONVERSION MEMBER? (IF THAT'S POSSIBLE AT ALL)
 	try {
 		//!! This is still too fragile! Remember: name() is implementation-dependent, and
 		//!! could be anything: duplicates(!), mangled, long raw template name (even for string) etc.
@@ -96,10 +105,10 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 	//!!Why exactly does this need const?! Did crash with <char**>, omitting it -- was it just bac_any_cast?
 	//!!		prompt = (const char*) (* _PTR(char**));
 		} else if (type_name == Binding::fptr_name) { // raw fn*
-			auto val = (Binding::FPTR)_PTR(void*);
+			auto val = (Binding::STRING_F_PTR)_PTR(void*);
 			out << val;
 		} else if (type_name == Binding::functor_name) { // CALLBACK functor
-			auto val = _PTR(Binding::CALLBACK)();
+			auto val = _PTR(Binding::STRING_FUNCTOR)();
 			out << val;
 		} else if (type_name == Binding::int_name) {
 			auto val = *_PTR(int*);
@@ -118,7 +127,7 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 			out << val;
 			out.precision(save);
 		} else if (type_name == Binding::string_name) {
-			auto val = *_PTR(const string*);
+			auto val = *_PTR(string*);
 			out << val;
 		} else if (type_name == Binding::char_name) { // Plain char value (not char*!)
 			auto val = *_PTR(char*);
