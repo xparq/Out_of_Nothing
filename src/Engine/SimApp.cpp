@@ -1,4 +1,4 @@
-#define SAVE_COMPRESSED
+﻿#define SAVE_COMPRESSED
 
 #include "SimApp.hpp"
 

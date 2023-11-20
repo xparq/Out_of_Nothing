@@ -1,4 +1,4 @@
-//!!
+﻿//!!
 //!!	RENAME!!-> Not a subclass of SimApp, just the Backend-specific parts of it
 //!!	compiled separately, unlike most/all other backend-specific files here!!
 //!!	(See also e.g. _Audio.cpp.inc!...)
