@@ -55,13 +55,13 @@ void HUD_SFML::_setup(sf::RenderWindow& window)
 
 
 //----------------------------------------------------------------------------
-void HUD_SFML::append_line(const string& str)
+void HUD_SFML::renderstate_append_line(const string& str)
 {
-	elements.emplace_back(font, stdstring_to_SFMLString(str), DEFAULT_LINE_HEIGHT);
-	auto& line = elements[line_count()-1];
+	lines.emplace_back(font, stdstring_to_SFMLString(str), DEFAULT_LINE_HEIGHT);
+	auto& line = lines[renderstate_line_count()-1];
 	line.setPosition({
 			(float)_panel_left + DEFAULT_PADDING,
-			(float)_panel_top  + DEFAULT_PADDING + (line_count()-1) * DEFAULT_LINE_HEIGHT});
+			(float)_panel_top  + DEFAULT_PADDING + (renderstate_line_count()-1) * DEFAULT_LINE_HEIGHT});
 
 //	line.setStyle(sf::Text::Bold | sf::Text::Underlined);
 	line.setFillColor(sf::Color(_fgcolor));
@@ -72,9 +72,10 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 {
 	if (!active()) return;
 
-#if 0 // SFML3 has now got some clipping support! Check/use it! And DELETE the cruft below!
-
-    //https://en.sfml-dev.org/forums/index.php?topic=25552.0
+    // SFML3 has got some clipping support now! Check/use it!
+   // Use in general for every SFW widget! And DELETE THE CRUFT BELOW!
+  //https://en.sfml-dev.org/forums/index.php?topic=25552.0
+ //
 //!!Why the offset?!
 //!!	tgui::Clipping clipview(window, sf::RenderStates::Default, //!!??
 //!!	                  {(float)_panel_left, (float)_panel_top}, {200.f, 200.f});
@@ -85,28 +86,25 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 	vw.setViewport(sf::FloatRect({(float)_panel_left, (float)_panel_top}, {1.f, 1.f}));
 	window.setView(vw);
 !!*/
-#endif //0
-	clear_content(); // Because it's volatile (by default)!
-	std::stringstream ss;
-	//!! Each element goes to a new line currently! :-/
-//	for (const Binding& x : watchers) ss << x;
-	for (size_t i = 0; i < watchers.size(); ++i) {
-		ss << prompts[i] << watchers[i];// << "\n";
-	}
-	for (std::string line; std::getline(ss, line);) {
-		append_line(line);
+	if (_volatile) {
+		renderstate_clear();
+		std::stringstream ss;
+		ss << *this;
+
+		for (std::string line; std::getline(ss, line);)
+			renderstate_append_line(line);
 	}
 
 	// OK, finally draw something...
 	sf::RectangleShape rect({450, //!!... "Fit-to-text" feature by recompilation ;)
-		(float)line_count() * DEFAULT_LINE_HEIGHT + 2*DEFAULT_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
+		(float)renderstate_line_count() * DEFAULT_LINE_HEIGHT + 2*DEFAULT_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
 	rect.setPosition({(float)_panel_left, (float)_panel_top});
 	rect.setFillColor(sf::Color(_bgcolor));
 	rect.setOutlineColor(sf::Color((uint32_t)(_bgcolor * 1.5f)));
 	rect.setOutlineThickness(1);
 	window.draw(rect);
 
-	for (auto& text : elements) {
+	for (auto& text : lines) {
 		window.draw(text);
 	}
 

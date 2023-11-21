@@ -140,6 +140,6 @@ Please choose the Technical Support command on the Visual C++ Help menu, or open
 }; // namespace UI
 
 //!!?? Declaring it as friend was not enough this time. But why?
-std::ostream& operator <<(std::ostream& out, const UI::Binding& w);
+std::ostream& operator << (std::ostream& out, const UI::Binding& w);
 
 #endif // _DMN78405B0T873YBV24C467I_

@@ -32,11 +32,12 @@ struct HUD_SFML : public HUD
 	static constexpr uint32_t DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
 	static constexpr uint32_t DEFAULT_BACKGROUND_COLOR = 0x00406050;
 
-	void clear_content() { elements.clear(); }
-	auto line_count() const { return elements.size(); }
-	void append_line(const std::string& str);
-	void draw(sf::RenderWindow& window);
 	void _setup(sf::RenderWindow& window);
+
+	void renderstate_clear() { lines.clear(); }
+	void renderstate_append_line(const std::string& str);
+	auto renderstate_line_count() const { return lines.size(); }
+	void draw(sf::RenderWindow& window);
 
 	virtual void onResize(sf::RenderWindow& window);
 
@@ -47,7 +48,7 @@ public:
 
 protected:
 	std::string _font_file;
-	std::vector<sf::Text> elements; // One per line, currently!
+	std::vector<sf::Text> lines;
 	sf::Font font;
 
 	int req_panel_top;

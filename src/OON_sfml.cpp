@@ -573,10 +573,10 @@ void OON_sfml::_setup_UI()
 	//!! a World reload?!?!?!
 	//!!
 
-	//!! Also: why did I make this a doulbe nested lambda?!
+	//!! Also: does this still need to be a double nested lambda? It doesn't even use `this` any more!
 	auto ftos = [this](auto* ptr_x) { return [this, ptr_x]() { static constexpr size_t LEN = 15;
-		char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *ptr_x);
-		return string(ec != std::errc() ? "???" : (*ptr = 0, buf));
+			char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *ptr_x);
+			return string(ec != std::errc() ? "???" : (*ptr = 0, buf));
 		};
 	};
 
@@ -591,90 +591,99 @@ void OON_sfml::_setup_UI()
 //	debug_hud.add("DBG>", &debug);
 //!!shouldn't compile:	debug_hud.add("DBG>", debug);
 #endif
-	debug_hud.add("# of objs.: ", [=](){ return to_string(this->const_world().bodies.size()); });
-	debug_hud.add("\nBody interactions: ", &this->const_world()._interact_all);
-	debug_hud.add("\nDrag: ", ftos(&this->const_world().FRICTION));
-	debug_hud.add("\n");
-	debug_hud.add("\nPlayer Globe #1:");
-	debug_hud.add("\n  T: ",  ftos(&this->const_world().bodies[this->globe_ndx]->T));
-//!!#29	debug_hud.add("\n  R: ",  &(world().CFG_GLOBE_RADIUS)); // OK now, probably since c365c899
-	debug_hud.add("\n  R: ",  ftos(&this->const_world().bodies[this->globe_ndx]->r));
-	debug_hud.add("\n  m: ",  ftos(&this->const_world().bodies[this->globe_ndx]->mass));
-	debug_hud.add("\n  x: ",  ftos(&this->const_world().bodies[this->globe_ndx]->p.x));
-	debug_hud.add(      ", y: ",  ftos(&this->const_world().bodies[this->globe_ndx]->p.y));
-	debug_hud.add("\n  vx: ", ftos(&this->const_world().bodies[this->globe_ndx]->v.x));
-	debug_hud.add(      ", vy: ", ftos(&this->const_world().bodies[this->globe_ndx]->v.y));
-	debug_hud.add("\n");
-	debug_hud.add("\nVIEW SCALE: ", &view.zoom);
-	debug_hud.add("\nCAM. X: ", &view.offset.x);
-	debug_hud.add(     ", Y: ", &view.offset.y);
-/*	debug_hud.add("\n");
-	debug_hud.add("\nSHIFT", (bool*)&_kbd_state[SHIFT]);
-	debug_hud.add("\nLSHIFT", (bool*)&_kbd_state[LSHIFT]);
-	debug_hud.add("\nRSHIFT", (bool*)&_kbd_state[RSHIFT]);
-	debug_hud.add("\nCAPS LOCK", (bool*)&_kbd_state[CAPS_LOCK]);
-	debug_hud.add("\nSCROLL LOCK", (bool*)&_kbd_state[SCROLL_LOCK]);
-	debug_hud.add("\nNUM LOCK", (bool*)&_kbd_state[NUM_LOCK]);
+	debug_hud
+		<< "# of objs.: " << [=](){ return to_string(this->const_world().bodies.size()); }
+		<< "\nBody interactions: " << &this->const_world()._interact_all
+		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
+		<< "\n"
+		<< "\nPlayer Globe #1:"
+		<< "\n  T: " << ftos(&this->const_world().bodies[this->globe_ndx]->T)
+		<< "\n  R: " << ftos(&this->const_world().bodies[this->globe_ndx]->r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
+		<< "\n  M: " << ftos(&this->const_world().bodies[this->globe_ndx]->mass)
+		<< "\n  x: " << ftos(&this->const_world().bodies[this->globe_ndx]->p.x)
+		<<   ", y: " << ftos(&this->const_world().bodies[this->globe_ndx]->p.y)
+		<< "\n  vx: " << ftos(&this->const_world().bodies[this->globe_ndx]->v.x)
+		<<   ", vy: " << ftos(&this->const_world().bodies[this->globe_ndx]->v.y)
+		<< "\n"
+		<< "\nCAMERA: "
+		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
+		<< "\n  ZOOM: " << &view.zoom
+	;
+/*	debug_hud
+		<< "\n"
+		<< "\nSHIFT" << (bool*)&_kbd_state[SHIFT]);
+		<< "\nLSHIFT" << (bool*)&_kbd_state[LSHIFT]);
+		<< "\nRSHIFT" << (bool*)&_kbd_state[RSHIFT]);
+		<< "\nCAPS LOCK" << (bool*)&_kbd_state[CAPS_LOCK]);
+		<< "\nSCROLL LOCK" << (bool*)&_kbd_state[SCROLL_LOCK]);
+		<< "\nNUM LOCK" << (bool*)&_kbd_state[NUM_LOCK]);
+	;
 */
-//	debug_hud.add("\n");
-//	debug_hud.add("\nPress ? for help...");
+//	debug_hud << "\n"
+//	          << "\nPress ? for help...";
 
 	//------------------------------------------------------------------------
-	timing_hud.add("FPS: ", [=](){ return to_string(1 / (float)this->avg_frame_delay); });
-	timing_hud.add("\nlast frame Δt: ", [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; });
-	timing_hud.add("\nmodel Δt: ", [=](){ return to_string(this->time.last_model_Δt * 1000.0f) + " ms"; });
-	timing_hud.add(           " ", [=](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; });
-	timing_hud.add("\ncycle: ", [=](){ return to_string(iterations); });
-	timing_hud.add("\nReal elapsed time: ", &time.real_session_time);
+	timing_hud
+		<< "FPS: " << [=](){ return to_string(1 / (float)this->avg_frame_delay); }
+		<< "\nlast frame Δt: " << [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; }
+		<< "\nmodel Δt: " << [=](){ return to_string(this->time.last_model_Δt * 1000.0f) + " ms"; }
+		<<            " " << [=](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
+		<< "\ncycle: " << [=](){ return to_string(iterations); }
+		<< "\nReal elapsed time: " << &time.real_session_time
 	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
-	//!!??timing_hud.add(vformat("frame dt: {} ms", time.last_frame_delay));
-	timing_hud.add("\nTime reversed: ", &time.reversed);
-	timing_hud.add("\nTime scale: ", ftos(&this->time.scale));
-	timing_hud.add("\nModel timing stats:");
-//	timing_hud.add("\n    updates: ", &time.model_Δt_stats.samples);
-	timing_hud.add("\n    total t: ", &time.model_Δt_stats.total);
-	timing_hud.add("\n  Δt:");
-//	timing_hud.add("\n    last: ", &time.model_Δt_stats.last);
-	timing_hud.add("\n    min abs: ", &time.model_Δt_stats.umin);
-	timing_hud.add("\n    max abs: ", &time.model_Δt_stats.umax);
-	timing_hud.add("\n    min: ", &time.model_Δt_stats.min);
-	timing_hud.add("\n    max: ", &time.model_Δt_stats.max);
-	timing_hud.add("\n    avg.: ", [=]{ return to_string(this->time.model_Δt_stats.average());});
+	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
+		<< "\nTime reversed: " << &time.reversed
+		<< "\nTime scale: " << ftos(&this->time.scale)
+		<< "\nModel timing stats:"
+//		<< "\n    updates: " << &time.model_Δt_stats.samples
+		<< "\n    total t: " << &time.model_Δt_stats.total
+		<< "\n  Δt:"
+		<< "\n    last: " << &time.model_Δt_stats.last
+		<< "\n    min abs: " << &time.model_Δt_stats.umin
+		<< "\n    max abs: " << &time.model_Δt_stats.umax
+		<< "\n    min: " << &time.model_Δt_stats.min
+		<< "\n    max: " << &time.model_Δt_stats.max
+		<< "\n    avg.: " << [=]{ return to_string(this->time.model_Δt_stats.average());}
+	;
+//cerr << timing_hud;
 
 	//------------------------------------------------------------------------
-//	help_hud.add("---------- Controls:\n");
-	help_hud.add("Arrows:    Thrust\n");
-	help_hud.add("Space:     \"Exhaust\" trail\n");
-	help_hud.add("Ins:       Add 100 objects (+Shift: only 1)\n");
-	help_hud.add("Del:       Remove 100 objects (+Shift: only 1)\n");
-//	help_hud.add("---------- Metaphysics:\n");
-	help_hud.add("Tab:       Toggle object interactions\n");
-	help_hud.add("F:         Decrease (+Shift: incr.) friction\n");
-//	help_hud.add("C:         chg. collision mode: pass/stick/bounce\n");
-	help_hud.add("R:         Reverse time\n");
-	help_hud.add("T:         Time accel. (+Shift: decel.)\n");
-	help_hud.add("X:         Toggle fixed Δt for model updates\n");
-	help_hud.add("Pause/h:   Halt the physics (time)\n");
-	help_hud.add("Enter:     Step 1 time slice forward\n");
-	help_hud.add("Backspace: Step 1 time slice backward\n");
-	help_hud.add("---------- View:\n");
-	help_hud.add("+/- or mouse wheel: Zoom\n");
-	help_hud.add("A W S D:   Pan\n");
-	help_hud.add("Shift:     Auto-scroll to follow player movement\n");
-	help_hud.add("Scroll Lock: Toggle player-locked auto-scroll\n");
-	help_hud.add("Home:      Home in on the player globe\n");
-	help_hud.add("Ctrl+Home: Reset view to Home pos. (not the zoom)\n");
-	help_hud.add("---------- Admin:\n");
-	help_hud.add("F1-F4:     Save world snapshots (+Shift: load)\n");
-	help_hud.add("M:         Mute/unmute music, N: sound fx\n");
-	help_hud.add("Shift+M:   Mute/unmute all audio\n");
-	help_hud.add("Shift+P:   Toggle FPS throttling (lower CPU load)\n");
-	help_hud.add("F11:       Toggle fullscreen\n");
-	help_hud.add("F12:       Toggle HUDs\n");
-	help_hud.add("\n");
-	help_hud.add("Esc:       Quit\n");
-	help_hud.add("\n");
-	help_hud.add("Command-line options: oon.exe /?");
+	help_hud
+        //	<< "---------- Controls:\n"
+		<< "Arrows:    Thrust\n"
+		<< "Space:     \"Exhaust\" trail\n"
+		<< "Ins:       Add 100 objects (+Shift: only 1)\n"
+		<< "Del:       Remove 100 objects (+Shift: only 1)\n"
+        //	<< "---------- Metaphysics:\n"
+		<< "Tab:       Toggle object interactions\n"
+		<< "F:         Decrease (+Shift: incr.) friction\n"
+        //	<< "C:         chg. collision mode: pass/stick/bounce\n"
+		<< "R:         Reverse time\n"
+		<< "T:         Time accel. (+Shift: decel.)\n"
+		<< "X:         Toggle fixed Δt for model updates\n"
+		<< "Pause/h:   Halt the physics (time)\n"
+		<< "Enter:     Step 1 time slice forward\n"
+		<< "Backspace: Step 1 time slice backward\n"
+		<< "---------- View:\n"
+		<< "+/- or mouse wheel: Zoom\n"
+		<< "A W S D:   Pan\n"
+		<< "Shift:     Auto-scroll to follow player movement\n"
+		<< "Scroll Lock: Toggle player-locked auto-scroll\n"
+		<< "Home:      Home in on the player globe\n"
+		<< "Ctrl+Home: Reset view to Home pos. (not the zoom)\n"
+		<< "---------- Admin:\n"
+		<< "F1-F4:     Save world snapshots (+Shift: load)\n"
+		<< "M:         Mute/unmute music, N: sound fx\n"
+		<< "Shift+M:   Mute/unmute all audio\n"
+		<< "Shift+P:   Toggle FPS throttling (lower CPU load)\n"
+		<< "F11:       Toggle fullscreen\n"
+		<< "F12:       Toggle HUDs\n"
+		<< "\n"
+		<< "Esc:       Quit\n"
+		<< "\n"
+		<< "Command-line options: oon.exe /?"
+	;
+//cerr << help_hud;
 
 	help_hud.active(cfg.get("show_help_on_start", true));
 #endif
