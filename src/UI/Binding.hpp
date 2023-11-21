@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <any>
 #include <functional>
+#include <utility> // inplace_type_t
 #include <string>
 #include <string_view>
 
@@ -24,14 +25,13 @@ public:
 
 public:
 
-	using STRING_F_PTR = std::string (*)(); // raw function ptr (see CALLBACK for functors/closures (capturing lambdas)!)
-
-	using STRING_FUNCTOR = std::function<std::string()>; //! not a raw fn pointer, not a ptr at all, but a (stateful) function object, so not convertible to/from void*!
+	using STRING_FN_PTR = std::string (*)(); // raw function ptr (see STRING_FUNCTOR for closures!)
+	using CHARPTR_FN_PTR = const char* (*)(); // raw function ptr (see STRING_FUNCTOR for closures!)
+	using STRING_FUNCTOR = std::function<std::string()>; //! not a raw fn pointer (not a ptr at all), but a (stateful?) function object, so not convertible to/from void*!
 		//!NOTE: "stateless" lambdas will (or just could?) also get auto-converted to plain old functions!
 
 	// Convenience ctors for string literals...
 	Binding(const char* literal);
-	Binding(const std::string* literal); //! Note the pointer! Will not accept "how_long_do_this_lives"s
 
 	// Add any other pointer-type binding...
 		// Helpers to avoid including the monstrosity of <type_traits> just for std::remove_const:
@@ -43,20 +43,26 @@ public:
 		_type(type_name ? type_name : typeid(std::remove_const_t<T>).name())
 	{}
 
-	// This can't be part of the template, as stateless ("captureless") lambdas wouldn't match without casting!
+	// These can't be part of the template, as stateless ("captureless") lambdas wouldn't match without casting!
 	//!!?? [What did I mean? Lambdas with empty [] do match? :-o Is the standard?]
-	Binding(STRING_F_PTR f);
+	Binding(STRING_FN_PTR f);
+	Binding(CHARPTR_FN_PTR f);
 
 	// Catch-all lambda matcher (needs no cast for lambdas, but we know kinda nothing here...)
 	//!! IOW, this actually matches EVERYTHING, not just functors!
 	template <typename ShouldBeFunctor> Binding(ShouldBeFunctor f) :
 		_data_ptr((STRING_FUNCTOR)f),
-		_type(functor_name)
+		_type(string_functor_name)
 	{
-//!!?? Why is this never triggered:
-		static_assert(!std::is_rvalue_reference_v<decltype(f)>, "Only lvalues are allowed for binding!");
+//!!?? Why is this never triggered, even when the arg was &&:
+//!!		static_assert(!std::is_rvalue_reference_v<decltype(f)>, "Only lvalues are allowed for binding!");
 //std::cerr << "- unknown type -- hopefully a lambda! :) -- catched...\n";
 	}
+
+	template <> Binding(std::string value) : _data_ptr(std::in_place_type<std::string>, value), _type(string_literal_name) {}
+	template <> Binding(int value)         : _data_ptr(std::in_place_type<int>, value), _type(int_literal_name) {}
+	template <> Binding(float value)       : _data_ptr(std::in_place_type<float>, value), _type(float_literal_name) {}
+	template <> Binding(double value)      : _data_ptr(std::in_place_type<double>, value), _type(double_literal_name) {}
 
 	// "promptless watcher" call form (a bit too vague tho, but would "mostly work"...):
 //	template <typename T> auto add(T* var) { return add("", var); }
@@ -88,9 +94,9 @@ public:
 		//!!??		out << _PTR(const char*) << '\n';
 		//!!Why exactly does this need const?! Did crash with <char**>, omitting it -- was it just bac_any_cast?
 		//!!		prompt = (const char*) (* _PTR(char**));
-			} else if constexpr (requested_type == Binding::fptr_name) { // raw fn*
-				return (Binding::STRING_F_PTR)_PTR(void*);
-			} else if constexpr (requested_type == Binding::functor_name) { // CALLBACK functor
+			} else if constexpr (requested_type == Binding::string_fn_ptr_name) { // string-returning raw fn*
+				return (Binding::STRING_FN_PTR)_PTR(void*);
+			} else if constexpr (requested_type == Binding::string_functor_name) { // string-returning functors
 				return _PTR(Binding::STRING_FUNCTOR)();
 			} else {
 				return *_PTR(T*);
@@ -118,14 +124,20 @@ Please choose the Technical Support command on the Visual C++ Help menu, or open
 !!*/
 
 	//----------------------------------------------------------------------------
-	//!!
 	//!! Dear C++... Why TF isn't typeid(...).name(), of all things, consteval?! :-o
 	//!! (Also, not sure these could be auto, due to subtle const char* vs. char[] mismatches.)
 	//!!
 	// These types have their own add(), so we can "standardize" their names (if C++ had failed to do so):
 	/*constexpr*/ static const _typename_t charptr_literal_name;// = "string literal"; //!!?? Why did this work (why different from const char*): typeid("literal").name()?
-	/*constexpr*/ static const _typename_t fptr_name;//     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
-	/*constexpr*/ static const _typename_t functor_name;//  = "CALLBACK"; // synthetic name for <CALLBACK> functor objects
+	/*constexpr*/ static const _typename_t string_literal_name;
+	/*constexpr*/ static const _typename_t int_literal_name;
+	/*constexpr*/ static const _typename_t float_literal_name;
+	/*constexpr*/ static const _typename_t double_literal_name;
+
+	/*constexpr*/ static const _typename_t charptr_fn_ptr_name;//  = "charptr_fn_ptr"; // synthetic name for const char* (*f)() and compatible raw fn ptrs
+	/*constexpr*/ static const _typename_t string_fn_ptr_name;//   = "string_fn_ptr";  // synthetic name for string (*f)() and compatible raw fn ptrs
+	/*constexpr*/ static const _typename_t string_functor_name;//  = "string_closure"; // synthetic name for string-returning functors/closures
+//!! :-(	/*constexpr*/ static const _typename_t sg_printable_name;//    = "something_<<able";
 	// For the generic add():
 	/*constexpr*/ static const _typename_t float_name;//   = typeid(float).name();
 	/*constexpr*/ static const _typename_t double_name;//  = typeid(double).name();

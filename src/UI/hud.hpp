@@ -8,9 +8,7 @@
 #include <string_view>
 #include <any>
 #include <utility> // std::exchange
-#include <stdexcept>
-
-#include <ostream> // for debugging only!
+#include <ostream>
 
 #ifdef DEBUG
 #  include <iostream> // for debugging only!
@@ -35,14 +33,17 @@ public:
 	//-------------------------------------------------------------
 	// Add a string literal to the panel...
 	void add(const char* literal);
-	void add(const std::string* literal);
+	void add(std::string literal);
+	void add(float literal);
+	void add(int literal);
 
 	//-------------------------------------------------------------
 	// Add a string-returning fn. pointer...
 	//!! Can't template this, as stateless (captureless) lambdas wouldn't match without casting!
-	void add(Binding::STRING_F_PTR f);
-	//!!auto add(prompt, STRING_F_PTR f) {...}
+	void add(Binding::STRING_FN_PTR f);
 
+	//-------------------------------------------------------------
+	// Scary vague version, but mostly works...
 	template <typename T> auto add(T* var)
 	{
 		//!!?? Why is this never triggered:
@@ -51,6 +52,8 @@ public:
 		_elements.emplace_back(std::in_place_type<Binding>, std::forward<T*>(var));
 	}
 
+	//-------------------------------------------------------------
+	// Even more vague, but mostly still works! :)
 	template <typename ShouldBeFunctor> auto add(ShouldBeFunctor f)
 	{
 		//!!?? Why is this never triggered:
@@ -59,49 +62,15 @@ public:
 		_elements.emplace_back(std::in_place_type<Binding>, std::forward<ShouldBeFunctor>(f));
 	}
 
-	//-------------------------------------------------------------
-	// Add a lambda/closure/functor...
-	// (Catch-all lambda matcher that needs no cast for lambdas, but we know nothing here...)
-	//!! IOW, this actually matches EVERYTHING, not just functors!
-	//!! Binding(T) is hoped to deal with that in a sensible way...
-	template <typename ShouldBeFunctor> auto add(const char* prompt, ShouldBeFunctor f)
-	{
-		//!!?? Why is this never triggered:
-		static_assert(!std::is_rvalue_reference_v<decltype(f)>, "Only lvalues are allowed for binding!");
-//std::cerr << "- unknown type -- hopefully a lambda/functor! :) -- catched...\n";
-		_elements.emplace_back(std::in_place_type<std::string>, prompt && *prompt ? prompt : "");
-		_elements.emplace_back(std::in_place_type<Binding>, std::forward<ShouldBeFunctor>(f));
-	}
-
-	// "promptless watcher" form (scary vague, but mostly works...):
-	//template <typename T> auto add(T* var) { return add("", var); }
-
-	//-------------------------------------------------------------
-	// Add any of tha above, with a prompt...
-
-		// Helpers to avoid including the monstrosity of <type_traits> just for std::remove_const:
-		private: template <class T> struct _nonstd_remove_const          { typedef T type; };
-		private: template <class T> struct _nonstd_remove_const<const T> { typedef T type; };
-	public:
-	template <typename T> auto add(const char* prompt, T* var, const char* type_name = nullptr)
-	{
-		_elements.emplace_back(std::in_place_type<std::string>, prompt && *prompt ? prompt : "");
-		_elements.emplace_back(std::in_place_type<Binding>, var, type_name);
-//!!?? [What did I mean below: shouldn't matter because I assumed they had the same size (they don't!),
-//!!   or shouldn't matter for some other reason I failed to add?!... :-/ ]
-//!!??Crashes if var is int*, as if sizeof int* < sizeof void* mattered, but it shouldn't:
-//!!??		std::cerr << type_name << " -> " << (void*)any_cast<void*>(ptr) << " added." << endl;
-//		std::cerr << type_name << " added." << endl;
-	}
 
 	template <typename T>
 	auto& operator << (T* var) {
 		add(std::forward<T*>(var));
 #ifdef DEBUG
 		if constexpr (std::is_same<std::decay_t<T>, char>::value) {
-cerr << "- HUD<< added (const?) char* element \""<< var <<"\" (elements: "<<_elements.size()<<").\n";
+//cerr << "- HUD<< added (const?) char* element \""<< var <<"\" (elements: "<<_elements.size()<<").\n";
 		} else {
-cerr << "- HUD<< added pointer -- hopefully the addr. of a variable! :) (elements: "<<_elements.size()<<").\n";
+//cerr << "- HUD<< added pointer -- hopefully the addr. of a variable! :) (elements: "<<_elements.size()<<").\n";
 		}
 #endif
 		return *this;
@@ -111,7 +80,7 @@ cerr << "- HUD<< added pointer -- hopefully the addr. of a variable! :) (element
 	auto& operator << (T&& var) {
 		add(std::forward<T&&>(var));
 #ifdef DEBUG
-cerr << "- HUD<< added element of unknown type -- hopefully a Functor! :) (elements: "<<_elements.size()<<").\n";
+//cerr << "- HUD<< added element of unknown type -- hopefully a Functor! :) (elements: "<<_elements.size()<<").\n";
 #endif
 		return *this;
 	}

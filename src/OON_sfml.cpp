@@ -40,6 +40,12 @@ using namespace sz;
 using namespace std;
 
 
+#ifdef DEBUG
+static std::string hud_test_callback_string() { return "this is a std::string"; }
+static const char* hud_test_callback_ccptr()  { return "this is a const char*"; }
+#endif
+
+
 //============================================================================
 namespace sync {
 	std::mutex Updating;
@@ -573,8 +579,9 @@ void OON_sfml::_setup_UI()
 	//!! a World reload?!?!?!
 	//!!
 
-	//!! Also: does this still need to be a double nested lambda? It doesn't even use `this` any more!
-	auto ftos = [this](auto* ptr_x) { return [this, ptr_x]() { static constexpr size_t LEN = 15;
+	//! This still needs to be a double nested lambda: the outer wrapper "converts" the
+	//! signature to match the string-returning nullary functions the HUD stuff supports.
+	auto ftos = [](auto* ptr_x) { return [ptr_x]() { static constexpr size_t LEN = 15;
 			char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *ptr_x);
 			return string(ec != std::errc() ? "???" : (*ptr = 0, buf));
 		};
@@ -583,13 +590,26 @@ void OON_sfml::_setup_UI()
 #ifdef DEBUG
 //!!Should be Rejected compile-time (with a static_assert):
 //!! - well, rejected indeed, but only "fortunately", and NOT by my static_assert!... :-/
-//!!	debug_hud.add("DBG>", string("debug"));
+//!!	debug_hud << "DBG>" << string("debug");
 	static const auto const_debug = "CONST STRING "s;
-//	debug_hud.add("DBG>", &const_debug);
-//!!shouldn't compile:	debug_hud.add("DBG>", const_debug);
+	debug_hud << "DBG>" << &const_debug;
+//!!shouldn't compile:	debug_hud << "DBG>" << const_debug;
 	static auto debug = "STR "s;
-//	debug_hud.add("DBG>", &debug);
-//!!shouldn't compile:	debug_hud.add("DBG>", debug);
+	debug_hud << "DBG>" << &debug;
+//!!shouldn't compile:	debug_hud << "DBG>" << debug;
+	debug_hud << "\n"
+	<< "test fn->string: " << hud_test_callback_string << "\n"
+	<< "test fn->ccptr: " << hud_test_callback_ccptr << "\n"
+	<< "test λ->ccptr: " << []{ return "autoconv to string?..."; } << "\n"
+//!!NOPE:	<< "test λ->int: " << []{ return 0xebba; } << "\n"
+//!!NOPE:	<< "test λ->float: " << []{ return 12.345; } << "\n"
+	// By-value data that are not closures:
+	<< "test val. string: " << "temp"s << "\n"
+	<< "test val. int: " << 12345 << "\n"
+	<< "test val. float: " << 12.345f << "\n"
+	<< "test val. double: " << 1e300 << "\n"
+//!!NOT YET:	<< "test val. bool: " << true << "\n"
+	<< "\n";
 #endif
 	debug_hud
 		<< "# of objs.: " << [=](){ return to_string(this->const_world().bodies.size()); }
@@ -681,7 +701,7 @@ void OON_sfml::_setup_UI()
 		<< "\n"
 		<< "Esc:       Quit\n"
 		<< "\n"
-		<< "Command-line options: oon.exe /?"
+		<< "Command-line options: " << args.exename() << " /?"
 	;
 //cerr << help_hud;
 

@@ -19,9 +19,23 @@ using namespace UI;
 //!! Should be moved further out into some separate cpp_type_bullshit_..._something object instead!
 //!! Also, not sure these could be auto, due to subtle const char* vs. char[...] mismatches...
 // These have their own add(...):
-/*static*/ /*constexpr*/ const Binding::_typename_t Binding::charptr_literal_name = "string literal";
-/*static*/ /*constexpr*/ const Binding::_typename_t Binding::fptr_name     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
-/*static*/ /*constexpr*/ const Binding::_typename_t Binding::functor_name  = "CALLBACK"; // synthetic name for <CALLBACK> functor Binding::objects
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::charptr_literal_name = "char* literal";
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::string_literal_name  = "string literal";
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::int_literal_name     = "int literal";
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::float_literal_name   = "float literal";
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::double_literal_name  = "double literal";
+
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::charptr_fn_ptr_name  = "charptr_fn_ptr";  // synthetic name for const char* (*f)() and compatible raw fn ptrs
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::string_fn_ptr_name   = "string_fn_ptr";   // synthetic name for directly (*f)() compatible raw fn ptrs
+/*static*/ /*constexpr*/ const Binding::_typename_t Binding::string_functor_name  = "string_closure";  // synthetic name for <CALLBACK> functor Binding::objects
+
+// :-( /*static*/ /*constexpr*/ const Binding::_typename_t Binding::sg_printable_name    = "something_<<able";
+
+//!!
+//!! It's totally blurred, where exactly the distinction between pointers and values are made!
+//!! These are non-pointer types, but the whole thing only supports pointers, not values! :-o
+//!! So: op<< assumes these plain names actually mean pointers, and casts accordingly! :-o
+//!!
 // For the generic add():
 /*static*/ /*constexpr*/ const Binding::_typename_t Binding::float_name   = typeid(float).name();
 /*static*/ /*constexpr*/ const Binding::_typename_t Binding::double_name  = typeid(double).name();
@@ -36,8 +50,9 @@ void Binding::_static_init()
 {
 	static bool done = false; if (done) return; else done = true;
 	charptr_literal_name = "string literal"; //!!?? Why did this work (why different from const char*): typeid("literal").name()?
-	fptr_name     = "fptr";     // synthetic name for directly (*f)() compatible raw fn ptrs
-	functor_name  = "CALLBACK"; // synthetic name for <CALLBACK> functor objects
+	charptr_fn_ptr_name  = "charptr_fn_ptr"; // synthetic name for const char* (*f)() and compatible raw fn ptrs
+	string_fn_ptr_name   = "string_fn_ptr";  // synthetic name for directly (*f)() compatible raw fn ptrs
+	string_functor_name  = "string_closure"; // synthetic name for <STRING_FUNCTOR> objects
 
 	float_name   = typeid(float).name();
 	double_name  = typeid(double).name();
@@ -51,30 +66,22 @@ void Binding::_static_init()
 
 //----------------------------------------------------------------------------
 Binding::Binding(const char* literal) :
-	_data_ptr(literal),
-	_type(Binding::charptr_literal_name)
+	_data_ptr(literal), _type(charptr_literal_name)
 {
-//cerr << "---> HUD: ADDING literal: "<<literal<<"\n";
+//cerr << "---> Binding: ADDING const char* literal: "<<literal<<"\n";
 }
 
-Binding::Binding(const std::string* literal) :
-	_data_ptr(literal),
-	_type(Binding::string_name)
+Binding::Binding(Binding::STRING_FN_PTR f) :
+//	Binding((void*)f, string_fn_ptr_name)
+	_data_ptr(f), _type(string_fn_ptr_name)
 {
-//cerr << "---> HUD: ADDING literal: "<<literal<<"\n";
+//cerr << "---> Binding: ADDING " << string_fn_ptr_name << ": " << (void*)f << " -> " << f() << "\n";
 }
 
-
-Binding::Binding(Binding::STRING_F_PTR f) :
-	Binding((void*)f, fptr_name)
+Binding::Binding(CHARPTR_FN_PTR f) :
+	_data_ptr(f), _type(charptr_fn_ptr_name)
 {
-//std::cerr << "adding " << fptr_name << ": "
-//		     << (void*)f << " -> " << f() << endl;
-//!!??Alas, this crashes:
-//!!??		return add("", f, fptr_name);
-
-//		any ptr; ptr.emplace<void*>(f); //!!?? and why does <FPTR>(f) crash here??
-//		watchers.push_back(make_tuple(fptr_name, ptr, default_prompt));
+//cerr << "---> Binding: ADDING " << charptr_fn_ptr_name << ": " << (void*)f << " -> " << f() << "\n";
 }
 
 //----------------------------------------------------------------------------
@@ -86,7 +93,7 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 //cerr << "static Binding::charptr_literal_name: " << Binding::charptr_literal_name << " --- retrieved type_name: " << type_name << "\n";
 //cerr << "static Binding::float_name:           " << Binding::float_name << "           --- retrieved type_name: " << type_name << "\n";
 
-#define _PTR(type) ( any_cast<type>(d.ref()) )
+#define _CAST(type) ( any_cast<type>(d.ref()) )
 
 	//!!MOVE THIS ENTIRE CAST-BACK PART TO A TEMPLATED AUTO-CONVERSION MEMBER? (IF THAT'S POSSIBLE AT ALL)
 	try {
@@ -96,54 +103,60 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 
 		if (type_name == Binding::charptr_literal_name) {
 			//!! Cf.: charptr_name!
-			auto val = _PTR(const char*);
+			auto val = _CAST(const char*);
 			out << val;
 		} else if (type_name == Binding::charptr_name) { //!!??
 //cerr << "GOT 'charptr_name' ("<< type_name <<")\n";
-	//!!WAS:	out << (const char*) (* _PTR(const char**)) << '\n';
-	//!!??		out << _PTR(const char*) << '\n';
+	//!!WAS:	out << (const char*) (* _CAST(const char**)) << '\n';
+	//!!??		out << _CAST(const char*) << '\n';
 	//!!Why exactly does this need const?! Did crash with <char**>, omitting it -- was it just bac_any_cast?
-	//!!		prompt = (const char*) (* _PTR(char**));
-		} else if (type_name == Binding::fptr_name) { // raw fn*
-			auto val = (Binding::STRING_F_PTR)_PTR(void*);
-			out << val;
-		} else if (type_name == Binding::functor_name) { // CALLBACK functor
-			auto val = _PTR(Binding::STRING_FUNCTOR)();
-			out << val;
+	//!!		prompt = (const char*) (* _CAST(char**));
+		} else if (type_name == Binding::string_fn_ptr_name) { // raw fn*
+			out << _CAST(Binding::STRING_FN_PTR) ();
+		} else if (type_name == Binding::charptr_fn_ptr_name) { // raw fn*
+			out << _CAST(Binding::CHARPTR_FN_PTR) ();
+		} else if (type_name == Binding::string_functor_name) {
+			out << _CAST(Binding::STRING_FUNCTOR) ();
 		} else if (type_name == Binding::int_name) {
-			auto val = *_PTR(int*);
-			out << val;
+			out << *_CAST(int*);
 		} else if (type_name == Binding::bool_name) {
-			auto val = (*_PTR(bool*) ? "on" : "off");
-			out << val;
+			out << (*_CAST(bool*) ? "on" : "off"); //!! This should be configurable, and also to be used by bool literals, if implemented!
 		} else if (type_name == Binding::float_name) {
-			auto save = out.precision(numeric_limits<float>::max_digits10); //!! Did I leave max as a placeholder?
-			auto val = *_PTR(float*);
-			out << val;
+			auto save = out.precision(numeric_limits<float>::max_digits10); //!! Did I use max as a placeholder?
+			out << *_CAST(float*);
 			out.precision(save);
 		} else if (type_name == Binding::double_name) {
-			auto save = out.precision(numeric_limits<double>::max_digits10); //!! Did I leave max as a placeholder?
-			auto val = *_PTR(double*);
-			out << val;
+			auto save = out.precision(numeric_limits<double>::max_digits10); //!! Did I use max as a placeholder?
+			out << *_CAST(double*);
 			out.precision(save);
 		} else if (type_name == Binding::string_name) {
-			auto val = *_PTR(string*);
-			out << val;
+			out << *_CAST(string*);
 		} else if (type_name == Binding::char_name) { // Plain char value (not char*!)
-			auto val = *_PTR(char*);
-			out << val;
+			out << *_CAST(char*);
+		} else
+		// Literals...
+		       if (type_name == Binding::string_literal_name) {
+			out << _CAST(const string&);
+		} else if (type_name == Binding::float_literal_name) {
+			out << _CAST(float);
+		} else if (type_name == Binding::int_literal_name) {
+			out << _CAST(int);
+		} else if (type_name == Binding::double_literal_name) {
+			out << _CAST(double);
 		} else {
-			out << "ERROR: Can't show unknown type: " << d.type_name();
+#ifdef DEBUG
+			out << "Binding ERROR: Can't show unknown type: " << d.type_name();
+#endif
 		}
 
 	} catch(std::bad_any_cast&) {
-cerr << "- ERROR: Type mismatch for a binding with saved type \"" <<type_name<< "\"!\n";
+cerr << "- Binding ERROR: Type mismatch for a binding with saved type \"" <<type_name<< "\" ["<<Binding::string_fn_ptr_name<<"]!\n";
 		// Nothing added to 'out', continuing...
 	} catch(...) {
 cerr << "- ERROR: Wow, unknown exception in " __FUNCTION__ "!\n";
 	}
 	
-#undef _PTR
+#undef _CAST
 
 	return out;
 }
