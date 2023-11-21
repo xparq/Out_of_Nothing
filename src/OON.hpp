@@ -2,6 +2,7 @@
 #define __OON__
 
 #include "Engine/SimApp.hpp"
+namespace UI { class HUD; }
 
 #include <cassert>
 
@@ -20,6 +21,11 @@ public:
 
 	//--------------------------------------------------------------------
 	// Config / Setup
+
+	enum HUD_ID { HelpPanel, TimingStats, PlayerData, };
+	virtual UI::HUD& ui_get(HUD_ID which) = 0;
+	bool _show_huds = true;
+	void _setup_UI();
 
 	virtual size_t add_player(Model::World::Body&& obj) override;
 	virtual void   remove_player(size_t ndx) override;
@@ -56,10 +62,20 @@ public:
 	auto zoom_out () { AUTO_CONST factor = 1/(1 + CFG_ZOOM_CHANGE_RATIO); zoom(factor); }
 	void zoom(float factor);
 
-	// - Misc. controls:
+	//--------------------------------------------------------------------
+	// "Meta" controls (not gameplay/player, but admin/user actions)...
 	void toggle_muting();
 	void toggle_music();
 	void toggle_sound_fx();
+#ifndef DISABLE_HUD
+	void toggle_huds();
+	bool huds_active();
+	void toggle_help();
+#else
+	auto toggle_huds()  {}
+	auto huds_active()  { return false; }
+	auto toggle_help()  {}
+#endif
 
 	//------------------------------------------------------------------------
 	// Internals: not even user actions (Well, some still are, basically for testing.)

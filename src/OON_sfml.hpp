@@ -8,6 +8,8 @@
 #include "sfw/GUI.hpp"
 #include "UI/hud_sfml.hpp"
 
+#include <utility> // std::unreachable
+
 //============================================================================
 class OON_sfml : public OON
 {
@@ -34,19 +36,6 @@ public:
 	//! The generic version of this is enough for now:
 	//virtual bool save_snapshot(unsigned slot = 1) override;
 
-	//--------------------------------------------------------------------
-	// "Meta" ops: beyond the gameplay ("user", rather than "player" actions):
-#ifndef DISABLE_HUD
-	auto toggle_huds()  { _show_huds = !_show_huds; }
-	auto huds_active()  { return _show_huds; }
-	auto toggle_help()  { help_hud.active(!help_hud.active()); }
-#else
-	auto toggle_huds()  {}
-	auto huds_active()  { return false; }
-	auto toggle_help()  {}
-#endif
-
-
 //------------------------------------------------------------------------
 // Callback impl. (overrides)...
 //------------------------------------------------------------------------
@@ -68,8 +57,6 @@ protected:
 	void updates_for_next_frame() override;
 	void draw() override;
 //!!	void onResize() override;
-
-	void _setup_UI();
 
 	// Misc...
 	// Compensate for zoom displacement when the player object is not centered;
@@ -97,7 +84,14 @@ protected:
 	UI::HUD_SFML timing_hud;
 	UI::HUD_SFML debug_hud;
 	UI::HUD_SFML help_hud;
-	bool _show_huds = true;
+
+	UI::HUD& ui_get(HUD_ID which) override { switch (which) {
+		case HelpPanel:   return help_hud;
+		case TimingStats: return timing_hud;
+		case PlayerData:  return debug_hud;
+		default: std::unreachable(); // c++23 only; and this is c++600: [[unreachable]];
+			//return help_hud; // Dummy, to shut up some compiler warnings
+	}}
 #endif
 };
 

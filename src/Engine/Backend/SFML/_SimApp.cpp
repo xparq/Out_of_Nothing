@@ -46,7 +46,7 @@ SimApp::SimApp(int argc, char** argv)
 		// Long options with 1 param. don't need to be defined:
 		//{"moons", 1}, // number of moons to start with
 		// Short ones do, unfortunately (they're predicates by default, and don't have '=' to override):
-		{"C", 1},
+		{"C", 1}, {"cfg", 1},
 	  })
 	// Load & fixup the SimApp config...
 	, cfg(
