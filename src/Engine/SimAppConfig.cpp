@@ -36,6 +36,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	data_dir        = get("data_dir", ""); // "" is the same as sz::getcwd()
 	asset_dir       = get("asset_dir", "asset/");
 	window_title    = get("appearance/window_title", window_title); //!! not really a cfg option...
+	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
 	default_font_file = get("appearance/default_font_file", "font/default.font");
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
 	background_music  = get("audio/background_music", "music/background.ogg");
@@ -71,7 +72,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	background_music = sz::prefix_if_rel(asset_dir, background_music);
 #ifdef DEBUG	
 	window_title += " (DEBUG build)";
-#endif	
+#endif
 
 cerr <<	"DBG> current dir: " << sz::getcwd() << '\n';
 cerr <<	"DBG> current(): " << current() << '\n';

@@ -1,5 +1,5 @@
 /*
-	v0.0.7
+	v0.0.8
 */
 
 #ifndef _LSF39847G45796GK890G676G42GF35_
@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <cassert>
 
 namespace sz {
@@ -18,12 +19,12 @@ inline std::string getcwd()
 	return ec ? "" : cwd.string();
 }
 
-inline std::string dirname(const std::string& path)
+inline std::string dirname(std::string_view path)
 {
 	return std::filesystem::path(path).parent_path().string();
 }
 
-inline std::string basename(const std::string& path, bool keep_last_suffix = true)
+inline std::string basename(std::string_view path, bool keep_last_suffix = true)
 {
 	return keep_last_suffix ? 
 		std::filesystem::path(path).filename().string() :
@@ -42,7 +43,7 @@ inline std::string& endslash_fixup(std::string* dirpath)
 
 inline std::string endslash_fixup(const std::string& dirpath)
 {
-	std::string result = dirpath;
+	std::string result(dirpath.data(), dirpath.size());
 	return endslash_fixup(&result);
 }
 
@@ -79,4 +80,48 @@ std::string prefix_if_rel(const StrOrCharPtr& prefix, Str path,
 
 
 }; // namespace sz
+
+
+//============================================================================
+#ifdef UNIT_TEST
+
+#include <string_view>
+#include <iostream>
+
+using namespace sz;
+using namespace std;
+
+int main()
+{
+	cerr << "Should be crap/target: " << prefix_if_rel("crap/", "target"s) << '\n';
+	cerr << "Should be /target: " <<     prefix_if_rel("crap", "/target"s) << '\n';
+	cerr << "Should be \\target: " <<    prefix_if_rel("crap", "\\target"s) << '\n';
+	cerr << "Should be crap\\target: " <<prefix_if_rel("crap", "\\target"s, false, true) << '\n';
+	cerr << "Should be \\: " <<          prefix_if_rel("crap", "\\"s) << '\n';
+	cerr << "Should be crap\\: " <<      prefix_if_rel("crap", "\\"s, false, true) << '\n';
+	cerr << "Should be /: " <<           prefix_if_rel("crap", "/"s) << '\n';
+	cerr << "Should be crap: " <<        prefix_if_rel("crap", ""s) << '\n';
+	cerr << "Should be c: " <<           prefix_if_rel("crap", "c:"s) << '\n';
+
+	// Special-casing ., ./whatever, .\whatever, but not .anything_else...
+
+	auto test_dot = [](bool enable) {
+		cerr << enable << " .: " <<     prefix_if_rel("crap", "."s, enable) << '\n';
+		cerr << enable << " ./: " <<    prefix_if_rel("crap", "./"s, enable) << '\n';
+		cerr << enable << " .\\: " <<   prefix_if_rel("crap", ".\\"s, enable) << '\n';
+		cerr << enable << " ./keep: " <<prefix_if_rel("crap", "./keep"s, enable) << '\n';
+		cerr << enable << " .x: " <<    prefix_if_rel("crap", ".x"s, enable) << '\n';
+		cerr << enable << " ..: " <<    prefix_if_rel("crap", ".."s, enable) << '\n';
+		cerr << enable << " ../: " <<   prefix_if_rel("crap", "../"s, enable) << '\n';
+		cerr << enable << " ..\\: " <<  prefix_if_rel("crap", "..\\"s, enable) << '\n';
+		cerr << enable << " ..x: " <<   prefix_if_rel("crap", "..x"s, enable) << '\n';
+	};
+
+	// ENABLED:
+	test_dot(true);
+
+	// DISABLED:
+	test_dot(false);
+}
+#endif // UNIT_TEST
 #endif // _LSF39847G45796GK890G676G42GF35_

@@ -38,9 +38,11 @@ public:
 	// "Meta" ops: beyond the gameplay ("user", rather than "player" actions):
 #ifndef DISABLE_HUD
 	auto toggle_huds()  { _show_huds = !_show_huds; }
+	auto huds_active()  { return _show_huds; }
 	auto toggle_help()  { help_hud.active(!help_hud.active()); }
 #else
 	auto toggle_huds()  {}
+	auto huds_active()  { return false; }
 	auto toggle_help()  {}
 #endif
 

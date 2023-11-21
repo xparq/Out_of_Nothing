@@ -3,6 +3,7 @@
 
 #include <string>
 	using namespace std::string_literals; // Damn... Just ...::operator""s did't compile, WTF?!
+#include <string_view>
 #include <functional>
 
 namespace Szim {
@@ -33,23 +34,23 @@ struct Config
 	//!! Support comfy cfg tagging, at least by filename!
 
 	// Calls select(), throws on error:
-	Config(const std::string& cfg_path,
+	Config(std::string_view cfg_path,
 		const CALLBACK& post_load = [](auto&&...) {});
 
 	// Selects ::Defaults if cfg_path is empty:
- 	bool select(const std::string& cfg_path, bool can_throw = false,
+	bool select(std::string_view cfg_path, bool can_throw = false,
 		const CALLBACK& post_load = [](auto&&...) {});
 
 	//----------------------------------------------------------------------------
 	// Typed getters...
 	//----------------------------------------------------------------------------
-	std::string get(const std::string& name, const char* def = ""); // 'name' can also be "section/name"
-	std::string get(const std::string& name, const std::string& def) { return get(name, def.c_str()); }
+	std::string get(std::string_view name, const char* def = ""); // 'name' can also be "section/name"
+	std::string get(std::string_view name, const std::string& def) { return get(name, def.c_str()); }
 	//!! Jesuschrist (C++ again), get("...", "default") won't select the string version above,
 	//!! but rather some of the numbers below, without the const char* variant!... :-o
-	int         get(const std::string& name, int def);
-	float       get(const std::string& name, float def);
-	bool        get(const std::string& name, bool def);
+	int         get(std::string_view name, int def);
+	float       get(std::string_view name, float def);
+	bool        get(std::string_view name, bool def);
 	//! Alas, only one of these can be meaningfully omit the 2nd arg, to not be ambiguous!
 
 	//----------------------------------------------------------------------------

@@ -247,9 +247,13 @@ void OON_sfml::updates_for_next_frame()
 	//!
 	//! NOTE: THIS MUST COME AFTER RECALCULATING THE NEW STATE!
 	//!
-	if (keystate(SCROLL_LOCKED) || keystate(SHIFT)) {
+	auto _locked_tmp = false;
+	if (keystate(SCROLL_LOCKED) || keystate(SHIFT) || ((sfw::CheckBox*)gui.recall("Pan override"))->get()) {
 		pan_to_player();
+		_locked_tmp = true;
 	}
+	// Update the pan lock indicator:
+	((sfw::CheckBox*)gui.recall(" - pan locked"))->set(_locked_tmp);
 }
 
 //----------------------------------------------------------------------------
@@ -359,7 +363,9 @@ try {
 						pan_to_player();
 					break;
 
-				case sf::Keyboard::F12: toggle_huds(); break;
+				case sf::Keyboard::F12: toggle_huds();
+					((sfw::CheckBox*)gui.recall("Show HUDs"))->set(huds_active());
+					break;
 				case sf::Keyboard::F11:
 					while (!SFML_WINDOW().setActive(true));
 						//!!Investigating the switching problem (#190)...
@@ -395,9 +401,7 @@ try {
 				case 'x': toggle_fixed_model_dt();
 					((sfw::CheckBox*)gui.recall("Fixed model Δt"))->set(cfg.fixed_model_dt_enabled);
 					break;
-				case '?': toggle_help();
-					((sfw::CheckBox*)gui.recall("Show Help"))->set(help_hud.active());
-					break;
+				case '?': toggle_help(); break;
 				}
 				break;
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
@@ -539,18 +543,18 @@ bool OON_sfml::init() // override
 void OON_sfml::_setup_UI()
 {
 	using namespace sfw;
-	// The SFW GUI is used as a translucent (i.e. not entirely transparent!)
-	// overlay, so an alpha-enabled bgColor must be applied; i.e. clearBackground
-	// must be left at its default (true).
+	// The SFW GUI is used as a translucent overlay, so an alpha-enabled bgColor
+	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
-	gui.setPosition(10, cfg.WINDOW_HEIGHT-150);
+	gui.setPosition(10, cfg.WINDOW_HEIGHT-200);
 	auto form = gui.add(new Form, "Params");
-		form->add("Show Help", new CheckBox([&](auto*){ this->toggle_help(); }, help_hud.active()));
+		form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
 		form->add("Fixed model Δt", new CheckBox([&](auto*){ this->toggle_fixed_model_dt(); },
 		                                         cfg.fixed_model_dt_enabled));
-
-	gui.recall("Show Help")->setTooltip("Press [?] to toggle the Help panel");
+		form->add("Pan override", new CheckBox); // Will be polled by the control loop!
+		form->add(" - pan locked", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
+	gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
 
 	auto volrect = gui.add(new Form, "VolForm");
 	volrect->add("Volume", new Slider({/*.orientation = Vertical*/}, 70), "volume slider")
@@ -672,7 +676,7 @@ void OON_sfml::_setup_UI()
 	help_hud.add("\n");
 	help_hud.add("Command-line options: oon.exe /?");
 
-	help_hud.active(true);
+	help_hud.active(cfg.get("show_help_on_start", true));
 #endif
 }
 

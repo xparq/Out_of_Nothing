@@ -81,7 +81,7 @@ SimApp::SimApp(int argc, char** argv)
 	, gui( ((SFML_Backend&)backend).SFML_window(), {
 		.basePath = cfg.asset_dir.c_str(), // Trailing / provided by the cfg. fixup!
 		.textureFile = "gui/texture.png",
-		.bgColor = sfw::Color("#302030d0"),
+		.bgColor = sfw::Color(cfg.default_bg_hexcolor),
 		.fontFile = cfg.default_font_file.c_str(),
 		}, false // Don't manage the window
 	  )

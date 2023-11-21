@@ -5,6 +5,6 @@
 #define INTERFACE
 #undef IMPLEMENTATION
 
-#include "listvals.c--"
-#include "lockers.cc"
+#include "listvals.hh"
+#include "lockers.hh"
 #include "fs.hh"

@@ -11,6 +11,12 @@ namespace Szim {
 
 struct SimAppConfig : Config
 {
+/*!!
+	struct UI
+	{
+		??? default_bg;
+	}
+!!*/
 	//--------------------------------------------------------------------
 	// CUSTOM PROPS...
 	AUTO_CONST DEFAULT_WINDOW_WIDTH  = 1024u; // unsigned in SFML
@@ -40,6 +46,7 @@ struct SimAppConfig : Config
 	std::string asset_dir;
 	std::string window_title;
 	std::string default_font_file;
+	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (sfw hex color string) + name!
 	std::string hud_font_file;
 	std::string background_music;
 	// Sim.

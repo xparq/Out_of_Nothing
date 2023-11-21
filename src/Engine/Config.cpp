@@ -39,7 +39,7 @@ static toml::table _config;
 	//!! task there's absolutely no need for that.)
 
 //----------------------------------------------------------------------------
-static auto split(const string& name)
+static auto split(string_view name)
 {
 	struct { string section, prop; } result;
 	//!! Abuse sz::dirname()/basename() to extract any section name...
@@ -53,13 +53,13 @@ static auto split(const string& name)
 }
 
 //============================================================================
-Config::Config(const std::string& cfg_path, const CALLBACK& post_load)
+Config::Config(std::string_view cfg_path, const CALLBACK& post_load)
 {
 	select(cfg_path, true, post_load); // Let it throw
 }
 
 //----------------------------------------------------------------------------
-bool Config::select(const string& cfg_path, bool can_throw, const CALLBACK& post_load)
+bool Config::select(std::string_view cfg_path, bool can_throw, const CALLBACK& post_load)
 {
 	//!! Wishful attempt below to try and unify both the exc. and noexc. modes
 	//!! in one control flow...
@@ -73,11 +73,12 @@ bool Config::select(const string& cfg_path, bool can_throw, const CALLBACK& post
 	}
 	if (!result) {
 		auto& err = (toml::parse_error&)result;
-		auto errmsg = "Failed to load config \""s + cfg_path;
-		errmsg += "\": \n    ";
-		errmsg += err.description();
-		errmsg += "\n        at line: ";
-		errmsg += std::to_string(err.source().begin.line);
+		auto errmsg = "Failed to load config \""s;
+		     errmsg += cfg_path;
+		     errmsg += "\": \n    ";
+		     errmsg += err.description();
+		     errmsg += "\n        at line: ";
+		     errmsg += std::to_string(err.source().begin.line);
 		if (can_throw) throw runtime_error(errmsg);
 		else { cerr << errmsg; return false; }
 	}
@@ -103,7 +104,7 @@ string Config::current() const
 //----------------------------------------------------------------------------
 
 template <typename T>
-T _select(const string& propname, T def) {
+T _get(string_view propname, T def) {
 	auto [section, name] = split(propname);
 	return section.empty()
 		? _config[name].value_or(def)
@@ -111,22 +112,22 @@ T _select(const string& propname, T def) {
 }
 
 //----------------------------------------------------------------------------
-string Config::get(const string& prop, const char* def)
+string Config::get(string_view prop, const char* def)
 {
-	return _select(prop, string(def));
+	return _get(prop, string(def));
 }
 
-int Config::get(const string& prop, int def)
+int Config::get(string_view prop, int def)
 {
-	return _select(prop, def);
+	return _get(prop, def);
 }
 
-float Config::get(const std::string& prop, float def)
+float Config::get(string_view prop, float def)
 {
-	return _select(prop, def);
+	return _get(prop, def);
 }
 
-bool Config::get(const string& prop, bool def)
+bool Config::get(string_view prop, bool def)
 {
-	return _select(prop, def);
+	return _get(prop, def);
 }
