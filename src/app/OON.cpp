@@ -36,42 +36,63 @@ bool OON::init() // override
 	//!!
 	//!! THIS MUST COME BEFORE CALLING add_bodies()! :-o
 	//!!
-	player_entity = add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
-	assert(entity_count() > player_entity);
-	assert(player_entity_ndx() == player_entity);
-
+	[[maybe_unused]] auto player_entity_index
+		= add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+	assert(entity_count() > player_entity_index);
+	assert(player_entity_ndx() == player_entity_index);
 	_setup_UI();
 
-	// Add 2 "moons" with fixed parameters (mainly for testing):
-	add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-				.color = 0xff2020});
-	add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
-				.color = 0x3060ff});
-
-
-	// Game-related cmdline options...
-	// Note: the system-level options have been processed and applied already!
-  try {
-	   if (args["bodies"]) {
-		auto n = stoi(args("bodies")) - 2; // 2 have already been created
-		add_bodies(n < 0 ? 0 : n); // Avoid possible overflow!
-	}; if (args["interact"]) {
-		interact_all();
-	}; if (args["friction"]) {
-		float f = stof(args("friction"));
-		world().FRICTION = f;
-	}; if (args["snd"]) {
-		backend.audio.enabled(args("snd") != "off");
-	}; if (args["zoom"]) {
-		float factor = stof(args("zoom"));
-		zoom(factor);
+	// Restore session (currently only a snapshot) if --session=name...
+	if (!args("session").empty()) {
+		load_snapshot(sz::prefix_if_rel(cfg.data_dir, args("session")).c_str());
+			//!! This manual dir prefixing will need to be normalized,
+			//!! i.e. synced with snapshot_filename(), by both that and
+			//!! this calling the same unified asset/resource filename
+			//!! resolver function... -> #257
+	} else {
+		//!! Here should be a "load default initial world state" thing...
+		//!!
+		//!! Even just this would be fine:
+		//!! load_snapshot(DEFAULT);
+		//!!
+		//!! - But preferably also being able to load from some text format
+		//!!   (TOML etc.), to finally replace this sad little hardcoding:
+		//!!
+		// Add 2 "moons" with fixed parameters (mainly for testing):
+		add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+					.color = 0xff2020});
+		add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
+					.color = 0x3060ff});
 	}
-  } catch(...) {
-	cerr << __FUNCTION__ ": ERROR processing/applying cmdline args!\n";
-	return false;
-  }
+
+	// App-level cmdline options (overrides)...
+	// Note: the (!!actually: "some"...!!) system-/engine-level options have been processed/applied already!
+	try { // <- Absolutely required, as sto...() are very throw-happy.
+		// Doing the ones that can't fail first, so an excpt. won't skip them:
+		if (args["interact"]) {
+			interact_all();
+		}; if (args["bodies"]) {
+			auto n = stoi(args("bodies")) - 2; // 2 have already been created
+			add_bodies(n < 0 ? 0 : n); // Avoid possible overflow!
+		}; if (args["friction"]) {
+			float f = stof(args("friction"));
+			world().FRICTION = f;
+		}; if (!args("zoom").empty()) { //!! Should be done by SimApp, and then the audio init
+			float factor = stof(args("zoom"));
+			if (factor) zoom(factor);
+		}
+	} catch(...) {
+		cerr << __FUNCTION__ ": ERROR processing/applying some cmdline args!\n";
+		return false;
+	}
 
 	// Audio...
+	//!!
+	//!! Later, with more mature session mgmt., music loading etc. should NOT
+	//!! happen here, ignoring all that!
+	//!!
+	// Note: --snd=off has been taken care of by the engine already, so it's
+	// safe to start playing here no matter what; it will not unmute.
 	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
 	backend.audio.play_music(cfg.background_music.c_str());
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));

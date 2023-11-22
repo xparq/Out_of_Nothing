@@ -101,6 +101,13 @@ SimApp::SimApp(int argc, char** argv)
 	cfg.select(cfgfile);
 	//!!auto basename = fs::path(cfgfile).filename().string();
 !!*/
+	//
+	// Some args aren't (can't/shoudn't be) done by SimAppConfig itself...
+	//
+	if (args["snd"]) {
+		backend.audio.enabled(args("snd") != "off");
+	}
+
 	this->SimApp::init(); // Our own internal init is "secretly" called even if overridden...
 	                      // (Note: the qualifier isn't strictly necessary, as ctors won't dispatch virtuals anyway.)
 }
