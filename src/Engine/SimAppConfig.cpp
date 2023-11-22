@@ -59,7 +59,15 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 			cerr << "- WRNING: --loopcap ignored! "<<args("loopcap")<<" must be a valid positive integer.\n";
 		}
 	} if (args["fixed_dt"]) {
-		try { fixed_model_dt = stof(args("fixed_dt")); } catch(...) {
+		try {
+			if (args("fixed_dt").empty()) {
+				// Just --fixed_dt should enable it with the configured/default value
+				fixed_model_dt_enabled = true;
+			} else {
+				fixed_model_dt = stof(args("fixed_dt"));
+				fixed_model_dt_enabled = true;
+			}
+		} catch(...) {
 			cerr << "- WRNING: --fixed_dt ignored! "<<args("fixed_dt")<<" must be a valid floating-pont number.\n";
 		}
 	} if (args["dbg-keys"]) {
