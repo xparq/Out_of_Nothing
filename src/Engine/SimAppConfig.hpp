@@ -51,6 +51,7 @@ struct SimAppConfig : Config
 	std::string background_music;
 	// Sim.
 	Time::CycleCount iteration_limit;
+	bool  exit_on_finish; // I.e. finishing with the iterations, if it has a limit
 	bool  fixed_model_dt_enabled;
 	float fixed_model_dt;
 	unsigned fps_limit; // 0: no limit

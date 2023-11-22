@@ -41,6 +41,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
 	background_music  = get("audio/background_music", "music/background.ogg");
 	iteration_limit  = get("sim/loopcap", -1);
+	exit_on_finish   = get("sim/exit_on_finish", false);
 	fixed_model_dt   = get("sim/timing/fixed_dt", 0.0333f);
 	fixed_model_dt_enabled = get("sim/timing/fixed_dt_enabled", false);
 	fps_limit        = get("sim/timing/fps_limit", DEFAULT_FPS_LIMIT);
@@ -70,6 +71,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 
 	sz::endslash_fixup(&data_dir);
 	sz::endslash_fixup(&asset_dir);
+	if (args["exit-on-finish"]) exit_on_finish = !args("exit-on-finish").empty();
 	background_music = sz::prefix_if_rel(asset_dir, background_music);
 #ifdef DEBUG	
 	window_title += " (DEBUG build)";

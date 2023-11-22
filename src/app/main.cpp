@@ -36,20 +36,20 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-try {
-	OON_sfml game(argc, argv);
-	game.run();
+	try {
+		OON_sfml game(argc, argv);
+		game.run();
 
-} catch (runtime_error& x) {
-	cerr << "- ERROR: " << x.what() << '\n';
-	return -1;
-} catch (exception& x) {
-	cerr << "- EXCEPTION: " << x.what() << '\n';
-	return -1;
-} catch (...) {
-	cerr << "- UNKNOWN EXCEPTION!\n";
-	return -1;
-}
+	} catch (runtime_error& x) {
+		cerr << "- ERROR: " << x.what() << '\n';
+		return -1;
+	} catch (exception& x) {
+		cerr << "- EXCEPTION: " << x.what() << '\n';
+		return -1;
+	} catch (...) {
+		cerr << "- UNKNOWN EXCEPTION!\n";
+		return -1;
+	}
 
 	cerr << "Profiling stats: " << IPROF_ALL_THREAD_STATS;
 

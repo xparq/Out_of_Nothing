@@ -42,7 +42,7 @@ using namespace std;
 
 //============================================================================
 namespace sync {
-	std::mutex Updating;
+	std::mutex Updating; //!!?? Updating what, when, by whom?
 };
 
 
@@ -73,7 +73,6 @@ void OON_sfml::time_step(int steps)
 		++iterations.limit;
 
 	timestepping = steps; //! See resetting it in updates_for_next_frame()!
-	assert(timestepping == steps); // sz::Counter op= was very fiddly, I still don't quite trust it 100%!...
 }
 
 //----------------------------------------------------------------------------
@@ -82,9 +81,9 @@ void OON_sfml::update_thread_main_loop()
 //	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
 	                     //!! The only change I can see is a different getActiveContext ID here, if this is enabled.
 
+#ifndef DISABLE_THREADS
 	std::unique_lock proc_lock{sync::Updating, std::defer_lock};
 
-#ifndef DISABLE_THREADS
 	while (!terminated()) {
 #endif
 		switch (ui_event_state) {
@@ -93,11 +92,13 @@ void OON_sfml::update_thread_main_loop()
 			break;
 		case UIEventState::IDLE:
 		case UIEventState::EVENT_READY:
+#ifndef DISABLE_THREADS
 			try {
 				proc_lock.lock();
 			} catch (...) {
 				cerr << "- WTF proc_lock failed?! (already locked? " << proc_lock.owns_lock() << ")\n";
 			}
+#endif
 			updates_for_next_frame();
 			//!!?? Why is this redundant?!
 			if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
@@ -118,7 +119,9 @@ void OON_sfml::update_thread_main_loop()
 //?				terminate();
 //?				return;
 			}
+#ifndef DISABLE_THREADS
 			proc_lock.unlock();
+#endif
 			break;
 		default:
 			assert(("[[[...!!UNKNOWN EVENT STATE!!...]]]", false));
@@ -238,9 +241,14 @@ void OON_sfml::updates_for_next_frame()
 	if (!iterations.maxed()) {
 		update_world(Δt);
 		++iterations;
+	} else {
+		if (cfg.exit_on_finish) {
+			cerr << "Stopping (as requested): iterations finished.\n";
+			terminate();
+		}
 	}
 
-	// One less step to make next time (if any):
+	// One less time-step to make next time (if any):
 	if (timestepping) if (timestepping < 0 ) ++timestepping; else --timestepping;
 
 	// Auto-scroll to follow player movement...
@@ -275,33 +283,38 @@ void OON_sfml::event_loop()
 
 try {
 	while (SFML_WINDOW().isOpen() && !terminated()) {
-			sf::Event event;
 
+		for (sf::Event event; SFML_WINDOW().pollEvent(event);) {
+		// This inner loop is here to prevent event "jamming" (delays in
+		// event processing -- or even loss?) due to accumulating events
+		// coming faster than 1/frame for a long enough period to cause
+		// noticable jam/stutter.
+		//
+		// In non-threaded mode, very high event stream density can also
+		// cause problems on its own, starving the rest of the main loop
+		// from frequent-enough updates. So, there should be some sort of
+		// triaging in those cases of overload, a balance between losing
+		// some events and losing some updates.
+		// (-- BUT THAT'S NOT IMPLEMENTED FOR NOW. JUST USE THREADING!
+		// Overloads will happen there, too, obviously, but at least
+		// the input and output processing will share the suffering. :) )
+		//!!
+		//!! BUT... I'm afraid, with the current crude thread-locking
+		//!! model updates/reactions can still get locked out unfairly!
+		//!!
+			ui_event_state = UIEventState::BUSY;
 #ifndef DISABLE_THREADS
-		if (!SFML_WINDOW().waitEvent(event)) {
-			cerr << "- Event processing failed. WTF?! Terminating.\n";
-			exit(-1);
-		}
+//!! Waitevent is kinda elegant, but not very practical... Among other things, it
+//!! can't be interrupted by our own internal events, like a terminate() request!...
+//!! Also, in both SFML and SDL, they already have to do pollEvents internally anyway:
+//!! -> https://en.sfml-dev.org/forums/index.php?topic=18264.0
+//!!		if (!SFML_WINDOW().waitEvent(event)) {
+//!!			cerr << "- Event processing failed. WTF?! Terminating.\n";
+//!!			exit(-1);
+//!!		}
 
-		ui_event_state = UIEventState::BUSY;
 //cerr << "- acquiring lock for events...\n";
-		noproc_lock.lock();
-
-#else
-/*!!?? Why did this (always?) fail?!
-		if (!SFML_WINDOW().pollEvent(event)) {
-			cerr << "- Event processing failed. WTF?! Terminating.\n";
-			exit(-1);
-		}
-??!!*/			
-
-		// This inner loop is only for non-threading mode, to prevent event processing
-		// (reaction) delays (or even loss) due to accumulating events coming faster
-		// than 1/frame (for a long enough period to cause noticable jam/stutter)!
-		for (; SFML_WINDOW().pollEvent(event);) {
-
-		ui_event_state = UIEventState::BUSY;
-//cerr << "- acquiring events...\n";
+			noproc_lock.lock();
 #endif
 			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
@@ -369,7 +382,7 @@ try {
 				case sf::Keyboard::F11:
 					while (!SFML_WINDOW().setActive(true));
 						//!!Investigating the switching problem (#190)...
-						//!! - this "being careful" makes no diff.:
+						//!! - this "being careful" makes no diff... :-o
 					toggle_fullscreen();
 					SFML_WINDOW().setActive(false); // Don't loop this one, we'd get stuck here!
 					break;
@@ -441,14 +454,24 @@ try {
 
 //cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
 
-#ifndef DISABLE_THREADS
 			ui_event_state = UIEventState::EVENT_READY;
-//cerr << "- freeing proc lock...\n";
+
+#ifndef DISABLE_THREADS
+//cerr << "- freeing the proc. lock...\n";
 			noproc_lock.unlock();
+		} // for
+
+		// The event queue has been emptied, so in this (input processing)
+		// thread we're idling now (while updates are happening elsewhere), so:
+		sf::sleep(sf::milliseconds(10)); // SFML does (used to do) the same amount for waitEvent
+			// This is only relevant when threading.
+			// The non-threaded main loop sleeps via backend.hci.fps_throttling.
+			//!!?? Explain how this is related to sleep-while-paused!
 #else
 		} // for
-		ui_event_state = UIEventState::EVENT_READY;
-		update_thread_main_loop(); // <- not looping when threads disabled
+
+		update_thread_main_loop(); // <- Doesn't actually loop, when threads are disabled, so crank it from here!
+
 //!!test idempotency:
 //!!	draw();
 
