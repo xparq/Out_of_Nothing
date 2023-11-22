@@ -56,7 +56,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 //!! configuration/layout/mode, where the client retains its own main()!
 	if   (args["loopcap"]) {
 		try { iteration_limit = stoul(args("loopcap")); } catch(...) {
-			cerr << "- WRNING: --loopcap ignored! "<<args("loopcap")<<" must be a valid positive integer.\n";
+			cerr << "- WRNING: --loopcap ignored! \""<<args("loopcap")<<"\" must be a valid positive integer.\n";
 		}
 	} if (args["fixed_dt"]) {
 		try {
@@ -68,7 +68,11 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 				fixed_model_dt_enabled = true;
 			}
 		} catch(...) {
-			cerr << "- WRNING: --fixed_dt ignored! "<<args("fixed_dt")<<" must be a valid floating-pont number.\n";
+			cerr << "- WRNING: --fixed_dt ignored! \""<<args("fixed_dt")<<"\" must be a valid floating-pont number.\n";
+		}
+	} if (args["fps_limit"]) {
+		try { fps_limit = stoul(args("fps_limit")); } catch(...) {
+			cerr << "- WRNING: --fps_limit ignored! \""<<args("fps_limit")<<"\" must be a valid positive integer.\n";
 		}
 	} if (args["dbg-keys"]) {
 		DEBUG_show_keycode = true;
@@ -81,7 +85,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 
 	sz::endslash_fixup(&data_dir);
 	sz::endslash_fixup(&asset_dir);
-	if (args["exit-on-finish"]) exit_on_finish = !args("exit-on-finish").empty();
+	if (args["exit_on_finish"]) exit_on_finish = (args("exit_on_finish") != "off");
+	if (args["exit-on-finish"]) exit_on_finish = (args("exit-on-finish") != "off"); //!! Sigh, the dup...
 	background_music = sz::prefix_if_rel(asset_dir, background_music);
 #ifdef DEBUG	
 	window_title += " (DEBUG build)";
