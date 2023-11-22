@@ -20,12 +20,14 @@
 #include "sz/unilang.hh" // On/Off
 #include "sz/counter.hh"
 #include "sz/rolling_average.hh"
+#include "sz/fs.hh"
 
 import Storage;
 
 #include <atomic>
 #include <format> // vformat
 #include <string>
+#include <string_view>
 
 namespace Szim {
 
@@ -74,14 +76,17 @@ public:
 	const Model::World& const_world(); // Explicit const World& of non-const SimApp
 	void set_world(const Model::World&);
 
-	virtual bool save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
-	virtual bool load_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
-	//virtual bool save_snapshot(const char* filename);
-	//virtual bool load_snapshot(const char* filename);
-	template <typename... X> // This convoluted way is to support all kinds of things that I forgot... :)
-	std::string snapshot_filename(size_t slot_ndx = 1, const std::string& format = "{}snapshot_{}.sav", const X... args) {
-		return std::vformat(format, std::make_format_args(
-			cfg.data_dir, slot_ndx, args...)); //!! if data_dir is not empty, it must have a trailing /
+	virtual bool save_snapshot(const char* filename);
+	virtual bool load_snapshot(const char* filename);
+	bool quick_save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
+	bool quick_load_snapshot(unsigned slot = 1); // See cfg.quick_snapshot_filename_pattern!
+	template <typename... X> // This must be a template to support custom patterns + args:
+	std::string snapshot_filename(size_t slot_ndx = 1,
+		std::string_view pattern = SimAppConfig::DEFAULT_SNAPSHOT_FILE_PATTERN,
+		const X... args)
+	{
+		return std::vformat(sz::prefix_if_rel(cfg.data_dir, pattern),
+		                    std::make_format_args(slot_ndx, args...));
 	}
 
 	using Entity = Model::World::Body;

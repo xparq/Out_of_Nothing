@@ -23,6 +23,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	// 1. Preset hardcoded baseline defaults...
 	// ...Well, just default them in one step with loading; see below!
 	window_title = "Out of Nothing"; //!! USE A BUILT-IN APP_NAME RESOURCE/PROP
+	quick_snapshot_filename_pattern = DEFAULT_SNAPSHOT_FILE_PATTERN;
 
 	// 2. Override from the config...
 
@@ -35,6 +36,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	//!!BTW: WITH get() THERE'S NO WAY TO GET VALUES WITHOUT ALWAYS SUPPLYING THE DEFAULTS, TOO! :-/
 	data_dir        = get("data_dir", ""); // "" is the same as sz::getcwd()
 	asset_dir       = get("asset_dir", "asset/");
+	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
 	window_title    = get("appearance/window_title", window_title); //!! not really a cfg option...
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
 	default_font_file = get("appearance/default_font_file", "font/default.font");

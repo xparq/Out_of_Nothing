@@ -32,9 +32,10 @@ public:
 	// Player (gameplay) action overrides:
 
 	virtual void pause_hook(bool newstate) override;
-	virtual bool load_snapshot(unsigned slot = 1) override;
+
+	virtual bool load_snapshot(const char* fname) override;
 	//! The generic version of this is enough for now:
-	//virtual bool save_snapshot(unsigned slot = 1) override;
+	//virtual bool save_snapshot(const char* fname) override;
 
 //------------------------------------------------------------------------
 // Callback impl. (overrides)...

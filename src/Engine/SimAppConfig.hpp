@@ -26,6 +26,7 @@ struct SimAppConfig : Config
 	AUTO_CONST VIEWPORT_WIDTH  = DEFAULT_WINDOW_WIDTH;
 	AUTO_CONST VIEWPORT_HEIGHT = DEFAULT_WINDOW_HEIGHT;
 
+	AUTO_CONST DEFAULT_SNAPSHOT_FILE_PATTERN = "snapshot_{}.save";
 	AUTO_CONST DEFAULT_FPS_LIMIT = 30;
 
 	AUTO_CONST THRUST_FORCE = 6.0e34f; // N (kg*m/s^2)
@@ -44,6 +45,7 @@ struct SimAppConfig : Config
 	// Sys.
 	std::string data_dir;
 	std::string asset_dir;
+	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with data_dir
 	std::string window_title;
 	std::string default_font_file;
 	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (sfw hex color string) + name!
@@ -51,7 +53,7 @@ struct SimAppConfig : Config
 	std::string background_music;
 	// Sim.
 	Time::CycleCount iteration_limit;
-	bool  exit_on_finish; // I.e. finishing with the iterations, if it has a limit
+	bool  exit_on_finish; // If iteration_limit > 0, close the app when finished.
 	bool  fixed_model_dt_enabled;
 	float fixed_model_dt;
 	unsigned fps_limit; // 0: no limit

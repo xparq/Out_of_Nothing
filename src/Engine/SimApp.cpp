@@ -65,14 +65,10 @@ const Model::World& SimApp::world() const { return _world; }
 const Model::World& SimApp::const_world() { return _world; }
 void SimApp::set_world(Model::World const& w) { _world = w; }
 
+
 //----------------------------------------------------------------------------
-bool SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
+bool SimApp::quick_save_snapshot(unsigned slot_id) // starting from 1, not 0!
 {
-	//!!A kinda alluring abstraction would be SimApp not really having its own state
-	//!!(worth saving, beside the model world), leaving all that to descendants...
-	//!!But I suspect it's unfounded; at least I can't see the higher principle it
-	//!!could be derived from... What I do see, OTOH, is the hassle in the App class
-	//!!chain to actually deal with saving/loading all the meta/supplementary state...
 /*
 	using namespace MEMDB;
 	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
@@ -86,10 +82,25 @@ bool SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
 	world_snapshots[slot] = world(); // :)
 	saved_slots |= slot_bit;
 */
+	return save_snapshot(
+		snapshot_filename(slot_id, cfg.quick_snapshot_filename_pattern.c_str()).c_str());
+}
+
+//----------------------------------------------------------------------------
+bool SimApp::save_snapshot(const char* fname) // starting from 1, not 0!
+{
+	//!!A kinda alluring abstraction would be SimApp not really having its own state
+	//!!(worth saving, beside the model world), leaving all that to descendants...
+	//!!But I suspect it's unfounded; at least I can't see the higher principle it
+	//!!could be derived from... What I do see, OTOH, is the hassle in the App class
+	//!!chain to actually deal with saving/loading all the meta/supplementary state...
+
 	Model::World snapshot = world();
 
-	string fname = snapshot_filename(slot_id);
-	string OVERALL_FAIL = "ERROR: Couldn't save snapshot to file \""; OVERALL_FAIL += fname + "\"\n";
+	//!! OK, now we could start a low-priority background
+	//!! thread to actually save the snapshot...
+
+	string OVERALL_FAIL = "ERROR: Couldn't save snapshot to file \""; OVERALL_FAIL += string(fname) + "\"\n";
 
 	//!! Note: perror("") may just print "No error" even if the stream in failure mode! :-/
 
@@ -141,12 +152,13 @@ bool SimApp::save_snapshot(unsigned slot_id) // starting from 1, not 0!
 
 	assert(out && !out.bad());
 
-	cerr << "World state saved to slot #" << slot_id << ".\n";
+	cerr << "World state saved to \"" << fname << "\".\n";
 	return true;
 }
 
+
 //----------------------------------------------------------------------------
-bool SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
+bool SimApp::quick_load_snapshot(unsigned slot_id) // starting from 1, not 0!
 {
 /*
 	using namespace MEMDB;
@@ -161,10 +173,20 @@ bool SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 	set_world(world_snapshots[slot]);
 	cerr << "World state loaded from slot " << slot_id << ".\n";
 */
-	Model::World snapshot;
+	return load_snapshot(
+		snapshot_filename(slot_id, cfg.quick_snapshot_filename_pattern.c_str()).c_str());
+}
 
-	string fname = snapshot_filename(slot_id);
-	string OVERALL_FAIL = "ERROR: Couldn't load snapshot from file \""; OVERALL_FAIL += fname + "\"\n";
+//----------------------------------------------------------------------------
+bool SimApp::load_snapshot(const char* fname)
+{
+	string OVERALL_FAIL = "ERROR: Couldn't load snapshot from file \""; OVERALL_FAIL += string(fname) + "\"\n";
+
+	//!! We could start a low-priority background thread
+	//!! to load a world state into a buffer first, and then
+	//!! copy it over the live instance when ready...
+
+	Model::World snapshot; // The input buffer
 
 #ifdef SAVE_COMPRESSED
 	ifstream file(fname, ios::binary);
@@ -233,7 +255,7 @@ bool SimApp::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 
 	set_world(snapshot);
 
-	cerr << "World state loaded from slot #" << slot_id << ".\n";
+	cerr << "World state loaded from \"" << fname << "\".\n";
 	return true;
 }
 

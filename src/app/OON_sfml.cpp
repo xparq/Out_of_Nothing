@@ -364,10 +364,10 @@ try {
 				case sf::Keyboard::Delete: remove_bodies(keystate(SHIFT) ? 1 : 100); break;
 //!!??			case sf::Keyboard::Delete: OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
 
-				case sf::Keyboard::F1:  keystate(SHIFT) ? load_snapshot(1) : save_snapshot(1); break;
-				case sf::Keyboard::F2:  keystate(SHIFT) ? load_snapshot(2) : save_snapshot(2); break;
-				case sf::Keyboard::F3:  keystate(SHIFT) ? load_snapshot(3) : save_snapshot(3); break;
-				case sf::Keyboard::F4:  keystate(SHIFT) ? load_snapshot(4) : save_snapshot(4); break;
+				case sf::Keyboard::F1:  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
+				case sf::Keyboard::F2:  keystate(SHIFT) ? quick_load_snapshot(2) : quick_save_snapshot(2); break;
+				case sf::Keyboard::F3:  keystate(SHIFT) ? quick_load_snapshot(3) : quick_save_snapshot(3); break;
+				case sf::Keyboard::F4:  keystate(SHIFT) ? quick_load_snapshot(4) : quick_save_snapshot(4); break;
 
 				case sf::Keyboard::Home:
 					if (keystate(CTRL))
@@ -561,10 +561,10 @@ void OON_sfml::onResize() // override
 }
 
 
-bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
+bool OON_sfml::load_snapshot(const char* fname) //override
 {
 	// This should load the model back, but can't rebuild the rendering state:
-	if (!SimApp::load_snapshot(slot_id)) {
+	if (!SimApp::load_snapshot(fname)) {
 		return false;
 	}
 
@@ -588,6 +588,7 @@ bool OON_sfml::load_snapshot(unsigned slot_id) // starting from 1, not 0!
 	for (size_t n = 0; n < const_world().bodies.size(); ++n) {
 		renderer.create_cached_body_shape(*this, *world().bodies[n], n);
 	}
-cerr << "Game state restored from slot " << slot_id << ".\n";
+// The engine has already written that:
+//cerr << "Game state restored from \"" << fname << "\".\n";
 	return true;
 }
