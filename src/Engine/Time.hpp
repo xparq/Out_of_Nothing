@@ -27,8 +27,6 @@ typedef float Seconds;
 		bool  reversed = false;
 		float scale = 1.0f; // > 0 (Decoupled from time reversal, for more flexible controls.)
 
-		unsigned fps_limit = 0;   // 0: no limit; see: fps_throttling(), cfg.fps_limit
-
 	// State
 		Seconds last_frame_delay; // In some modes it's not tied to the model Δt at all!
 		Seconds real_session_time = 0; // (real-world) life-time of this Time instance

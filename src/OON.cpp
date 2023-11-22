@@ -1,4 +1,4 @@
-#include "OON.hpp"
+﻿#include "OON.hpp"
 #include "UI/hud.hpp"
 
 #include "sz/sign.hh"
@@ -62,21 +62,11 @@ bool OON::init() // override
 	return false;
   }
 
-	//! Note: the window itself has just been newly created, but
-	//! it will also be recreated each fullscreen/windowed mode
-	//! toggledswitch, so this will need to be repeated after every
-	//! `window.create` call (i.e. in `toggle_fullscreen`):
-	//!! I guess my SFML backend adapter actually takes care of
-	//!! that implicitly!
-	fps_throttling(ON);//!! Get this from the cfg instead!
-
 	_setup_UI();
 
-	// Init sounds (even if turned off; it may be turned back from the UI!)
+	// Audio...
 	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
-
 	backend.audio.play_music(cfg.background_music.c_str());
-
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
 
 	return true;

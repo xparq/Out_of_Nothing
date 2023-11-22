@@ -18,9 +18,13 @@ struct HCI
 	struct Window {};
 	public: virtual Window& window() = 0;
 	public: virtual void switch_fullscreen(bool fullscreen) = 0;
-	public: virtual void frame_rate_limit(unsigned fps) = 0;
+	public: virtual void set_frame_rate_limit(unsigned fps) = 0;
+	public: unsigned get_frame_rate_limit() { return _last_fps_limit; }
 
 	virtual ~HCI() = default;
+
+protected:
+	unsigned _last_fps_limit = 0;
 };
 
 } // namespace Szim

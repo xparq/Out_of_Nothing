@@ -53,11 +53,7 @@ struct SimAppConfig : Config
 	Time::CycleCount iteration_limit;
 	bool  fixed_model_dt_enabled;
 	float fixed_model_dt;
-	unsigned fps_limit = DEFAULT_FPS_LIMIT; // 0: no limit
-	        //!! Changing the frame rate would change the physics (in non-fixed-dt mode)
-		//!! by increasing the resolution/precision)!!!
-	        //!! (Things tend to be more interesting, with more "quantum-like" randomness,
-	        //!! with larger dt-s (less precision -> overshoots, tunnelling...)!)
+	unsigned fps_limit; // 0: no limit
 
 	// Misc.
 	bool DEBUG_show_keycode = false;

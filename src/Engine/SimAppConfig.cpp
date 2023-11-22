@@ -43,6 +43,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	iteration_limit  = get("sim/loopcap", -1);
 	fixed_model_dt   = get("sim/timing/fixed_dt", 0.0333f);
 	fixed_model_dt_enabled = get("sim/timing/fixed_dt_enabled", false);
+	fps_limit        = get("sim/timing/fps_limit", DEFAULT_FPS_LIMIT);
 
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 

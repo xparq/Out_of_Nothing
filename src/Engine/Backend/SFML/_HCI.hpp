@@ -20,8 +20,8 @@ struct SFML_HCI : HCI
 
 	SFML_HCI::Window& window() override { return _main_window; }
 	public: void switch_fullscreen(bool fullscreen) override;
-	public: void frame_rate_limit(unsigned fps) override;
-
+	public: void set_frame_rate_limit(unsigned fps) override;
+		// SFML's window.create() will reset it, so it's implicitly saved/restored, too!
 
 	//--------------------------------------------------------------------
 	// SFML-dependent details (used within the adapter layer)...
@@ -42,7 +42,6 @@ struct SFML_HCI : HCI
 private:
 	SimAppConfig& cfg;             // Keep a ref. to the global cfg.!
 	SFML_HCI::Window _main_window; // <- Not just a ref, but the actual window!
-	unsigned _last_fps_limit = 0;  // SFML's window.create() will reset it! :-/
 }; // class SFML_HCI
 
 } // namespace Szim

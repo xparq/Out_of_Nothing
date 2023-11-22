@@ -22,6 +22,7 @@ SFML_HCI::SFML_HCI(SimAppConfig& syscfg) :
 	cfg(syscfg),
 	_main_window(cfg.WINDOW_WIDTH, cfg.WINDOW_HEIGHT, cfg.window_title.c_str())
 {
+	set_frame_rate_limit(cfg.fps_limit);
 }
 
 //----------------------------------------------------------------------------
@@ -40,7 +41,7 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
 		fullscreen ? sf::Style::Fullscreen|sf::Style::Resize/*!!??*/ : sf::Style::Resize
 	);
 
-	frame_rate_limit(_last_fps_limit); //! Restore, as SFML has just killed it with window.create()... :-/
+	set_frame_rate_limit(_last_fps_limit); //! Restore, as SFML has just killed it with window.create()... :-/
 
 	if (!SFML_window().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
 cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
@@ -54,7 +55,7 @@ cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
 }
 
 //----------------------------------------------------------------------------
-void SFML_HCI::frame_rate_limit(unsigned fps) //override
+void SFML_HCI::set_frame_rate_limit(unsigned fps) //override
 {
 	_last_fps_limit = fps;
 	SFML_window().setFramerateLimit(fps); // 0: no limit

@@ -279,10 +279,12 @@ void SimApp::toggle_fullscreen()
 unsigned SimApp::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 {
 	if (new_fps_limit != (unsigned)-1) {
-		time.fps_limit = new_fps_limit;
-		backend.hci.frame_rate_limit(time.fps_limit); // 0: no limit
+	// Set...
+		backend.hci.set_frame_rate_limit(new_fps_limit); // 0: no limit
 	}
-	return time.fps_limit; // C++ converts it to false when 0 (no limit)
+
+	// Query...
+	return backend.hci.get_frame_rate_limit(); // C++ converts it to false when 0 (no limit)
 }
 
 void SimApp::fps_throttling(bool onoff)
