@@ -42,7 +42,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	default_font_file = get("appearance/default_font_file", "font/default.font");
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
 	background_music  = get("audio/background_music", "music/background.ogg");
-	iteration_limit  = get("sim/loopcap", -1);
+	iteration_limit  = get("sim/loop_cap", -1);
 	exit_on_finish   = get("sim/exit_on_finish", false);
 	fixed_model_dt   = get("sim/timing/fixed_dt", 0.0333f);
 	fixed_model_dt_enabled = get("sim/timing/fixed_dt_enabled", false);
@@ -54,26 +54,30 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 //!! See also main.cpp, currently! And if main goes into Szim [turning all this essentially into a framework, not a lib, BTW...],
 //!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's also likely gonna be an app
 //!! configuration/layout/mode, where the client retains its own main()!
-	if   (args["loopcap"]) {
-		try { iteration_limit = stoul(args("loopcap")); } catch(...) {
-			cerr << "- WRNING: --loopcap ignored! \""<<args("loopcap")<<"\" must be a valid positive integer.\n";
-		}
-	} if (args["fixed_dt"]) {
+	if   (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
+		try { iteration_limit = stoul(args("loop-cap")); } catch(...) { // stoul crashes on empty! :-/
+			cerr << "- WRNING: --loop-cap ignored! \""<<args("loop-cap")<<"\" must be a valid positive integer.\n"; }
+	} if (args["loop_cap"]) { //!! Sigh, the dup...
+		try { iteration_limit = stoul(args("loop_cap")); } catch(...) { // stoul crashes on empty! :-/
+			cerr << "- WRNING: --loop_cap ignored! \""<<args("loop_cap")<<"\" must be a valid positive integer.\n"; }
+	} if (args["fixed-dt"]) { //!! No "fixed_dt" yet!... :-/
 		try {
-			if (args("fixed_dt").empty()) {
-				// Just --fixed_dt should enable it with the configured/default value
+			if (args("fixed-dt").empty() ) { // stof crashes on empty! :-/
+				// Just --fixed-dt should enable it with the configured/default value!
 				fixed_model_dt_enabled = true;
 			} else {
-				fixed_model_dt = stof(args("fixed_dt"));
+				fixed_model_dt = stof(args("fixed-dt"));
 				fixed_model_dt_enabled = true;
 			}
 		} catch(...) {
-			cerr << "- WRNING: --fixed_dt ignored! \""<<args("fixed_dt")<<"\" must be a valid floating-pont number.\n";
+			cerr << "- WRNING: --fixed-dt ignored! \""<<args("fixed-dt")<<"\" must be a valid floating-pont number.\n";
 		}
-	} if (args["fps_limit"]) {
+	} if (args["fps-limit"]) { // Use =0 for no limit (just --fps-limit[=] is ignored!)
+		try { fps_limit = stoul(args("fps-limit")); } catch(...) {
+			cerr << "- WRNING: --fps-limit ignored! \""<<args("fps-limit")<<"\" must be a valid positive integer.\n"; }
+	} if (args["fps_limit"]) { //!! Sigh, the dup...
 		try { fps_limit = stoul(args("fps_limit")); } catch(...) {
-			cerr << "- WRNING: --fps_limit ignored! \""<<args("fps_limit")<<"\" must be a valid positive integer.\n";
-		}
+			cerr << "- WRNING: --fps_limit ignored! \""<<args("fps_limit")<<"\" must be a valid positive integer.\n"; }
 	} if (args["dbg-keys"]) {
 		DEBUG_show_keycode = true;
 	}
@@ -85,8 +89,9 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 
 	sz::endslash_fixup(&data_dir);
 	sz::endslash_fixup(&asset_dir);
-	if (args["exit_on_finish"]) exit_on_finish = (args("exit_on_finish") != "off");
-	if (args["exit-on-finish"]) exit_on_finish = (args("exit-on-finish") != "off"); //!! Sigh, the dup...
+	if (iteration_limit == 0) iteration_limit = (decltype(iteration_limit))-1; // -1 is what's internally used for no limit
+	if (args["exit-on-finish"]) exit_on_finish = (args("exit-on-finish") != "off");
+	if (args["exit_on_finish"]) exit_on_finish = (args("exit_on_finish") != "off"); //!! Sigh, the dup...
 	background_music = sz::prefix_if_rel(asset_dir, background_music);
 #ifdef DEBUG	
 	window_title += " (DEBUG build)";

@@ -243,7 +243,7 @@ void OON_sfml::updates_for_next_frame()
 		++iterations;
 	} else {
 		if (cfg.exit_on_finish) {
-			cerr << "Stopping (as requested): iterations finished.\n";
+			cerr << "Exiting (as requested): iterations finished.\n";
 			terminate();
 		}
 	}
