@@ -306,4 +306,4 @@ else
 #!! message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup was not run?
 endif
 
-$(outdir)/$(SZ_SRC_SUBDIR)/main.o: $(COMMIT_HASH_INCLUDE_FILE)
+$(objdir)/app/main.o: $(COMMIT_HASH_INCLUDE_FILE)

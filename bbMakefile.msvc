@@ -332,4 +332,4 @@ else
 #!! message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup was not run?
 endif
 
-$(objdir)/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
+$(objdir)/app/main.obj: $(COMMIT_HASH_INCLUDE_FILE)

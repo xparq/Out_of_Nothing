@@ -1233,6 +1233,7 @@ OON_FULL_REBUILD_BY_MANUAL_DEPS=$(OON_CPP_MODULE_IFCS)
 #-----------------------------------------------------------------------------
 # Custom build steps...
 #-----------------------------------------------------------------------------
+#!! Not `$(obj_dir)\app\main.obj: ...` in the flattened tree mode!
 $(obj_dir)\main.obj: $(COMMIT_HASH_INCLUDE_FILE)
 
 !if defined(COMMIT_HASH_INCLUDE_FILE)
