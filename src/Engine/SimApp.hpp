@@ -101,10 +101,12 @@ public:
 	const Entity& _entity(size_t index) const { return *_world.bodies[index]; }
 	const Entity& _const_entity(size_t index) { return *_world.bodies[index]; }
 
-	virtual size_t add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
+	virtual unsigned add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
 	                //!! But C++ doesn't have the covariance needed here.
 	                //!! (Still added this cringy fn. for consistency.)
-	virtual void   remove_player(size_t ndx) = 0; //!this should then be virtual, too (like destructors)
+	virtual void   remove_player(unsigned player_id) = 0; //!this should then be virtual, too (like destructors)
+	virtual       Entity& player_entity(unsigned player_id = 1) = 0;
+	virtual const Entity& player_entity(unsigned player_id = 1) const = 0;
 
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)

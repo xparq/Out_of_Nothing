@@ -25,20 +25,29 @@ static const char* hud_test_callback_ccptr()  { return "this is a const char*"; 
 //----------------------------------------------------------------------------
 bool OON::init() // override
 {
+	//!! Currently, the data watcher HUD setup depends directly on the player objects
+	//!! that have just been created above, so the UI init CAN'T happen before that...:
+	//_setup_UI();
+
 	const auto& w = const_world();
-		//!! The model world has been implicitly created in SimApp yet!...
+		//!! "Some" model world has been implicitly created by SimApp for now... :-o
 
 	// Add the "Player Superglobe" first
-	//!! THIS MUST COME BEFORE CALLING add_bodies()!
-	globe_ndx = add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
-	assert(entity_count() > globe_ndx);
-	assert(player_entity_ndx() == globe_ndx);
+	//!!
+	//!! THIS MUST COME BEFORE CALLING add_bodies()! :-o
+	//!!
+	player_entity = add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+	assert(entity_count() > player_entity);
+	assert(player_entity_ndx() == player_entity);
+
+	_setup_UI();
 
 	// Add 2 "moons" with fixed parameters (mainly for testing):
 	add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
 				.color = 0xff2020});
 	add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
 				.color = 0x3060ff});
+
 
 	// Game-related cmdline options...
 	// Note: the system-level options have been processed and applied already!
@@ -62,8 +71,6 @@ bool OON::init() // override
 	return false;
   }
 
-	_setup_UI();
-
 	// Audio...
 	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
 	backend.audio.play_music(cfg.background_music.c_str());
@@ -76,7 +83,7 @@ bool OON::init() // override
 #ifndef DISABLE_HUD
 void OON::toggle_huds()  { _show_huds = !_show_huds; }
 bool OON::huds_active()  { return _show_huds; }
-void OON::toggle_help()  { ui_get(HelpPanel).active(!ui_get(HelpPanel).active()); }
+void OON::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }
 #endif
 
 //----------------------------------------------------------------------------
@@ -121,7 +128,7 @@ void OON::_setup_UI()
 		};
 	};
 
-	auto& debug_hud = ui_get(PlayerData);
+	auto& debug_hud = ui_gebi(PlayerData);
 
 #ifdef DEBUG
 //!!Should be Rejected compile-time (with a static_assert):
@@ -147,20 +154,35 @@ void OON::_setup_UI()
 //!!NOT YET:	<< "test val. bool: " << true << "\n"
 	<< "\n";
 #endif
+
 	debug_hud
-		<< "# of objs.: " << [=](){ return to_string(this->const_world().bodies.size()); }
+		<< "# of objs.: " << [=](){ return to_string(this->entity_count()); }
 		<< "\nBody interactions: " << &this->const_world()._interact_all
 		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
 		<< "\n"
-		<< "\nPlayer Globe #1:"
-		<< "\n  T: " << ftos(&this->const_world().bodies[this->globe_ndx]->T)
-		<< "\n  R: " << ftos(&this->const_world().bodies[this->globe_ndx]->r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
-		<< "\n  M: " << ftos(&this->const_world().bodies[this->globe_ndx]->mass)
-		<< "\n  x: " << ftos(&this->const_world().bodies[this->globe_ndx]->p.x)
-		<<   ", y: " << ftos(&this->const_world().bodies[this->globe_ndx]->p.y)
-		<< "\n  vx: " << ftos(&this->const_world().bodies[this->globe_ndx]->v.x)
-		<<   ", vy: " << ftos(&this->const_world().bodies[this->globe_ndx]->v.y)
+	;
+	//! Setting up player data watches below requires that the player
+	//! entity have actually been created already!
+	//! If not, an assertion will fail, but only in the DEBUG build!
+	//! So... Just checking it run-time, too, as I have made this mistake
+	//! too many times now... :)
+if ( !(player_entity_ndx() < entity_count()) ) {
+	cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
+} else {
+	debug_hud
+		<< "\nPlayer #1:"
 		<< "\n"
+		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
+		<< "\n  T: " << ftos(&this->player_entity().T)
+		<< "\n  M: " << ftos(&this->player_entity().mass)
+		<< "\n  x: " << ftos(&this->player_entity().p.x)
+		<<   ", y: " << ftos(&this->player_entity().p.y)
+		<< "\n  vx: " << ftos(&this->player_entity().v.x)
+		<<   ", vy: " << ftos(&this->player_entity().v.y)
+		<< "\n"
+	;
+}
+	debug_hud
 		<< "\nCAMERA: "
 		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
 		<< "\n  ZOOM: " << &view.zoom
@@ -179,7 +201,7 @@ void OON::_setup_UI()
 //	          << "\nPress ? for help...";
 
 	//------------------------------------------------------------------------
-	auto& timing_hud = ui_get(TimingStats);
+	auto& timing_hud = ui_gebi(TimingStats);
 	timing_hud
 		<< "FPS: " << [=](){ return to_string(1 / (float)this->avg_frame_delay); }
 		<< "\nlast frame Δt: " << [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; }
@@ -205,7 +227,7 @@ void OON::_setup_UI()
 //cerr << timing_hud;
 
 	//------------------------------------------------------------------------
-	auto& help_hud = ui_get(HelpPanel);
+	auto& help_hud = ui_gebi(HelpPanel);
 	help_hud
         //	<< "---------- Controls:\n"
 		<< "Arrows:    Thrust\n"
@@ -248,7 +270,7 @@ void OON::_setup_UI()
 }
 
 //----------------------------------------------------------------------------
-size_t OON::add_player(World::Body&& obj)
+unsigned OON::add_player(World::Body&& obj)
 {
 	// These are the player modelling differences:
 	obj.add_thrusters();
@@ -256,11 +278,12 @@ size_t OON::add_player(World::Body&& obj)
 	obj.superpower.free_color = true;
 	obj/*.superpower*/.lifetime = World::Body::Unlimited; //!!?? Should this be a superpower instead?
 
-	return add_body(std::forward<World::Body>(obj));
+	return (unsigned) //!! Blatant narrowing conv., hoping entity_count() will never overflow `unsigned`...
+		add_body(std::forward<World::Body>(obj));
 }
 
-void OON::remove_player(size_t ndx)
-{ndx;
+void OON::remove_player(unsigned)
+{
 }
 
 

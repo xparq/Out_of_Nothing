@@ -86,7 +86,7 @@ protected:
 	UI::HUD_SFML debug_hud;
 	UI::HUD_SFML help_hud;
 
-	UI::HUD& ui_get(HUD_ID which) override { switch (which) {
+	UI::HUD& ui_gebi(HUD_ID which) override { switch (which) {
 		case HelpPanel:   return help_hud;
 		case TimingStats: return timing_hud;
 		case PlayerData:  return debug_hud;

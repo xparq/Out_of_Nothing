@@ -23,12 +23,9 @@ public:
 	// Config / Setup
 
 	enum HUD_ID { HelpPanel, TimingStats, PlayerData, };
-	virtual UI::HUD& ui_get(HUD_ID which) = 0;
+	virtual UI::HUD& ui_gebi(HUD_ID which) = 0;
 	bool _show_huds = true;
 	void _setup_UI();
-
-	virtual size_t add_player(Model::World::Body&& obj) override;
-	virtual void   remove_player(size_t ndx) override;
 
 	//------------------------------------------------------------------------
 	// Player actions...
@@ -89,7 +86,11 @@ public:
 	void   add_bodies(size_t n);
 	void   remove_bodies(size_t n = -1); // -1 -> all
 
+	virtual unsigned add_player(Model::World::Body&& obj) override;
+	virtual void  remove_player(unsigned ndx) override;
 	size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const { assert(player_id == 1); return globe_ndx; }
+	       Entity& player_entity(unsigned p = 1)       override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+	 const Entity& player_entity(unsigned p = 1) const override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 
 	virtual bool poll_and_process_controls() override; // true if there was any input
 
