@@ -44,9 +44,12 @@ protected:
 // API...
 //----------------------------------------------------------------------------
 public:
-	bool run();
-
-	virtual bool init();
+	int run(); // Returns the intended exit code for the process (!0: error)
+	           // Note: "exit codes" may not be applicable in every execution model!
+	virtual void init(); // Call request_exit(exit_code) to mark it "aborted".
+	                     // No need to call the "upstream" init() from an override.
+	virtual void done(); // Optional cleanup; will not be called if init() was aborted.
+	                     // No need to call the "upstream" done() from an override.
 	virtual bool poll_and_process_controls() { return false; } // false: no inputs, nothing to do
 	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
 
@@ -57,8 +60,11 @@ public:
 	void fps_throttling(bool newstate);
 		// Enable/disable configured FPS limit
 
-	auto terminate()  { _terminated = true; }
-	auto terminated()  { return _terminated; }
+	void request_exit(int exit_code = 0); // (The code set by the last request_exit(x) will win.)
+	bool terminated() const { return _terminated; }
+	int  exit_code() const { return _exit_code; } // The code set by the last request_exit(x), or 0
+	//!!TBD: Setting it directly without request_exit(x):
+	//int|void exit_code(int exit_code) { return _exit_code = exit_code; }
 
 	void pause(bool newstate = true);
 	auto paused() const { return time.paused; }
@@ -140,9 +146,9 @@ protected:
 //----------------------------------------------------------------------------
 public:
 	SimApp(int argc, char** argv);
+	virtual ~SimApp();
 
 	SimApp(const SimApp&) = delete;
-	virtual ~SimApp() = default;
 
 //------------------------------------------------------------------------
 // Data: Abstract (Generic) Model World & View state etc...
@@ -180,6 +186,7 @@ public://!! Still directly set from main, hence the public yet!
 protected:
 	// Workflow/logic control
 	bool _terminated = false;
+	int  _exit_code = 0;
 
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945

@@ -4,12 +4,12 @@
 
 #include <string>
 	using std::string, std::to_string;
-	using std::stoul, std::stof;
-	using namespace std::string_literals;
-#include <string_view>
-	using std::string_view;
-#include "sz/fs.hh"
-	using sz::dirname;
+//	using std::stoul, std::stof;
+//	using namespace std::string_literals;
+//#include <string_view>
+//	using std::string_view;
+//#include "sz/fs.hh"
+//	using sz::dirname;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
 #ifdef SAVE_COMPRESSED
@@ -31,6 +31,105 @@
 
 using namespace Szim;
 //============================================================================
+//----------------------------------------------------------------------------
+void SimApp::init()
+//
+// Internal init, called from the ctor...
+// NO VIRTUAL DISPATCH IS AVAILABLE HERE YET!
+//
+{
+	// Guard against multiple calls (which can happen if not overridden):
+	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
+
+	// Apply the config...
+	iterations.max(cfg.iteration_limit);
+
+	if (cfg.fixed_model_dt_enabled) {
+		time.last_model_Δt = cfg.fixed_model_dt; // Otherwise no one might ever init this...
+	}
+
+cerr << "+++ Session initialized. +++\n\n";
+}
+
+//----------------------------------------------------------------------------
+void SimApp::done()
+//
+// Internal cleanup, called from the dtor...
+// NO VIRTUAL DISPATCH IS AVAILABLE HERE ANY MORE!
+//
+{
+	// Guard against multiple calls (which can happen if not overridden):
+	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
+
+cerr << "\n+++ Session closed. +++\n";
+}
+
+//----------------------------------------------------------------------------
+int SimApp::run()
+{
+/*
+	//!!
+	//!! I'VE JUST DISABLED THIS LEFTOVER CRUFT (SHOULD BE IN THE BACKEND ANYWAY),
+	//!! SO THAT I COULD MOVE run() TO THE NON-BACKEND-SPECIFIC PART OF SimApp FINALLY.
+	//!! AND THIS CHANGE HAS APPARENTLY BEEN REDUNDANT...
+	//!! I'M STILL LEAVING IT HERE, AS THE UNDERLYING ISSUE (#190) REMAINS UNRESOLVED.
+	//!
+	//! The event loop will block and sleep.
+	//! The update thread is safe to start before the event loop, but we'd also need to
+	//! draw things before the first event, so we have to release the SFML (OpenGL) Window (crucial!),
+	//! and unfreeze the update thread (which would wait on the first event by default).
+	//!
+	//!! [THINGS HAVE CHANGED SINCE THEN! E.g. events are polled now also in threaded mode,
+	//!! so no blocking before the first one. And that "crucial" GL release seems to not
+	//!! make any difference whatsoever now... Everything just works as before without it.
+	//!! -- BUT THAT MAY BE A LUCKY COINCIDENCE OF THREAD SCHEDULING! :-o
+	//!! Also: what does/did the 1st-event "freeze" have to do with setActive()?!]
+	//!!
+	if (!((SFML_Backend&)backend).SFML_window().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+		cerr << "\n- [main] sf::setActive(false) failed, WTF?! Terminating.\n";
+		return -1;
+	}
+*/
+	if (terminated()) // Terminated during construction? (e.g. by the default init())...
+		return exit_code();
+
+	init(); // Unlike the ctor, this calls the override (or the "onced" NOOP default, if none)
+
+	if (terminated()) // init() may have been "aborted"...
+		return exit_code();
+		// NOTE: If there's no init() override (-- weird, but who knows! :-o ),
+		// but there *is* an overridden done() (-- wow, even weirder!!! :) ),
+		// that will be called normally, as if the default init was the client's.
+
+	ui_event_state = SimApp::UIEventState::IDLE;
+
+#ifndef DISABLE_THREADS
+	std::thread game_state_updates(&SimApp::update_thread_main_loop, this);
+		//! NOTES:
+		//! - When it wasn't a member fn, the value vs ref. form was ambiguous and failed to compile!
+		//! - The thread ctor would *copy* its params (by default), which would be kinda wonky for the entire app. ;)
+#endif
+
+	event_loop();
+
+#ifndef DISABLE_THREADS
+//cerr << "TRACE - before threads join\n";
+	game_state_updates.join();
+#endif
+
+	done(); // Unlike the dtor, this calls the override (or the "onced" NOOP default if none)
+
+	return exit_code();
+}
+
+
+//----------------------------------------------------------------------------
+void SimApp::request_exit(int exit_code)
+{
+	_terminated = true;
+	_exit_code = exit_code;
+}
+
 //----------------------------------------------------------------------------
 void SimApp::pause(bool newstate)
 {

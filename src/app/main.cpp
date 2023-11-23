@@ -36,9 +36,10 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	int exit_code = 0;
 	try {
 		OON_sfml game(argc, argv);
-		game.run();
+		exit_code = game.run();
 
 	} catch (runtime_error& x) {
 		cerr << "- ERROR: " << x.what() << '\n';
@@ -52,6 +53,7 @@ int main(int argc, char* argv[])
 	}
 
 	cerr << "Profiling stats: " << IPROF_ALL_THREAD_STATS;
+	cerr << "DBG> main() returning: " << exit_code << '\n';
 
-	return 0;
+	return exit_code;
 }

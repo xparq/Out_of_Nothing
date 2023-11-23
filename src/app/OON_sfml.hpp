@@ -25,15 +25,14 @@ public:
 	// Config / Setup:
 	//------------------------------------------------------------------------
 
-	virtual size_t add_body(Model::World::Body&& obj) override;
-	virtual void   remove_body(size_t ndx) override;
+	size_t add_body(Model::World::Body&& obj) override;
+	void   remove_body(size_t ndx) override;
 
 	//--------------------------------------------------------------------
 	// Player (gameplay) action overrides:
 
-	virtual void pause_hook(bool newstate) override;
-
-	virtual bool load_snapshot(const char* fname) override;
+	void pause_hook(bool newstate) override;
+	bool load_snapshot(const char* fname) override;
 	//! The generic version of this is enough for now:
 	//virtual bool save_snapshot(const char* fname) override;
 
@@ -41,7 +40,6 @@ public:
 // Callback impl. (overrides)...
 //------------------------------------------------------------------------
 private:
-	bool init() override;
 	void onResize() override;
 
 	// Game control

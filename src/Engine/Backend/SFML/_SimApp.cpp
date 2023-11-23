@@ -108,56 +108,19 @@ SimApp::SimApp(int argc, char** argv)
 		backend.audio.enabled(args("snd") != "off");
 	}
 
-	this->SimApp::init(); // Our own internal init is "secretly" called even if overridden...
-	                      // (Note: the qualifier isn't strictly necessary, as ctors won't dispatch virtuals anyway.)
+	this->SimApp::init(); // Our own internal init() is called "secretly", even if overridden...
+	                      // (Note: the qualifier is only for emphasis; ctors don't dispatch virtuals.)
 }
-
-bool SimApp::init()
-{
-	// Apply the config...
-	iterations.max(cfg.iteration_limit);
-
-	if (cfg.fixed_model_dt_enabled) {
-		time.last_model_Δt = cfg.fixed_model_dt; // Otherwise no one might ever init this...
-	}
-
-cerr << "Sim. engine initialized. Good luck with your mission! :)\n";
-	return true;
-}
-
 
 //----------------------------------------------------------------------------
-bool SimApp::run()
+SimApp::~SimApp()
 {
-	if (!init()) {
-		return false;
-	}
-
-	//! The event loop will block and sleep.
-	//! The update thread is safe to start before the event loop, but we should also draw something
-	//! already before the first event, so we have to release the SFML (OpenGL) Window (crucial!),
-	//! and unfreeze the update thread (which would wait on the first event by default).
-	if (!((SFML_Backend&)backend).SFML_window().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-		cerr << "\n- [main] sf::setActive(false) failed, WTF?! Terminating.\n";
-		return false;
-	}
-
-	ui_event_state = SimApp::UIEventState::IDLE;
-
-#ifndef DISABLE_THREADS
-//!!WAS:std::thread game_state_updates(&OON_sfml::update_thread_main_loop, this);
-	std::thread game_state_updates(&SimApp::update_thread_main_loop, this);
-		//! NOTES:
-		//! - When it wasn't a member fn, the value vs ref. form was ambiguous and failed to compile!
-		//! - The thread ctor would *copy* its params (by default), which would be kinda wonky for the entire app. ;)
-#endif
-
-	event_loop();
-
-#ifndef DISABLE_THREADS
-//cerr << "TRACE - before threads join\n";
-	game_state_updates.join();
-#endif
-
-	return true;
+  try { // Let's survive our last moments... :) (Albeit our internal done() is just about empty now...)
+	this->SimApp::done(); // Our own internal done() is called "secretly", even if overridden...
+	                      // (Note: the qualifier is only for emphasis; dtors don't dispatch virtuals.)
+  } catch (...) {
+	cerr << "- INTERNAL ERROR: *REALLY UNEXPECTED* exception from SimApp::done()! :-o " << endl;
+	//... throw; // <- Could be useful to see the fireworks in DEBUG mode,
+	             //    but can't compile without noexcept-violation warnings.
+  }
 }

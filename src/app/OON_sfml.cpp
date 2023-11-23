@@ -103,7 +103,7 @@ void OON_sfml::update_thread_main_loop()
 			//!!?? Why is this redundant?!
 			if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [update_thread_main_loop] sf::setActive(true) failed!\n";
-//?				terminate();
+//?				request_exit(-1);
 //?				return;
 			}
 
@@ -116,7 +116,7 @@ void OON_sfml::update_thread_main_loop()
 			draw();
 			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
-//?				terminate();
+//?				request_exit(-1);
 //?				return;
 			}
 #ifndef DISABLE_THREADS
@@ -237,16 +237,23 @@ void OON_sfml::updates_for_next_frame()
 	//----------------------------
 	// Update...
 	//
-	//!! Move to a SimApp virtual, I guess (so at leat the counter capping can be implicitly done there; see also time_step()!):
+	//!! Move to a SimApp virtual, I guess (so at least the counter capping can be implicitly done there; see also time_step()!):
 	if (!iterations.maxed()) {
 		update_world(Δt);
 		++iterations;
 	} else {
 		if (cfg.exit_on_finish) {
 			cerr << "Exiting (as requested): iterations finished.\n";
-			terminate();
+			request_exit();
+			// fallthrough
 		}
 	}
+
+	//!! Time-stepping should take precedence and prevent immediate exit
+	//!! in the "plain finished" case above! Since request_exit() doesn't
+	//!! abort/return on its own, it's *implicitly* doing the right thing,
+	//!! but that might change to actually aborting later (e.g. via an excpt.)
+	//!! -- so, this reminder has been added for that case...
 
 	// One less time-step to make next time (if any):
 	if (timestepping) if (timestepping < 0 ) ++timestepping; else --timestepping;
@@ -282,9 +289,9 @@ void OON_sfml::event_loop()
 	std::unique_lock noproc_lock{sync::Updating, std::defer_lock};
 
 try {
-	while (SFML_WINDOW().isOpen() && !terminated()) {
+	while (!terminated() && SFML_WINDOW().isOpen()) {
 
-		for (sf::Event event; SFML_WINDOW().pollEvent(event);) {
+		for (sf::Event event; !terminated() && SFML_WINDOW().pollEvent(event);) {
 		// This inner loop is here to prevent event "jamming" (delays in
 		// event processing -- or even loss?) due to accumulating events
 		// coming faster than 1/frame for a long enough period to cause
@@ -304,8 +311,8 @@ try {
 		//!!
 			ui_event_state = UIEventState::BUSY;
 #ifndef DISABLE_THREADS
-//!! Waitevent is kinda elegant, but not very practical... Among other things, it
-//!! can't be interrupted by our own internal events, like a terminate() request!...
+//!! waitEvent was kinda elegant, but not very practical... Among other things,
+//!! it can't be interrupted by our own internal "events", like request_exit()...
 //!! Also, in both SFML and SDL, they already have to do pollEvents internally anyway:
 //!! -> https://en.sfml-dev.org/forums/index.php?topic=18264.0
 //!!		if (!SFML_WINDOW().waitEvent(event)) {
@@ -318,7 +325,7 @@ try {
 #endif
 			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
-//?				terminate();
+//?				request_exit(-1);
 //?				return;
 			}
 
@@ -339,20 +346,24 @@ try {
 				//!! This should be generalized beyond keys, and should also make it possible
 				//!! to use abstracted event types/codes for dispatching (below)!
 
+			// Close req.?
+			if (event.type == sf::Event::Closed ||
+			    event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+				request_exit();
+				// [fix-setactive-fail] -> DON'T: window.close();
+				//!!?? I forgot: how exactly is the window being closed on Esc?
+				//!!?? I *guess* by the sf::Window dtor, but why do I vaguely
+				//!!?? recall endless annoying problems with that from earlier?!
+				break;
+			}
+
 			switch (event.type) //!! See above: morph into using abstracted events!
 			{
 			case sf::Event::KeyPressed:
-//!!See main.cpp:
 #ifdef DEBUG
 	if (cfg.DEBUG_show_keycode) cerr << "key code: " << event.key.code << "\n";
 #endif
-
 				switch (event.key.code) {
-				case sf::Keyboard::Escape: //!!Merge with Closed!
-					terminate();
-					// [fix-setactive-fail] -> DON'T: window.close();
-					break;
-
 				case sf::Keyboard::Pause: toggle_pause(); break;
 				case sf::Keyboard::Enter: time_step(1); break;
 				case sf::Keyboard::Backspace: time_step(-1); break;
@@ -360,9 +371,9 @@ try {
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
 
 				case sf::Keyboard::Insert: spawn(player_entity_ndx(), keystate(SHIFT) ? 1 : 100); break;
-//!!...			case sf::Keyboard::Insert: add_bodies(keystate(SHIFT) ? 1 : 100); break;
 				case sf::Keyboard::Delete: remove_bodies(keystate(SHIFT) ? 1 : 100); break;
-//!!??			case sf::Keyboard::Delete: OON::remove_body(); break; //!!??WTF is this one ambiguous (without the qualif.)?!
+//!!...			case sf::Keyboard::Insert: add_bodies(keystate(SHIFT) ? 1 : 100); break;
+//!!??			case sf::Keyboard::Delete: OON::remove_body(); break; //!!??WTF is this one ambiguous without the qualif.?!
 
 				case sf::Keyboard::F1:  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
 				case sf::Keyboard::F2:  keystate(SHIFT) ? quick_load_snapshot(2) : quick_save_snapshot(2); break;
@@ -435,13 +446,6 @@ try {
 
 			case sf::Event::GainedFocus:
 				renderer.p_alpha = Renderer_SFML::ALPHA_ACTIVE;
-				break;
-
-			case sf::Event::Closed: //!!Merge with key:Esc!
-				terminate();
-//cerr << "BEGIN sf::Event::Closed\n"; //!!this frame is to trace an error from SFML/OpenGL
-				SFML_WINDOW().close();
-//cerr << "END sf::Event::Closed\n";
 				break;
 
 			default:
@@ -539,16 +543,6 @@ cerr << "R-viewsize: " << view.zoom * plm->r
 	}
 */
 
-
-//----------------------------------------------------------------------------
-bool OON_sfml::init() // override
-{
-	if (!OON::init()) {
-		return false; // It should've dealt with any dignotstics already
-	}
-
-	return true;
-}
 
 //----------------------------------------------------------------------------
 //!!Sink this into the UI!

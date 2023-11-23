@@ -23,7 +23,7 @@ static const char* hud_test_callback_ccptr()  { return "this is a const char*"; 
 
 
 //----------------------------------------------------------------------------
-bool OON::init() // override
+void OON::init() // override
 {
 	//!! Currently, the data watcher HUD setup depends directly on the player objects
 	//!! that have just been created above, so the UI init CAN'T happen before that...:
@@ -42,7 +42,7 @@ bool OON::init() // override
 	assert(player_entity_ndx() == player_entity_index);
 	_setup_UI();
 
-	// Restore session (currently only a snapshot) if --session=name...
+	// Restore session (currently just loading a snapshot...) if requested (i.e. --session=name)...
 	if (!args("session").empty()) {
 		load_snapshot(sz::prefix_if_rel(cfg.data_dir, args("session")).c_str());
 			//!! This manual dir prefixing will need to be normalized,
@@ -83,7 +83,8 @@ bool OON::init() // override
 		}
 	} catch(...) {
 		cerr << __FUNCTION__ ": ERROR processing/applying some cmdline args!\n";
-		return false;
+		request_exit(-1);
+		return;
 	}
 
 	// Audio...
@@ -96,8 +97,13 @@ bool OON::init() // override
 	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
 	backend.audio.play_music(cfg.background_music.c_str());
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
+}
 
-	return true;
+
+//----------------------------------------------------------------------------
+void OON::done() // override
+{
+	cerr << __FUNCTION__ << ": Put any 'onExit' tasks (like saving the last state) here!...\n";
 }
 
 //----------------------------------------------------------------------------
