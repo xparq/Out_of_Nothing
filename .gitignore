@@ -41,6 +41,7 @@ import/
 cache/
 
 *.sav*
+*.autosav*
 
 extern/*
 !extern/sfw/

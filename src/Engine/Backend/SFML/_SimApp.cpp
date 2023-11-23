@@ -86,6 +86,8 @@ SimApp::SimApp(int argc, char** argv)
 		}, false // Don't manage the window
 	  )
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(backend.hci.window())}
+
+	, session(*this/*!!, args("session")!!*/)
 {
 /*!! See instead the sad "functional" approach in the member init list above now:
 	// Check the cmdline for custom-config location...
@@ -101,12 +103,6 @@ SimApp::SimApp(int argc, char** argv)
 	cfg.select(cfgfile);
 	//!!auto basename = fs::path(cfgfile).filename().string();
 !!*/
-	//
-	// Some args aren't (can't/shoudn't be) done by SimAppConfig itself...
-	//
-	if (args["snd"]) {
-		backend.audio.enabled(args("snd") != "off");
-	}
 
 	this->SimApp::init(); // Our own internal init() is called "secretly", even if overridden...
 	                      // (Note: the qualifier is only for emphasis; ctors don't dispatch virtuals.)

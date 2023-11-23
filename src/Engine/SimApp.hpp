@@ -5,6 +5,7 @@
 #include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
 #include "Backend.hpp"
 #include "SimAppConfig.hpp"
+#include "SessionManager.hpp"
 #include "Time.hpp"
 
 //!!... The UI and IO etc. are gonna be tough to abstract...
@@ -17,7 +18,7 @@
 #include "Model/World.hpp"
 #include "View/ViewPort.hpp"
 
-#include "sz/unilang.hh" // On/Off
+//#include "sz/unilang.hh" // ON/OFF, AUTO_CONST
 #include "sz/counter.hh"
 #include "sz/rolling_average.hh"
 #include "sz/fs.hh"
@@ -141,7 +142,7 @@ protected:
 	virtual void draw() = 0;
 	virtual void onResize() {}
 
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
@@ -150,52 +151,56 @@ public:
 
 	SimApp(const SimApp&) = delete;
 
-//------------------------------------------------------------------------
-// Data: Abstract (Generic) Model World & View state etc...
+//----------------------------------------------------------------------------
+// Data...
 //----------------------------------------------------------------------------
 protected:
 	Args args;
 public://!! E.g. the renderer still needs these...
 	SimAppConfig cfg;
+
 	Backend& backend;
-protected:
-	bool is_fullscreen = false; //!! May need to move it into the backend!
-//--------------
-//!!
-sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
-	              //!! -- e.g. via a unique_ptr!
-//!!	View::Renderer_SFML renderer; //! The SFML UI has its own, but sharing the same SFML window! :-o
+	protected: bool is_fullscreen = false; //!! Move to the backend!
 
 //--------------
+protected:
+//!!
+	sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
+	              //!! -- e.g. via a unique_ptr!
+//!!	View::Renderer_SFML renderer; //! The SFML UI has its own, but sharing the same SFML window! :-o
+//--------------
+
+	//--------------------------------------------------------------------
+	// - Abstract (Generic) Model World & View state...
+
+	SessionManager session;
+
 private: // <- Forcing the use of accessors
 	Model::World _world; // See the *world() accessors!
-public://!! Alas, the renderer needs it... 
+public://!! Alas, the renderer still needs this:
         //!! Oh, but move the renderer here, and the ViewPort should be part of that!too, BTW! But it's both SFML *and* app dependent yet!... :-/
 	View::ViewPort view;
 
-public://!! Still directly set from main, hence the public yet!
+protected:
+	//--------------------------------------------------------------------
+	// - Time control...
+
+	Time::Control time;
 	sz::CappedCounter<Szim::Time::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
 		// 1 calendar year = 3,784,320,000 cycles at 120 fps, so even 32 bits are quite enough!
 		// But for longer runs (on persistent-world servers), or for higher resolutions, let's go 64...
-
 	sz::Counter<int> timestepping; // # of scheduled steps to advance/retrace, while in halt (paused) mode
-
-//------------------------------------------------------------------------
-// Data / Internals...
-//----------------------------------------------------------------------------
-protected:
-	// Workflow/logic control
-	bool _terminated = false;
-	int  _exit_code = 0;
-
-	enum UIEventState { IDLE, BUSY, EVENT_READY };
-	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
-
-	// Time control
-	Time::Control time;
 	//!!??Move to the Metrics system and resuse it from there:
 //!!	sz::SmoothRollingAverage<0.993f, 1/30.f> avg_frame_delay;
 	sz::RollingAverage<30> avg_frame_delay;
+
+	//--------------------------------------------------------------------
+	// - Workflow control...
+
+	bool _terminated = false;
+	int  _exit_code = 0;
+	enum UIEventState { IDLE, BUSY, EVENT_READY };
+	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
 
 }; // class SimApp
 } // namespace Szim

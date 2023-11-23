@@ -42,21 +42,20 @@ void OON::init() // override
 	assert(player_entity_ndx() == player_entity_index);
 	_setup_UI();
 
-	// Restore session (currently just loading a snapshot...) if requested (i.e. --session=name)...
-	if (!args("session").empty()) {
-		load_snapshot(sz::prefix_if_rel(cfg.data_dir, args("session")).c_str());
-			//!! This manual dir prefixing will need to be normalized,
-			//!! i.e. synced with snapshot_filename(), by both that and
-			//!! this calling the same unified asset/resource filename
-			//!! resolver function... -> #257
+	//!! MOVE THE SESSION LOGIC TO SimApp:
+	// Restore or start session (currently just loading a snapshot...) if requested (i.e. --session=name)...
+	if (args["session"]) { // If empty, a new unnamed session will be started; see also at done()!
+		session.open(args("session")); // So, a previously autosaved unnamed session state will NOT be loaded implicitly!
 	} else {
 		//!! Here should be a "load default initial world state" thing...
 		//!!
-		//!! Even just this would be fine:
+		//!! session.create(); // call back to the app to build default state
+		//!!
+		//!! Or even just this would be fine:
 		//!! load_snapshot(DEFAULT);
 		//!!
 		//!! - But preferably also being able to load from some text format
-		//!!   (TOML etc.), to finally replace this sad little hardcoding:
+		//!!   (TOML etc.), to finally replace this sad little hardcoding here:
 		//!!
 		// Add 2 "moons" with fixed parameters (mainly for testing):
 		add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
@@ -103,7 +102,13 @@ void OON::init() // override
 //----------------------------------------------------------------------------
 void OON::done() // override
 {
-	cerr << __FUNCTION__ << ": Put any 'onExit' tasks (like saving the last state) here!...\n";
+//	cerr << __FUNCTION__ << ": Put any 'onExit' tasks (like saving the last state) here!...\n";
+
+	//!! MOVE THE SESSION LOGIC TO SimApp:
+	// Let the session-manager auto-save the current session (unless disabled with --session-no-save; see SimApp::init()!)
+	if (args["session"]) { // If empty, it will be saved as "UNNAMED.autosave" or sg. like that...
+		session.close();
+	}
 }
 
 //----------------------------------------------------------------------------

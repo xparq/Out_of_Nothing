@@ -35,33 +35,50 @@ using namespace Szim;
 void SimApp::init()
 //
 // Internal init, called from the ctor...
-// NO VIRTUAL DISPATCH IS AVAILABLE HERE YET!
+//
+// >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE YET!  <<<
 //
 {
 	// Guard against multiple calls (which can happen if not overridden):
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
 
 	// Apply the config...
+
+	//
+	// Some args aren't/can't/shoudn't be handled by SimAppConfig itself...
+	//
+	if (args["snd"])
+		backend.audio.enabled(args("snd") != "off"); //!! Also support "no"!
+
+	// Time control...
 	iterations.max(cfg.iteration_limit);
-
-	if (cfg.fixed_model_dt_enabled) {
+	if (cfg.fixed_model_dt_enabled)
 		time.last_model_Δt = cfg.fixed_model_dt; // Otherwise no one might ever init this...
-	}
 
-cerr << "+++ Session initialized. +++\n\n";
+	// Sessions...
+	if (args("session-save") == "off" ||
+	    args("session-save") == "no" ||
+	    args["session-no-save"])
+		session.set_autosave(false);
+
+	if (!args("session-save-as").empty()) // Even if autosave disabled. (Could be reenabled later, or manual save...)
+		session.set_save_as_filename(args("session-save-as"));
+
+cerr << "<<< SimApp Engine/API initialized. >>>\n\n";
 }
 
 //----------------------------------------------------------------------------
 void SimApp::done()
 //
 // Internal cleanup, called from the dtor...
-// NO VIRTUAL DISPATCH IS AVAILABLE HERE ANY MORE!
+//
+// >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE ANY MORE!  <<<
 //
 {
 	// Guard against multiple calls (which can happen if not overridden):
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
 
-cerr << "\n+++ Session closed. +++\n";
+cerr << "\n<<< SimApp Engine/API shutting down... >>>\n";
 }
 
 //----------------------------------------------------------------------------
@@ -101,6 +118,8 @@ int SimApp::run()
 		// but there *is* an overridden done() (-- wow, even weirder!!! :) ),
 		// that will be called normally, as if the default init was the client's.
 
+	cerr << "> Engine: User app initialized.\n";
+
 	ui_event_state = SimApp::UIEventState::IDLE;
 
 #ifndef DISABLE_THREADS
@@ -118,6 +137,8 @@ int SimApp::run()
 #endif
 
 	done(); // Unlike the dtor, this calls the override (or the "onced" NOOP default if none)
+
+	cerr << "> Engine: user app cleaned up.\n";
 
 	return exit_code();
 }
