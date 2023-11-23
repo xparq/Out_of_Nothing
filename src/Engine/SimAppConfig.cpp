@@ -97,12 +97,12 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	window_title += " (DEBUG build)";
 #endif
 
-cerr <<	"DBG> current dir: " << sz::getcwd() << '\n';
-cerr <<	"DBG> current config: " << (current().empty() ? "built-in defaults(!)" : current()) << '\n';
-cerr <<	"DBG> base_path(): " << base_path() << '\n';
-cerr <<	"DBG> asset_dir: " << asset_dir << '\n';
-cerr <<	"DBG> data_dir: " << data_dir << '\n';
-cerr <<	"DBG> iteration_limit: " << iteration_limit << '\n';
-cerr <<	"DBG> fixed_model_dt_enabled: " << fixed_model_dt_enabled << '\n';
-cerr <<	"DBG> fixed_model_dt: " << fixed_model_dt << '\n';
+cerr << "DBG> current dir: " << sz::getcwd() << '\n';
+cerr << "DBG> current config: " << (current().empty() ? "built-in defaults(!)" : current()) << '\n';
+cerr << "DBG> base_path(): " << base_path() << '\n';
+cerr << "DBG> asset_dir: " << asset_dir << '\n';
+cerr << "DBG> data_dir: " << data_dir << '\n';
+cerr << "DBG> iteration_limit: " << iteration_limit << '\n';
+cerr << "DBG> fixed_model_dt: " << fixed_model_dt
+     << (fixed_model_dt_enabled ? ", enabled" : ", disabled!") << '\n';
 }

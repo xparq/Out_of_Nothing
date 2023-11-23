@@ -10,24 +10,25 @@ namespace UI { class HUD; }
 class OON : public Szim::SimApp
 {
 //----------------------------------------------------------------------------
-// Config...
+// Config/Setup...
 //----------------------------------------------------------------------------
+protected:
+	AUTO_CONST CFG_PAN_STEP = 5; // pixel
+	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.25f; // 25%
 
-//----------------------------------------------------------------------------
-// API...
-//----------------------------------------------------------------------------
-public:
-	auto&  player_model(unsigned player_id = 1) { assert(player_id == 1); return world().bodies[player_entity_ndx(player_id)]; }
-
-	//--------------------------------------------------------------------
-	// Config / Setup
+	void init() override;
+	void done() override;
 
 	enum HUD_ID { HelpPanel, TimingStats, PlayerData, };
-	virtual UI::HUD& ui_gebi(HUD_ID which) = 0;
+	virtual UI::HUD& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
 	bool _show_huds = true;
 	void _setup_UI();
 
-	//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// Operations...
+//----------------------------------------------------------------------------
+public:
+	//--------------------------------------------------------------------
 	// Player actions...
 
 	// - Gameplay:
@@ -74,7 +75,7 @@ public:
 	auto toggle_help()  {}
 #endif
 
-	//------------------------------------------------------------------------
+	//--------------------------------------------------------------------
 	// Internals: not even user actions (Well, some still are, basically for testing.)
 	//!!Make a proper distinction between these and the player/user actions!
 	//!!(One thing's that those tend/should go through the UI, whereas these shouldn't.)
@@ -86,32 +87,23 @@ public:
 	void   add_bodies(size_t n);
 	void   remove_bodies(size_t n = -1); // -1 -> all
 
-	virtual unsigned add_player(Model::World::Body&& obj) override;
-	virtual void  remove_player(unsigned ndx) override;
+	unsigned add_player(Model::World::Body&& obj) override;
+	void     remove_player(unsigned ndx) override;
 	size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const { assert(player_id == 1); return globe_ndx; }
 	       Entity& player_entity(unsigned p = 1)       override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 	 const Entity& player_entity(unsigned p = 1) const override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 
-	virtual bool poll_and_process_controls() override; // true if there was any input
+	bool poll_and_process_controls() override; // true if there was any input
 
 	bool _ctrl_update_thrusters(); // true if any engine is firing
 	bool _ctrl_update_pan(); // true if panning was requested
 
-//----------------------------------------------------------------------------
-// Virtuals...
-//----------------------------------------------------------------------------
-protected:
-	//------------------------------------------------------------------------
-	// - Implemented:
-	virtual void init() override;
-	virtual void done() override;
-
 	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
-	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
-	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
+	void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
+	bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
-	//------------------------------------------------------------------------
-	// - Introduced:
+	//--------------------------------------------------------------------
+	// New overridables introduced:
 	virtual void post_zoom_hook([[maybe_unused]] float factor) {}
 
 //----------------------------------------------------------------------------
@@ -125,9 +117,6 @@ public:
 // Data / Internals...
 //----------------------------------------------------------------------------
 protected:
-	constexpr static auto CFG_PAN_STEP = 5; // "SFML pixel"
-	constexpr static auto CFG_ZOOM_CHANGE_RATIO = 0.25f; // 25%
-
 	// These will be reset to +/-CFG_PAN_STEP whenever starting to pan:
 	float pan_step_x = 0, pan_step_y = 0;
 

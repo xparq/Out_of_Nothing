@@ -520,7 +520,7 @@ void OON_sfml::post_zoom_hook(float factor)
 //----------------------------------------------------------------------------
 void OON_sfml::_adjust_pan_after_zoom(float factor)
 {
-	auto vpos = view.world_to_view_coord(player_model()->p) - view.offset;
+	auto vpos = view.world_to_view_coord(player_entity().p) - view.offset;
 	pan(-(vpos - vpos/factor));
 }
 
@@ -528,7 +528,7 @@ void OON_sfml::_adjust_pan_after_zoom(float factor)
 	// If the new zoom level would put the player object out of view, reposition the view so that
 	// it would keep being visible; also roughly at the same view-offset as before!
 
-	auto visible_R = player_model()->r * view.zoom; //!! Not a terribly robust method to get that size...
+	auto visible_R = player_entity().r * view.zoom; //!! Not a terribly robust method to get that size...
 
 	if (abs(vpos.x) > cfg.VIEWPORT_WIDTH/2  - visible_R ||
 	    abs(vpos.y) > cfg.VIEWPORT_HEIGHT/2 - visible_R)
