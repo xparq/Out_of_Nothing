@@ -5,7 +5,8 @@ rem	the env. vars won't persist, and won't clash with anything important!
 set SZ_APP_NAME=oon
 
 rem !!
-rem !! These could crash horrendously, if e.g. the existing value has & in it etc...:
+rem !! These could crash horrendously, if e.g. a pre-existing value has & in it, etc...
+rem !! Try with set "...=..."!
 rem !!
 
 if "%SZ_PRJDIR%"=="" set SZ_PRJDIR=%~dp0..
@@ -14,13 +15,15 @@ if "%SZ_SFML_LIBROOT%"=="" set SZ_SFML_LIBROOT=%SZ_PRJDIR%/extern/sfml/msvc
 set SZ_SRC_SUBDIR=src
 set SZ_OUT_SUBDIR=build.out
 set SZ_IFC_SUBDIR=ifc
-set SZ_RUN_SUBDIR=test
+set SZ_TEST_SUBDIR=test
+set SZ_RUN_SUBDIR=%SZ_TEST_SUBDIR%
 set SZ_ASSET_SUBDIR=asset
 set SZ_RELEASE_SUBDIR=release
 
 set SZ_SRC_DIR=%SZ_PRJDIR%/%SZ_SRC_SUBDIR%
 set SZ_OUT_DIR=%SZ_PRJDIR%/%SZ_OUT_SUBDIR%
-set SZ_RUN_DIR=%SZ_PRJDIR%/%SZ_RUN_SUBDIR%
+set SZ_TEST_DIR=%SZ_PRJDIR%/%SZ_TEST_SUBDIR%
+set SZ_RUN_DIR=%SZ_TEST_DIR%
 set SZ_ASSET_DIR=%SZ_PRJDIR%/%SZ_ASSET_SUBDIR%
 set SZ_TMP_DIR=%SZ_PRJDIR%/tmp
 set SZ_RELEASE_DIR=%SZ_TMP_DIR%/%SZ_RELEASE_SUBDIR%
