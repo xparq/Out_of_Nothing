@@ -57,6 +57,8 @@ cerr << __FUNCTION__ << ": New sessions are not yet \"created\"! They just happe
 //----------------------------------------------------------------------------
 void SessionManager::open(const string& session_name/* = ""*/)
 {
+cerr << __FUNCTION__; // To be continued...
+
 	//!! Should handle things like:
 	//!! - saving an existing session first
 	//!! - starting new named session if 'name' has no file yet (-> create(""))
@@ -66,6 +68,7 @@ void SessionManager::open(const string& session_name/* = ""*/)
 
 	if (active_session_name.empty()) {
 		create("");
+cerr << " starting new session\n";
 		return;
 	}
 
@@ -77,6 +80,8 @@ void SessionManager::open(const string& session_name/* = ""*/)
 		//!! i.e. synced with snapshot_filename(), by both that and
 		//!! this calling the same unified asset/resource filename
 		//!! resolver function... -> #257
+
+cerr << " " << active_session.filename << '\n';
 
 	if (!app.load_snapshot(active_session.filename.c_str())) {
 		cerr << __FUNCTION__ << ": Failed to load session state (from "<<active_session.filename<<")!\n";

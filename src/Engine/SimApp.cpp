@@ -118,7 +118,7 @@ int SimApp::run()
 		// but there *is* an overridden done() (-- wow, even weirder!!! :) ),
 		// that will be called normally, as if the default init was the client's.
 
-	cerr << "> Engine: User app initialized.\n";
+	cerr << "> Engine: Client app initialized. Starting main loop...\n";
 
 	ui_event_state = SimApp::UIEventState::IDLE;
 
@@ -136,9 +136,9 @@ int SimApp::run()
 	game_state_updates.join();
 #endif
 
-	done(); // Unlike the dtor, this calls the override (or the "onced" NOOP default if none)
+	cerr << "> Engine: Main loop finished. Cleaning up client app...\n";
 
-	cerr << "> Engine: user app cleaned up.\n";
+	done(); // Unlike the dtor, this calls the override (or the "onced" NOOP default if none)
 
 	return exit_code();
 }
