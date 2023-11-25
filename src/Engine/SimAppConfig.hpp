@@ -19,8 +19,8 @@ struct SimAppConfig : Config
 !!*/
 	//--------------------------------------------------------------------
 	// CUSTOM PROPS...
-	AUTO_CONST DEFAULT_WINDOW_WIDTH  = 1024u; // unsigned in SFML
-	AUTO_CONST DEFAULT_WINDOW_HEIGHT = 768u;  // unsigned in SFML
+	AUTO_CONST DEFAULT_WINDOW_WIDTH  = 1280u; // unsigned in SFML
+	AUTO_CONST DEFAULT_WINDOW_HEIGHT = 1024u; // unsigned in SFML
 	AUTO_CONST WINDOW_WIDTH    = DEFAULT_WINDOW_WIDTH;
 	AUTO_CONST WINDOW_HEIGHT   = DEFAULT_WINDOW_HEIGHT;
 	AUTO_CONST VIEWPORT_WIDTH  = DEFAULT_WINDOW_WIDTH;
