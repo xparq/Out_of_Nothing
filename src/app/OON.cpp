@@ -172,6 +172,8 @@ void OON::_setup_UI()
 	static auto debug = "STR "s;
 	debug_hud << "DBG>" << &debug;
 //!!shouldn't compile:	debug_hud << "DBG>" << debug;
+	debug_hud << "\nHŐTŰRŐ lótúró [αβ°C]" << 1e300 << "\n";
+
 	debug_hud << "\n"
 	<< "test fn->string: " << hud_test_callback_string << "\n"
 	<< "test fn->ccptr: " << hud_test_callback_ccptr << "\n"

@@ -25,15 +25,10 @@ using namespace std;
 
 using namespace UI;
 
-
-HUD_SFML::HUD_SFML(sf::RenderWindow& window, const string& font_file,
-	int xpos, int ypos, uint32_t fgcolor, uint32_t bgcolor)
-	:
-	_font_file(font_file),
-	req_panel_top(ypos),
-	req_panel_left(xpos),
-	_fgcolor(fgcolor),
-	_bgcolor(bgcolor)
+HUD_SFML::HUD_SFML(sf::RenderWindow& window, const Config& cfg) :
+//HUD_SFML::HUD_SFML(sf::RenderWindow& window, const string& font_file,
+//	int xpos, int ypos, uint32_t fgcolor, uint32_t bgcolor) :
+	cfg(cfg)
 {
 	_setup(window);
 }
@@ -41,30 +36,35 @@ HUD_SFML::HUD_SFML(sf::RenderWindow& window, const string& font_file,
 //----------------------------------------------------------------------------
 void HUD_SFML::_setup(sf::RenderWindow& window)
 {
-	if (!font.loadFromFile(_font_file)) {
-		//! SFML does print errors to the console.
+	if (!font.loadFromFile(cfg.font_file)) {
+		//! SFML has already written the error to the console.
 		active(false);
 	}
 
 	// Adjust for negative "virtual" offsets:
 	sf::Vector2u winsize = window.getSize();
 
-	_panel_left = req_panel_left < 0 ? winsize.x + req_panel_left : req_panel_left;
-	_panel_top  = req_panel_top  < 0 ? winsize.y + req_panel_top  : req_panel_top;
+	_panel_left = cfg.panel_left < 0 ? winsize.x + cfg.panel_left : cfg.panel_left;
+	_panel_top  = cfg.panel_top  < 0 ? winsize.y + cfg.panel_top  : cfg.panel_top;
 }
 
 
 //----------------------------------------------------------------------------
 void HUD_SFML::renderstate_append_line(const string& str)
 {
-	lines.emplace_back(font, stdstring_to_SFMLString(str), DEFAULT_LINE_HEIGHT);
+	lines.emplace_back(font, stdstring_to_SFMLString(str), cfg.line_height - cfg.line_spacing);
 	auto& line = lines[renderstate_line_count()-1];
 	line.setPosition({
 			(float)_panel_left + DEFAULT_PADDING,
-			(float)_panel_top  + DEFAULT_PADDING + (renderstate_line_count()-1) * DEFAULT_LINE_HEIGHT});
+			(float)_panel_top  + DEFAULT_PADDING + (renderstate_line_count()-1) * cfg.line_height});
+
+	sf::FloatRect linerect = line.getLocalBounds();
+	sf::Vector2f size(linerect.left * 2 + linerect.width, linerect.top + linerect.height);
+	if (linerect.width + 2 * DEFAULT_PADDING > _panel_width)
+		_panel_width = (unsigned) linerect.width + 2 * DEFAULT_PADDING;
 
 //	line.setStyle(sf::Text::Bold | sf::Text::Underlined);
-	line.setFillColor(sf::Color(_fgcolor));
+	line.setFillColor(sf::Color(cfg.fgcolor));
 }
 
 //----------------------------------------------------------------------------
@@ -96,11 +96,11 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 	}
 
 	// OK, finally draw something...
-	sf::RectangleShape rect({450, //!!... "Fit-to-text" feature by recompilation ;)
-		(float)renderstate_line_count() * DEFAULT_LINE_HEIGHT + 2*DEFAULT_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
+	sf::RectangleShape rect({(float)_panel_width,
+		(float)renderstate_line_count() * cfg.line_height + 2*DEFAULT_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
 	rect.setPosition({(float)_panel_left, (float)_panel_top});
-	rect.setFillColor(sf::Color(_bgcolor));
-	rect.setOutlineColor(sf::Color((uint32_t)(_bgcolor * 1.5f)));
+	rect.setFillColor(sf::Color(cfg.bgcolor));
+	rect.setOutlineColor(sf::Color((uint32_t)(cfg.bgcolor * 1.5f)));
 	rect.setOutlineThickness(1);
 	window.draw(rect);
 

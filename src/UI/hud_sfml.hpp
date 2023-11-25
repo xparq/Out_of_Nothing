@@ -29,9 +29,6 @@ namespace UI {
 //----------------------------------------------------------------------------
 struct HUD_SFML : public HUD
 {
-	static constexpr uint32_t DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
-	static constexpr uint32_t DEFAULT_BACKGROUND_COLOR = 0x00406050;
-
 	void _setup(sf::RenderWindow& window);
 
 	void renderstate_clear() { lines.clear(); }
@@ -42,25 +39,19 @@ struct HUD_SFML : public HUD
 	virtual void onResize(sf::RenderWindow& window);
 
 public:
-	HUD_SFML(sf::RenderWindow& window, const std::string& font_file,
-		int xpos = DEFAULT_PANEL_LEFT, int ypos = DEFAULT_PANEL_TOP,
-		uint32_t fgcolor = DEFAULT_TEXT_COLOR, uint32_t bgcolor = DEFAULT_BACKGROUND_COLOR);
+	HUD_SFML(sf::RenderWindow& window, const Config& cfg);
 
 protected:
+	Config cfg;
+
 	std::string _font_file;
 	std::vector<sf::Text> lines;
 	sf::Font font;
 
-	int req_panel_top;
-	int req_panel_left;
-
-	int _panel_top;  // calc. by _setup()
-	int _panel_left; // calc. by _setup()
-	size_t _panel_width  = DEFAULT_PANEL_WIDTH;
-	size_t _panel_height = DEFAULT_PANEL_HEIGHT;
-
-	uint32_t _fgcolor = DEFAULT_TEXT_COLOR;
-	uint32_t _bgcolor = DEFAULT_BACKGROUND_COLOR;
+	int      _panel_left; // calc. by _setup()
+	int      _panel_top;  // calc. by _setup()
+	unsigned _panel_width  = DEFAULT_PANEL_WIDTH;
+	unsigned _panel_height = DEFAULT_PANEL_HEIGHT;
 };
 
 }; // namespace

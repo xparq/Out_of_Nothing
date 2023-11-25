@@ -51,9 +51,18 @@ namespace sync {
 OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 #ifndef DISABLE_HUD
 	// NOTE: .cfg is ready to use now!
-	, timing_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -250, 10)
-	, debug_hud(SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, -250, 260, 0x90e040ff, 0x90e040ff/4)
-	, help_hud( SFML_WINDOW(), cfg.asset_dir + cfg.hud_font_file, 10, 10, 0x40d040ff, 0x40f040ff/4) // left = 10
+	, timing_hud(SFML_WINDOW(),{ .font_file = cfg.asset_dir + cfg.hud_font_file,
+		.line_height  = (unsigned)cfg.get("appearance/HUD/line_height", HUD::DEFAULT_LINE_HEIGHT),
+		.line_spacing = (unsigned)cfg.get("appearance/HUD/line_spacing", HUD::DEFAULT_LINE_SPACING),
+		.panel_left = -250, .panel_top = 10})
+	, debug_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
+		.line_height  = (unsigned)cfg.get("appearance/HUD/line_height", HUD::DEFAULT_LINE_HEIGHT),
+		.line_spacing = (unsigned)cfg.get("appearance/HUD/line_spacing", HUD::DEFAULT_LINE_SPACING),
+		.panel_left = -250, .panel_top = 350, .fgcolor = 0x90e040ff, .bgcolor = 0x90e040ff/4})
+	, help_hud( SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
+		.line_height  = (unsigned)cfg.get("appearance/HUD/line_height", HUD::DEFAULT_LINE_HEIGHT),
+		.line_spacing = (unsigned)cfg.get("appearance/HUD/line_spacing", HUD::DEFAULT_LINE_SPACING),
+		.panel_left = 10, .panel_top = 10, .fgcolor = 0x40d040ff, .bgcolor = 0x40f040ff/4})
 #endif
 {
 }

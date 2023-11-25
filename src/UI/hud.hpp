@@ -22,14 +22,32 @@ class HUD
 {
 public:
 	// Note: all in pixels
-	static constexpr int DEFAULT_LINE_HEIGHT = 13; //! Lots of obscure warnings if this was size_t! :-o
-	static constexpr int DEFAULT_PANEL_TOP = 4; // signed!
-	static constexpr int DEFAULT_PANEL_LEFT = -250; // signed!
-	static constexpr size_t DEFAULT_PANEL_WIDTH = 0; //!! 0: fit-text - NOT IMPLEMENTED YET!
-	static constexpr size_t DEFAULT_PANEL_HEIGHT = 0; //!! 0: fit-text - NOT IMPLEMENTED YET!
-	static constexpr int DEFAULT_PADDING = 6;
+	static constexpr int DEFAULT_LINE_HEIGHT = 17;
+	static constexpr int DEFAULT_LINE_SPACING = 4;  // font size = line height - line spacing
+	static constexpr int DEFAULT_PANEL_TOP = 4;     // <0: relative to top edge
+	static constexpr int DEFAULT_PANEL_LEFT = -250; // <0: relative to right edge
+	static constexpr unsigned DEFAULT_PANEL_WIDTH = 0;  // 0: fit text
+	static constexpr unsigned DEFAULT_PANEL_HEIGHT = 0; // 0: fit text (!!fixed height not implemented!!)
+	static constexpr int DEFAULT_PADDING = 4;
 
-public:
+	static constexpr uint32_t DEFAULT_TEXT_COLOR = 0x72c0c0ff; // RGBA
+	static constexpr uint32_t DEFAULT_BACKGROUND_COLOR = 0x00406050;
+
+	struct Config
+	{
+		std::string font_file;
+		unsigned line_height = DEFAULT_LINE_HEIGHT;
+		unsigned line_spacing = 2;
+
+		int panel_left   = DEFAULT_PANEL_LEFT;
+		int panel_top    = DEFAULT_PANEL_TOP;
+		int panel_width  = DEFAULT_PANEL_WIDTH;
+		int panel_height = DEFAULT_PANEL_HEIGHT;
+
+		uint32_t fgcolor = DEFAULT_TEXT_COLOR;
+		uint32_t bgcolor = DEFAULT_BACKGROUND_COLOR;
+	};
+
 	//-------------------------------------------------------------
 	// Add a string literal to the panel...
 	void add(const char* literal);
