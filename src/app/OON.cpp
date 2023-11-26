@@ -285,6 +285,7 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 		<< "Scroll Lock: Toggle player-locked auto-scroll\n"
 		<< "Home:      Home in on the player globe\n"
 		<< "Ctrl+Home: Reset view to Home pos. (not the zoom)\n"
+		<< "Ctrl+Alt:  Leave movment trails while holding\n"
 		<< "---------- Admin:\n"
 		<< "F1-F4:     Save world snapshots (+Shift: load)\n"
 		<< "M:         Mute/unmute music, N: sound fx\n"
