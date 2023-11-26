@@ -39,9 +39,9 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
 	window_title    = get("appearance/window_title", window_title); //!! not really a cfg option...
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
-	default_font_file = get("appearance/default_font_file", "font/default.font");
+	default_font_file = get("appearance/default_font_file", "gui/font/default.font");
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
-	background_music  = get("audio/background_music", "music/background.ogg");
+	background_music  = get("audio/background_music", "sound/music/background.ogg");
 	iteration_limit  = get("sim/loop_cap", -1);
 	exit_on_finish   = get("sim/exit_on_finish", false);
 	fixed_model_dt   = get("sim/timing/fixed_dt", 0.0333f);

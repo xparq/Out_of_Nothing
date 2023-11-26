@@ -57,9 +57,9 @@ SimApp::SimApp(int argc, char** argv)
 		app_name = "Don't put the app name to the config, FFS! ;) "
 		[appearance]
 		window_title = "OON <Running with hardcoded defaults!>"
-		)"s,
+		)",
 		args("cfg").empty()
-		? args("C").empty() ? "" // Use the literal Defaults above now, not the old DEFAULT_CFG_FILE path!
+		? args("C").empty() ? DEFAULT_CFG_FILE // `... ? ""` would use Config::Defaults instead
 			            : args("C")
 		: args("cfg")
 /* For a pedantic warning:

@@ -28,9 +28,9 @@ gcm.cache
 *.code-workspace
 *.vscode
 
-asset/music/*
-!asset/music/README.*
-!asset/music/default.ogg
+**/sound/music/*
+!**/sound/music/README.*
+!**/sound/music/default.ogg
 
 release/
 _release/

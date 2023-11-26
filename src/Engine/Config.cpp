@@ -61,9 +61,9 @@ Config::Config(std::string_view cfg_path, const CALLBACK& post_load)
 //----------------------------------------------------------------------------
 bool Config::select(std::string_view cfg_path, bool can_throw, const CALLBACK& post_load)
 {
-	//!! Wishful attempt below to try and unify both the exc. and noexc. modes
-	//!! in one control flow...
-	//!! However, I've only tried it with exceptions disabled yet! :)
+	//!! Wishful attempt below to try and unify both the exc. and noexc.
+	//!! modes in one control flow...
+	//!! ...and it works fine, as long as exceptions are disabled! :)
 	toml::parse_result result;
 	try {
 		result = cfg_path.empty() ?

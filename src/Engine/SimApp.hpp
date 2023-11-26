@@ -41,6 +41,8 @@ class SimApp // Universal Sim. App Base ("Engine Controller")
 protected:
 	static constexpr auto DEFAULT_CFG_FILE = "default.cfg";
 
+	// See also: SimAppConfig
+
 //----------------------------------------------------------------------------
 // API...
 //----------------------------------------------------------------------------

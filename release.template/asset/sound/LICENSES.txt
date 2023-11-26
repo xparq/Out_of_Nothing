@@ -1,0 +1,7 @@
+﻿Music:
+	Mine
+	LICENSE: Public Domain
+
+clack.wav:
+	https://freesound.org/people/Za-Games/sounds/539854/
+	LICENSE: Creative Commons 0
