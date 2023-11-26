@@ -43,7 +43,7 @@ inline std::string& endslash_fixup(std::string* dirpath)
 
 inline std::string endslash_fixup(const std::string& dirpath)
 {
-	std::string result(dirpath.data(), dirpath.size());
+	std::string result(dirpath);
 	return endslash_fixup(&result);
 }
 
