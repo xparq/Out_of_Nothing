@@ -17,8 +17,8 @@ struct ViewPort
 {
 	static constexpr auto CFG_DEFAULT_ZOOM = 0.0000005f; //! This one also depends very much on the physics!
 
-	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * zoom + offset; }
-	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * zoom + offset.x, y * zoom + offset.y }; }
+	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * zoom - offset; }
+	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * zoom - offset.x, y * zoom - offset.y }; }
 
 	float zoom = CFG_DEFAULT_ZOOM;
 	Math::Vector2f offset = {0, 0}; // in World-coordinates

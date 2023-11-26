@@ -387,10 +387,10 @@ bool OON::_ctrl_update_pan()
 {
 	auto action = false;
 
-	if (keystate(W)) { action = true; pan_step_y =  CFG_PAN_STEP; }
-	if (keystate(S)) { action = true; pan_step_y = -CFG_PAN_STEP; }
-	if (keystate(A)) { action = true; pan_step_x =  CFG_PAN_STEP; }
-	if (keystate(D)) { action = true; pan_step_x = -CFG_PAN_STEP; }
+	if (keystate(W)) { action = true; pan_step_y = -CFG_PAN_STEP; }
+	if (keystate(S)) { action = true; pan_step_y =  CFG_PAN_STEP; }
+	if (keystate(A)) { action = true; pan_step_x = -CFG_PAN_STEP; }
+	if (keystate(D)) { action = true; pan_step_x =  CFG_PAN_STEP; }
 
 	if (!action) {
 		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x);

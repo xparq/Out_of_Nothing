@@ -536,8 +536,8 @@ void OON_sfml::post_zoom_hook(float factor)
 //----------------------------------------------------------------------------
 void OON_sfml::_adjust_pan_after_zoom(float factor)
 {
-	auto vpos = view.world_to_view_coord(player_entity().p) - view.offset;
-	pan(-(vpos - vpos/factor));
+	auto viewpos = view.world_to_view_coord(player_entity().p) + view.offset;
+//	pan(viewpos - viewpos/factor);
 }
 
 /*
