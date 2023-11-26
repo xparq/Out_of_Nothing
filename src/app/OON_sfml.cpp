@@ -1,4 +1,4 @@
-﻿#include "OON_sfml.hpp"
+#include "OON_sfml.hpp"
 
 //!! This "backend tunelling" should be "allowed" (even properly facilitated,
 //!! in a more way) later, after the backend selection becomes more transparent
@@ -537,7 +537,7 @@ void OON_sfml::post_zoom_hook(float factor)
 void OON_sfml::_adjust_pan_after_zoom(float factor)
 {
 	auto viewpos = view.world_to_view_coord(player_entity().p) + view.offset;
-//	pan(viewpos - viewpos/factor);
+	pan(viewpos - viewpos/factor);
 }
 
 /*

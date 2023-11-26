@@ -65,6 +65,11 @@ IPROF_FUNC;
 //
 //	t += dt;
 
+	if (dt == 0.f) { // (Whatever the accuracy of this, good enough.)
+		return;  // <- This may change later (perhaps selectively,
+		         // for any "timeless features"), but for now: fix #298!
+	}
+
 #ifdef _SKIP_
 //!!testin' testin'...
 static int SKIP_N = 10; //! const[expr] here would trigger a warning for a later `if (0)`
