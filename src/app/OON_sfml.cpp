@@ -1,4 +1,4 @@
-#include "OON_sfml.hpp"
+﻿#include "OON_sfml.hpp"
 
 //!! This "backend tunelling" should be "allowed" (even properly facilitated,
 //!! in a more way) later, after the backend selection becomes more transparent
@@ -180,8 +180,9 @@ void OON_sfml::draw() // override
 	if (_show_huds) {
 		timing_hud.draw(SFML_WINDOW());
 		debug_hud.draw(SFML_WINDOW());
-		if (help_hud.active()) help_hud.draw(SFML_WINDOW()); //!! the active-chk is redundant, the HUD does the same; TBD, who's boss!
-		                                              //!! "activity" may mean more than drawing. so... actually both can do it?
+		if (help_hud.active())
+			help_hud.draw(SFML_WINDOW()); //!! This active-chk is redundant: HUD::draw() does the same. TBD, who's boss!
+		                                      //!! "Activity" may mean more than drawing. So... (Or actually both should control it?)
 	}
 #endif
 
@@ -220,9 +221,10 @@ void OON_sfml::updates_for_next_frame()
 	// Update the FPS gauge
 	avg_frame_delay.update(time.last_frame_delay);
 
+	// Drop the frame rate and sleep more if paused
 	if (paused()) {
 		if (!timestepping) { // Are we single-stepping?
-			sf::sleep(sf::milliseconds(50)); //!! That 50 should drop the frame rate to ~15-20 FPS... But see #217! :-o
+			sf::sleep(sf::milliseconds(100)); // 10 FPS... !!But see #217! :-o
 			return;
 		}
 	}
@@ -476,27 +478,28 @@ try {
 
 			ui_event_state = UIEventState::EVENT_READY;
 
-#ifndef DISABLE_THREADS
-//cerr << "- freeing the proc. lock...\n";
-			noproc_lock.unlock();
-		} // for
-
-		// The event queue has been emptied, so in this (input processing)
-		// thread we're idling now (while updates are happening elsewhere), so:
-		sf::sleep(sf::milliseconds(10)); // SFML does (used to do) the same amount for waitEvent
-			// This is only relevant when threading.
-			// The non-threaded main loop sleeps via backend.hci.fps_throttling.
-			//!!?? Explain how this is related to sleep-while-paused!
-#else
-		} // for
+#ifdef DISABLE_THREADS
+		} // for - events in the queue
 
 		update_thread_main_loop(); // <- Doesn't actually loop, when threads are disabled, so crank it from here!
 
 //!!test idempotency:
 //!!	draw();
 
+#else
+//cerr << "- freeing the proc. lock...\n";
+			noproc_lock.unlock();
+		} // for - events in the queue
+
+		// The event queue has been emptied, so in this thread (of input processing)
+		// we're idling now (while updates are happening elsewhere), so:
+		sf::sleep(sf::milliseconds(
+			paused() ? 100 : 10)); // SFML does (used to do) the same amount for waitEvent
+			// This is only relevant when threading.
+			// The non-threaded main loop sleeps via backend.hci.fps_throttling.
+			//!!?? Explain how this is related to sleep-while-paused!
 #endif			
-	} // while
+	} // while - still running
 
 } catch (runtime_error& x) {
 	cerr << __FUNCTION__ " - ERROR: " << x.what() << '\n';
