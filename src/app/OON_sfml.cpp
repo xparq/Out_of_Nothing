@@ -1,12 +1,19 @@
 ﻿#include "OON_sfml.hpp"
 
-//!! This could be "allowed" later directly in OON.cpp, too, after the backend selection
-//!! becomes more transparent/automatic (e.g. finishing what I've started in SFW),
-//!! because the goal here (on the app level) is only separating the source from the
-//!! backend dependencies ("write once"), not the compilation process!
-#include "Engine/Backend/SFML/_Backend.hpp"
+//!! This "backend tunelling" should be "allowed" (even properly facilitated,
+//!! in a more way) later, after the backend selection becomes more transparent
+//!! and/or automatic etc. (#294; finishing what I've started in SFW).
+//!!
+//!! A side-note/reminder: the goal here (on the app level) is only separating
+//!! (most of?) the *sources* from direct backend dependencies ("write once"),
+//!! not the entire compilation process.
+//!!
+//!! This is so sad, still...:
+#include "Engine/Backend/_adapter_switcher.hpp"
+#include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
 #define SFML_HUD(x) (((UI::HUD_SFML&)backend).SFML_window())
+
 
 import Storage;
 

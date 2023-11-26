@@ -35,8 +35,9 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
+# This is too scrict, e.g. would prevent trying alternate builds etc.:
+#    strategy:
+#      fail-fast: false
     
     steps:
 
@@ -69,9 +70,9 @@ jobs:
     - name: Build with NMAKE + Jumpstart-NG
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
-      run: nbuild.cmd
+      run: tooling\diag\wtime nbuild.cmd
 
-    - name: Build with BusyBox-w32 (pdpmake) + my univ. makefile
+    - name: Build with BusyBox-w32 (pdpmake) + my "universal" makefile
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
-      run: bbuild.cmd
+      run: tooling\diag\wtime bbuild.cmd

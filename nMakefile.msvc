@@ -74,7 +74,8 @@ EXT_LIBS=\
 	$(EXT_LIB_SFW) \
 #	extern/toml++/toml$(_cflags_crt_linkmode).lib \
 	$(EXT_LIB_ZSTD) \
-
+	user32.lib
+#		^^^ Only needed with SFML=dll, strangely! -o
 
 #-----------------------------------------------------------------------------
 # Config - Build options
@@ -116,7 +117,9 @@ buildmode_dir_suffix=.sfml-$(SFML_linkmode)
 #!-------------------------------------
 #!Sz Other custom options for OON...
 #!-------------------------------------
-CFLAGS=$(CFLAGS) -DUSE_BACKEND_SFML
+CFLAGS=$(CFLAGS) -DBACKEND=SFML
+#CFLAGS=$(CFLAGS) -DGFX_BACKEND=... -DINPUTS_BACKEND=... -DAUDIO_BACKEND=... -DSYSTEM_BACKEND=...
+
 !if "$(SFML)" == "static"
 CFLAGS=$(CFLAGS) -DSFML_STATIC
 !endif

@@ -2,9 +2,10 @@
 #define _VIY6OUAOIN4378G135Y_
 
 #include "SimAppConfig.hpp"
-#include "Clock.hpp"
-#include "HCI.hpp"
-#include "Audio.hpp"
+
+#include "Backend/Clock.hpp"
+#include "Backend/HCI.hpp"
+#include "Backend/Audio.hpp"
 
 //!!#include <memory> // unique_ptr
 

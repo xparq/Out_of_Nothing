@@ -2,8 +2,12 @@
 #include "Engine/SimApp.hpp" //!!This stinks: should only use the Model,
                         //!!perhaps *some* of the _generic_ OON stuff,
                         //!!and either have or get (as params) any gfx infrastr. resources directly!
-#include "Engine/Backend/SFML/_Backend.hpp"
+
+//!! This "backend tunelling" is so sad this way"... See notes in OON_sfml!
+#include "Engine/Backend/_adapter_switcher.hpp"
+#include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW(game) (((SFML_Backend&)game.backend).SFML_window())
+
 
 #include "Model/Math/Vector2.hpp"
 #include "adapter/SFML/vector.hpp"

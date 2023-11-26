@@ -11,7 +11,9 @@ CRT = dll
 SFML = static
 
 #!! Integrate these:
-CFLAGS_ = -DUSE_BACKEND_SFML
+CFLAGS_ = -DBACKEND=SFML
+#CFLAGS_ = -DGFX_BACKEND=... -DINPUTS_BACKEND=... -DAUDIO_BACKEND=... -DSYSTEM_BACKEND=...
+
 # -DDISABLE_HUD
 # -DDISABLE_THREADS
 
@@ -51,8 +53,11 @@ EXT_LIBS =\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
 	$(EXT_LIB_SFW) \
 	$(EXT_LIB_ZSTD) \
-#	extern/toml++/toml$(cflags_crt_linkmode).lib \
 	user32.lib\
+# (Comments must be last...:)
+#	extern/toml++/toml$(cflags_crt_linkmode).lib \
+#	user32.lib <- only needed with SFML=dll, strangely! -o
+
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
 SFML_linkmode=$(SFML)

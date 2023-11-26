@@ -4,6 +4,8 @@
 // SFML-BACKED AUDIO SUBSYSTEM - IMPLEMENTATION
 //============================================================================
 
+using namespace Szim;
+
 #include <iostream>
 	using std::cerr, std::endl;
 
