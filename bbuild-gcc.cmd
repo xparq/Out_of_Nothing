@@ -8,3 +8,5 @@ call %~dp0tooling/_setenv.cmd
 
 ::!! wtime GETS CONFUSED BY THE QUOTED PARAM! :-o : %~dp0tooling/diag/wtime.exe 
 busybox sh -c "export SZ_PRJDIR=. && . tooling/_setenv.sh && busybox make -f bbMakefile.gcc %*"
+
+if not errorlevel 1 if not defined GITHUB_ACTION %SZ_TEST_DIR%\regression\tc-smoke

@@ -2,13 +2,17 @@
 call %~dp0..\..\tooling\_setenv.cmd
 
 :: This name is also used to select the corresponding baseline state files:
-set tc_name=500_bodies
+set tc_name=%~n0
 
 set regdir=%~dp0
-set baseline_version=ea39db36
-set "baseline_dir=%regdir%%baseline_version%.baseline"
-set "reference_startstate=%baseline_dir%/%tc_name%-START.state"
-set "reference_endstate=%baseline_dir%\%tc_name%-REFERENCE-END.state"
+set tc_subdir=%tc_name%
+set tc_dir=%regdir%%tc_subdir%
+
+set baseline_version=445da1f6
+
+set "baseline_dir=%regdir%_baseline-%baseline_version%"
+set "reference_startstate=%baseline_dir%/1000_bodies-START.state"
+set "reference_endstate=%tc_dir%\REFERENCE-END.state"
 set "new_endstate=%regdir%\END.state.tmp"
 
 ::NOTES:
@@ -18,7 +22,7 @@ set "new_endstate=%regdir%\END.state.tmp"
 
 
 ::set bodies=500
-set loop=500
+set loop=20
 
 :: Empty means use the latest:
 set oon_use_exe=%1
