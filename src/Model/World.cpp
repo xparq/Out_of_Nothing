@@ -53,30 +53,36 @@ void World::remove_body(size_t ndx)
 	bodies.erase(bodies.begin() + ndx);
 }
 
-#define _SKIP_
-//#define _SKIP_INTERACTIONS_
-//----------------------------------------------------------------------------
-void World::update(float dt, SimApp& game)
-// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
-{
-IPROF_FUNC;
 
-//	static float t = 0; // s
-//
-//	t += dt;
+//============================================================================
+void World::update(float dt, SimApp& game)
+//!! Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
+{
+//----------------------------------------------------------------------------
+#define _SKIP_SOME_STATE_UPDATES_ 10
+	// Slow changes (like cooling bodies) don't need updates in every frame
+	//!! Make it actually timed, so it can be independent of frame rate!
+
+//#define _SKIP_SOME_INTERACTIONS_ 3
+	//!! Should spread the "skippage" across varied blocks of entities
+        //!! not just entirely skipping some frames for all (-> very jittery!)
+//----------------------------------------------------------------------------
+IPROF_FUNC;
 
 	if (dt == 0.f) { // (Whatever the accuracy of this, good enough.)
 		return;  // <- This may change later (perhaps selectively,
 		         // for any "timeless features"), but for now: fix #298!
 	}
 
-#ifdef _SKIP_
+#ifdef _SKIP_SOME_STATE_UPDATES_
 //!!testin' testin'...
-static int SKIP_N = 10; //! const[expr] here would trigger a warning for a later `if (0)`
-static int skipping_T_recalc = SKIP_N * 10;
-static int skipping_n_interactions = SKIP_N;
+static int skipping_T_recalc = _SKIP_SOME_STATE_UPDATES_ * 10;
 static float accumulated_skip_dt = 0; // s
 auto last_dt = dt;
+#endif
+
+#ifdef _SKIP_SOME_INTERACTIONS_
+static int skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
 #endif
 
 	// Go through autogenic effects first:
@@ -108,10 +114,10 @@ auto last_dt = dt;
 			//!! should detect change in "abstract color" (similar to B-V), or the renderer
 			//!! should always unconditionally map T to real color...
 			//!!
-			//!! Wel, OK, doing a "skiprate" refresh here, so that's gonna be the condition then...
-#ifdef _SKIP_
+			//!! Well, OK, doing a "skiprate" refresh here, so that's gonna be the condition then...
+#ifdef _SKIP_SOME_STATE_UPDATES_
 			if (!--skipping_T_recalc) {
-				skipping_T_recalc = SKIP_N * 10;
+				skipping_T_recalc = _SKIP_SOME_STATE_UPDATES_ * 10;
 				body->recalc();
 //cerr << "#"<<i <<" Recalculated (T = " << body->T << ").\n";
 			}
@@ -127,23 +133,23 @@ auto last_dt = dt;
 		}
 	}
 
-#if defined(_SKIP_) && defined(_SKIP_INTERACTIONS_)
+#if defined(_SKIP_SOME_STATE_UPDATES_) && defined(_SKIP_SOME_INTERACTIONS_)
 //!!testin' testin'...
-if (SKIP_N && --skipping_n_interactions) {
+if (_SKIP_SOME_STATE_UPDATES_ && --skipping_n_interactions) {
 	accumulated_skip_dt += dt; goto end_interact_loop;
 } else {
 //	cerr << ".";
 	// Consume the time we've "collected" while skipping:
 	if (accumulated_skip_dt > 0) { dt = accumulated_skip_dt; accumulated_skip_dt = 0; }
 	// Start skipping again:
-	skipping_n_interactions = SKIP_N;
+	skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
 }
 #endif
 
 // Now do the interaction matrix:
 //!!This line below is hard-coded to globe-ndx == 0, and also ignores any other (potential) players!...
 for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 1); ++actor_obj_ndx)
-
+{
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{
 		auto& body = bodies[i];
@@ -198,12 +204,23 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				// Note: calling the hook before processing the collision!
 				// If the listener returns false, it didn't process it, so we should.
 				if (!game.collide_hook(this, body.get(), other.get(), distance)) {
-					//!!Possibly also handle this in a hook, but one of the physics.
 
-					//!! Interestingly, if this spee reset below is disabled, an orbiting moon
-					//!! that hits the surface of the Superglobe (in a flat-enough angle),
-					//!! DOES bounce off of it! :-o WHY?
-					//body->v = {0, 0}; // or bounce, or stick to the other body and take its v, or any other sort of interaction.
+					//!! Handle this in a hook:
+					//body->v = {0, 0}; // - or bounce, or stick to the other body and take its v, or any other sort of interaction...
+
+					// Interestingly, if no speed reset/change is applied at all,
+					// an orbiting moon that hits the surface of its attractor with
+					// a flat-enough angle, STILL DOES APPEAR TO BOUNCE OFF OF IT! :-O
+					// Why? -> #56
+					// a) Since the speed will not get updated while travelling inside
+					//    the attractor body (i.e. still colliding), for a shallow
+					//    "surface rub" collision, that's a pretty damn' good approx.
+					//    of a proper collision calc. anyway.
+					// b) The viewer would expect a continued bending (spiralling) of
+					//    the trajectory if not colliding, which would abruptly stop
+					//    happening on a collision, creating the illusion of a bounce.
+					// c) With a shallow angle the collision takes short enough for
+					//    this fake (non-)calculation to remain unnoticeable.
 				}
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
@@ -217,7 +234,8 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				body->v += dv;
 //cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
 			}
-		}
+		} // if interacting with itself
+
 /*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
 		// Friction:
 		Vector2f dv = friction_decel * (dt);
@@ -225,9 +243,10 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 		body->v += dv;
 !!*/		
 //cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
-	}
+	} // inner for
+} // outer for
 
-#ifdef _SKIP_INTERACTIONS_
+#ifdef _SKIP_SOME_INTERACTIONS_
 end_interact_loop:
 dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 #endif
@@ -249,22 +268,25 @@ dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 	}
 }
 
-//----------------------------------------------------------------------------
-World& World::_clone(World const& other)
-{
-	//!!Move these into some container to avoid forgetting
-	//!!some when manip. them one by one! :-/
-	//!!There might anyway be a distinction between these and
-	//!!throw-away volatile state (like caches) in the future.
-	FRICTION = other.FRICTION;
-	_interact_all = other._interact_all;
 
-	bodies.clear();
-	for (const auto& b : other.bodies) {
-		add_body(*b);
+//----------------------------------------------------------------------------
+void World::_copy(World const& other)
+{
+//cerr << "World copy requested!\n";
+	if (&other != this)
+	{
+		//!! Move these into some props container to prevent forgetting
+		//!! some, when manip. them one by one! :-/
+		//!! There might anyway be a distinction between these and
+		//!! throw-away volatile state (like caches) in the future.
+		FRICTION = other.FRICTION;
+		_interact_all = other._interact_all;
+
+		bodies.clear();
+		for (const auto& b : other.bodies) {
+			add_body(*b);
+		}
 	}
-//cerr << "World cloned.\n";
-	return *this;
 }
 
 

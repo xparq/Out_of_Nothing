@@ -143,9 +143,9 @@ public:
 //!!friend class OON_sfml;
 //!!So just allow public access for now:
 public:
-
-	float FRICTION = 0.03f;
-	bool _interact_all = false; // bodies react with each other too, or only with the player(s)
+	//!! REVISE _copy() WHENEVER CHANGING THE DATA HERE!
+	float FRICTION = 0.03f; //!!Take its default from the cfg!
+	bool _interact_all = false; // Bodies react to each other too, or only the player(s)?
 
 	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
 
@@ -159,11 +159,11 @@ public:
 //----------------------------------------------------------------------------
 public:
 	World() = default;
-	World(const World& other) { _clone(other); }
-	World& operator= (const World& other)  { return _clone(other); }
+	World(const World& other) { _copy(other); }
+	World& operator= (const World& other)  { _copy(other); return *this; }
 	//!!Say sg. about move, too! I guess they are inhibited by the above now.
 
-	World& _clone(World const& other);
+	void _copy(World const& other);
 }; // class World
 
 
