@@ -373,7 +373,7 @@ void OON::pan_x(float delta) { view.offset.x += delta; }
 void OON::pan_y(float delta) { view.offset.y += delta; }
 void OON::pan_to_entity(size_t id)
 {
-	view.offset = - entity(id).p * view.zoom;
+	view.offset = entity(id).p * view.zoom;
 }
 
 void OON::zoom(float factor)
