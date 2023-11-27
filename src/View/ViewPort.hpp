@@ -1,6 +1,9 @@
 ﻿#ifndef _DP2M97FG6MF98D59NH7_
 #define _DP2M97FG6MF98D59NH7_
 
+#include "Model/Math/Vector2.hpp"
+#include "Engine/SimAppConfig.hpp"
+
 namespace View {
 
 // View-local coord. sys.:
@@ -15,13 +18,52 @@ namespace View {
 
 struct ViewPort
 {
-	static constexpr auto CFG_DEFAULT_ZOOM = 0.0000005f; //! This one also depends very much on the physics!
+	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * scale - offset; }
+	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * scale - offset.x, y * scale - offset.y }; }
 
-	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * zoom - offset; }
-	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * zoom - offset.x, y * zoom - offset.y }; }
+	Math::Vector2f view_to_world_coord(Math::Vector2f vp) const { return (vp + offset)/scale; }
+	//!!Math::Vector2f view_to_world_coord(float x, float y) const { ... }
 
-	float zoom = CFG_DEFAULT_ZOOM;
-	Math::Vector2f offset = {0, 0}; // in World-coordinates
+	void center_to(Math::Vector2f world_pos) {
+		offset = world_pos * scale;
+	}
+
+	void pan(Math::Vector2f delta) { pan_x(delta.x); pan_y(delta.y); }
+	void pan_x(float delta)        { offset.x += delta; }
+	void pan_y(float delta)        { offset.y += delta; }
+
+	void zoom(float change_factor); // Zoom change ratio (zoom in if > 1)
+	void zoom_in  (float step) { zoom(1.f + step); }
+	void zoom_out (float step) { zoom(1.f / (1.f + step)); }
+
+	bool visible(Math::Vector2f world_pos) const {
+		auto vpos = world_to_view_coord(world_pos);
+		return visible_x(vpos.x) && visible_y(vpos.y);
+	}
+	// These are to check view(!) positions (per dim.):
+	bool visible_x(float view_pos_x) const { return view_pos_x >= _edge_x_min && view_pos_x < _edge_x_max; }
+	bool visible_y(float view_pos_y) const { return view_pos_y >= _edge_y_min && view_pos_y < _edge_y_max; }
+
+	void confine(Math::Vector2f world_pos);
+
+	// --- "API Data" ----------------------------------------------------
+	Math::Vector2f offset = {0, 0}; // Displacement of the view relative to the initial implicit origin, in View (screen) coordinates
+	Math::Vector2f focus_offset = {0, 0}; // Pos. of a focus point in the view rect (in View coord.)
+	                                      // Used as the zoom origin etc. Usually set to the player's
+	                                      // on-screen pos, or some other interesting subject...
+
+	//!! Remove these awkward defaults from here! Get them via the ctor!
+	float width  = Szim::SimAppConfig::VIEWPORT_WIDTH;
+	float height = Szim::SimAppConfig::VIEWPORT_HEIGHT;
+	float scale  = Szim::SimAppConfig::DEFAULT_ZOOM;
+
+	ViewPort();
+
+	// --- Internal Data --------------------------------------------------
+	// Calculated:
+	float _edge_x_min, _edge_x_max;
+	float _edge_y_min, _edge_y_max;
+
 }; // class ViewPort
 
 } // namespace View

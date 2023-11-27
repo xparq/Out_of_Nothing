@@ -104,7 +104,7 @@ void Renderer_SFML::create_cached_body_shape(const SimApp& game, const Model::Wo
 
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
-	auto shape = make_shared<sf::CircleShape>(body.r * game.view.zoom);
+	auto shape = make_shared<sf::CircleShape>(body.r * game.view.scale);
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
 
@@ -113,8 +113,8 @@ void Renderer_SFML::create_cached_body_shape(const SimApp& game, const Model::Wo
 }
 
 //----------------------------------------------------------------------------
-void Renderer_SFML::delete_cached_body_shape(const SimApp& game, size_t body_ndx)
-{game;
+void Renderer_SFML::delete_cached_body_shape(const SimApp& /*game*/, size_t body_ndx)
+{
 	assert(body_ndx != (size_t)-1);
 	// Require the body already been deleted from the world:
 	assert(game.entity_count() == shapes_to_draw.size() - 1);
@@ -125,5 +125,15 @@ void Renderer_SFML::delete_cached_body_shape(const SimApp& game, size_t body_ndx
 		shapes_to_change.erase(shapes_to_change.begin() + body_ndx);
 	}
 }
+
+
+//----------------------------------------------------------------------------
+void Renderer_SFML::resize_objects(float factor)
+{
+	transform_objects([factor](sf::Transformable& shape) {
+		shape.setScale(shape.getScale() * factor);
+	});
+}
+
 
 } // namespace View

@@ -49,16 +49,24 @@ public:
 	void  left_thruster_stop();
 	void right_thruster_stop();
 
-	// - View control:
+	// - View control (note: panning uses view coordinates!):
 	void pan(Math::Vector2f delta);
 	void pan_x(float delta);
 	void pan_y(float delta);
 	void pan_reset();
-	void pan_to_entity(size_t id);
-	void pan_to_player(unsigned player_id = 1) { assert(player_id == 1); return pan_to_entity(player_entity_ndx(player_id)); }
-	auto zoom_in  () { AUTO_CONST factor =    1 + CFG_ZOOM_CHANGE_RATIO;  zoom(factor); }
-	auto zoom_out () { AUTO_CONST factor = 1/(1 + CFG_ZOOM_CHANGE_RATIO); zoom(factor); }
-	void zoom(float factor);
+	void zoom(float factor); // Change the current zoom by a ratio
+	// Zoom in/out by a configured amount:
+	void zoom_in();
+	void zoom_out();
+	void zoom_reset();
+
+	void center_to_entity(size_t id);
+	void center_to_player(unsigned player_id = 1);
+	void follow_entity(size_t id);
+	void follow_player(unsigned player_id = 1);
+
+	//!! A more generic _adjust_pan() (or even _adjust_view()) should also exist, e.g.
+	//!! to bring back things on-screen, if drifted off!
 
 	//--------------------------------------------------------------------
 	// "Meta" controls (not gameplay/player, but admin/user actions)...
@@ -120,8 +128,10 @@ protected:
 	// These will be reset to +/-CFG_PAN_STEP whenever starting to pan:
 	float pan_step_x = 0, pan_step_y = 0;
 
-	size_t globe_ndx = 0; // paranoid safety init (see _setup()!)
-	size_t clack_sound = 0; // paranoid safety init (see _setup()!)
+	size_t globe_ndx = 0;   // Paranoid safety init; see init()!
+	size_t clack_sound = 0; // Paranoid safety init; see init()!
+
+	size_t focused_entity_ndx = 0; // The player entity (globe_ndx) by default
 };
 
 #endif // __OON__

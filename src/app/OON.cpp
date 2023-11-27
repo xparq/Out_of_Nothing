@@ -9,6 +9,7 @@
 	using std::cerr, std::endl;
 #include <cassert>
 
+using namespace Szim;
 using namespace Model;
 using namespace Math;
 using namespace UI;
@@ -40,6 +41,9 @@ void OON::init() // override
 		= add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
 	assert(entity_count() > player_entity_index);
 	assert(player_entity_ndx() == player_entity_index);
+
+	focused_entity_ndx = player_entity_ndx();
+
 	_setup_UI();
 
 	//!! MOVE THE SESSION LOGIC TO SimApp:
@@ -219,7 +223,7 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 	debug_hud
 		<< "\nCAMERA: "
 		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
-		<< "\n  ZOOM: " << &view.zoom
+		<< "\n  ZOOM: " << &view.scale
 	;
 /*	debug_hud
 		<< "\n"
@@ -263,29 +267,32 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 	//------------------------------------------------------------------------
 	auto& help_hud = ui_gebi(HelpPanel);
 	help_hud
-        //	<< "---------- Controls:\n"
-		<< "Arrows:    Thrust\n"
-		<< "Space:     \"Exhaust\" trail\n"
-		<< "Ins:       Add 100 objects (+Shift: only 1)\n"
-		<< "Del:       Remove 100 objects (+Shift: only 1)\n"
-        //	<< "---------- Metaphysics:\n"
-		<< "Tab:       Toggle object interactions\n"
-		<< "F:         Decrease (+Shift: incr.) friction\n"
-        //	<< "C:         chg. collision mode: pass/stick/bounce\n"
-		<< "R:         Reverse time\n"
-		<< "T:         Time accel. (+Shift: decel.)\n"
-		<< "X:         Toggle fixed Δt for model updates\n"
-		<< "Pause/h:   Halt the physics (time)\n"
-		<< "Enter:     Step 1 time slice forward\n"
-		<< "Backspace: Step 1 time slice backward\n"
-		<< "---------- View:\n"
-		<< "+/- or mouse wheel: Zoom\n"
-		<< "A W S D:   Pan\n"
-		<< "Shift:     Auto-scroll to follow player movement\n"
-		<< "Scroll Lock: Toggle player-locked auto-scroll\n"
-		<< "Home:      Home in on the player globe\n"
-		<< "Ctrl+Home: Reset view to Home pos. (not the zoom)\n"
-		<< "Ctrl+Alt:  Leave movment trails while holding\n"
+        //	<< "----------- Controls:\n"
+		<< "Arrows:     Thrust\n"
+		<< "Space:      \"Exhaust\" sprinkle\n"
+		<< "Ins:        Spawn 100 objects (+Shift: only 1)\n"
+		<< "Del:        Remove 100 objects (+Shift: only 1)\n"
+        //	<< "----------- Metaphysics:\n"
+		<< "Tab:        Toggle object interactions\n"
+		<< "F:          Decrease (+Shift: incr.) friction\n"
+        //	<< "C:          chg. collision mode: pass/stick/bounce\n"
+		<< "------------ Time Control:\n"
+		<< "Pause or H: Toggle halting the physics (time)\n"
+		<< "Enter:      Step 1 time slice forward\n"
+		<< "Backspace:  Step 1 time slice backward\n"
+		<< "R:          Reverse time\n"
+		<< "T:          Time accel. (+Shift: decel.)\n"
+		<< "X:          Toggle fixed Δt for model updates\n"
+		<< "------------ View:\n"
+		<< "A W S D:     Pan\n"
+		<< "+/- or Mouse Wheel: Zoom\n"
+		<< "Shift:       Pin scroll to player (or other focused entity)\n"
+		<< "Scroll Lock: Toggle locked auto-scroll\n"
+		<< "Left Click:  Set focus point (i.e. zoom center)\n"
+		<< "Sh. + Click: Set focus point & pan to player\n"
+		<< "Home:        Home in on the player\n"
+		<< "Ctrl+Home:   Reset view to Home pos. (not the zoom)\n"
+		<< "Ctrl+Alt:    Leave movement trails while holding\n"
 		<< "---------- Admin:\n"
 		<< "F1-F4:     Save world snapshots (+Shift: load)\n"
 		<< "M:         Mute/unmute music, N: sound fx\n"
@@ -367,21 +374,83 @@ bool OON::_ctrl_update_thrusters()
 }
 
 //----------------------------------------------------------------------------
-void OON::pan_reset()  { view.offset = {0, 0}; }
-void OON::pan(Vector2f delta) { pan_x(delta.x); pan_y(delta.y); }
-void OON::pan_x(float delta) { view.offset.x += delta; }
-void OON::pan_y(float delta) { view.offset.y += delta; }
-void OON::pan_to_entity(size_t id)
+void OON::pan_reset()
 {
-	view.offset = entity(id).p * view.zoom;
+	view.offset = {0, 0};
+
+	// Since the player entity may have moved out of view, stop focusing on it:
+	//!!
+	//!!?? What is the rule for Scroll Lock in this case?
+	//!!The key should be turned off!...
+	//!!
+	focused_entity_ndx = ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
+void OON::pan(Vector2f delta) { view.pan_x(delta.x); view.pan_y(delta.y); }
+void OON::pan_x(float delta)  { view.pan_x(delta); }
+void OON::pan_y(float delta)  { view.pan_y(delta); }
+
+void OON::center_to_entity(size_t id)
+{
+	view.offset = entity(id).p * view.scale;
+	view.focus_offset = view.offset; //!!??
+}
+
+void OON::center_to_player(unsigned player_id)
+{
+	assert(player_id == 1);
+	focused_entity_ndx = player_entity_ndx(player_id);
+	center_to_entity(focused_entity_ndx);
+}
+
+
+void OON::follow_entity(size_t id)
+{
+	auto vpos = view.world_to_view_coord(entity(id).p);
+	view.offset += vpos - view.focus_offset;
+}
+
+void OON::follow_player(unsigned player_id)
+{
+	assert(player_id == 1);
+	auto new_player_vpos = view.world_to_view_coord(player_entity(player_id).p);
+	view.offset += new_player_vpos - view.focus_offset;
+}
+
+
+void OON::zoom_reset() { view.scale = SimAppConfig::DEFAULT_ZOOM; } //!!...
 void OON::zoom(float factor)
 {
 //!!pre_zoom_hook(factor);
-	view.zoom *= factor;
+	view.zoom(factor);
 	post_zoom_hook(factor);
 }
+// These can't call view.zoom_in/out directly, because we need to trigger the zoom_hook above!...:
+void OON::zoom_in () { zoom(1.f + CFG_ZOOM_CHANGE_RATIO); }
+void OON::zoom_out() { zoom(1.f / (1.f + CFG_ZOOM_CHANGE_RATIO)); }
+
+
+/*!!
+void OON::zoom(float factor)
+{
+//auto viewpos = view.world_to_view_coord(player_entity().p);
+//cerr << "- focus vs player diff: " << (viewpos - view.focus_offset).x << ", " << (viewpos - view.focus_offset).y << '\n';
+
+//!!pre_zoom_hook(factor);
+	// Compensate for zoom displacement when the player object is not centered
+	auto v = view.world_to_view_coord(view.offset);
+	pan((view.focus_offset - v) * view.zoom/factor);
+//	auto viewpos = view.focus_offset + view.offset;
+//	pan(viewpos - viewpos/factor);
+
+//	auto vpos = view.world_to_view_coord(view.offset);
+//	pan(view.focus_offset/factor);
+
+	view.zoom *= factor;
+
+	post_zoom_hook(factor);
+}
+!!*/
 
 
 bool OON::_ctrl_update_pan()
@@ -480,7 +549,7 @@ void OON::remove_body()
 {
 	auto entities = entity_count();
 	if (entities < 2) { // Leave the player "superglobe", so not just checking for empty()!
-cerr <<	"No more \"free\" items to delete.\n";
+//cerr << "No more \"free\" items to delete.\n";
 		return;
 	}
 

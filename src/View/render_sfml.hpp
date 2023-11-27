@@ -52,12 +52,7 @@ public:
 
 // Internals
 //!!protected: //!!STILL USED DIRECTLY BY THE GAME CONTROLLER CLASS! :-/
-	void resize_objects(float factor)
-	{
-		transform_objects([factor](sf::Transformable& shape) {
-				shape.setScale(shape.getScale() * factor);
-		});
-	}
+	void resize_objects(float factor);
 
 	void transform_objects(const auto& op) // c++20 auto lambda ref (but why the `const` required by MSVC?); https://stackoverflow.com/a/67718838/1479945
 	// op = [](Transformable& shape);

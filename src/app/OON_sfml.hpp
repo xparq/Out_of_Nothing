@@ -43,7 +43,7 @@ private:
 	void onResize() override;
 
 	// Game control
-	virtual void post_zoom_hook(float factor) override;
+	virtual void post_zoom_hook(float factor) override; // Resize cached shapes
 
 
 //------------------------------------------------------------------------
@@ -56,13 +56,6 @@ protected:
 	void updates_for_next_frame() override;
 	void draw() override;
 //!!	void onResize() override;
-
-	// Misc...
-	// Compensate for zoom displacement when the player object is not centered;
-	// called by post_zoom_hook
-	void _adjust_pan_after_zoom(float factor); //!! A generic _adjust_pan(), and even _adjust_view() should exist, too, at least for consistency!
-		//!! This is not SFML-specific, BTW, but the post_zoom_hook override already is (for using the SFML-dependent renderer),
-		//!! so we're stuck here with this, due to that...
 
 //------------------------------------------------------------------------
 // C++ mechanics...

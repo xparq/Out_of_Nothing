@@ -280,13 +280,22 @@ void OON_sfml::updates_for_next_frame()
 	//!
 	//! NOTE: THIS MUST COME AFTER RECALCULATING THE NEW STATE!
 	//!
-	auto _locked_tmp = false;
+	auto _focus_locked_ = false;
 	if (keystate(SCROLL_LOCKED) || keystate(SHIFT) || ((sfw::CheckBox*)gui.recall("Pan override"))->get()) {
-		pan_to_player();
-		_locked_tmp = true;
+		// Pan follows player (with locked focus point):
+		_focus_locked_ = true;
+//		follow_player(); //!!
+		if (focused_entity_ndx != ~0u)
+			follow_entity(focused_entity_ndx);
+	} else {
+		// Focus (point) follows player (or other selected entity):
+		if (focused_entity_ndx != ~0u) {
+			view.focus_offset = view.world_to_view_coord(entity(focused_entity_ndx).p);
+			view.confine(entity(focused_entity_ndx).p);
+		}
 	}
-	// Update the pan lock indicator:
-	((sfw::CheckBox*)gui.recall(" - pan locked"))->set(_locked_tmp);
+	// Update the focus lock indicator:
+	((sfw::CheckBox*)gui.recall(" - pan locked"))->set(_focus_locked_);
 }
 
 //----------------------------------------------------------------------------
@@ -399,10 +408,11 @@ try {
 				case sf::Keyboard::F4:  keystate(SHIFT) ? quick_load_snapshot(4) : quick_save_snapshot(4); break;
 
 				case sf::Keyboard::Home:
-					if (keystate(CTRL))
+					if (keystate(CTRL)) {
 						pan_reset(); //!!Should be "upgraded" to "Camera/view reset" -- also resetting the zoom?
-					else
-						pan_to_player();
+					} else {
+						center_to_player();
+					}
 					break;
 
 				case sf::Keyboard::F12: toggle_huds();
@@ -456,6 +466,14 @@ try {
 			case sf::Event::MouseWheelScrolled:
 				if (event.mouseWheelScroll.delta > 0) zoom_in(); else zoom_out();
 //				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
+				break;
+
+			case sf::Event::MouseButtonPressed:
+				view.focus_offset = {event.mouseButton.x - view.width/2,
+				                     event.mouseButton.y - view.height/2};
+				focused_entity_ndx = keystate(SHIFT)
+					? player_entity_ndx()
+					: ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
 				break;
 
 			case sf::Event::LostFocus:
@@ -533,17 +551,12 @@ void OON_sfml::remove_body(size_t ndx)
 void OON_sfml::post_zoom_hook(float factor)
 {
 	renderer.resize_objects(factor);
-	_adjust_pan_after_zoom(factor);
 }
 
 //----------------------------------------------------------------------------
+/*!!
 void OON_sfml::_adjust_pan_after_zoom(float factor)
 {
-	auto viewpos = view.world_to_view_coord(player_entity().p) + view.offset;
-	pan(viewpos - viewpos/factor);
-}
-
-/*
 	// If the new zoom level would put the player object out of view, reposition the view so that
 	// it would keep being visible; also roughly at the same view-offset as before!
 
@@ -560,7 +573,8 @@ cerr << "R-viewsize: " << view.zoom * plm->r
 		pan_to_entity(player_entity_ndx(), vpos * CFG_ZOOM_CHANGE_RATIO); // keep the on-screen pos!
 //		zoom_out(); //!! Shouldn't be an infinite zoom loop (even if moving way too fast, I think)
 	}
-*/
+}
+!!*/
 
 
 //----------------------------------------------------------------------------
