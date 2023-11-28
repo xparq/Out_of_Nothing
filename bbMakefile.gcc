@@ -156,6 +156,8 @@ CFLAGS   = -c $(cflags_crt_linkmode_with_debug) $(cflags_debug)
 # C[PLUS]_INCLUDE_PATH is expected to have been setup already!
 # Add a -I also for including the commit hash file:
 CFLAGS  += -I$(objdir) -I$(outdir)
+# Add a -I also for 'extern' (perhaps redundantly, as the env should have it, but it's so generic):
+CFLAGS  += -Iextern
 CFLAGS  += -Wall
 # -pedantic -Wall -Wextra -Wshadow -Wwrite-strings
 CFLAGS  += $(CFLAGS_)

@@ -22,13 +22,15 @@ export SZ_SFML_LIBROOT=${SZ_SFML_LIBROOT:-${SZ_PRJDIR}/extern/sfml/msvc}
 export SZ_SRC_SUBDIR=src
 export SZ_OUT_SUBDIR=build.out
 export SZ_IFC_SUBDIR=ifc
-export SZ_RUN_SUBDIR=test
+export SZ_TEST_SUBDIR=test
+export SZ_RUN_SUBDIR=${SZ_TEST_SUBDIR}
 export SZ_ASSET_SUBDIR=asset
 export SZ_RELEASE_SUBDIR=release
 
 export SZ_SRC_DIR=${SZ_PRJDIR}/${SZ_SRC_SUBDIR}
 export SZ_OUT_DIR=${SZ_PRJDIR}/${SZ_OUT_SUBDIR}
-export SZ_RUN_DIR=${SZ_PRJDIR}/${SZ_RUN_SUBDIR}
+export SZ_TEST_DIR=${SZ_PRJDIR}/${SZ_TEST_SUBDIR}
+export SZ_RUN_DIR=${SZ_TEST_DIR}
 export SZ_ASSET_DIR=${SZ_PRJDIR}/${SZ_ASSET_SUBDIR}
 export SZ_TMP_DIR=${SZ_PRJDIR}/tmp
 export SZ_RELEASE_DIR=${SZ_TMP_DIR}/${SZ_RELEASE_SUBDIR}
@@ -51,6 +53,6 @@ if [ ! -d "${SZ_OUT_DIR}" ]; then
 fi
 
 # Note the ; separators, which would fail with GCC on everything, but Windows (MinGW-like?)...
-export INCLUDE="${SZ_SRC_DIR};extern/sfw/include;${SZ_SFML_LIBROOT}/include;${SZ_PRJDIR};${INCLUDE}"
+export INCLUDE="${SZ_SRC_DIR};extern;extern/sfw/include;${SZ_SFML_LIBROOT}/include;${SZ_PRJDIR};${INCLUDE}"
 export LIB="${SZ_SFML_LIBROOT}/lib;${LIB}"
 export PATH="${SZ_PRJDIR}/tooling;${SZ_SFML_LIBROOT}/bin;${PATH}"

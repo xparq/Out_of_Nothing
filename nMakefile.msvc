@@ -126,6 +126,9 @@ CFLAGS=$(CFLAGS) -DSFML_STATIC
 CXXFLAGS=-std:c++latest
 # Add a -I also for including the commit hash file:
 CFLAGS=$(CFLAGS) -I$(out_dir)
+# Add a -I also for 'extern' (perhaps redundantly, as the env should have it, but it's so generic):
+CFLAGS=$(CFLAGS) -Iextern
+
 # Note: C++ comp. commands would use $(CFLAGS), too! (!!Which may be stupid, and change later...!!)
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
