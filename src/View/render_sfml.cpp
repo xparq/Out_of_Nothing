@@ -113,7 +113,7 @@ void Renderer_SFML::create_cached_body_shape(const SimApp& game, const Model::Wo
 }
 
 //----------------------------------------------------------------------------
-void Renderer_SFML::delete_cached_body_shape(const SimApp& /*game*/, size_t body_ndx)
+void Renderer_SFML::delete_cached_body_shape([[maybe_unused]] const SimApp& game, size_t body_ndx)
 {
 	assert(body_ndx != (size_t)-1);
 	// Require the body already been deleted from the world:
