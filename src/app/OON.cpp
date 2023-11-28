@@ -394,7 +394,7 @@ void OON::pan_y(float delta)  { view.pan_y(delta); }
 void OON::center_to_entity(size_t id)
 {
 	view.offset = entity(id).p * view.scale;
-	view.focus_offset = view.offset; //!!??
+	view.focus_offset = {0, 0};
 }
 
 void OON::center_to_player(unsigned player_id)
