@@ -13,9 +13,6 @@ class OON : public Szim::SimApp
 // Config/Setup...
 //----------------------------------------------------------------------------
 protected:
-	AUTO_CONST CFG_PAN_STEP = 5; // pixel
-	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.25f; // 25%
-
 	void init() override;
 	void done() override;
 
@@ -54,12 +51,12 @@ public:
 	void pan_x(float delta);
 	void pan_y(float delta);
 	void pan_reset();
-	void zoom(float factor); // Change the current zoom by a ratio
-	bool scroll_locked();    // Auto-panning via pinned focus point/obj.
-	// Zoom in/out by a configured amount:
-	void zoom_in();
-	void zoom_out();
-	void zoom_reset();
+	void zoom(float factor); // Multiply the current scaling with 'factor'
+	bool scroll_locked();    // Auto-panning via pinned focus point or object
+	// Change the zoom ratio by 'amount' (e.g. 5%):
+	void zoom_in(float amount);
+	void zoom_out(float amount);
+	void zoom_reset(float factor = 0); // If !0, also change the original level by 'factor'!
 
 	void center_to_entity(size_t id);
 	void center_to_player(unsigned player_id = 1);
@@ -104,9 +101,9 @@ public:
 
 	bool poll_and_process_controls() override; // true if there was any input
 
-	bool view_control(); //!! override;
-		// Returns true if view adjustments have been requested/performed
-		// This is irrespective of modelling, and is also enabled while paused
+	bool view_control(float mousewheel_delta = 0); //!! override;
+		// Returns true if view adjustments have been requested/performed.
+		// Note: this is irrespective of modelling, and is also enabled while paused.
 
 	bool _ctrl_update_thrusters(); // true if any engine is firing
 
@@ -129,8 +126,9 @@ public:
 // Data / Internals...
 //----------------------------------------------------------------------------
 protected:
-	// These will be reset to +/-CFG_PAN_STEP whenever starting to pan:
+	// See view_control() for these:
 	float pan_step_x = 0, pan_step_y = 0;
+	float zoom_step = 0;
 
 	size_t globe_ndx = 0;   // Paranoid safety init; see init()!
 	size_t clack_sound = 0; // Paranoid safety init; see init()!

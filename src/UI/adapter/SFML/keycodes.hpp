@@ -8,6 +8,8 @@
 //#error windows.h has not been included?!... (Only Windows is supported yet!)
 //#endif
 
+#include "extern/iprof/iprof.hpp" //!! Don't leave this here forever!...
+
 namespace UI {
 
 // Call this once, somewhere in the (beginning of the) app's SFML event loop!
@@ -17,8 +19,8 @@ void update_keys(const sf::Event& sfml_event);
 // SFML -> SimApp virt. keycode translation
 constexpr auto key_from_SFML(auto sfml_keycode);
 
-//!! Simple, but FRAGILE map to SFML keys -- SFML codes can change at any time
-//!! (especially as they haven't released a stable v3 API yet)!
+//!! Simple, but FRAGILE map from SFML keys to ours -- SFML codes can change at any time!
+//!! (Especially as they haven't released a stable v3 API yet!)
 constinit enum VKEY _SFML_KBD_XLAT[] = {
 	VKEY::A, VKEY::B, VKEY::C, VKEY::D, VKEY::E, VKEY::F, VKEY::G, VKEY::H,
 		VKEY::I, VKEY::J, VKEY::K, VKEY::L, VKEY::M, VKEY::N, VKEY::O, VKEY::P,
@@ -69,9 +71,23 @@ inline constexpr auto UI::key_from_SFML(auto sfml_keycode)
 	return _SFML_KBD_XLAT[sfml_keycode];
 }
 
+
 inline void UI::update_keys(const sf::Event& sfml_event)
+//!!
+//!! If GetKeyState is really a "real" kernel call (as opposed to just a DLL function),
+//!! then it's probably horrendously expensive to call en masse, like no tomorrow! :-o
+//!!
 // (No need for a separate transl. unit for this, as it's supposed to be called from only one.)
 {
+//!!??IPROF_FUNC; -> #335
+
+	//!!?? How to do these with SFML?
+	_kbd_state[VKEY::NUMPAD_ENTER]  = (unsigned)GetKeyState(VK_RETURN) & 0xff80;
+	_kbd_state[VKEY::NUMPAD_PLUS]   = (unsigned)GetKeyState(VK_ADD) & 0xff80;
+	_kbd_state[VKEY::NUMPAD_MINUS]  = (unsigned)GetKeyState(VK_SUBTRACT) & 0xff80;
+	_kbd_state[VKEY::NUMPAD_0]      = (unsigned)GetKeyState(VK_NUMPAD0) & 0xff80;
+	_kbd_state[VKEY::NUMPAD_DOT]    = (unsigned)GetKeyState(VK_DECIMAL) & 0xff80;
+
 	switch (sfml_event.type)
 	{
 	case sf::Event::KeyReleased:

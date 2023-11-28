@@ -75,7 +75,11 @@ enum VKEY {
 	a = 97, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
 	BRACE_LEFT, PIPE, BRACE_RIGHT, TILDE,
 	DELETE = 127, 
-	F1 = 129, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16,
+	F1 = 128, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, // F16 = 143
+
+	// Keypad:
+	NUMPAD_ENTER = 144, NUMPAD_PLUS, NUMPAD_MINUS, NUMPAD_MULTIPLY, NUMPAD_DIVIDE, NUMPAD_DOT,
+	NUMPAD_0, NUMPAD_1, NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6, NUMPAD_7, NUMPAD_8, NUMPAD_9, // NUMPAD_9 = 159
 
 	// Meta states:
 	SHIFT = 160, CTRL, ALT,

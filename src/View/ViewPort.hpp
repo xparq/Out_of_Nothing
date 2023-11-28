@@ -18,6 +18,16 @@ namespace View {
 
 struct ViewPort
 {
+	struct Config
+	{
+		float base_scale = 1; // Depends on the physics, so pretty much always set it!
+	};
+
+	// -------------------------------------------------------------------
+	ViewPort(Config cfg);
+	void reset();
+
+	// -------------------------------------------------------------------
 	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * scale - offset; }
 	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * scale - offset.x, y * scale - offset.y }; }
 
@@ -49,7 +59,10 @@ struct ViewPort
 
 	void confine(Math::Vector2f world_pos);
 
+
 	// --- "API Data" ----------------------------------------------------
+	Config cfg;
+
 	Math::Vector2f offset = {0, 0}; // Displacement of the view relative to the initial implicit origin, in View (screen) coordinates
 	Math::Vector2f focus_offset = {0, 0}; // Pos. of a focus point in the view rect (in View coord.)
 	                                      // Used as the zoom origin etc. Usually set to the player's
@@ -59,8 +72,6 @@ struct ViewPort
 	float width  = Szim::SimAppConfig::VIEWPORT_WIDTH;
 	float height = Szim::SimAppConfig::VIEWPORT_HEIGHT;
 	float scale  = Szim::SimAppConfig::DEFAULT_ZOOM;
-
-	ViewPort();
 
 	// --- Internal Data --------------------------------------------------
 	// Calculated:

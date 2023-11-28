@@ -86,7 +86,7 @@ void OON::init() // override
 			world().FRICTION = f;
 		}; if (!args("zoom").empty()) { //!! Should be done by SimApp, and then the audio init
 			float factor = stof(args("zoom"));
-			if (factor) zoom(factor);
+			if (factor) zoom_reset(factor);
 		}
 	} catch(...) {
 		cerr << __FUNCTION__ ": ERROR processing/applying some cmdline args!\n";
@@ -295,7 +295,7 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 		<< "Left Click:  Set focused obj (or empty point as zoom center)\n"
 		<< "             +Shift: Set focus & pin player or clicked obj\n"
 		<< "Home:        Home in on the player\n"
-		<< "Ctrl+Home:   Reset view to Home pos. (not the zoom)\n"
+		<< "Ctrl+Home:   Reset view (to Home position & default zoom)\n"
 		<< "Ctrl+Alt:    Leave movement trails while holding\n"
 		<< "---------- Admin:\n"
 		<< "F1-F4:     Save world snapshots (+Shift: load)\n"
@@ -377,6 +377,8 @@ bool OON::_ctrl_update_thrusters()
 //----------------------------------------------------------------------------
 void OON::pan_reset()
 {
+	pan_step_x = pan_step_y = 0;
+
 	view.offset = {0, 0};
 
 	// Since the player entity may have moved out of view, stop focusing on it:
@@ -424,16 +426,21 @@ bool OON::scroll_locked()
 		|| ((sfw::CheckBox*)gui.recall("Pan override"))->get();
 }
 
-void OON::zoom_reset() { view.scale = SimAppConfig::DEFAULT_ZOOM; } //!!...
+void OON::zoom_reset(float factor/* = 0*/)
+{
+	if (factor) view.cfg.base_scale *= factor;
+	zoom(view.cfg.base_scale / view.scale);
+}
+
 void OON::zoom(float factor)
 {
-//!!pre_zoom_hook(factor);
+	//!!pre_zoom_hook(factor);
 	view.zoom(factor);
 	post_zoom_hook(factor);
 }
-// These can't call view.zoom_in/out directly, because we need to trigger the zoom_hook above!...:
-void OON::zoom_in () { zoom(1.f + CFG_ZOOM_CHANGE_RATIO); }
-void OON::zoom_out() { zoom(1.f / (1.f + CFG_ZOOM_CHANGE_RATIO)); }
+// These can't call view.zoom_in/out directly, because we need to trigger our zoom_hook!...
+void OON::zoom_in (float amount) { zoom(1.f + amount); }
+void OON::zoom_out(float amount) { zoom(1.f / (1.f + amount)); }
 
 
 /*!!
@@ -456,23 +463,52 @@ void OON::zoom(float factor)
 
 	post_zoom_hook(factor);
 }
+
+//----------------------------------------------------------------------------
+void OON_sfml::_adjust_pan_after_zoom(float factor)
+{
+	// If the new zoom level would put the player object out of view, reposition the view so that
+	// it would keep being visible; also roughly at the same view-offset as before!
+
+	auto visible_R = player_entity().r * view.zoom; //!! Not a terribly robust method to get that size...
+
+	if (abs(vpos.x) > cfg.VIEWPORT_WIDTH/2  - visible_R ||
+	    abs(vpos.y) > cfg.VIEWPORT_HEIGHT/2 - visible_R)
+	{
+cerr << "R-viewsize: " << view.zoom * plm->r
+	 << " abs(vpos.x): " << abs(vpos.x) << ", "
+     << " abs(vpos.u): " << abs(vpos.y) << endl;
+
+		pan_to_player(offset);
+		pan_to_entity(player_entity_ndx(), vpos * CFG_ZOOM_CHANGE_RATIO); // keep the on-screen pos!
+//		zoom_out(); //!! Shouldn't be an infinite zoom loop (even if moving way too fast, I think)
+	}
+}
 !!*/
 
-
-bool OON::view_control() //!!override
+//----------------------------------------------------------------------------
+bool OON::view_control(float mousewheel_delta) //!!override
 {
+	//!!
+	//!! NOT YET FPS-NORMALIZED!...
+	//!!
+	AUTO_CONST CFG_PAN_STEP = 5; // pixel
+	AUTO_CONST CFG_PAN_AUTOCHANGE_STEP = 1; // +/- pixel
+	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.08f; // 8%
+	AUTO_CONST CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = 0.2f; // 20%
+	AUTO_CONST CFG_ZOOM_AUTOCHANGE_STEP = 0.007f; // +/- ratio delta
+
 	auto action = false;
 
-	if (keystate(W)) { action = true; pan_step_y = -CFG_PAN_STEP; }
-	if (keystate(S)) { action = true; pan_step_y =  CFG_PAN_STEP; }
-	if (keystate(A)) { action = true; pan_step_x = -CFG_PAN_STEP; }
-	if (keystate(D)) { action = true; pan_step_x =  CFG_PAN_STEP; }
-
+	// Panning...
+	if (keystate(W)) { action = true; --pan_step_y; } // = !pan_step_y ? -CFG_PAN_STEP : pan_step_y - 1; } // approach 2
+	if (keystate(S)) { action = true; ++pan_step_y; } // = !pan_step_y ?  CFG_PAN_STEP : pan_step_y + 1; }
+	if (keystate(A)) { action = true; --pan_step_x; } // = -CFG_PAN_STEP; } // approach 1
+	if (keystate(D)) { action = true; ++pan_step_x; } // =  CFG_PAN_STEP; }
 	if (!action) {
-		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x);
-		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y);
+		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x) * CFG_PAN_AUTOCHANGE_STEP;
+		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y) * CFG_PAN_AUTOCHANGE_STEP;
 	}
-
 	if (!scroll_locked()) { // Shift, Scroll Lock etc.
 		if (pan_step_x) pan_x(pan_step_x);
 		if (pan_step_y) pan_y(pan_step_y);
@@ -481,16 +517,25 @@ bool OON::view_control() //!!override
 		if (pan_step_y) view.focus_offset.y -= pan_step_y;
 	}
 
+	// Zooming... (MouseWheel takes precedence!)
+	if      (mousewheel_delta > 0)  { action = true; zoom_step =  CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
+	else if (mousewheel_delta < 0)  { action = true; zoom_step = -CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
+	else if (keystate(NUMPAD_PLUS)) { action = true; zoom_step +=
+	                                                 zoom_step == 0 ? CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP; }
+	else if (keystate(NUMPAD_MINUS)){ action = true; zoom_step -=
+	                                                 zoom_step == 0 ? CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP; }
+	if (!action) {
+		if (zoom_step) zoom_step -= sz::sign(zoom_step) * CFG_ZOOM_AUTOCHANGE_STEP;
+		if (abs(zoom_step) < CFG_ZOOM_AUTOCHANGE_STEP) zoom_step = 0;
+	}
+	if (zoom_step) {
+		if (zoom_step > 0) zoom_in(zoom_step);
+		else               zoom_out(-zoom_step);
+	}
+
 	return action;
 }
 
-/*
-bool OON::_ctrl_driving()
-{
-	return ((keystate(UP) || keystate(UI::DOWN) || keystate(LEFT) || keystate(RIGHT) ||
-			 keystate(W) || keystate(UI::S) || keystate(A) || keystate(D));
-}
-*/
 
 //----------------------------------------------------------------------------
 //!!Move chores like this to Szim API!

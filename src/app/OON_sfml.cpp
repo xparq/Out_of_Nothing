@@ -430,7 +430,8 @@ try {
 
 				case sf::Keyboard::Home:
 					if (keystate(CTRL)) {
-						pan_reset(); //!!Should be "upgraded" to "Camera/view reset" -- also resetting the zoom?
+						pan_reset(); //!!Should be "upgraded" to "Camera/view reset"
+						zoom_reset();
 					} else {
 						center_to_player();
 					}
@@ -457,8 +458,6 @@ try {
 				switch (static_cast<char>(event.text.unicode)) {
 				case 'f': world().FRICTION -= 0.01f; break;
 				case 'F': world().FRICTION += 0.01f; break;
-				case '+': zoom_in(); break;
-				case '-': zoom_out(); break;
 				case 'r': time.reversed = !time.reversed; break;
 				case 't': time.scale *= 2.0f; break;
 				case 'T': time.scale /= 2.0f; break;
@@ -487,14 +486,14 @@ try {
 			case sf::Event::MouseWheelScrolled:
 			{
 				//!! As a quick workaround for #334, we just check the GUI rect here
-				//!! directly and pass the click if it belongs there...
+				//!! directly and pass the event if it belongs there...
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
 //cerr << "-- mouse: " << mouse.x <<", "<< mouse.y << "\n";
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				if (event.mouseWheelScroll.delta > 0) zoom_in(); else zoom_out();
-//				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
+				view_control(event.mouseWheelScroll.delta); //! Apparently always 1 or -1...
+//renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4;
 				break;
 			}
 
@@ -503,7 +502,7 @@ try {
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
 //cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
 				//!! As a quick workaround for #334, we just check the GUI rect here
-				//!! directly and pass the click if it belongs there...
+				//!! directly and pass the event if it belongs there...
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
@@ -614,30 +613,6 @@ void OON_sfml::post_zoom_hook(float factor)
 {
 	renderer.resize_objects(factor);
 }
-
-//----------------------------------------------------------------------------
-/*!!
-void OON_sfml::_adjust_pan_after_zoom(float factor)
-{
-	// If the new zoom level would put the player object out of view, reposition the view so that
-	// it would keep being visible; also roughly at the same view-offset as before!
-
-	auto visible_R = player_entity().r * view.zoom; //!! Not a terribly robust method to get that size...
-
-	if (abs(vpos.x) > cfg.VIEWPORT_WIDTH/2  - visible_R ||
-	    abs(vpos.y) > cfg.VIEWPORT_HEIGHT/2 - visible_R)
-	{
-cerr << "R-viewsize: " << view.zoom * plm->r
-	 << " abs(vpos.x): " << abs(vpos.x) << ", "
-     << " abs(vpos.u): " << abs(vpos.y) << endl;
-
-		pan_to_player(offset);
-		pan_to_entity(player_entity_ndx(), vpos * CFG_ZOOM_CHANGE_RATIO); // keep the on-screen pos!
-//		zoom_out(); //!! Shouldn't be an infinite zoom loop (even if moving way too fast, I think)
-	}
-}
-!!*/
-
 
 //----------------------------------------------------------------------------
 //!!Sink this into the UI!

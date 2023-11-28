@@ -8,9 +8,18 @@
 using namespace Szim;
 using namespace View;
 
-ViewPort::ViewPort()
+ViewPort::ViewPort(Config cfg) :
+	cfg(cfg)
 {
+	reset();
+}
+
+void ViewPort::reset()
+{
+	scale = cfg.base_scale;
+
 	//!! These might need to be adjusted dynamically though!
+	//!! Also, use .cfg!!! :-o
 	_edge_x_min = -width/2;
 	_edge_x_max =  width/2;
 	_edge_y_min = -height/2;
