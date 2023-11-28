@@ -137,6 +137,12 @@ void OON_sfml::update_thread_main_loop()
 			}
 #ifndef DISABLE_THREADS
 			proc_lock.unlock();
+			
+			if (paused()) {
+				sf::sleep(sf::milliseconds(
+					cfg.get("sim/timing/paused_sleep_time_per_cycle", 40) // #330
+				)); //!! or 100 for 10 FPS... But see #217! :-o
+			}
 #endif
 			break;
 		default:
@@ -224,7 +230,10 @@ void OON_sfml::updates_for_next_frame()
 	// Drop the frame rate and sleep more if paused
 	if (paused()) {
 		if (!timestepping) { // Are we single-stepping?
-			sf::sleep(sf::milliseconds(100)); // 10 FPS... !!But see #217! :-o
+//!!#330:
+//			sf::sleep(sf::milliseconds(
+//				cfg.get("sim/timing/paused_sleep_time_per_cycle", 40) // #330
+//			)); // 10 FPS... !!But see #217! :-o
 			return;
 		}
 	}
@@ -515,15 +524,27 @@ cerr << "- Nothing there, focusing on the deep void...\n";
 #else
 //cerr << "- freeing the proc. lock...\n";
 			noproc_lock.unlock();
+
+			//! Better to sleep here, too (not just outside this inner loop, while
+			//! idling), counterintuitively *especially* while jamming, in order to
+			//! give the other parts some unlocked time!...
+
+			// There still are things in the queue, but they also need to be processed,
+			// so sleep "some"... Should sleep all the paused time chunk here to even
+			// out that sleepy responsiveness (I know that only from testing!)...
+			//!! Should be adaptive!!
+			sf::sleep(sf::milliseconds(
+				paused() ? cfg.get("sim/timing/paused_sleep_time_per_cycle", 50) // #330
+				         : 5)); //!! -> #217
 		} // for - events in the queue
 
 		// The event queue has been emptied, so in this thread (of input processing)
 		// we're idling now (while updates are happening elsewhere), so:
-		sf::sleep(sf::milliseconds(
-			paused() ? 100 : 10)); // SFML does (used to do) the same amount for waitEvent
+		if (!paused()) sf::sleep(sf::milliseconds(10)); // SFML does (used to do) the same amount for waitEvent
 			// This is only relevant when threading.
 			// The non-threaded main loop sleeps via backend.hci.fps_throttling.
 			//!!?? Explain how this is related to sleep-while-paused!
+
 #endif			
 	} // while - still running
 
