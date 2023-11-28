@@ -24,6 +24,9 @@ struct ViewPort
 	Math::Vector2f view_to_world_coord(Math::Vector2f vp) const { return (vp + offset)/scale; }
 	//!!Math::Vector2f view_to_world_coord(float x, float y) const { ... }
 
+//!! This would require properly defining a screen coords first via the ctor! :-o
+	Math::Vector2f screen_to_view_coord(int x, int y) const { return {(float)x + _edge_x_min, (float)y + _edge_y_min}; }
+
 	void center_to(Math::Vector2f world_pos) {
 		offset = world_pos * scale;
 	}

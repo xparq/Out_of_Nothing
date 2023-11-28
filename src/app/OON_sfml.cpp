@@ -282,13 +282,12 @@ void OON_sfml::updates_for_next_frame()
 	//!
 	auto _focus_locked_ = false;
 	if (keystate(SCROLL_LOCKED) || keystate(SHIFT) || ((sfw::CheckBox*)gui.recall("Pan override"))->get()) {
-		// Pan follows player (with locked focus point):
+		// Panning follows focused obj. with locked focus point:
 		_focus_locked_ = true;
-//		follow_player(); //!!
 		if (focused_entity_ndx != ~0u)
 			follow_entity(focused_entity_ndx);
 	} else {
-		// Focus (point) follows player (or other selected entity):
+		// Focus point follows focused obj., with panning only if drifting off-screen:
 		if (focused_entity_ndx != ~0u) {
 			view.focus_offset = view.world_to_view_coord(entity(focused_entity_ndx).p);
 			view.confine(entity(focused_entity_ndx).p);
@@ -469,13 +468,22 @@ try {
 				break;
 
 			case sf::Event::MouseButtonPressed:
+			{
 				view.focus_offset = {event.mouseButton.x - view.width/2,
 				                     event.mouseButton.y - view.height/2};
+				size_t clicked_entity_id = ~0u;
+				//!!??auto vpos = view.screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o Where did this x,y=={-520,-391} come from?! :-ooo
+				Math::Vector2f vpos = view.screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
+				if (entity_at_wiewpos(vpos.x, vpos.y, &clicked_entity_id)) {
+cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
+				} else {
+cerr << "- Nothing there, focusing on the deep void...\n";
+				}
 				focused_entity_ndx = keystate(SHIFT)
-					? player_entity_ndx()
-					: ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
+					? (clicked_entity_id == ~0u ? player_entity_ndx() : clicked_entity_id)
+					: clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
 				break;
-
+			}
 			case sf::Event::LostFocus:
 				renderer.p_alpha = Renderer_SFML::ALPHA_INACTIVE;
 				break;

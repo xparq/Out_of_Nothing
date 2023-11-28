@@ -379,6 +379,41 @@ bool SimApp::load_snapshot(const char* fname)
 	return true;
 }
 
+
+//----------------------------------------------------------------------------
+bool SimApp::entity_at_wiewpos(float x, float y, size_t* entity_id OUT) const
+{
+	for (size_t i = entity_count(); i-- != 0;) { //!! Poor man's Z-order...
+		const auto& e = entity(i);
+		//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
+		//!! Actully, in OON_sfml it is -- make this "tunnellable"!...
+		auto ep = view.world_to_view_coord(e.p);
+		//!! ... = e.bounding_box();
+		auto box_R = e.r * view.scale; //!! Not a terribly robust method to get that size...
+		auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327
+//cerr << "---> ...checking click at ("<<x<<", "<<y<<") against entity #"<<i<<" at ("<<ep.x<<", "<<ep.y<<")...\n";
+
+		if (distance <= box_R) {
+			*entity_id = i;
+//cerr << "- FOUND entity #" << i << "!\n";
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool SimApp::entity_at_wiewpos(float x, float y, Entity** entity OUT)
+{
+	size_t entity_id;
+	if (!entity_at_wiewpos(x, y, &entity_id))
+		return false;
+
+	*entity = &(this->entity(entity_id));
+	return true;
+}
+
+
 //----------------------------------------------------------------------------
 bool SimApp::collide_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2, float distance)
 {w, obj1, obj2, distance;

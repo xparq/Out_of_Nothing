@@ -18,7 +18,7 @@
 #include "Model/World.hpp"
 #include "View/ViewPort.hpp"
 
-//#include "sz/unilang.hh" // ON/OFF, AUTO_CONST
+#include "sz/unilang.hh" // ON/OFF, AUTO_CONST, OUT
 #include "sz/counter.hh"
 #include "sz/rolling_average.hh"
 #include "sz/fs.hh"
@@ -100,6 +100,7 @@ public:
 
 	using Entity = Model::World::Body;
 	size_t entity_count() const { return world().bodies.size(); }
+//!! ADD DEBUG-MODE BOUNDS-CHECKING FOR THESE!
 	// Thread-safe, slower access:
 	      Entity& entity(size_t index)       { return *world().bodies[index]; }
 	const Entity& entity(size_t index) const { return *world().bodies[index]; }
@@ -110,9 +111,19 @@ public:
 	const Entity& _entity(size_t index) const { return *_world.bodies[index]; }
 	const Entity& _const_entity(size_t index) { return *_world.bodies[index]; }
 
+//!!	bool entity_at(model::Math::Vector2f world_pos, size_t* entity_id OUT) const;
+//!!	bool entity_at(model::Math::Vector3f world_pos, size_t* entity_id OUT) const;
+//!!	bool entity_at_wiewpos(View::Vector2f view_pos, size_t* entity_id OUT) const;
+	bool entity_at_wiewpos(float x, float y, size_t* entity_id OUT) const;
+	bool entity_at_wiewpos(float x, float y, Entity** entity OUT);
+//!!	bool entity_at_wiewpos(float x, float y, Entity** entity OUT) const;
+//!!??	bool entity_at_wiewpos(unsigned x, unsigned y, size_t* entity_id OUT) const;
+//!!?? For SFML mouse coords:
+//!!??	bool entity_at_wiewpos(int x, int y, size_t* entity_id OUT) const;
+
 	virtual unsigned add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
-	                //!! But C++ doesn't have the covariance needed here.
-	                //!! (Still added this cringy fn. for consistency.)
+	                //!! (This can't really be done in C++ properly, without RTTI etc.
+	                //!! Still added this cringy fn. for consistency & as a reminder.)
 	virtual void   remove_player(unsigned player_id) = 0; //!this should then be virtual, too (like destructors)
 	virtual       Entity& player_entity(unsigned player_id = 1) = 0;
 	virtual const Entity& player_entity(unsigned player_id = 1) const = 0;
