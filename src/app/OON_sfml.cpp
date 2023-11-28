@@ -107,6 +107,11 @@ void OON_sfml::update_thread_main_loop()
 //cerr << " [[[...BUSY...]]] ";
 			break;
 		case UIEventState::IDLE:
+/*!! THIS HELPED NOTHING HERE:
+			if (paused())
+				sf::sleep(sf::milliseconds(100)); // Sleep even more, if *really* idle! :)
+			// fallthrough
+!!*/
 		case UIEventState::EVENT_READY:
 #ifndef DISABLE_THREADS
 			try {
@@ -137,18 +142,19 @@ void OON_sfml::update_thread_main_loop()
 			}
 #ifndef DISABLE_THREADS
 			proc_lock.unlock();
-			
-			// Drop the frame rate and/or sleep more if paused
-			if (paused()) {
-				sf::sleep(sf::milliseconds(
-					cfg.get("sim/timing/paused_sleep_time_per_cycle", 40) // #330
-				)); //!! or 100 for 10 FPS... But see #217! :-o
-			}
 #endif
 			break;
 		default:
 			assert(("[[[...!!UNKNOWN EVENT STATE!!...]]]", false));
 		}
+
+		// Drop the frame rate and/or sleep more if paused
+		if (paused()) {
+			sf::sleep(sf::milliseconds(
+				cfg.get("sim/timing/paused_sleep_time_per_cycle", 40) // #330
+			)); //!! or 100 for 10 FPS... But see #217! :-o
+		}
+
 
 //cerr << "- releasing Events...\n";
 		//sync::EventsFreeToGo.release();
@@ -229,72 +235,73 @@ void OON_sfml::updates_for_next_frame()
 	avg_frame_delay.update(time.last_frame_delay);
 
 	//----------------------------
-	// Adjust the view/UI (even if paused #339)
-	view_control();
-
-	//----------------------------
-	// OK, the rest is disabled when paused (and explicitly single-stepping)...
-	if (paused()) {
-		if (!timestepping) { // Are we single-stepping?
-			return;
-		}
-	}
-
-	//----------------------------
-	//!!? Get some fresh immediate (continuous) input control state updates,
-	//!!? in addition to the async. event_loop()!...
-	//!! This doesn't just do low-level controls, but "fires" gameplay-level actions!
-	poll_and_process_controls();
-
-	//----------------------------
-	// Determine the size of the next model iteration time slice...
+	// Model updates...
 	//
-	Time::Seconds Δt;
-	if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
-		//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
-		Δt = cfg.fixed_model_dt;
-		//!!Don't check: won't be true if changing cfg.fixed_model_dt_enabled at run-time!
-		//!!assert(Δt == time.last_model_Δt); // Should be initialized by the SimApp init!
-	} else {
-		Δt = time.last_model_Δt = time.last_frame_delay;
-			// Just an estimate; the last frame time can't guarantee anything about the next one, obviously.
+	// - Disabled when paused, unless explicitly single-stepping...
+	//
+	if (!paused() || timestepping) {
+
+		//----------------------------
+		//!!? Get some fresh immediate (continuous) input control state updates,
+		//!!? in addition to the async. event_loop()!...
+		//!! This doesn't just do low-level controls, but "fires" gameplay-level actions!
+		//!! (Not any actual processing, just input translation... HOPEFULLY! :) )
+		poll_and_process_controls();
+
+		//----------------------------
+		// Determine the size of the next model iteration time slice...
+		//
+		Time::Seconds Δt;
+		if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
+			//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
+			Δt = cfg.fixed_model_dt;
+			//!!Don't check: won't be true if changing cfg.fixed_model_dt_enabled at run-time!
+			//!!assert(Δt == time.last_model_Δt); // Should be initialized by the SimApp init!
+		} else {
+			Δt = time.last_model_Δt = time.last_frame_delay;
+				// Just an estimate; the last frame time can't guarantee anything about the next one, obviously.
+		}
+
+		Δt *= time.scale;
+		if (time.reversed || timestepping < 0) Δt = -Δt;
+
+		time.model_Δt_stats.update(Δt);
+
+		//----------------------------
+		// Update...
+		//
+		//!! Move to a SimApp virtual, I guess (so at least the counter capping can be implicitly done there; see also time_step()!):
+		if (!iterations.maxed()) {
+			update_world(Δt);
+			++iterations;
+		} else {
+			if (cfg.exit_on_finish) {
+				cerr << "Exiting (as requested): iterations finished.\n";
+				request_exit();
+				// fallthrough
+			}
+		}
+
+		//!! Time-stepping should take precedence and prevent immediate exit
+		//!! in the "plain finished" case above! Since request_exit() doesn't
+		//!! abort/return on its own, it's *implicitly* doing the right thing,
+		//!! but that might change to actually aborting later (e.g. via an excpt.)
+		//!! -- so, this reminder has been added for that case...
+
+		// One less time-step to make next time (if any):
+		if (timestepping) if (timestepping < 0 ) ++timestepping; else --timestepping;
 	}
-
-	Δt *= time.scale;
-	if (time.reversed || timestepping < 0) Δt = -Δt;
-
-	time.model_Δt_stats.update(Δt);
 
 	//----------------------------
-	// Update...
-	//
-	//!! Move to a SimApp virtual, I guess (so at least the counter capping can be implicitly done there; see also time_step()!):
-	if (!iterations.maxed()) {
-		update_world(Δt);
-		++iterations;
-	} else {
-		if (cfg.exit_on_finish) {
-			cerr << "Exiting (as requested): iterations finished.\n";
-			request_exit();
-			// fallthrough
-		}
-	}
-
-	//!! Time-stepping should take precedence and prevent immediate exit
-	//!! in the "plain finished" case above! Since request_exit() doesn't
-	//!! abort/return on its own, it's *implicitly* doing the right thing,
-	//!! but that might change to actually aborting later (e.g. via an excpt.)
-	//!! -- so, this reminder has been added for that case...
-
-	// One less time-step to make next time (if any):
-	if (timestepping) if (timestepping < 0 ) ++timestepping; else --timestepping;
-
-	// Auto-scroll to follow player movement...
+	// View adjustments...
 	//!
-	//! NOTE: THIS MUST COME AFTER RECALCULATING THE NEW STATE!
+	//! NOTE: MUST COME AFTER CALCULATING THE NEW MODEL STATE!
 	//!
+	// - Auto-scroll to follow pinned player/object
+	// - Manual panning
+	// - Zoom
 	auto _focus_locked_ = false;
-	if (keystate(SCROLL_LOCKED) || keystate(SHIFT) || ((sfw::CheckBox*)gui.recall("Pan override"))->get()) {
+	if (scroll_locked()) {
 		// Panning follows focused obj. with locked focus point:
 		_focus_locked_ = true;
 		if (focused_entity_ndx != ~0u)
@@ -308,6 +315,8 @@ void OON_sfml::updates_for_next_frame()
 	}
 	// Update the focus lock indicator:
 	((sfw::CheckBox*)gui.recall(" - pan locked"))->set(_focus_locked_);
+
+	view_control(); // Manual view adjustments
 }
 
 //----------------------------------------------------------------------------
@@ -476,27 +485,44 @@ try {
 				break;
 !!*/
 			case sf::Event::MouseWheelScrolled:
+			{
+				//!! As a quick workaround for #334, we just check the GUI rect here
+				//!! directly and pass the click if it belongs there...
+//sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
+//cerr << "-- mouse: " << mouse.x <<", "<< mouse.y << "\n";
+				if (gui.contains(gui.getMousePosition()))
+					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
+
 				if (event.mouseWheelScroll.delta > 0) zoom_in(); else zoom_out();
 //				renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4; //! seems to always be 1 or -1...
 				break;
+			}
 
 			case sf::Event::MouseButtonPressed:
 			{
+//sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
+//cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
+				//!! As a quick workaround for #334, we just check the GUI rect here
+				//!! directly and pass the click if it belongs there...
+				if (gui.contains(gui.getMousePosition()))
+					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
+
 				view.focus_offset = {event.mouseButton.x - view.width/2,
 				                     event.mouseButton.y - view.height/2};
 				size_t clicked_entity_id = ~0u;
 				//!!??auto vpos = view.screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o Where did this x,y=={-520,-391} come from?! :-ooo
 				Math::Vector2f vpos = view.screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
-				if (entity_at_wiewpos(vpos.x, vpos.y, &clicked_entity_id)) {
+				if (entity_at_wiewpos(vpos.x, vpos.y, &clicked_entity_id))
 cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
-				} else {
+				else
 cerr << "- Nothing there, focusing on the deep void...\n";
-				}
-				focused_entity_ndx = keystate(SHIFT)
-					? (clicked_entity_id == ~0u ? player_entity_ndx() : clicked_entity_id)
-					: clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
+				focused_entity_ndx =
+					scroll_locked()
+						? (clicked_entity_id == ~0u ? player_entity_ndx() : clicked_entity_id)
+						: clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
 				break;
 			}
+
 			case sf::Event::LostFocus:
 				renderer.p_alpha = Renderer_SFML::ALPHA_INACTIVE;
 				break;
@@ -506,8 +532,10 @@ cerr << "- Nothing there, focusing on the deep void...\n";
 				break;
 
 			default:
+process_ui_event:		// The GUI should be given a chance before this `switch`, but... -> #334: it can't swallow events!
 				gui.process(event);
-
+				//!! Also, it's inconsistent with this `IDLE` state assumption below!... :-o :-/
+				//!! (Hopefully it's not even used nowadays at all though...)
 				ui_event_state = UIEventState::IDLE;
 
 				break;
@@ -529,25 +557,26 @@ cerr << "- Nothing there, focusing on the deep void...\n";
 //cerr << "- freeing the proc. lock...\n";
 			noproc_lock.unlock();
 
-			//! Better to sleep here, too (not just outside this inner loop, while
+			//! Sleep some here, too (not just outside this inner loop, while
 			//! idling), counterintuitively *especially* while jamming, in order to
-			//! give the other parts some unlocked time!...
-
-			// There still are things in the queue, but they also need to be processed,
-			// so sleep "some"... Should sleep all the paused time chunk here to even
-			// out that sleepy responsiveness (I know that only from testing!)...
-			//!! Should be adaptive!!
-			sf::sleep(sf::milliseconds(
-				paused() ? cfg.get("sim/timing/paused_sleep_time_per_cycle", 50) // #330
-				         : 5)); //!! -> #217
+			//! give the actual processing parts some unlocked time!...
+			sf::sleep(sf::milliseconds(5)); //!! Should be adaptive!
 		} // for - events in the queue
 
 		// The event queue has been emptied, so in this thread (of input processing)
 		// we're idling now (while updates are happening elsewhere), so:
-		if (!paused()) sf::sleep(sf::milliseconds(10)); // SFML does (used to do) the same amount for waitEvent
-			// This is only relevant when threading.
+		//!! Should be adaptive!!
+		sf::sleep(sf::milliseconds(
+			paused() ? cfg.get("sim/timing/paused_sleep_time_per_cycle", 50) // #330
+			         : 10)); // SFML does (used to?) sleep the same amount for waitEvent
+			// NOTE: This is only relevant when threading!
 			// The non-threaded main loop sleeps via backend.hci.fps_throttling.
-			//!!?? Explain how this is related to sleep-while-paused!
+			//!!?? How about fps throttling *with* threading then?! -> #217
+
+		if (paused() && ui_event_state == UIEventState::IDLE)
+		{
+			sf::sleep(sf::milliseconds(100)); // Sleep even more, if *really* idle! :)
+		}
 
 #endif			
 	} // while - still running

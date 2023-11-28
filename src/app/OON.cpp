@@ -1,5 +1,9 @@
 ﻿#include "OON.hpp"
-#include "UI/hud.hpp"
+
+#include "sfw/GUI.hpp" //!! Used to be in OON_sfml only, but since scroll_locked() requires it...
+                       //!! (And sooner or later it must be usable unrestricted anyway!
+#include "UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
+                       //!! And we're already using keystate() here, too, shamelessly! ;) )
 
 #include "sz/sign.hh"
 
@@ -414,6 +418,11 @@ void OON::follow_player(unsigned player_id)
 	view.offset += new_player_vpos - view.focus_offset;
 }
 
+bool OON::scroll_locked()
+{
+	return keystate(SCROLL_LOCKED) || keystate(SHIFT)
+		|| ((sfw::CheckBox*)gui.recall("Pan override"))->get();
+}
 
 void OON::zoom_reset() { view.scale = SimAppConfig::DEFAULT_ZOOM; } //!!...
 void OON::zoom(float factor)
@@ -463,8 +472,14 @@ bool OON::view_control() //!!override
 		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x);
 		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y);
 	}
-	if (pan_step_x) pan_x(pan_step_x);
-	if (pan_step_y) pan_y(pan_step_y);
+
+	if (!scroll_locked()) { // Shift, Scroll Lock etc.
+		if (pan_step_x) pan_x(pan_step_x);
+		if (pan_step_y) pan_y(pan_step_y);
+	} else {
+		if (pan_step_x) view.focus_offset.x -= pan_step_x;
+		if (pan_step_y) view.focus_offset.y -= pan_step_y;
+	}
 
 	return action;
 }

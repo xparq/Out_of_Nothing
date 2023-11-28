@@ -55,6 +55,7 @@ public:
 	void pan_y(float delta);
 	void pan_reset();
 	void zoom(float factor); // Change the current zoom by a ratio
+	bool scroll_locked();    // Auto-panning via pinned focus point/obj.
 	// Zoom in/out by a configured amount:
 	void zoom_in();
 	void zoom_out();
