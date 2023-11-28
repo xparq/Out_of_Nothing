@@ -486,51 +486,77 @@ cerr << "R-viewsize: " << view.zoom * plm->r
 }
 !!*/
 
+
 //----------------------------------------------------------------------------
 bool OON::view_control(float mousewheel_delta) //!!override
 {
-	//!!
-	//!! NOT YET FPS-NORMALIZED!...
-	//!!
+	auto action = false;
+	action |= pan_control();
+	action |= zoom_control(mousewheel_delta);
+	return action;
+}
+
+//----------------------------------------------------------------------------
+bool OON::pan_control() //!!override
+{
+	//
+	// Calibrated for 30FPS; normalized below (#306)
+	//
+	// (In theory, it could've been normalized by adjusting the sampling rate, rather than
+	// each of the values below, but I suspect that the uneven reactions could be noticeable.
+	// Also, since I've set things for 30 PFS, skip-frame compensation can't help with <30 FPS!...)
+	//
 	AUTO_CONST CFG_PAN_STEP = 5; // pixel
 	AUTO_CONST CFG_PAN_AUTOCHANGE_STEP = 1; // +/- pixel
-	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.08f; // 8%
-	AUTO_CONST CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = 0.2f; // 20%
-	AUTO_CONST CFG_ZOOM_AUTOCHANGE_STEP = 0.007f; // +/- ratio delta
+
+	auto fps_factor = (float)avg_frame_delay * 30.f; // Params. have been calibrated for 30 FPS
 
 	auto action = false;
-
-	// Panning...
-	if (keystate(W)) { action = true; --pan_step_y; } // = !pan_step_y ? -CFG_PAN_STEP : pan_step_y - 1; } // approach 2
-	if (keystate(S)) { action = true; ++pan_step_y; } // = !pan_step_y ?  CFG_PAN_STEP : pan_step_y + 1; }
-	if (keystate(A)) { action = true; --pan_step_x; } // = -CFG_PAN_STEP; } // approach 1
-	if (keystate(D)) { action = true; ++pan_step_x; } // =  CFG_PAN_STEP; }
+	if (keystate(W)) { action = true; pan_step_y -= CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // = !pan_step_y ? -CFG_PAN_STEP : pan_step_y - 1; } // approach 2
+	if (keystate(S)) { action = true; pan_step_y += CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // = !pan_step_y ?  CFG_PAN_STEP : pan_step_y + 1; }
+	if (keystate(A)) { action = true; pan_step_x -= CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // = -CFG_PAN_STEP; } // approach 1
+	if (keystate(D)) { action = true; pan_step_x += CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // =  CFG_PAN_STEP; }
 	if (!action) {
-		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x) * CFG_PAN_AUTOCHANGE_STEP;
-		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y) * CFG_PAN_AUTOCHANGE_STEP;
+		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x) * CFG_PAN_AUTOCHANGE_STEP * fps_factor;
+		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y) * CFG_PAN_AUTOCHANGE_STEP * fps_factor;
 	}
-	if (!scroll_locked()) { // Shift, Scroll Lock etc.
-		if (pan_step_x) pan_x(pan_step_x);
-		if (pan_step_y) pan_y(pan_step_y);
-	} else {
+	if (scroll_locked()) { // Shift, Scroll Lock etc.
 		if (pan_step_x) view.focus_offset.x -= pan_step_x;
 		if (pan_step_y) view.focus_offset.y -= pan_step_y;
+	} else {
+		if (pan_step_x) pan_x(pan_step_x * fps_factor);
+		if (pan_step_y) pan_y(pan_step_y * fps_factor);
 	}
 
-	// Zooming... (MouseWheel takes precedence!)
+	return action;
+}
+
+//----------------------------------------------------------------------------
+bool OON::zoom_control(float mousewheel_delta) //!!override
+{
+	// Note: the mouse-wheel case needs no calibration, as it's triggered
+	// directly by the mouse events, independently of frame rate!
+	// See more about FPS norm. at pan_control()!
+	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.08f; // 8%
+	AUTO_CONST CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = 0.2f; // 20%
+	AUTO_CONST CFG_ZOOM_AUTOCHANGE_STEP = 0.01f; // +/- ratio delta
+
+	auto fps_factor = (float)avg_frame_delay * 30.f;
+
+	auto action = false;
 	if      (mousewheel_delta > 0)  { action = true; zoom_step =  CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
 	else if (mousewheel_delta < 0)  { action = true; zoom_step = -CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
-	else if (keystate(NUMPAD_PLUS)) { action = true; zoom_step +=
-	                                                 zoom_step == 0 ? CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP; }
-	else if (keystate(NUMPAD_MINUS)){ action = true; zoom_step -=
-	                                                 zoom_step == 0 ? CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP; }
+	else if (keystate(NUMPAD_PLUS)) { action = true; zoom_step += zoom_step == 0 ?
+	                                                        CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP * fps_factor; }
+	else if (keystate(NUMPAD_MINUS)){ action = true; zoom_step -= zoom_step == 0 ?
+	                                                        CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP * fps_factor; }
 	if (!action) {
-		if (zoom_step) zoom_step -= sz::sign(zoom_step) * CFG_ZOOM_AUTOCHANGE_STEP;
+		if (zoom_step) zoom_step -= sz::sign(zoom_step) * CFG_ZOOM_AUTOCHANGE_STEP * fps_factor;
 		if (abs(zoom_step) < CFG_ZOOM_AUTOCHANGE_STEP) zoom_step = 0;
 	}
 	if (zoom_step) {
-		if (zoom_step > 0) zoom_in(zoom_step);
-		else               zoom_out(-zoom_step);
+		if (zoom_step > 0) zoom_in(  zoom_step * fps_factor);
+		else               zoom_out(-zoom_step * fps_factor);
 	}
 
 	return action;
@@ -538,7 +564,7 @@ bool OON::view_control(float mousewheel_delta) //!!override
 
 
 //----------------------------------------------------------------------------
-//!!Move chores like this to Szim API!
+//!!Move chores like this to the Szim API!
 void OON::toggle_muting() { backend.audio.toggle_audio(); }
 void OON::toggle_music() { backend.audio.toggle_music(); }
 void OON::toggle_sound_fx() { backend.audio.toggle_sounds(); }
