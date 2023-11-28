@@ -103,8 +103,11 @@ public:
 
 	bool poll_and_process_controls() override; // true if there was any input
 
+	bool view_control(); //!! override;
+		// Returns true if view adjustments have been requested/performed
+		// This is irrespective of modelling, and is also enabled while paused
+
 	bool _ctrl_update_thrusters(); // true if any engine is firing
-	bool _ctrl_update_pan(); // true if panning was requested
 
 	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
 	void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;

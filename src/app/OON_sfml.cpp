@@ -138,6 +138,7 @@ void OON_sfml::update_thread_main_loop()
 #ifndef DISABLE_THREADS
 			proc_lock.unlock();
 			
+			// Drop the frame rate and/or sleep more if paused
 			if (paused()) {
 				sf::sleep(sf::milliseconds(
 					cfg.get("sim/timing/paused_sleep_time_per_cycle", 40) // #330
@@ -227,19 +228,22 @@ void OON_sfml::updates_for_next_frame()
 	// Update the FPS gauge
 	avg_frame_delay.update(time.last_frame_delay);
 
-	// Drop the frame rate and sleep more if paused
+	//----------------------------
+	// Adjust the view/UI (even if paused #339)
+	view_control();
+
+	//----------------------------
+	// OK, the rest is disabled when paused (and explicitly single-stepping)...
 	if (paused()) {
 		if (!timestepping) { // Are we single-stepping?
-//!!#330:
-//			sf::sleep(sf::milliseconds(
-//				cfg.get("sim/timing/paused_sleep_time_per_cycle", 40) // #330
-//			)); // 10 FPS... !!But see #217! :-o
 			return;
 		}
 	}
 
+	//----------------------------
 	//!!? Get some fresh immediate (continuous) input control state updates,
 	//!!? in addition to the async. event_loop()!...
+	//!! This doesn't just do low-level controls, but "fires" gameplay-level actions!
 	poll_and_process_controls();
 
 	//----------------------------

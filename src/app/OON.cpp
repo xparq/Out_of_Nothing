@@ -347,9 +347,6 @@ bool OON::poll_and_process_controls()
 		exhaust_burst(player_entity_ndx(), 5);
 	}
 
-	if (_ctrl_update_pan())
-		action = true;
-
 	return action;
 }
 
@@ -453,7 +450,7 @@ void OON::zoom(float factor)
 !!*/
 
 
-bool OON::_ctrl_update_pan()
+bool OON::view_control() //!!override
 {
 	auto action = false;
 
