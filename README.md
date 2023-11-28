@@ -22,7 +22,6 @@ and start crafting the fun bits. You can't wait! ;)
 
 Technical & other details: -> [doc/...](doc/)
 
-
 _(BTW, the screenshots are getting obsolete fast. I've been updating them 
 occasionally, however, they can't convey the fist-hand experience of actually
 manipulating the wolrd, or even just watching the mesmerizing flow and constant
@@ -33,3 +32,5 @@ development of interesting superstructures -- just like in the real universe.)_
 ![screenshot](doc/image/screenshot/screenshot_5000_void_sphere_zoomout_1.png)
 ------------------------------------------------------------------------------
 ![screenshot](doc/image/screenshot/13k-vari-friction-1024.png)
+------------------------------------------------------------------------------
+![screenshot](doc/image/screenshot/DenseOrbits-crop.jpg)
