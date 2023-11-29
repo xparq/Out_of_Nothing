@@ -28,24 +28,32 @@ SFML_HCI::SFML_HCI(SimAppConfig& syscfg) :
 //----------------------------------------------------------------------------
 void SFML_HCI::switch_fullscreen(bool fullscreen) // override
 {
-	//! NOTE: We're being called here from a locked section of the event loop.
+	//! NOTE: We're being (...umm, supposed to be...) called from a
+	//!       locked section of the event loop!
 
-	if (SFML_window().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-cerr << "\n- [toggle_fullscreen] sf::setActive(false) failed!\n";
-	}
+//cerr << "DBG> Doing `while !setActive(FALSE)...`\n";
+	// This looping did the trick for #190! (#102 is still a thing, but elsewhere!)
+	while (!SFML_window().setActive(false)); //!!?? In case it's already inactive, would it return false?!
+	                                         //!!?? Could we not get stuck here forever?! :-o
+						 //!!?? As we COULD indeed e.g. in update_thread_main_loop() or event_loop()!
+	                                         //!!?? There's no getActive() in SFML to play safe! :-/
+//cerr << "DBG> - done `while !setActive(FALSE).`\n";
 
 	SFML_window().create(
 		fullscreen ? sf::VideoMode::getDesktopMode()
 		           : sf::VideoMode({cfg.WINDOW_WIDTH, cfg.WINDOW_HEIGHT}),
 		cfg.window_title,
-		fullscreen ? sf::Style::Fullscreen|sf::Style::Resize/*!!??*/ : sf::Style::Resize
+		fullscreen ? sf::Style::Fullscreen : sf::Style::Resize
 	);
 
 	set_frame_rate_limit(_last_fps_limit); //! Restore, as SFML has just killed it with window.create()... :-/
 
-	if (!SFML_window().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-cerr << "\n- [toggle_fullscreen] sf::setActive(true) failed!\n";
-	}
+	//!! Doesn't help with #104 (no mouse in fullscreen):
+	//!!SFML_window().setMouseCursorVisible(true);
+
+//cerr << "DBG> Doing `while !setActive(TRUE)...`\n";
+	while (!SFML_window().setActive(true));
+//cerr << "DBG> - done `while !setActive(TRUE).`\n";
 
 //	if (!(is_full = !is_full) /* :) */) {
 //		// full

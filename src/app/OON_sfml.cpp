@@ -114,19 +114,20 @@ void OON_sfml::update_thread_main_loop()
 !!*/
 		case UIEventState::EVENT_READY:
 #ifndef DISABLE_THREADS
-			try {
-				proc_lock.lock();
-			} catch (...) {
-				cerr << "- WTF proc_lock failed?! (already locked? " << proc_lock.owns_lock() << ")\n";
+			try { proc_lock.lock(); } // Blocks
+			catch (...) {
+cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_lock() << ")\n";
 			}
 #endif
 			updates_for_next_frame();
+
 			//!!?? Why is this redundant?!
 			if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [update_thread_main_loop] sf::setActive(true) failed!\n";
 //?				request_exit(-1);
 //?				return;
 			}
+			//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(true));
 
 			//!! This is problematic, as it currently relies on sf::setFrameRateLImit()
 			//!! which would make the thread sleep -- but with still holding the lock! :-/
@@ -135,13 +136,19 @@ void OON_sfml::update_thread_main_loop()
 			//!! displaying (so we can release the update lock right after renedring)
 			//!! -- AND THEN ALSO IMPLEMENTING SYNCING BETWEEN THOSE TWO!...
 			draw();
+
 			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
 				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
 //?				request_exit(-1);
 //?				return;
 			}
+			//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(false));
+
 #ifndef DISABLE_THREADS
-			proc_lock.unlock();
+			try { proc_lock.unlock(); } // This can throw, too!
+			catch (...) {
+cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.owns_lock() << ")\n";
+			}
 #endif
 			break;
 		default:
@@ -441,11 +448,9 @@ try {
 					((sfw::CheckBox*)gui.recall("Show HUDs"))->set(huds_active());
 					break;
 				case sf::Keyboard::F11:
-					while (!SFML_WINDOW().setActive(true));
-						//!!Investigating the switching problem (#190)...
-						//!! - this "being careful" makes no diff... :-o
 					toggle_fullscreen();
-					SFML_WINDOW().setActive(false); // Don't loop this one, we'd get stuck here!
+					//!! Refresh all our own (app-level) dimensions, too!
+					//!! E.g. #288, and wrong .view size etc.!...
 					break;
 
 //				default:
