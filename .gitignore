@@ -46,3 +46,5 @@ cache/
 extern/*
 !extern/sfw/
 extern/sfw/lib/msvc/*-d.lib
+
+!extern/sz/

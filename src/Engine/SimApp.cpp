@@ -2,6 +2,9 @@
 
 #include "SimApp.hpp"
 
+#include "sz/stringtools.hh"
+//	using sz::to_bool
+
 #include <string>
 	using std::string, std::to_string;
 //	using std::stoul, std::stof;
@@ -48,7 +51,7 @@ void SimApp::init()
 	// Some args aren't/can't/shoudn't be handled by SimAppConfig itself...
 	//
 	if (args["snd"])
-		backend.audio.enabled(args("snd") != "off"); //!! Also support "no"!
+		backend.audio.enabled(sz::to_bool(args("snd"), sz::str::empty_is_true));
 
 	// Time control...
 	iterations.max(cfg.iteration_limit);
@@ -56,9 +59,8 @@ void SimApp::init()
 		time.last_model_Δt = cfg.fixed_model_dt; // Otherwise no one might ever init this...
 
 	// Sessions...
-	if (args("session-save") == "off" ||
-	    args("session-save") == "no" ||
-	    args["session-no-save"])
+	if (!sz::to_bool(args("session-save"), sz::str::empty_is_true) // explicitly set to false?
+	    || args["session-no-save"])
 		session.set_autosave(false);
 
 	if (!args("session-save-as").empty()) // Even if autosave disabled. (Could be reenabled later, or manual save...)

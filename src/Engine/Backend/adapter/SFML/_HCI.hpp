@@ -30,7 +30,7 @@ struct SFML_HCI : HCI
 	struct Window : HCI::Window
 	{
 		sf::RenderWindow _owned_sfml_window; //! <- Not just a ref!
-		Window(unsigned width, unsigned height, const char* title);
+		Window(unsigned width, unsigned height, const char* title, bool fullscreen = false);
 		operator sf::RenderWindow&() { return _owned_sfml_window; }
 	};
 

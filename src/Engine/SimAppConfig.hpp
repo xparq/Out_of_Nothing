@@ -47,6 +47,7 @@ struct SimAppConfig : Config
 	std::string data_dir;
 	std::string asset_dir;
 	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with data_dir
+	bool        start_fullscreen;
 	std::string window_title;
 	std::string default_font_file;
 	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (sfw hex color string) + name!

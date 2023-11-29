@@ -2,6 +2,8 @@
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/fs.hh"
 	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
+#include "sz/stringtools.hh"
+//	using sz::to_bool
 #include <string>
 #include <string_view>
 #include <iostream>
@@ -37,7 +39,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	data_dir        = get("data_dir", ""); // "" is the same as sz::getcwd()
 	asset_dir       = get("asset_dir", "asset/");
 	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
-	window_title    = get("appearance/window_title", window_title); //!! not really a cfg option...
+	window_title      = get("appearance/window_title", window_title); //!! not really a cfg option...
+	start_fullscreen  = get("appearance/start_fullscreen", false);
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
 	default_font_file = get("appearance/default_font_file", "gui/font/default.font");
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
@@ -51,10 +54,12 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 
 	// 3. Process cmdline args to override again...
-//!! See also main.cpp, currently! And if main goes into Szim [turning all this essentially into a framework, not a lib, BTW...],
+//!! See also main.cpp! And if main goes to Szim [turning all this essentially into a framework, not a lib, BTW...],
 //!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's also likely gonna be an app
 //!! configuration/layout/mode, where the client retains its own main()!
-	if   (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
+	  if (args["fullscreen"]) {
+		start_fullscreen = sz::to_bool(args("fullscreen"), sz::str::empty_is_true);
+	} if (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
 		try { iteration_limit = stoul(args("loop-cap")); } catch(...) { // stoul crashes on empty! :-/
 			cerr << "- WRNING: --loop-cap ignored! \""<<args("loop-cap")<<"\" must be a valid positive integer.\n"; }
 	} if (args["loop_cap"]) { //!! Sigh, the dup...
