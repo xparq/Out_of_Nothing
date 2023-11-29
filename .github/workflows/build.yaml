@@ -70,9 +70,13 @@ jobs:
     - name: Build with NMAKE + Jumpstart-NG
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
-      run: tooling\diag\wtime nbuild.cmd
+      #!! This would mask any make error exit codes! :-/
+      #run: tooling\diag\wtime nbuild.cmd
+      run: nbuild.cmd
 
-    - name: Build with BusyBox-w32 (pdpmake) + my "universal" makefile
+    - name: Build with BusyBox-w32 (pdpmake) + my exp. BB makefile
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
-      run: tooling\diag\wtime bbuild.cmd
+      #!! This would mask any make error exit codes! :-/
+      #run: tooling\diag\wtime bbuild.cmd
+      run: bbuild.cmd
