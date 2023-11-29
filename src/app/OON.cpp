@@ -631,13 +631,13 @@ size_t OON::add_body()
 void OON::remove_body()
 {
 	auto entities = entity_count();
-	if (entities < 2) { // Leave the player "superglobe", so not just checking for empty()!
+	if (entities <= 1) { // Leave the player "superglobe", so not just checking for empty()!
 //cerr << "No more \"free\" items to delete.\n";
 		return;
 	}
 
-	auto ndx = 1/*leave the globe!*/ + rand() * ((entities-1) / (RAND_MAX + 1));
-//cerr << "Deleting object #"	 << ndx << "...\n";
+	auto ndx = 1/*leave the globe!*/ + (size_t) (rand() * (float(entities-1)) / (RAND_MAX + 1));
+//cerr << "Deleting object #" << ndx << "...\n";
 	assert(ndx < entities); // Note: entity indexes are 0-based
 	assert(ndx > 0);        // Note: 0 is the player globe
 	remove_body(ndx);
