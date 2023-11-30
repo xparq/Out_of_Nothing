@@ -506,23 +506,28 @@ bool OON::pan_control() //!!override
 	// each of the values below, but I suspect that the uneven reactions could be noticeable.
 	// Also, since I've set things for 30 PFS, skip-frame compensation can't help with <30 FPS!...)
 	//
-	AUTO_CONST CFG_PAN_STEP = 5; // pixel
+	//AUTO_CONST CFG_PAN_INITIAL_STEP = 5; // pixel
 	AUTO_CONST CFG_PAN_AUTOCHANGE_STEP = 1; // +/- pixel
 
 	auto fps_factor = (float)avg_frame_delay * 30.f; // Params. have been calibrated for 30 FPS
+	//auto CFG_PAN_INITIAL_STEP_fps = CFG_PAN_INITIAL_STEP * fps_factor;
+	auto CFG_PAN_AUTOCHANGE_STEP_fps = CFG_PAN_AUTOCHANGE_STEP * fps_factor;
+//!!??auto CFG_PAN_AUTOCHANGE_STEP_fps = CFG_PAN_AUTOCHANGE_STEP;
 
 	auto action = false;
-	if (keystate(W)) { action = true; pan_step_y -= CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // = !pan_step_y ? -CFG_PAN_STEP : pan_step_y - 1; } // approach 2
-	if (keystate(S)) { action = true; pan_step_y += CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // = !pan_step_y ?  CFG_PAN_STEP : pan_step_y + 1; }
-	if (keystate(A)) { action = true; pan_step_x -= CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // = -CFG_PAN_STEP; } // approach 1
-	if (keystate(D)) { action = true; pan_step_x += CFG_PAN_AUTOCHANGE_STEP * fps_factor; } // =  CFG_PAN_STEP; }
+	if (keystate(W)) { action = true; pan_step_y -= CFG_PAN_AUTOCHANGE_STEP_fps; } // = !pan_step_y ? -CFG_PAN_INITIAL_STEP_fps : pan_step_y - CFG_PAN_AUTOCHANGE_STEP_fps; } // approach 2
+	if (keystate(S)) { action = true; pan_step_y += CFG_PAN_AUTOCHANGE_STEP_fps; } // = !pan_step_y ?  CFG_PAN_INITIAL_STEP_fps : pan_step_y + CFG_PAN_AUTOCHANGE_STEP_fps; }
+	if (keystate(A)) { action = true; pan_step_x -= CFG_PAN_AUTOCHANGE_STEP_fps; } // = -CFG_PAN_INITIAL_STEP_fps; } // approach 1
+	if (keystate(D)) { action = true; pan_step_x += CFG_PAN_AUTOCHANGE_STEP_fps; } // =  CFG_PAN_INITIAL_STEP_fps; }
 	if (!action) {
-		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x) * CFG_PAN_AUTOCHANGE_STEP * fps_factor;
-		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y) * CFG_PAN_AUTOCHANGE_STEP * fps_factor;
+		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x) * CFG_PAN_AUTOCHANGE_STEP_fps;
+		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y) * CFG_PAN_AUTOCHANGE_STEP_fps;
+		if (abs(pan_step_x) < CFG_PAN_AUTOCHANGE_STEP_fps) pan_step_x = 0;
+		if (abs(pan_step_y) < CFG_PAN_AUTOCHANGE_STEP_fps) pan_step_y = 0;
 	}
 	if (scroll_locked()) { // Shift, Scroll Lock etc.
-		if (pan_step_x) view.focus_offset.x -= pan_step_x;
-		if (pan_step_y) view.focus_offset.y -= pan_step_y;
+		if (pan_step_x) view.focus_offset.x -= pan_step_x * fps_factor;
+		if (pan_step_y) view.focus_offset.y -= pan_step_y * fps_factor;
 	} else {
 		if (pan_step_x) pan_x(pan_step_x * fps_factor);
 		if (pan_step_y) pan_y(pan_step_y * fps_factor);
@@ -542,17 +547,19 @@ bool OON::zoom_control(float mousewheel_delta) //!!override
 	AUTO_CONST CFG_ZOOM_AUTOCHANGE_STEP = 0.01f; // +/- ratio delta
 
 	auto fps_factor = (float)avg_frame_delay * 30.f;
+	auto CFG_ZOOM_CHANGE_RATIO_fps = CFG_ZOOM_CHANGE_RATIO * fps_factor;
+	auto CFG_ZOOM_AUTOCHANGE_STEP_fps = CFG_ZOOM_AUTOCHANGE_STEP * fps_factor;
 
 	auto action = false;
 	if      (mousewheel_delta > 0)  { action = true; zoom_step =  CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
 	else if (mousewheel_delta < 0)  { action = true; zoom_step = -CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
 	else if (keystate(NUMPAD_PLUS)) { action = true; zoom_step += zoom_step == 0 ?
-	                                                        CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP * fps_factor; }
+	                                                        CFG_ZOOM_CHANGE_RATIO_fps : CFG_ZOOM_AUTOCHANGE_STEP_fps; }
 	else if (keystate(NUMPAD_MINUS)){ action = true; zoom_step -= zoom_step == 0 ?
-	                                                        CFG_ZOOM_CHANGE_RATIO : CFG_ZOOM_AUTOCHANGE_STEP * fps_factor; }
+	                                                        CFG_ZOOM_CHANGE_RATIO_fps : CFG_ZOOM_AUTOCHANGE_STEP_fps; }
 	if (!action) {
-		if (zoom_step) zoom_step -= sz::sign(zoom_step) * CFG_ZOOM_AUTOCHANGE_STEP * fps_factor;
-		if (abs(zoom_step) < CFG_ZOOM_AUTOCHANGE_STEP) zoom_step = 0;
+		if (zoom_step) zoom_step -= sz::sign(zoom_step) * CFG_ZOOM_AUTOCHANGE_STEP_fps;
+		if (abs(zoom_step) < CFG_ZOOM_AUTOCHANGE_STEP_fps) zoom_step = 0;
 	}
 	if (zoom_step) {
 		if (zoom_step > 0) zoom_in(  zoom_step * fps_factor);
