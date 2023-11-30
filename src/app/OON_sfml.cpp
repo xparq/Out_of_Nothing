@@ -624,8 +624,9 @@ void OON_sfml::post_zoom_hook(float factor)
 void OON_sfml::onResize() // override
 {
 #ifndef DISABLE_HUD
-	((UI::HUD_SFML&)debug_hud).onResize(((SFML_Backend&)backend).SFML_window());
-	((UI::HUD_SFML&)help_hud) .onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)debug_hud) .onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)timing_hud).onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)help_hud)  .onResize(((SFML_Backend&)backend).SFML_window());
 #endif
 }
 
