@@ -22,6 +22,12 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 //
+
+//!---------------------------------------------------------------------------
+//! Hi, in compliance with point 2: the original source has been adapted for
+//! use in this project (https://github.com/xparq/Out_of_Nothing/). Thanks! Sz.
+//!---------------------------------------------------------------------------
+
 ////////////////////////////////////////////////////////////
 
 #include <cassert>
