@@ -72,17 +72,17 @@ EXT_LIB_ZSTD=extern/zstd/msvc/zstd$(_cflags_crt_linkmode).lib
 EXT_LIBS=\
 	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
 	$(EXT_LIB_SFW) \
-#	extern/toml++/toml$(_cflags_crt_linkmode).lib \
 	$(EXT_LIB_ZSTD) \
 	user32.lib
 #		^^^ Only needed with SFML=dll, strangely! -o
+#	extern/toml++/toml$(_cflags_crt_linkmode).lib \
 
 #-----------------------------------------------------------------------------
 # Config - Build options
 #-----------------------------------------------------------------------------
 # Build alternatives (override from the command-line, too, if needed):
 DEBUG=0
-CRT=dll
+CRT=static
 #!Sz: CRT=dll is always the case with the pre-built SFML libs, so not use changing it!
 # Custom build options can also be added:
 SFML=static
@@ -132,11 +132,14 @@ CFLAGS=$(CFLAGS) -Iextern
 # Note: C++ comp. commands would use $(CFLAGS), too! (!!Which may be stupid, and change later...!!)
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
-sfml_libs_static=sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib \
-	sfml-audio-s.lib
+!if "$(CRT)" == "static"
+_sfMT = -s
+sfml_libs_static = sfml-graphics-s$(_sfMT).lib sfml-window-s$(_sfMT).lib sfml-system-s$(_sfMT).lib sfml-audio-s$(_sfMT).lib
+!else
+sfml_libs_static = sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib sfml-audio-s.lib
+!endif
 
-sfml_libs_dll=sfml-graphics.lib sfml-window.lib sfml-system.lib \
-	sfml-audio.lib
+sfml_libs_dll = sfml-graphics.lib sfml-window.lib sfml-system.lib sfml-audio.lib
 
 !if "$(SFML)" == "static"
 sfml_libs=$(sfml_libs_static)

@@ -6,8 +6,8 @@
 
 #--- BUILD MODE DEFAULTS -----------------------------------------------------
 DEBUG = 0
-CRT = dll
-#	CRT=dll is always the case with the pre-built SFML libs, so not use changing it!
+CRT = static
+# Note: CRT=dll is required when using the pre-built SFML libs!
 SFML = static
 
 #!! Integrate these:
@@ -47,22 +47,42 @@ CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
 #!! So, well, sigh... (or add a manaully updated list...):
 objs_using_modules = $(objs)
 
-EXT_LIB_SFW = extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib
-EXT_LIB_ZSTD = extern/zstd/msvc/zstd$(cflags_crt_linkmode).lib
-EXT_LIBS =\
-	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
-	$(EXT_LIB_SFW) \
-	$(EXT_LIB_ZSTD) \
-	user32.lib\
-# (Comments must be last...:)
+EXT_LIBROOT_SFML = $(SZ_SFML_LIBROOT)/lib
+EXT_LIBROOT_SFW  = extern/sfw/lib/msvc
+EXT_LIBROOT_ZSTD = extern/zstd/msvc
+#! CAREFUL! These are also used as direct dependencies of the .exe, so
+#!          do not add those that can't be located by the make tool itself!
+#!          (Otherwise it would try to build them too... E.g. user32.lib)
+EXT_LIB_DEPS =\
+	$(EXT_LIBROOT_SFW)/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib \
+	$(EXT_LIBROOT_ZSTD)/zstd$(cflags_crt_linkmode).lib \
+# (Comments must be last...)
+#	$(EXT_LIBS_SFML) <- Each individual lib abspathed to calm down `make`!...
 #	extern/toml++/toml$(cflags_crt_linkmode).lib \
+
+# The SFML libs are added here -- not to EXT_LIB_DEPS --, as dependencies,
+# as they're not full paths, so `make` would freak out that they don't exist...
+# (NOTE: LINK.exe finds them via the LIB env var.)
+EXT_LIBS =\
+	$(EXT_LIB_DEPS) \
+	$(sfml_and_deps_libs) \
+	user32.lib\
+# (Comments must be last...)
 #	user32.lib <- only needed with SFML=dll, strangely! -o
+
+#dump:; echo EXT_LIB_DEPS: $(EXT_LIB_DEPS)
+#dump:; echo EXT_LIBS: $(EXT_LIBS)
 
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
 SFML_linkmode=$(SFML)
 
-_sfml_libs__static = sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib sfml-audio-s.lib
+# Add an extra -s if also the CRT is static (i.e. with my custom-built "SFML/MT"):
+_sfml_homebrew_suffix_static = -s
+_sfml_homebrew_suffix_dll =
+_s_MT = $(_sfml_homebrew_suffix_$(CRT))
+
+_sfml_libs__static = sfml-graphics-s$(_s_MT).lib sfml-window-s$(_s_MT).lib sfml-system-s$(_s_MT).lib sfml-audio-s$(_s_MT).lib
 _sfml_libs__dll    = sfml-graphics.lib   sfml-window.lib   sfml-system.lib   sfml-audio.lib
 sfml_libs = $(_sfml_libs__$(SFML_linkmode))
 
@@ -89,7 +109,7 @@ cflags_crt_linkmode_with_debug = $(_cflags_crt_linkmode_with_debug__$(DEBUG))
 #----------------------
 # DEBUG/RELEASE mode
 #------
-_cflags_debug__0 = -DNDEBUG /O2
+_cflags_debug__0 = -DNDEBUG /O2 /Ob3
 _cflags_debug__1 = /DDEBUG /ZI /Od /Oy- /Ob0 /RTCsu /Fd$(objdir)/
 #	The -O...s above are borrowed from Dr. Memory's README/Quick start.
 #	-ZI enables edit-and-continue (but it only exists for Intel CPUs!).
@@ -109,27 +129,27 @@ cflags_sfml_linkmode = $(_cflags_sfml_linkmode__$(SFML))
 # Output dir/file tags for build alternatives
 # NOTE: Must differ from their "no ..." counterparts to avoid code (linking) mismatches!
 # Also: CRT=dll is always the case with the pre-built SFML libs, so no use changing it...
-##!!
-##!! Instead of the horror of having 3 sets of these macros (a generic tag,
-##!! a dir tag, a file tag -- where each must separately dispatch on their
-##!! parameter!), use a uniform format suitable for each purpose (as a suffix):
-##!!
-_buildmode_debug_tag__0 =
-_buildmode_debug_tag__1 = .d
-buildmode_debug_tag     = $(_buildmode_debug_tag__$(DEBUG))
-_buildmode_crtdll_tag__static =
-_buildmode_crtdll_tag__dll    = .crtdll
-buildmode_crtdll_tag          = $(_buildmode_crtdll_tag__$(CRT))
-_buildmode_sfml_linkmode_tag__static =
-_buildmode_sfml_linkmode_tag__dll    = .SFMLdll
-buildmode_sfml_linkmode_tag          = $(_buildmode_sfml_linkmode_tag__$(SFML_linkmode))
+
+_buildmode_debug_dir_tag__0 =
+_buildmode_debug_dir_tag__1 = .d
+_buildmode_debug_file_tag__0 =
+_buildmode_debug_file_tag__1 = d
+_buildmode_crt_linkmode_dir_tag__static =
+_buildmode_crt_linkmode_dir_tag__dll    = .crtdll
+_buildmode_crt_linkmode_file_tag__static = -MT
+_buildmode_crt_linkmode_file_tag__dll    = -MD
+_buildmode_sfml_linkmode_dir_tag__static =
+_buildmode_sfml_linkmode_dir_tag__dll    = .SFMLdll
+_buildmode_sfml_linkmode_file_tag__static =
+_buildmode_sfml_linkmode_file_tag__dll    = .SFMLdll
 
 # All combined:
-buildmode_dir_tag  = $(buildmode_crtdll_tag)$(buildmode_sfml_linkmode_tag)$(buildmode_debug_tag)
-buildmode_file_tag = $(buildmode_crtdll_tag)$(buildmode_sfml_linkmode_tag)$(buildmode_debug_tag)
+buildmode_dir_tag  = $(_buildmode_sfml_linkmode_dir_tag__$(SFML))$(_buildmode_crt_linkmode_dir_tag__$(CRT))$(_buildmode_debug_dir_tag__$(DEBUG))
+buildmode_file_tag = $(_buildmode_sfml_linkmode_file_tag__$(SFML))$(_buildmode_crt_linkmode_file_tag__$(CRT))$(_buildmode_debug_file_tag__$(DEBUG))
 #debug:; @echo buildmode_dir_tag: $(buildmode_dir_tag)
 #debug:; @echo buildmode_file_tag: $(buildmode_file_tag)
 
+# Add -d to the debug SFML libs:
 _sfml_lib_debug_suffix__0 =
 _sfml_lib_debug_suffix__1 = -d
 sfml_lib_debug_suffix     = $(_sfml_lib_debug_suffix__$(DEBUG))
@@ -260,7 +280,7 @@ $(objs_using_modules): $(CPP_MODULE_IFCS)
 #!!$(exe): $(objs:$(objdir)/%=%)
 #!!	@echo LINK $?
 #!!	$(LINK) $(LINKFLAGS) /libpath:$(objdir) $(objs) $(EXT_LIBS) /out:$@
-$(exe): $(objs) $(EXT_LIB_SFW) $(EXT_LIB_ZSTD)
+$(exe): $(objs) $(EXT_LIB_DEPS)
 	$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) /out:$@
 
 #-----------------------------------------------------------------------------

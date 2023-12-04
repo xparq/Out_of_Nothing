@@ -51,6 +51,9 @@ jobs:
 #    - name: Install prerequisites (wget...)
 #      run: choco install wget
 
+    - name: Setup MSVC/CLI dev. env.
+      uses: ilammy/msvc-dev-cmd@v1.12.0
+
     - name: Setup SFML...
       shell: cmd
       run: tooling/sfml_dl+unzip.cmd
@@ -64,19 +67,27 @@ jobs:
     #    #??commit: a4bca20567d744c04929b1fc7135cdb845c7c4f6
     #    # -> https://github.com/actions/checkout/issues/24
 
-    - name: Setup MSVC/CLI dev. env.
-      uses: ilammy/msvc-dev-cmd@v1.12.0
+    - name: Download custom-built full-static SFML pack
+      shell: cmd
+      run: tooling\busybox sh tooling/sfml-setup-MSVCRT-static-addon
 
-    - name: Build with NMAKE + Jumpstart-NG
+    - name: Download & build zstd
+      shell: cmd
+      run: extern/zstd/build-msvc static
+
+    - name: Build OON with NMAKE + Jumpstart-NG
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
+      # No static-CRT version in stock SFML downloadable prebuilts, so:
+      run: nbuild.cmd
+# CRT=dll
       #!! This would mask any make error exit codes! :-/
       #run: tooling\diag\wtime nbuild.cmd
-      run: nbuild.cmd
 
-    - name: Build with BusyBox-w32 (pdpmake) + my exp. BB makefile
+    - name: Build OON with BusyBox-w32 + my exp. BB makefile
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
       #!! This would mask any make error exit codes! :-/
       #run: tooling\diag\wtime bbuild.cmd
       run: bbuild.cmd
+# CRT=dll
