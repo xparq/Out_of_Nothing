@@ -18,9 +18,11 @@
 int main(int argc, char* argv[])
 //============================================================================
 {
-	Args args(argc, argv); // Just a prelim. "preview" :) parse for -h -V etc.
+	//!! Sad kludge util #348...:
+	Args args(argc, argv); // Just for -h -V etc.
 	if (args["?"] || args["h"] || args["help"]) {
-		cout << "Usage: " << args.exename() << " [-V] [-C cfgfile] [...lots more undoc. yet, sorry!]\n";
+		//!!game.show_cmdline_help();
+		OON_sfml::show_cmdline_help(args);
 		return 0;
 	} else if (args["V"]) {
 		cout
@@ -36,9 +38,11 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+
 	int exit_code = 0;
 	try {
 		OON_sfml game(argc, argv);
+
 		exit_code = game.run();
 
 	} catch (runtime_error& x) {

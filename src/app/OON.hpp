@@ -12,6 +12,9 @@ class OON : public Szim::SimApp
 //----------------------------------------------------------------------------
 // Config/Setup...
 //----------------------------------------------------------------------------
+public:
+	static void show_cmdline_help(const Args& args, const char* banner = nullptr);
+
 protected:
 	void init() override;
 	void done() override;

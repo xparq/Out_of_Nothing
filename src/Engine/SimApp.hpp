@@ -47,6 +47,9 @@ protected:
 // API...
 //----------------------------------------------------------------------------
 public:
+	//!!virtual... -> #348
+	static auto show_cmdline_help(const Args& args, const char* description = nullptr) -> void;
+
 	int run(); // Returns the intended exit code for the process (!0: error)
 	           // Note: "exit codes" may not be applicable in every execution model!
 	virtual void init(); // Call request_exit(exit_code) to mark it "aborted".

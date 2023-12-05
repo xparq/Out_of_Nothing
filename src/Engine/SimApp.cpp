@@ -27,13 +27,35 @@
 #include <format>
 	using std::format;
 #include <iostream>
-	using std::cerr, std::endl;
+	using std::cerr, std::cout, std::endl;
 //#include <stdexcept>
 //	using std::runtime_error;
 
 
 using namespace Szim;
 //============================================================================
+void SimApp::show_cmdline_help(const Args& args, const char* banner)
+{
+	std::string descr;
+
+	if (!banner) {
+		banner = "\"Intuition\" - Simulation engine and app. dev. framework\n";
+	}
+
+	descr = R"(
+Usage:)"; descr += args.exename(); descr += " [options...]\n";
+	descr += R"(
+Options:
+
+  -h | -? | --help
+  	Show this help.
+  -V
+  	Show version information.
+)";
+
+	cout << banner << descr;
+}
+
 //----------------------------------------------------------------------------
 void SimApp::init()
 //
@@ -46,6 +68,8 @@ void SimApp::init()
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
 
 	// Apply the config...
+
+	// Misc. fixup that should've been in the ctors, but C++...
 
 	//
 	// Some args aren't/can't/shoudn't be handled by SimAppConfig itself...

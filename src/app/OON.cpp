@@ -28,6 +28,24 @@ static const char* hud_test_callback_ccptr()  { return "this is a const char*"; 
 
 
 //----------------------------------------------------------------------------
+void OON::show_cmdline_help(const Args& args, const char* banner)
+{
+	banner = "\"Out of Nothing\" - experimental simulation toy\n";
+
+	SimApp::show_cmdline_help(args, banner);
+
+	cout << R"(
+  -C cfgfile
+          Load config. from 'cfgfile'. If not found, abort.
+	  If omitted, ./default.cfg is tried, and if that doesn't exist,
+	  internal hardcoded defaultw will be used as a fallback.
+
+  ...lots more to be documented here, sorry!
+)";
+}
+
+
+//----------------------------------------------------------------------------
 void OON::init() // override
 {
 	//!! Currently, the data watcher HUD setup depends directly on the player objects
@@ -134,13 +152,16 @@ void OON::_setup_UI()
 	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
-	gui.setPosition(10, cfg.WINDOW_HEIGHT-200);
+	gui.setPosition(4, cfg.WINDOW_HEIGHT-200);
+		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
+		//!! Not even this would do anything, actually: form->setPosition({100, -200});
 	auto form = gui.add(new Form, "Params");
 		form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
 		form->add("Fixed model Δt", new CheckBox([&](auto*){ this->toggle_fixed_model_dt(); },
 		                                         cfg.fixed_model_dt_enabled));
 		form->add("Pan override", new CheckBox); // Will be polled by the control loop!
 		form->add(" - pan locked", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
+
 	gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
 
 	auto volrect = gui.add(new Form, "VolForm");
