@@ -335,7 +335,7 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 		<< "Ctrl+Home:   Reset view (to Home position & default zoom)\n"
 		<< "Ctrl+Alt:    Leave movement trails while holding\n"
 		<< "---------- Admin:\n"
-		<< "F1-F4:     Save world snapshots (+Shift: load)\n"
+		<< "F1-F8:     Save world snapshots (+Shift: load)\n"
 		<< "M:         Mute/unmute music, N: sound fx\n"
 		<< "Shift+M:   Mute/unmute all audio\n"
 		<< "Shift+P:   Toggle FPS throttling (lower CPU load)\n"

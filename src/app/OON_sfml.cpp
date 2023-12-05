@@ -434,6 +434,10 @@ try {
 				case sf::Keyboard::F2:  keystate(SHIFT) ? quick_load_snapshot(2) : quick_save_snapshot(2); break;
 				case sf::Keyboard::F3:  keystate(SHIFT) ? quick_load_snapshot(3) : quick_save_snapshot(3); break;
 				case sf::Keyboard::F4:  keystate(SHIFT) ? quick_load_snapshot(4) : quick_save_snapshot(4); break;
+				case sf::Keyboard::F5:  keystate(SHIFT) ? quick_load_snapshot(5) : quick_save_snapshot(5); break;
+				case sf::Keyboard::F6:  keystate(SHIFT) ? quick_load_snapshot(6) : quick_save_snapshot(6); break;
+				case sf::Keyboard::F7:  keystate(SHIFT) ? quick_load_snapshot(7) : quick_save_snapshot(7); break;
+				case sf::Keyboard::F8:  keystate(SHIFT) ? quick_load_snapshot(8) : quick_save_snapshot(8); break;
 
 				case sf::Keyboard::Home:
 					if (keystate(CTRL)) {
