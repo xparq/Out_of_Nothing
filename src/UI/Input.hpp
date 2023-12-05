@@ -16,7 +16,7 @@ namespace UI {
 //!! -> But note: such conversions should be adapter add-ons,
 //!!    to avoid introducing dependencies into the base package!
 
-enum VKEY {
+enum VKEY : unsigned {
 	//! -> eg. https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
 	//!    or: http://www.kbdedit.com/manual/low_level_vk_list.html
 
@@ -91,6 +91,8 @@ enum VKEY {
 
 extern volatile bool _kbd_state[];
 inline auto keystate(VKEY k) { return _kbd_state[k]; }
+
+void reset_keys();
 
 } // namespace UI
 

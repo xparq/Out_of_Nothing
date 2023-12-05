@@ -3,10 +3,18 @@
 
 #include "UI/Input.hpp"
 #include "SFML/Window/Event.hpp"
-#include <windows.h> // GetKeyState(), VK_... for the Num/Caps/Scroll lock keys
-//#ifndef _WIN32
-//#error windows.h has not been included?!... (Only Windows is supported yet!)
-//#endif
+
+//!!
+//!! "Tag" this file for not just SFML dependency, but also for Windows!
+//!!
+
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h> // GetKeyState(), VK_... for the Num/Caps/Scroll lock keys
+#else
+#  error Only Windows is supported yet!
+#endif
 
 #include "extern/iprof/iprof.hpp" //!! Don't leave this here forever!...
 
@@ -71,7 +79,6 @@ inline constexpr auto UI::key_from_SFML(auto sfml_keycode)
 	return _SFML_KBD_XLAT[sfml_keycode];
 }
 
-
 inline void UI::update_keys(const sf::Event& sfml_event)
 //!!
 //!! If GetKeyState is really a "real" kernel call (as opposed to just a DLL function),
@@ -80,6 +87,9 @@ inline void UI::update_keys(const sf::Event& sfml_event)
 // (No need for a separate transl. unit for this, as it's supposed to be called from only one.)
 {
 //!!??IPROF_FUNC; -> #335
+
+//!! Should be locked to prevent any interleaving state changes via a parallel
+//!! call to reset_keys()!
 
 	//!!?? How to do these with SFML?
 	_kbd_state[VKEY::NUMPAD_ENTER]  = (unsigned)GetKeyState(VK_RETURN) & 0xff80;
@@ -119,6 +129,11 @@ inline void UI::update_keys(const sf::Event& sfml_event)
 	_kbd_state[VKEY::SHIFT] = _kbd_state[VKEY::LSHIFT] || _kbd_state[VKEY::RSHIFT]; //!! SFML/Windows BUG: https://github.com/SFML/SFML/issues/1301
 	_kbd_state[VKEY::CTRL]  = _kbd_state[VKEY::LCTRL]  || _kbd_state[VKEY::RCTRL];
 	_kbd_state[VKEY::ALT]   = _kbd_state[VKEY::LALT]   || _kbd_state[VKEY::RALT];
+
+//!!?? Is this still needed, given the switch above?
+//!!?? Or, IOW: why is that one needed, if we have this below?
+//!! (I vaguely recall the Win32 API being more cumbersome than just letting me
+//!! do the straightforward thing, but can't remember what the pitfalls were!)
 	// These are ignored by SFML, must get them manually:
 	_kbd_state[VKEY::CAPS_LOCKED]   = (unsigned)GetKeyState(VK_CAPITAL) & 1;
 	_kbd_state[VKEY::NUM_LOCKED]    = (unsigned)GetKeyState(VK_NUMLOCK) & 1;

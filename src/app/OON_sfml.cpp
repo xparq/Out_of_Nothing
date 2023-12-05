@@ -528,10 +528,12 @@ cerr << "- Nothing there, focusing on the deep void...\n";
 			}
 
 			case sf::Event::LostFocus:
+				reset_keys();
 				renderer.p_alpha = Renderer_SFML::ALPHA_INACTIVE;
 				break;
 
 			case sf::Event::GainedFocus:
+				reset_keys();
 				renderer.p_alpha = Renderer_SFML::ALPHA_ACTIVE;
 				break;
 
