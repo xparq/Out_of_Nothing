@@ -4,6 +4,8 @@
 //!! only its modelling-related services that are actually used:
 #include "Engine/SimApp.hpp"
 
+#include "extern/semver.hpp"
+
 #include <cassert>
 #include <cmath> // sqrt, pow?
 #include <fstream>
@@ -31,6 +33,15 @@ using namespace std;
 using namespace Szim;
 using namespace Math;
 
+
+
+//============================================================================
+World::World() :
+	gravity_mode(Normal)
+{
+}
+
+//----------------------------------------------------------------------------
 size_t World::add_body(Body const& obj)
 {
 	bodies.push_back(std::make_shared<Body>(obj));
@@ -59,6 +70,8 @@ void World::update(float dt, SimApp& game)
 //!! Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 //----------------------------------------------------------------------------
+#define _LEGACY_GRAVITY_CALC_ // -> #65
+
 #define _SKIP_SOME_STATE_UPDATES_ 10
 	// Slow changes (like cooling bodies) don't need updates in every frame
 	//!! Make it actually timed, so it can be independent of frame rate!
@@ -150,12 +163,19 @@ if (_SKIP_SOME_STATE_UPDATES_ && --skipping_n_interactions) {
 //!!This line below is hard-coded to globe-ndx == 0, and also ignores any other (potential) players!...
 for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 1); ++actor_obj_ndx)
 {
-	for (size_t i = 0; i < bodies.size(); ++i)
+//#ifdef _LEGACY_GRAVITY_CALC_
+//	for (size_t i = 0; i < bodies.size(); ++i)
+//#else
+//	for (size_t i = actor_obj_ndx + 1; i < bodies.size(); ++i)
+//#endif
+	assert(gravity_mode == Normal || gravity_mode == Skewed || gravity_mode == Off);
+	for (size_t i = gravity_mode == Normal ? 0 : actor_obj_ndx + 1; i < bodies.size(); ++i)
 	{
 		auto& body = bodies[i];
 
 		// Collisions & gravity...
-		if (i != actor_obj_ndx) {
+		//!! see the relative looping now! if (i != actor_obj_ndx)
+		{
 			auto& other = bodies[actor_obj_ndx];
 
 			auto dx = other->p.x - body->p.x,
@@ -227,11 +247,33 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				game.interaction_hook(this, Event::Collision, body.get(), other.get());
 
 			} else if (!body->superpower.gravity_immunity) { // process gravity if not colliding
+//#ifdef _LEGACY_GRAVITY_CALC_
+if (gravity_mode == Normal) {
 				float g = Physics::G * other->mass / (distance * distance);
 				Vector2f gvect(dx * g, dy * g);
 				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
 				Vector2f dv = gvect * dt;
 				body->v += dv;
+//#else //!! #65...:
+} else if (gravity_mode == Skewed) {
+				float G_per_DD = Physics::G / (distance * distance);
+				// New accel. of the "inner" body:
+				float a1 = G_per_DD * other->mass;
+				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
+				Vector2f dv1 = Vector2f{dx * a1, dy * a1} * dt;
+				body->v += dv1;
+/*
+				// New accel. of the "outer" body:
+				float a2 = -G_per_DD * body->mass;
+				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
+				Vector2f dv2 = Vector2f{dx * a2, dy * a2} * dt;
+				other->v += dv2;
+*/
+//#endif
+} else {
+	assert(gravity_mode == Off);
+}
+
 //cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
 			}
 		} // if interacting with itself
@@ -281,6 +323,7 @@ void World::_copy(World const& other)
 		//!! throw-away volatile state (like caches) in the future.
 		FRICTION = other.FRICTION;
 		_interact_all = other._interact_all;
+		gravity_mode = other.gravity_mode;
 
 		bodies.clear();
 		for (const auto& b : other.bodies) {
@@ -291,12 +334,18 @@ void World::_copy(World const& other)
 
 
 //----------------------------------------------------------------------------
-bool World::save(std::ostream& out)
+bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nullptr*/)
 {
-	out << "MODEL_VERSION = " << Model::VERSION << '\n';
+//!! For reg. testing:
+//!!	version = "0.0.1";
+	semver::version saved_version(version ? version : Model::VERSION);
+
+	out << "MODEL_VERSION = " << saved_version << '\n';
 
 	out << "drag = " << FRICTION << '\n';
 	out << "interactions = " << _interact_all << '\n';
+//	out << "gravity_mode = " << (unsigned)gravity_mode << '\n';
+
 	out << "objects = " << bodies.size() << '\n'; // Saving for verification + preallocation on load!
 	out << "- - -" << '\n'; //!! mandatory separator to not break the idiotic loader! :)
 	for (size_t ndx = 0; ndx < bodies.size(); ++ndx) {
@@ -318,25 +367,33 @@ bool World::save(std::ostream& out)
 //!!	optional<World> w0;
 //!!	return nullopt; //!! w0;
 //!!}
-bool World::load(std::istream& in, World* result/* = nullptr*/)
+/*static*/ bool World::load(std::istream& in, World* result/* = nullptr*/)
 {
-	// World properties...
+	// Read the global world properties...
 	map<string, string> props;
-    for (string name, eq, val; in && !in.bad()
+	for (string name, eq, val; in && !in.bad()
 		&& (in >> name >> eq >> quoted(val)) && eq == "=";) {
 		props[name] = val;
 	}
 //for (auto& [n, v] : props) cerr << n << ": " << v << endl;
 
+	const semver::version runtime_version(Model::VERSION);
+	const semver::version loaded_version(props["MODEL_VERSION"]);
+
 	//!! Verify a prev. save assuming a locked state, so the world hasn't changed since.
 	//!! This might be a very stupid idea actually...
-	if (props["MODEL_VERSION"] != string(Model::VERSION)) {
-		cerr << "- ERROR: Unknown smapshot version \"" << props["MODEL_VERSION"] << "\"\n";
+	if (loaded_version > semver::version("0.1.0")) {
+		cerr << "- ERROR: Unsupported snapshot version \"" << props["MODEL_VERSION"] << "\"\n";
 		return false;
 	}
+	if (loaded_version != runtime_version) {
+		cerr << "- NOTE: Loading version " << loaded_version << " different from the runtime version ("
+			<< runtime_version <<")\n";
+	}
+
 	/*
 	if (stoul(props["interactions"]) > 1) {
-		cerr << "- ERROR: Inconsistent smapshot data (`interactions` is not bool?!)\n";
+		cerr << "- ERROR: Inconsistent snapshot data (`interactions` is not bool?!)\n";
 		return false;
 	}*/
 	//!!
@@ -350,11 +407,15 @@ bool World::load(std::istream& in, World* result/* = nullptr*/)
 
 	World& w_new = *result;
 
+	unsigned _prop_ndx_ = 0;
 	try { // stof & friends are throw-happy
-		w_new.FRICTION = stof(props["drag"]);
-		w_new._interact_all = stof(props["interactions"]);
+		++_prop_ndx_; w_new.FRICTION = stof(props["drag"]);
+		++_prop_ndx_; w_new._interact_all = stof(props["interactions"]);
+		if (loaded_version != semver::version("0.0.1"))	{
+			++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]);
+		}
 	} catch (...) {
-		cerr << "- ERROR: Invalid world property in loaded snapshot.\n";
+		cerr << "- ERROR: Invalid world property #"<<_prop_ndx_<<" in the loaded snapshot.\n";
 		return false;
 	}
 

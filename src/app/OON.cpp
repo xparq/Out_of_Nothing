@@ -155,22 +155,36 @@ void OON::_setup_UI()
 	gui.setPosition(4, cfg.WINDOW_HEIGHT-200);
 		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
 		//!! Not even this would do anything, actually: form->setPosition({100, -200});
-	auto form = gui.add(new Form, "Params");
+	auto gui_main_hbox = gui.add(new HBox);
+	auto left_vbox = gui_main_hbox->add(new VBox);
+	auto form = left_vbox->add(new Form, "Params");
 		form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
-		form->add("Fixed model Δt", new CheckBox([&](auto*){ this->toggle_fixed_model_dt(); },
-		                                         cfg.fixed_model_dt_enabled));
 		form->add("Pan override", new CheckBox); // Will be polled by the control loop!
 		form->add(" - pan locked", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 
 	gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
 
-	auto volrect = gui.add(new Form, "VolForm");
+	auto volrect = left_vbox->add(new Form, "VolForm");
 	volrect->add("Volume", new Slider({/*.orientation = Vertical*/}, 70), "volume slider")
 		->setCallback([&](auto* w){backend.audio.volume(w->get());})
 		->update(75); // %
-	auto audio_onoff = gui.add(new Form, "AudioOnOffForm");
+	auto audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
 	audio_onoff->add("Audio: ", new CheckBox([&](auto*){backend.audio.toggle_audio();}, backend.audio.enabled));
 	audio_onoff->add(" - FX: ", new CheckBox([&](auto*){backend.audio.toggle_sounds();}, backend.audio.fx_enabled));
+
+	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
+
+	auto g_select = new OptionsBox<World::GravityMode>();
+		g_select->add("Normal", World::GravityMode::Normal);
+		g_select->add("Skewed", World::GravityMode::Skewed);
+		g_select->add("Off",    World::GravityMode::Off);
+		g_select->set(0);
+		g_select->setCallback([&](auto* w){ this->world().gravity_mode = (World::GravityMode)w->current(); });
+
+	auto phys_form = gui_main_hbox->add(new Form);
+		phys_form->add("Gravity", g_select);
+		phys_form->add("Fixed model Δt", new CheckBox(
+			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
@@ -221,6 +235,7 @@ void OON::_setup_UI()
 	debug_hud
 		<< "# of objs.: " << [=](){ return to_string(this->entity_count()); }
 		<< "\nBody interactions: " << &this->const_world()._interact_all
+		<< "\nGravity mode: " << [=](){ return to_string((unsigned)this->const_world().gravity_mode); }
 		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
 		<< "\n"
 	;
@@ -299,7 +314,8 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 		<< "Del:        Remove 100 objects (+Shift: only 1)\n"
         //	<< "----------- Metaphysics:\n"
 		<< "Tab:        Toggle object interactions\n"
-		<< "F:          Decrease (+Shift: incr.) friction\n"
+		<< "G:          Gravity mode\n"
+		<< "F:          Decrease friction (+Shift: increase)\n"
         //	<< "C:          chg. collision mode: pass/stick/bounce\n"
 		<< "------------ Time Control:\n"
 		<< "Pause or H: Toggle halting the physics (time)\n"

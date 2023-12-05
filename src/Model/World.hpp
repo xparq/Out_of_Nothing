@@ -14,12 +14,17 @@
 //!!No, not yet. It's just too cumbersome, for too little gain:
 //!!#include <optional> // for load()
 
-//!!class std::ostream; class std::istream;
-//!! MSVC accepted fw-declaring them, but only inside the classes (below)!
-//!! It actually crashed, when I moved them here!... :-o (-> https://github.com/xparq/Out_of_Nothing/issues/195)
-//!! GCC really freaked out from those declarations, though...
-//!! AND CRASHED TOO (albeit in Audio.cpp, half an hour before MSVC)! :D (-> https://github.com/xparq/Out_of_Nothing/issues/195)
-//!! OK, fuck it...:
+/*!!
+namespace std {
+	class istream;
+	class ostream;
+}
+MSVC accepted fw-declaring them, but only inside the classes (below)!
+And it actually crashed the MSVC compiler, when I moved them here!... :-o (-> #195)
+GCC was also really freaking out from those declarations...
+AND CRASHED TOO!!! :)) (Albeit in Audio.cpp, probably unrelated; 1/2 hour before MSVC)! :D (-> #195)
+!!*/
+//!!OK, fuck it...:
 #include <iostream>
 
 namespace Szim {
@@ -30,7 +35,7 @@ class SimApp; //! Sigh, must predeclare it here, outside the namespace...
 
 namespace Model {
 
-static constexpr char const* VERSION = "0.0.1";
+static constexpr char const* VERSION = "0.1.0";
 
 //============================================================================
 class World // The model world
@@ -47,6 +52,8 @@ public:
 //----------------------------------------------------------------------------
 public:
 	enum Event { None, Collision, Decay };
+
+	enum GravityMode : unsigned { Off, Normal, Skewed };
 
 	struct Body //!! : public Serializable //! No: this would kill the C++ init list syntax!...
 	                                       //! So, just keep it a memcpy-able POD type for easy loading!
@@ -143,14 +150,16 @@ public:
 //!!friend class OON_sfml;
 //!!So just allow public access for now:
 public:
-	//!! REVISE _copy() WHENEVER CHANGING THE DATA HERE!
+	//!! REVISE _copy(), and save/load, WHENEVER CHANGING THE DATA HERE!
 	float FRICTION = 0.03f; //!!Take its default from the cfg!
 	bool _interact_all = false; // Bodies react to each other too, or only the player(s)?
+
+	GravityMode gravity_mode; //! v0.1.0
 
 	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
 
 //!!	class std::ostream; class std::istream;
-	bool        save(std::ostream& out);
+	bool        save(std::ostream& out, const char* version = nullptr);
 	static bool load(std::istream& in, World* result = nullptr); // Verifies only (comparing to *this) if null
 //!! std::optional<World> load(std::istream& in);
 
@@ -158,7 +167,7 @@ public:
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	World() = default;
+	World();
 	World(const World& other) { _copy(other); }
 	World& operator= (const World& other)  { _copy(other); return *this; }
 	//!!Say sg. about move, too! I guess they are inhibited by the above now.

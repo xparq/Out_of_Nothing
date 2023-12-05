@@ -461,6 +461,9 @@ try {
 			case sf::Event::TextEntered:
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
+				case 'g':
+					((sfw::OptionsBox<Model::World::GravityMode>*)gui.recall("Gravity"))->selectNext();
+					break;
 				case 'f': world().FRICTION -= 0.01f; break;
 				case 'F': world().FRICTION += 0.01f; break;
 				case 'r': time.reversed = !time.reversed; break;
