@@ -304,6 +304,20 @@ _CL_dephack_errhandler =@\
 	echo "grep    \"Note: including file:\" $(_cc_out) > $(_CL_hdeps) || true" >> $(_CL_dephack_sh) &&\
 	echo "exit 0"                                                          >> $(_CL_dephack_sh) &&\
 	. $(_CL_dephack_sh)
+#
+# Need the abs. project dir for filtering from the showIncludes output...
+#
+#!!_CL_dephack_PRJDIR_ != cmd /c "pushd $(SZ_PRJDIR) & cd & popd"
+#!!	Fails with pdpmake and/or BB sh tying to be clever with the quotes,
+#!!	*and* the backslashes (which it just swallows)... :-/
+#!!	(And pdpmake failed with a / -> \ %-conversion, too, AFAICR. :-/ )
+#!!
+#!!?? So... How the f* do I normalize a rel. path in CMD, again, in a way
+#!!?? that can survive this sh-wrapping indirection?...
+#!!   (Note again: sh's `realpath` won't do: we need those backslashes!)
+#!!
+#!! BB's make botches also this somehow, and we get "The system cannot find the file":
+#!!_CL_dephack_PRJDIR_ != cmd /c "for /f %X in ("$(SZ_PRJDIR)") do echo %~fX"
 
 #! Note: using $(outdir) instead of $(vroot), to not miss build-mode-
 #!       independent (e.g. generated) includes; see:
@@ -311,7 +325,8 @@ _CL_dephack_errhandler =@\
 #!! IT WILL HAVE TO BE ADJUSTED AGAIN, WHEN ELIMINATING THE SRC TREE DUPLICATION!...
 _CL_dephack_procdep = @busybox awk -e 'BEGIN{print"$@:\\"}\
 	{ sub($$1 FS $$2 FS $$3 FS, ""); gsub(/\\/, "/", $$0);\
-		if (index($$0, "$(outdir)") != 0) print $$0 "\\" }\
+		if (index($$0, "$(outdir)") != 0\
+		 || index($$0, "extern"   ) != 0) print $$0 "\\"; }\
 	END{print""}' "$(_CL_hdeps)" > $@.dep
 #!!?? WTF: this worked directly from the cmd (FAR) commandline, but not here:
 #!!??_teehack2 = busybox grep -iF $(vroot_bs)\$(src_subdir) $@.dep.tmp
