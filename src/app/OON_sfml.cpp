@@ -412,7 +412,15 @@ try {
 				break;
 			}
 
-			switch (event.type) //!! See above: morph into using abstracted events!
+			// If the GUI has the input focus, let it process the event
+			// -- except for some that really don't belong there:
+			if (gui.focused() &&
+				event.type != sf::Event::LostFocus && // Yeah, so this is an entirely different "focus"! :-o
+				event.type != sf::Event::GainedFocus)
+			{
+				goto process_ui_event;
+			}
+			else switch (event.type) //!! See above: morph into using abstracted events!
 			{
 			case sf::Event::KeyPressed:
 #ifdef DEBUG
@@ -501,7 +509,7 @@ try {
 				//!! directly and pass the event if it belongs there...
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
 //cerr << "-- mouse: " << mouse.x <<", "<< mouse.y << "\n";
-				if (gui.contains(gui.getMousePosition()))
+				if (gui.focused() || gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
 				view_control(event.mouseWheelScroll.delta); //! Apparently always 1 or -1...
@@ -515,7 +523,7 @@ try {
 //cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...
-				if (gui.contains(gui.getMousePosition()))
+				if (gui.focused() || gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
 				view.focus_offset = {event.mouseButton.x - view.width/2,
@@ -547,7 +555,7 @@ cerr << "- Nothing there, focusing on the deep void...\n";
 			default:
 process_ui_event:		// The GUI should be given a chance before this `switch`, but... -> #334: it can't swallow events!
 				gui.process(event);
-				//!! Also, it's inconsistent with this `IDLE` state assumption below!... :-o :-/
+				//!! Also, it's kinda inconsistent with this `IDLE` state assumption below!...
 				//!! (Hopefully it's not even used nowadays at all though...)
 				ui_event_state = UIEventState::IDLE;
 
