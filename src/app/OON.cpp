@@ -131,8 +131,8 @@ void OON::done() // override
 //	cerr << __FUNCTION__ << ": Put any 'onExit' tasks (like saving the last state) here!...\n";
 
 	//!! MOVE THE SESSION LOGIC TO SimApp:
-	// Let the session-manager auto-save the current session (unless disabled with --session-no-save; see SimApp::init()!)
-	if (args["session"]) { // If empty, it will be saved as "UNNAMED.autosave" or sg. like that...
+	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
+	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
 		session.close();
 	}
 }

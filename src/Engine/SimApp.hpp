@@ -88,6 +88,7 @@ public:
 	const Model::World& const_world(); // Explicit const World& of non-const SimApp
 	void set_world(const Model::World&);
 
+	// Session save/load...
 	virtual bool save_snapshot(const char* filename);
 	virtual bool load_snapshot(const char* filename);
 	bool quick_save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
@@ -97,10 +98,11 @@ public:
 		std::string_view pattern = SimAppConfig::DEFAULT_SNAPSHOT_FILE_PATTERN,
 		const X... args)
 	{
-		return std::vformat(sz::prefix_if_rel(cfg.data_dir, pattern),
+		return std::vformat(sz::prefix_if_rel(cfg.session_dir, pattern),
 		                    std::make_format_args(slot_ndx, args...));
 	}
 
+	// Entities...
 	using Entity = Model::World::Body;
 	size_t entity_count() const { return world().bodies.size(); }
 //!! ADD DEBUG-MODE BOUNDS-CHECKING FOR THESE!

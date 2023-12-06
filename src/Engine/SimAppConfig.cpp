@@ -27,6 +27,9 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	window_title = "Out of Nothing"; //!! USE A BUILT-IN APP_NAME RESOURCE/PROP
 	quick_snapshot_filename_pattern = DEFAULT_SNAPSHOT_FILE_PATTERN;
 
+	exe_dir = sz::dirname(args.argv[0]);  //!! See #368, and right below:
+	cfg_dir = base_path(); //!! But...: #368 - infer from the exe dir, in Config already!...
+
 	// 2. Override from the config...
 
 	//!! These assignments are kinda silly... I don't like storing them here _again_,
@@ -36,10 +39,22 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	//!! later!... But: the parsed TOML tables can be modified, too!...
 	//!!
 	//!!BTW: WITH get() THERE'S NO WAY TO GET VALUES WITHOUT ALWAYS SUPPLYING THE DEFAULTS, TOO! :-/
-	data_dir        = get("data_dir", ""); // "" is the same as sz::getcwd()
-	asset_dir       = get("asset_dir", "asset/");
-	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
 	window_title      = get("appearance/window_title", window_title); //!! not really a cfg option...
+
+	// "" is the current dir (e.g. sz::getcwd())
+
+	asset_dir       = get("asset_dir", "asset/");
+	engine_state_dir = get("engine_state_dir", "state");
+	// Relative to engine_state_dir (unless absolute paths):
+	log_dir         = get("log_dir", "");
+
+	user_dir        = get("user_dir", "user");
+	// Relative to user_dir (unless absolute paths):
+	session_dir     = get("session_dir", "session");
+	model_dir       = get("model_dir", "model");
+
+	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
+
 	start_fullscreen  = get("appearance/start_fullscreen", false);
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
 	default_font_file = get("appearance/default_font_file", "gui/font/default.font");
@@ -92,8 +107,15 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	//!! Decide & consolidate whether to go with normalized abs. paths, or keep them as-is,
 	//!! and rely on the CWD (which might need some explicit care)!
 
-	sz::endslash_fixup(&data_dir);
+	//!! The base dirs must end with a slash currently...:
+	sz::endslash_fixup(&engine_state_dir);
 	sz::endslash_fixup(&asset_dir);
+	sz::endslash_fixup(&user_dir);
+
+	log_dir     = sz::prefix_if_rel(engine_state_dir, log_dir);
+	session_dir = sz::prefix_if_rel(user_dir, session_dir);
+	model_dir   = sz::prefix_if_rel(user_dir, model_dir);
+
 	if (iteration_limit == 0) iteration_limit = (decltype(iteration_limit))-1; // -1 is what's internally used for no limit
 	if (args["exit-on-finish"]) exit_on_finish = (args("exit-on-finish") != "off");
 	if (args["exit_on_finish"]) exit_on_finish = (args("exit_on_finish") != "off"); //!! Sigh, the dup...
@@ -103,10 +125,16 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 #endif
 
 cerr << "DBG> current dir: " << sz::getcwd() << '\n';
+cerr << "DBG> exe dir: " << exe_dir << '\n';
 cerr << "DBG> current config: " << (current().empty() ? "built-in defaults(!)" : current()) << '\n';
-cerr << "DBG> base_path(): " << base_path() << '\n';
-cerr << "DBG> asset_dir: " << asset_dir << '\n';
-cerr << "DBG> data_dir: " << data_dir << '\n';
+cerr << "DBG> cfg.base_path(): " << base_path() << '\n';
+cerr << "DBG> cfg_dir: " << cfg_dir << '\n';
+cerr << "DBG> asset_dir: "   << asset_dir << '\n';
+cerr << "DBG> engine_state_dir: "   << engine_state_dir << '\n';
+cerr << "DBG> log_dir: "     << log_dir << '\n';
+cerr << "DBG> user_dir: "    << user_dir << '\n';
+cerr << "DBG> session_dir: " << session_dir << '\n';
+cerr << "DBG> model_dir: "   << model_dir << '\n';
 cerr << "DBG> iteration_limit: " << iteration_limit << '\n';
 cerr << "DBG> fixed_model_dt: " << fixed_model_dt
      << (fixed_model_dt_enabled ? ", enabled" : ", disabled!") << '\n';

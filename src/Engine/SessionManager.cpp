@@ -42,7 +42,7 @@ void SessionManager::set_autosave(bool state)
 void SessionManager::set_save_as_filename(const string& fn)
 {
 	active_session.save_as_filename =
-		sz::prefix_if_rel(app.cfg.data_dir, fn);
+		sz::prefix_if_rel(app.cfg.session_dir, fn);
 		//!! This manual dir prefixing will need to be normalized...
 		//!! See notes in open()!
 }
@@ -75,7 +75,7 @@ cerr << " starting new session\n";
 	//!! Use the same prefixing logic as the Config etc.
 	//!! -- JUST NOT THIS WAY, BUT VIA A SYSTEM-LEVEL RES. MGR.!
 	active_session.filename =
-		sz::prefix_if_rel(app.cfg.data_dir, active_session_name);
+		sz::prefix_if_rel(app.cfg.session_dir, active_session_name);
 		//!! This manual dir prefixing will need to be normalized,
 		//!! i.e. synced with snapshot_filename(), by both that and
 		//!! this calling the same unified asset/resource filename

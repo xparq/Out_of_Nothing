@@ -41,25 +41,32 @@ struct SimAppConfig : Config
 		//! provided by the physics there!
 
 	//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	//!! THESARE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
+	//!! SOME OF THESARE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
 	//!! Possibly move the post-load callback hook here!
 	// Sys.
-	std::string data_dir;
+	std::string exe_dir;
+	std::string cfg_dir;
 	std::string asset_dir;
-	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with data_dir
+	std::string engine_state_dir;
+	std::string log_dir;
+	std::string user_dir;
+	std::string session_dir;
+	std::string model_dir;
+//	std::string addon_dir;
+	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with session_dir
 	bool        start_fullscreen;
 	std::string window_title;
 	std::string default_font_file;
 	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (sfw hex color string) + name!
 	std::string hud_font_file;
-	std::string background_music;
 	// Sim.
 	Time::CycleCount iteration_limit;
 	bool  exit_on_finish; // If iteration_limit > 0, close the app when finished.
 	bool  fixed_model_dt_enabled;
 	float fixed_model_dt;
 	unsigned fps_limit; // 0: no limit
-
+	// UI, presentation
+	std::string background_music; //!!?? Awkward... App stuff that needs convenient engine support. How exactly?
 	// Misc.
 	bool DEBUG_show_keycode = false;
 

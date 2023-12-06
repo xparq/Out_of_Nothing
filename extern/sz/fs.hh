@@ -1,5 +1,5 @@
 /*
-	v0.1.0
+	v0.1.1
 */
 
 #ifndef _LSF39847G45796GK890G676G42GF35_
@@ -73,7 +73,7 @@ std::string prefix_if_rel(const StrOrCharPtr& prefix, Str path,
              ))
 
 	     ? path
-	     : (std::filesystem::path(prefix) += path).string()
+	     : (std::filesystem::path(prefix) /= path).string()
 	);
 #ifdef _WIN32
 #  undef OR_BACKSLASH_TOO_ON_WINDOWS
