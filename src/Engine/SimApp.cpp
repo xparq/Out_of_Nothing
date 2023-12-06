@@ -11,8 +11,8 @@
 //	using namespace std::string_literals;
 //#include <string_view>
 //	using std::string_view;
-//#include "sz/fs.hh"
-//	using sz::dirname;
+#include "sz/fs.hh"
+	using sz::prefix_if_rel;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
 #ifdef SAVE_COMPRESSED
@@ -233,7 +233,7 @@ bool SimApp::quick_save_snapshot(unsigned slot_id) // starting from 1, not 0!
 }
 
 //----------------------------------------------------------------------------
-bool SimApp::save_snapshot(const char* fname) // starting from 1, not 0!
+bool SimApp::save_snapshot(const char* unsanitized_filename)
 {
 	//!!A kinda alluring abstraction would be SimApp not really having its own state
 	//!!(worth saving, beside the model world), leaving all that to descendants...
@@ -241,14 +241,14 @@ bool SimApp::save_snapshot(const char* fname) // starting from 1, not 0!
 	//!!could be derived from... What I do see, OTOH, is the hassle in the App class
 	//!!chain to actually deal with saving/loading all the meta/supplementary state...
 
+	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
+
+	string OVERALL_FAIL = "ERROR: Couldn't save snapshot to file \""; OVERALL_FAIL += fname + "\"\n";
+
 	Model::World snapshot = world();
+	//!! OK, now we could start a low-priority background thread to actually save the snapshot...
 
-	//!! OK, now we could start a low-priority background
-	//!! thread to actually save the snapshot...
-
-	string OVERALL_FAIL = "ERROR: Couldn't save snapshot to file \""; OVERALL_FAIL += string(fname) + "\"\n";
-
-	//!! Note: perror("") may just print "No error" even if the stream in failure mode! :-/
+	//!! Note: perror("") may just print "No error" even if the stream is in failure mode! :-/
 
 #ifdef SAVE_COMPRESSED
 	ofstream file(fname, ios::binary);
@@ -324,9 +324,11 @@ bool SimApp::quick_load_snapshot(unsigned slot_id) // starting from 1, not 0!
 }
 
 //----------------------------------------------------------------------------
-bool SimApp::load_snapshot(const char* fname)
+bool SimApp::load_snapshot(const char* unsanitized_filename)
 {
-	string OVERALL_FAIL = "ERROR: Couldn't load snapshot from file \""; OVERALL_FAIL += string(fname) + "\"\n";
+	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
+
+	string OVERALL_FAIL = "ERROR: Couldn't load snapshot from file \""; OVERALL_FAIL += fname + "\"\n";
 
 	//!! We could start a low-priority background thread
 	//!! to load a world state into a buffer first, and then

@@ -21,7 +21,6 @@
 #include "sz/unilang.hh" // ON/OFF, AUTO_CONST, OUT
 #include "sz/counter.hh"
 #include "sz/rolling_average.hh"
-#include "sz/fs.hh"
 
 import Storage;
 
@@ -98,8 +97,7 @@ public:
 		std::string_view pattern = SimAppConfig::DEFAULT_SNAPSHOT_FILE_PATTERN,
 		const X... args)
 	{
-		return std::vformat(sz::prefix_if_rel(cfg.session_dir, pattern),
-		                    std::make_format_args(slot_ndx, args...));
+		return std::vformat(pattern, std::make_format_args(slot_ndx, args...));
 	}
 
 	// Entities...

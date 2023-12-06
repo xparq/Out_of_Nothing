@@ -44,7 +44,9 @@ cache/
 *.autosav*
 
 extern/*
-!extern/sfw/
-extern/sfw/lib/msvc/*-d.lib
+!extern/sfw/asset/
+!extern/sfw/include/
+!extern/sfw/lib/
+extern/sfw/lib/*-d.lib
 
 !extern/sz/

@@ -344,7 +344,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	out << "drag = " << FRICTION << '\n';
 	out << "interactions = " << _interact_all << '\n';
-//	out << "gravity_mode = " << (unsigned)gravity_mode << '\n';
+	out << "gravity_mode = " << (unsigned)gravity_mode << '\n';
 
 	out << "objects = " << bodies.size() << '\n'; // Saving for verification + preallocation on load!
 	out << "- - -" << '\n'; //!! mandatory separator to not break the idiotic loader! :)

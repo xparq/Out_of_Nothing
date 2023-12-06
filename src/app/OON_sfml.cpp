@@ -321,7 +321,7 @@ void OON_sfml::updates_for_next_frame()
 		}
 	}
 	// Update the focus lock indicator:
-	((sfw::CheckBox*)gui.recall(" - pan locked"))->set(_focus_locked_);
+	sfw::getWidget<sfw::CheckBox>(" - pan locked")->set(_focus_locked_);
 
 	view_control(); // Manual view adjustments
 }
@@ -457,7 +457,7 @@ try {
 					break;
 
 				case sf::Keyboard::F12: toggle_huds();
-					((sfw::CheckBox*)gui.recall("Show HUDs"))->set(huds_active());
+					sfw::getWidget<sfw::CheckBox>("Show HUDs")->set(huds_active());
 					break;
 				case sf::Keyboard::F11:
 					toggle_fullscreen();
@@ -474,7 +474,7 @@ try {
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
 				case 'g':
-					((sfw::OptionsBox<Model::World::GravityMode>*)gui.recall("Gravity"))->selectNext();
+					sfw::getWidget<sfw::OptionsBox<Model::World::GravityMode>>("Gravity")->selectNext();
 					break;
 				case 'f': world().FRICTION -= 0.01f; break;
 				case 'F': world().FRICTION += 0.01f; break;
@@ -483,15 +483,15 @@ try {
 				case 'T': time.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
 				case 'M': toggle_muting();
-					((sfw::CheckBox*)gui.recall("Audio: "))->set(backend.audio.enabled);
+					sfw::getWidget<sfw::CheckBox>("Audio: ")->set(backend.audio.enabled);
 					break;
 				case 'm': toggle_music(); break;
 				case 'n': toggle_sound_fx();
-					((sfw::CheckBox*)gui.recall(" - FX: "))->set(backend.audio.fx_enabled);
+					sfw::getWidget<sfw::CheckBox>(" - FX: ")->set(backend.audio.fx_enabled);
 					break;
 				case 'P': fps_throttling(!fps_throttling()); break;
 				case 'x': toggle_fixed_model_dt();
-					((sfw::CheckBox*)gui.recall("Fixed model Δt"))->set(cfg.fixed_model_dt_enabled);
+					sfw::getWidget<sfw::CheckBox>("Fixed model Δt")->set(cfg.fixed_model_dt_enabled);
 					break;
 				case '?': toggle_help(); break;
 				}

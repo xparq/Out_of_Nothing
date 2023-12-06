@@ -151,40 +151,68 @@ void OON::_setup_UI()
 	// The SFW GUI is used as a translucent overlay, so an alpha-enabled bgColor
 	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
-	Theme::click.textColor = sfw::Color("#ee9"); //!! "input".textColor... YUCK!! And "click" for LABELS?!?!
-	gui.setPosition(4, cfg.WINDOW_HEIGHT-200);
+	Theme::click.textColor = sfw::Color("#ee9"); //!!("input".textColor!) YUCK!! Also "click" for LABELS?!?!
+	gui.setPosition(4, cfg.WINDOW_HEIGHT-130);
 		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
-		//!! Not even this would do anything, actually: form->setPosition({100, -200});
+		//!! Not even this would do anything, actually: ->setPosition({100, -200});
 	auto gui_main_hbox = gui.add(new HBox);
+
+	// Misc UI controls...
 	auto left_vbox = gui_main_hbox->add(new VBox);
-	auto form = left_vbox->add(new Form, "Params");
-		form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
-		form->add("Pan override", new CheckBox); // Will be polled by the control loop!
-		form->add(" - pan locked", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
+		auto	gui_form = left_vbox->add(new Form, "Params");
+			gui_form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
+			gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
+		auto	volrect = left_vbox->add(new Form, "VolForm");
+			volrect->add("Volume", new Slider({/*.orientation = Vertical*/}, 70), "volume slider")
+			->setCallback([&](auto* w){backend.audio.volume(w->get());})
+			->update(75); // %
+		auto	audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
+			audio_onoff->add("Audio: ", new CheckBox([&](auto*){backend.audio.toggle_audio();}, backend.audio.enabled));
+			audio_onoff->add(" - FX: ", new CheckBox([&](auto*){backend.audio.toggle_sounds();}, backend.audio.fx_enabled));
 
-	gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
+	// View...
+	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
+	auto	view_form = gui_main_hbox->add(new Form);
+		view_form->add("Pan override", new CheckBox); // Will be polled by the control loop!
+		view_form->add(" - pan locked", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 
-	auto volrect = left_vbox->add(new Form, "VolForm");
-	volrect->add("Volume", new Slider({/*.orientation = Vertical*/}, 70), "volume slider")
-		->setCallback([&](auto* w){backend.audio.volume(w->get());})
-		->update(75); // %
-	auto audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
-	audio_onoff->add("Audio: ", new CheckBox([&](auto*){backend.audio.toggle_audio();}, backend.audio.enabled));
-	audio_onoff->add(" - FX: ", new CheckBox([&](auto*){backend.audio.toggle_sounds();}, backend.audio.fx_enabled));
-
-	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
-
-	auto g_select = new OptionsBox<World::GravityMode>();
-		g_select->add("Normal", World::GravityMode::Normal);
-		g_select->add("Skewed", World::GravityMode::Skewed);
-		g_select->add("Off",    World::GravityMode::Off);
-		g_select->set(0);
-		g_select->setCallback([&](auto* w){ this->world().gravity_mode = (World::GravityMode)w->current(); });
-
-	auto phys_form = gui_main_hbox->add(new Form);
+	// Physics props...
+	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
+	auto	phys_form = gui_main_hbox->add(new Form);
+		auto g_select = new OptionsBox<World::GravityMode>();
+			g_select->add("Normal", World::GravityMode::Normal);
+			g_select->add("Skewed", World::GravityMode::Skewed);
+			g_select->add("Off",    World::GravityMode::Off);
+			//g_select->set(World::GravityMode::Off);
+			g_select->setCallback([&](auto* w){ this->world().gravity_mode = w->get(); });
 		phys_form->add("Gravity", g_select);
 		phys_form->add("Fixed model Δt", new CheckBox(
 			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
+
+	// Save/load...
+	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
+	auto	saveload_form = gui_main_hbox->add(new Form);
+		saveload_form->add("File", new TextBox);
+		auto	saveload_buttons = saveload_form->add("", new HBox);
+			saveload_buttons->add(new Button("Save"))
+				->setTextColor(sf::Color::Black)->setColor(sfw::Color("#f002"))
+				->setCallback([&]{
+					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
+						auto fname = fname_widget->get();
+cerr << "FILENAME EDITOR: " << fname << '\n';
+						this->save_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
+					}
+				});
+			saveload_buttons->add(new Button("Load"))
+				->setTextColor(sf::Color::Black)->setColor(sfw::Color("#0f02"))
+				->setCallback([&]{
+					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
+						auto fname = fname_widget->get();
+cerr << "FILENAME EDITOR: " << fname << '\n';
+						this->load_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
+					}
+				});
+
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
