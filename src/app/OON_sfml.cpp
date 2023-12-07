@@ -640,11 +640,13 @@ void OON_sfml::post_zoom_hook(float factor)
 //!!Sink this into the UI!
 void OON_sfml::onResize() // override
 {
+//cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
 #ifndef DISABLE_HUD
 	((UI::HUD_SFML&)debug_hud) .onResize(((SFML_Backend&)backend).SFML_window());
 	((UI::HUD_SFML&)timing_hud).onResize(((SFML_Backend&)backend).SFML_window());
 	((UI::HUD_SFML&)help_hud)  .onResize(((SFML_Backend&)backend).SFML_window());
 #endif
+	gui.setPosition(4, SFML_WINDOW().getSize().y - gui.getSize().y - 4);
 }
 
 

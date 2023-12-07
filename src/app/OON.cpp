@@ -1,4 +1,4 @@
-#include "OON.hpp"
+﻿#include "OON.hpp"
 
 #include "sfw/GUI.hpp" //!! Used to be in OON_sfml only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
@@ -152,9 +152,6 @@ void OON::_setup_UI()
 	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!!("input".textColor!) YUCK!! Also "click" for LABELS?!?!
-	gui.setPosition(4, cfg.WINDOW_HEIGHT-120);
-		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
-		//!! Not even this would do anything, actually: ->setPosition({100, -200});
 	auto gui_main_hbox = gui.add(new HBox);
 
 	// Misc UI controls...
@@ -213,6 +210,10 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 					}
 				});
 
+	// Only position after built, so it has its dimensions:
+	gui.setPosition(4, cfg.WINDOW_HEIGHT - gui.getSize().y - 4);
+		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
+		//!! Not even this would do anything, actually: ->setPosition({100, -200});
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
