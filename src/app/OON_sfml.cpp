@@ -433,10 +433,10 @@ try {
 
 				case sf::Keyboard::Tab: toggle_interact_all(); break;
 
-				case sf::Keyboard::Insert: spawn(player_entity_ndx(), keystate(SHIFT) ? 1 : 100); break;
-				case sf::Keyboard::Delete: remove_bodies(keystate(SHIFT) ? 1 : 100); break;
-//!!...			case sf::Keyboard::Insert: add_bodies(keystate(SHIFT) ? 1 : 100); break;
-//!!??			case sf::Keyboard::Delete: OON::remove_body(); break; //!!??WTF is this one ambiguous without the qualif.?!
+				case sf::Keyboard::Insert: spawn(player_entity_ndx(),
+						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
+				case sf::Keyboard::Delete: remove_bodies(
+						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
 
 				case sf::Keyboard::F1:  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
 				case sf::Keyboard::F2:  keystate(SHIFT) ? quick_load_snapshot(2) : quick_save_snapshot(2); break;

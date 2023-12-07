@@ -33,8 +33,8 @@ public:
 
 	// Gameplay...
 
-	virtual void spawn(size_t parent_ndx = 0, size_t n = 1);       //!! require: 0 == player_entity_ndx()
-	virtual void exhaust_burst(size_t entity = 0, size_t n = 50); //!! require: 0 == player_entity_ndx()
+	virtual void spawn(size_t parent_ndx = 0, size_t n = 1);      //!! requires: 0 == player_entity_ndx()
+	virtual void exhaust_burst(size_t entity = 0, size_t n = 50);
 
 	auto interact_all(bool state = true)  { world()._interact_all = state; }
 	auto toggle_interact_all()  { interact_all(!const_world()._interact_all); }

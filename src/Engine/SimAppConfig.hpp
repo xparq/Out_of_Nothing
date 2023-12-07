@@ -61,6 +61,9 @@ struct SimAppConfig : Config
 	std::string hud_font_file;
 	// Sim.
 	Time::CycleCount iteration_limit;
+	unsigned exhaust_burst_particles;
+	float    exhaust_v_factor;
+	float    exhaust_offset_factor;
 	bool  exit_on_finish; // If iteration_limit > 0, close the app when finished.
 	bool  fixed_model_dt_enabled;
 	float fixed_model_dt;

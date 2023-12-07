@@ -1,4 +1,4 @@
-﻿#include "OON.hpp"
+#include "OON.hpp"
 
 #include "sfw/GUI.hpp" //!! Used to be in OON_sfml only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
@@ -152,7 +152,7 @@ void OON::_setup_UI()
 	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
 	Theme::click.textColor = sfw::Color("#ee9"); //!!("input".textColor!) YUCK!! Also "click" for LABELS?!?!
-	gui.setPosition(4, cfg.WINDOW_HEIGHT-130);
+	gui.setPosition(4, cfg.WINDOW_HEIGHT-120);
 		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
 		//!! Not even this would do anything, actually: ->setPosition({100, -200});
 	auto gui_main_hbox = gui.add(new HBox);
@@ -335,42 +335,43 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 	//------------------------------------------------------------------------
 	auto& help_hud = ui_gebi(HelpPanel);
 	help_hud
-        //	<< "----------- Controls:\n"
-		<< "Arrows:     Thrust\n"
-		<< "Space:      \"Exhaust\" sprinkle\n"
-		<< "Ins:        Spawn 100 objects (+Shift: only 1)\n"
-		<< "Del:        Remove 100 objects (+Shift: only 1)\n"
-        //	<< "----------- Metaphysics:\n"
-		<< "Tab:        Toggle object interactions\n"
-		<< "G:          Gravity mode\n"
-		<< "F:          Decrease friction (+Shift: increase)\n"
-        //	<< "C:          chg. collision mode: pass/stick/bounce\n"
-		<< "------------ Time Control:\n"
-		<< "Pause or H: Toggle halting the physics (time)\n"
-		<< "Enter:      Step 1 time slice forward\n"
-		<< "Backspace:  Step 1 time slice backward\n"
-		<< "R:          Reverse time\n"
-		<< "T:          Time accel. (+Shift: decel.)\n"
-		<< "X:          Toggle fixed Δt for model updates\n"
+		<< "------------ Actions:\n"
+		<< "← → ↑ ↓      Thrust\n"
+		<< "SPACE        \"Exhaust\" sprinkle\n"
+		<< "INS          Spawn object(s), +CTRL: 10, +SHIFT: 100\n"
+		<< "DEL          Remove object(s), +CTRL: 10, +SHIFT: 100\n"
+		<< "------------ God Mode - Metaphysics:\n"
+		<< "TAB          Toggle object interactions\n"
+		<< "G            Gravity mode\n"
+		<< "F            Decrease friction, +SHIFT: increase\n"
+        //	<< "C            chg. collision mode: pass/stick/bounce\n"
+		<< "------------ God Mode - Time Control:\n"
+		<< "PAUSE, H     Halt time (model time only, sorry)\n"
+		<< "ENTER        Step 1 time slice forward\n"
+		<< "BACKSPACE    Step 1 time slice backward\n"
+		<< "R            Reverse time\n"
+		<< "T            Time accel. (double), +SHIFT: decel. (half)\n"
+		<< "X            Toggle fixed Δt for model updates\n"
 		<< "------------ View:\n"
-		<< "A W S D:     Pan\n"
-		<< "+/- or Mouse Wheel: Zoom\n"
-		<< "Shift:       Pin scroll to player (or other focused entity)\n"
-		<< "Scroll Lock: Toggle locked auto-scroll\n"
-		<< "Left Click:  Set focused obj (or empty point as zoom center)\n"
-		<< "             +Shift: Set focus & pin player or clicked obj\n"
-		<< "Home:        Home in on the player\n"
-		<< "Ctrl+Home:   Reset view (to Home position & default zoom)\n"
-		<< "Ctrl+Alt:    Leave movement trails while holding\n"
-		<< "---------- Admin:\n"
-		<< "F1-F8:     Save world snapshots (+Shift: load)\n"
-		<< "M:         Mute/unmute music, N: sound fx\n"
-		<< "Shift+M:   Mute/unmute all audio\n"
-		<< "Shift+P:   Toggle FPS throttling (lower CPU load)\n"
-		<< "F11:       Toggle fullscreen\n"
-		<< "F12:       Toggle HUDs\n"
+		<< "A W S D      Pan\n"
+		<< "MOUSE WHEEL,\n"
+		<< "NUMPAD +/-   Zoom\n"
+		<< "SHIFT        Auto-scroll to follow player (or other obj.)\n"
+		<< "SCROLL LOCK  Toggle locked auto-scroll\n"
+		<< "LEFT CLICK   Set focused obj., or point for zoom center\n"
+		<< "             +SHIFT: Follow player or clicked object\n"
+		<< "HOME         Home in on the player\n"
+		<< "CTRL+HOME    Reset view to Home position & default zoom\n"
+		<< "CTRL+ALT     Trace trajectories while held\n"
+		<< "F11          Toggle fullscreen\n"
+		<< "F12          Toggle HUD overlays\n"
+		<< "------------ Admin:\n"
+		<< "F1 - F8      Quicksave (overwrites!), +SHIFT: qickload\n"
+		<< "M            Mute/unmute music, N: sound fx\n"
+		<< "SHIFT+M      Mute/unmute all audio\n"
+		<< "SHIFT+P      Toggle FPS throttling\n"
 		<< "\n"
-		<< "Esc:       Quit\n"
+		<< "ESC          Quit\n"
 		<< "\n"
 		<< "Command-line options: " << args.exename() << " /?"
 	;
@@ -413,7 +414,7 @@ bool OON::poll_and_process_controls()
 	// Allow this now irrespective of any engine firing:
 	if (keystate(SPACE)) {
 		action = true;
-		exhaust_burst(player_entity_ndx(), 5);
+		exhaust_burst(player_entity_ndx(), cfg.exhaust_burst_particles);
 	}
 
 	return action;
@@ -741,12 +742,16 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 		auto ndx = add_body();
 		auto& newborn = entity(ndx);
 		newborn.T = parent.T; // #155: Inherit T
+		newborn.v = parent.v;
 	}
 }
 
 //----------------------------------------------------------------------------
 void OON::exhaust_burst(size_t entity/* = 0*/, size_t n/* = 50*/)
 {
+	float exhaust_v_factor = cfg.exhaust_v_factor; //!! Should just be calculated instead!
+	float exhaust_offset_factor = cfg.exhaust_offset_factor; //!! Should just be calculated instead!
+
 /*!! Too boring with all these small particles:
 	auto constexpr r_min = const_world().CFG_GLOBE_RADIUS / 10;
 	auto constexpr r_max = const_world().CFG_GLOBE_RADIUS * 0.3;
@@ -763,11 +768,11 @@ void OON::exhaust_burst(size_t entity/* = 0*/, size_t n/* = 50*/)
 		add_body({
 			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! Suppress warning "conversion from double to float..."
 					+ r_min,
- 			//!!...Jesus, those literal pseudo dts here! :-o :)
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.x - rocket.v.x * 0.1f,
-			       (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.y - rocket.v.y * 0.1f },
-			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.x * 0.1f,
-			       (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.y * 0.1f },
+ 			//!!...Jesus, those hamfixted "pseudo Δts" here! :-o :)
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.x - rocket.v.x * exhaust_offset_factor,
+			       (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.y - rocket.v.y * exhaust_offset_factor },
+			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.x * exhaust_v_factor,
+			       (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.y * exhaust_v_factor },
 			.color = (uint32_t) (float)0xffffff * rand(),
 		});
 	}
