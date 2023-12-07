@@ -39,7 +39,10 @@ template <class T> auto OptionsBox<T>::add(const std::string& label, const T& va
 		this->setSize(m_box.getSize()); //! See comment at the class def., why this->...
 	}
 
-	update_selection(m_items.size() - 1);
+// Don't (as per #359):
+//	update_selection(m_items.size() - 1);
+// But update_selection() is still needed to prepare the looks, so:
+	update_selection(m_currentIndex);
 	return this;
 }
 
