@@ -19,7 +19,7 @@ protected:
 	void init() override;
 	void done() override;
 
-	enum HUD_ID { HelpPanel, TimingStats, WorldData, ObjectData, };
+	enum HUD_ID { HelpPanel, TimingStats, WorldData, ViewData, ObjectData, Debug };
 	virtual UI::HUD& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
 	bool _show_huds = true;
 	void _setup_UI();

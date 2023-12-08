@@ -17,6 +17,8 @@
 	using std::stringstream;
 #include <limits>
 	using std::numeric_limits; // # of digits for precise float output
+#include <algorithm>
+	using std::max;
 //#include <format>
 #include <iostream>
 	using std::cerr, std::endl;
@@ -100,7 +102,16 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 		(float)renderstate_line_count() * cfg.line_height + 2*DEFAULT_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
 	rect.setPosition({(float)_panel_left, (float)_panel_top});
 	rect.setFillColor(sf::Color(cfg.bgcolor));
-	rect.setOutlineColor(sf::Color((uint32_t)(cfg.bgcolor * 1.5f)));
+
+	// Add a fine border...
+	// - This is still not bullet-proof, but the best way I could conjure up that automatically looks nice:
+	float amp = 255.f / std::max(sf::Color(cfg.bgcolor).r, std::max(sf::Color(cfg.bgcolor).g, sf::Color(cfg.bgcolor).b));
+	rect.setOutlineColor(sf::Color(
+		(uint8_t) (sf::Color(cfg.bgcolor).r * amp),
+		(uint8_t) (sf::Color(cfg.bgcolor).g * amp),
+		(uint8_t) (sf::Color(cfg.bgcolor).b * amp),
+		(sf::Color(cfg.bgcolor).a) // + sf::Color(cfg.fgcolor).a) / 2
+	));
 	rect.setOutlineThickness(1);
 	window.draw(rect);
 

@@ -1,5 +1,5 @@
-#ifndef _OON_SFML_HPP_
-#define _OON_SFML_HPP_
+#ifndef _WILIRTHG029828Y9VCY37829045YGCM4EDF_
+#define _WILIRTHG029828Y9VCY37829045YGCM4EDF_
 
 #include "OON.hpp"
 
@@ -73,19 +73,23 @@ protected:
 #ifndef DISABLE_HUD
 //!!	UI::HUD& ...;
 	UI::HUD_SFML timing_hud;
-	UI::HUD_SFML debug_hud;
+	UI::HUD_SFML world_hud;
+	UI::HUD_SFML view_hud;
 	UI::HUD_SFML object_hud;
 	UI::HUD_SFML help_hud;
+	UI::HUD_SFML debug_hud;
 
 	UI::HUD& ui_gebi(HUD_ID which) override { switch (which) {
-		case HelpPanel:   return help_hud;
 		case TimingStats: return timing_hud;
-		case WorldData:   return debug_hud;
+		case WorldData:   return world_hud;
+		case ViewData:    return view_hud;
 		case ObjectData:  return object_hud;
-		default: std::unreachable(); // c++23 only; and this is c++600: [[unreachable]];
-			//return help_hud; // Dummy, to shut up some compiler warnings
+		case HelpPanel:   return help_hud;
+		case Debug:       return debug_hud;
+		default: std::unreachable(); // c++23 only; and this will be c++999: [[unreachable]]
+			//return help_hud; // Dummy, to shut up some pre-c++23 compiler warnings
 	}}
 #endif
 };
 
-#endif // _OON_SFML_HPP_
+#endif // _WILIRTHG029828Y9VCY37829045YGCM4EDF_

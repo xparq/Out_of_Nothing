@@ -64,11 +64,16 @@ OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 		.panel_left = cfg.get("appearance/HUD/timing_left", -250), .panel_top = cfg.get("appearance/HUD/timing_top", 10),
 		.fgcolor = cfg.get("appearance/HUD/timing_fg", HUD::DEFAULT_TEXT_COLOR),
 		.bgcolor = cfg.get("appearance/HUD/timing_bg", HUD::DEFAULT_BACKGROUND_COLOR)})
-	, debug_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
+	, world_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
 		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
 		.panel_left = cfg.get("appearance/HUD/world_state_left", -250), .panel_top = cfg.get("appearance/HUD/world_state_top", 320),
 		.fgcolor = cfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
 		.bgcolor = cfg.get("appearance/HUD/world_state_bg", 0x90e040ff/4)})
+	, view_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
+		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+		.panel_left = cfg.get("appearance/HUD/view_state_left", -250), .panel_top = cfg.get("appearance/HUD/view_state_top", 470),
+		.fgcolor = cfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
+		.bgcolor = cfg.get("appearance/HUD/view_state_bg", 0x90e040ff/4)})
 	, object_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
 		.line_height = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
 		.panel_left = cfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = cfg.get("appearance/HUD/object_monitor_top", 500),
@@ -79,6 +84,11 @@ OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 		.panel_left = cfg.get("appearance/HUD/help_left", 10), .panel_top = cfg.get("appearance/HUD/help_top", 10),
 		.fgcolor = cfg.get("appearance/HUD/help_fg", 0x40d040ffu),
 		.bgcolor = cfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)})
+	, debug_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
+		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+		.panel_left = cfg.get("appearance/HUD/debug_left", -250), .panel_top = cfg.get("appearance/HUD/debug_top", -350),
+		.fgcolor = cfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
+		.bgcolor = cfg.get("appearance/HUD/debug_bg", 0x90e040ff/4)})
 #endif
 {
 }
@@ -208,12 +218,13 @@ void OON_sfml::draw() // override
 #ifndef DISABLE_HUD
 	if (_show_huds) {
 		timing_hud.draw(SFML_WINDOW());
-		debug_hud.draw(SFML_WINDOW());
+		world_hud.draw(SFML_WINDOW());
+		view_hud.draw(SFML_WINDOW());
 		object_hud.draw(SFML_WINDOW());
-
+		debug_hud.draw(SFML_WINDOW());
 		if (help_hud.active())
-			help_hud.draw(SFML_WINDOW()); //!! This active-chk is redundant: HUD::draw() does the same. TBD, who's boss!
-		                                      //!! "Activity" may mean more than drawing. So... (Or actually both should control it?)
+			help_hud.draw(SFML_WINDOW()); //!! This active-chk is redundant: HUD::draw() does the same. TBD: who's boss?
+		                                      //!! "Activity" means more than just drawing, so... (Or actually both should control it?)
 	}
 #endif
 
@@ -653,9 +664,11 @@ void OON_sfml::onResize() // override
 {
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
 #ifndef DISABLE_HUD
-	((UI::HUD_SFML&)debug_hud) .onResize(((SFML_Backend&)backend).SFML_window());
-	((UI::HUD_SFML&)object_hud).onResize(((SFML_Backend&)backend).SFML_window());
 	((UI::HUD_SFML&)timing_hud).onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)world_hud) .onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)view_hud)  .onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)object_hud).onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)debug_hud) .onResize(((SFML_Backend&)backend).SFML_window());
 	((UI::HUD_SFML&)help_hud)  .onResize(((SFML_Backend&)backend).SFML_window());
 #endif
 	gui.setPosition(4, SFML_WINDOW().getSize().y - gui.getSize().y - 4);

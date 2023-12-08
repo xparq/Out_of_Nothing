@@ -237,31 +237,118 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 		};
 	};
 
+	//------------------------------------------------------------------------
+	// Timing
+	ui_gebi(TimingStats)
+		<< "FPS: " << [&](){ return to_string(1 / (float)this->avg_frame_delay); }
+		<< "\nlast frame Δt: " << [&](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; }
+		<< "\nmodel Δt: " << [&](){ return to_string(this->time.last_model_Δt * 1000.0f) + " ms"; }
+		<<            " " << [&](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
+		<< "\ncycle: " << [&](){ return to_string(iterations); }
+		<< "\nReal elapsed time: " << &time.real_session_time
+	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
+	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
+		<< "\nTime reversed: " << &time.reversed
+		<< "\nTime scale: " << ftos(&this->time.scale)
+		<< "\nModel timing stats:"
+//		<< "\n    updates: " << &time.model_Δt_stats.samples
+		<< "\n    total t: " << &time.model_Δt_stats.total
+		<< "\n  Δt:"
+		<< "\n    last: " << &time.model_Δt_stats.last
+		<< "\n    min abs: " << &time.model_Δt_stats.umin
+		<< "\n    max abs: " << &time.model_Δt_stats.umax
+		<< "\n    min: " << &time.model_Δt_stats.min
+		<< "\n    max: " << &time.model_Δt_stats.max
+		<< "\n    avg.: " << [&]{ return to_string(this->time.model_Δt_stats.average());}
+	;
+//cerr << timing_hud;
+
+	//------------------------------------------------------------------------
+	// World
+	ui_gebi(WorldData)
+		<< "# of objs.: " << [&](){ return to_string(this->entity_count()); }
+		<< "\nBody interactions: " << &this->const_world()._interact_all
+		<< "\nGravity mode: " << [&](){ return to_string((unsigned)this->const_world().gravity_mode); }
+		<< "\n  - strength: " << &this->const_world().gravity
+		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
+		<< "\n"
+	;
+
+	//------------------------------------------------------------------------
+	// View
+	ui_gebi(ViewData)
+		<< "CAMERA: "
+		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
+		<< "\n  ZOOM: " << &view.scale
+	;
+
+//	???_hud << "\nPress ? for help...";
+
+	//------------------------------------------------------------------------
+	// "Object Observer"
+
+	//! Setting up player data watches below requires that the player
+	//! entity have actually been created already!
+	//! If not, an assertion will fail, but only in the DEBUG build!
+	//! So... Just checking it run-time, too, as I have made this mistake
+	//! too many times now... :)
+  if ( !(player_entity_ndx() < entity_count()) ) {
+	cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
+  } else {
+
+	ui_gebi(ObjectData)
+		<< [&]{	if (this->focused_entity_ndx == ~0u) return "<NOTHING>"s;
+			if (this->focused_entity_ndx >= this->entity_count()) return "INVALID ENTITY #"s + to_string(this->focused_entity_ndx);
+			if (this->focused_entity_ndx == player_entity_ndx()) return "Player #"s + to_string(player_entity_ndx());
+			else return "Object #"s + to_string(this->focused_entity_ndx); }
+		<< "\n"
+//		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
+		<< "\n  R: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return to_string(this->entity(this->focused_entity_ndx).r); }
+		<< "\n  T: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return to_string(this->entity(this->focused_entity_ndx).T); }
+//		<< "\n  M: " << ftos(&this->player_entity().mass)
+		<< "\n  M: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return (ftos(&this->entity(this->focused_entity_ndx).mass))(); }
+//		<< "\n  x: " << ftos(&this->player_entity().p.x)
+//		<<   ", y: " << ftos(&this->player_entity().p.y)
+//		<< "\n  vx: " << ftos(&this->player_entity().v.x)
+//		<<   ", vy: " << ftos(&this->player_entity().v.y)
+		<< "\n  x: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return (ftos(&this->entity(this->focused_entity_ndx).p.x))(); }
+		<<   ", y: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return (ftos(&this->entity(this->focused_entity_ndx).p.y))(); }
+		<< "\n  vx: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return (ftos(&this->entity(this->focused_entity_ndx).v.x))(); }
+		<<   ", vy: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return (ftos(&this->entity(this->focused_entity_ndx).v.y))(); }
+	;
+  }
+
+	//------------------------------------------------------------------------
+	// Debug
 #ifdef DEBUG
-	auto& debug_hud = ui_gebi(WorldData);
+	auto& debug_hud = ui_gebi(Debug);
 
 //!!Should be Rejected compile-time (with a static_assert):
 //!! - well, rejected indeed, but only "fortunately", and NOT by my static_assert!... :-/
 //!!	debug_hud << "DBG>" << string("debug");
-	static const auto const_debug = "CONST STRING "s;
-	debug_hud << "DBG>" << &const_debug;
+	static const auto const_debug = "CONST STRING "s; debug_hud << "DBG>" << &const_debug;
 //!!shouldn't compile:	debug_hud << "DBG>" << const_debug;
-	static auto debug = "STR "s;
-	debug_hud << "DBG>" << &debug;
+	static       auto debug = "STR "s;                debug_hud << "DBG>" << &debug;
 //!!shouldn't compile:	debug_hud << "DBG>" << debug;
-	debug_hud << "\nHŐTŰRŐ lótúró [αβ°C]" << 1e300 << "\n";
-
+	debug_hud << "\nHŐTŰRŐ lótúró [αβ°C]" << "\n";
 	debug_hud << "\n"
-	<< "test fn->string: " << hud_test_callback_string << "\n"
-	<< "test fn->ccptr: " << hud_test_callback_ccptr << "\n"
-	<< "test λ->ccptr: " << []{ return "autoconv to string?..."; } << "\n"
+		<< "test fn->string: " << hud_test_callback_string << "\n"
+		<< "test fn->ccptr: " << hud_test_callback_ccptr << "\n"
+		<< "test λ->ccptr: " << []{ return "autoconv to string?..."; } << "\n"
 //!!NOPE:	<< "test λ->int: " << []{ return 0xebba; } << "\n"
 //!!NOPE:	<< "test λ->float: " << []{ return 12.345; } << "\n"
-	// By-value data that are not closures:
-	<< "test val. string: " << "temp"s << "\n"
-	<< "test val. int: " << 12345 << "\n"
-	<< "test val. float: " << 12.345f << "\n"
-	<< "test val. double: " << 1e300 << "\n"
+		// By-value data that are not closures:
+		<< "test val. string: " << "temp"s << "\n"
+		<< "test val. int: " << 12345 << "\n"
+		<< "test val. float: " << 12.345f << "\n"
+		<< "test val. double: " << 1e300 << "\n"
 //!!NOT YET:	<< "test val. bool: " << true << "\n"
 	<< "\n";
 
@@ -277,81 +364,6 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 */
 #endif
 
-	//------------------------------------------------------------------------
-	// Timing
-	auto& timing_hud = ui_gebi(TimingStats);
-	timing_hud
-		<< "FPS: " << [=](){ return to_string(1 / (float)this->avg_frame_delay); }
-		<< "\nlast frame Δt: " << [=](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; }
-		<< "\nmodel Δt: " << [=](){ return to_string(this->time.last_model_Δt * 1000.0f) + " ms"; }
-		<<            " " << [=](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
-		<< "\ncycle: " << [=](){ return to_string(iterations); }
-		<< "\nReal elapsed time: " << &time.real_session_time
-	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
-	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
-		<< "\nTime reversed: " << &time.reversed
-		<< "\nTime scale: " << ftos(&this->time.scale)
-		<< "\nModel timing stats:"
-//		<< "\n    updates: " << &time.model_Δt_stats.samples
-		<< "\n    total t: " << &time.model_Δt_stats.total
-		<< "\n  Δt:"
-		<< "\n    last: " << &time.model_Δt_stats.last
-		<< "\n    min abs: " << &time.model_Δt_stats.umin
-		<< "\n    max abs: " << &time.model_Δt_stats.umax
-		<< "\n    min: " << &time.model_Δt_stats.min
-		<< "\n    max: " << &time.model_Δt_stats.max
-		<< "\n    avg.: " << [=]{ return to_string(this->time.model_Δt_stats.average());}
-	;
-//cerr << timing_hud;
-
-	//------------------------------------------------------------------------
-	// World
-	auto& debug_hud = ui_gebi(WorldData); //!! Create a properly named world watch HUD instead!
-	debug_hud
-		<< "# of objs.: " << [=](){ return to_string(this->entity_count()); }
-		<< "\nBody interactions: " << &this->const_world()._interact_all
-		<< "\nGravity mode: " << [=](){ return to_string((unsigned)this->const_world().gravity_mode); }
-		<< "\n  - strength: " << &this->const_world().gravity
-		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
-		<< "\n"
-	;
-
-	//------------------------------------------------------------------------
-	// View
-	debug_hud //!! Createa a proper View HUD instead!
-		<< "\nCAMERA: "
-		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
-		<< "\n  ZOOM: " << &view.scale
-	;
-
-//	debug_hud << "\n"
-//	          << "\nPress ? for help...";
-
-	//------------------------------------------------------------------------
-	// "Object Observer"
-
-	//! Setting up player data watches below requires that the player
-	//! entity have actually been created already!
-	//! If not, an assertion will fail, but only in the DEBUG build!
-	//! So... Just checking it run-time, too, as I have made this mistake
-	//! too many times now... :)
-if ( !(player_entity_ndx() < entity_count()) ) {
-	cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
-} else {
-
-	auto& object_hud = ui_gebi(ObjectData);
-	object_hud
-		<< "Player #1:" //!! Adjust to the real POI object!
-		<< "\n"
-		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
-		<< "\n  T: " << ftos(&this->player_entity().T)
-		<< "\n  M: " << ftos(&this->player_entity().mass)
-		<< "\n  x: " << ftos(&this->player_entity().p.x)
-		<<   ", y: " << ftos(&this->player_entity().p.y)
-		<< "\n  vx: " << ftos(&this->player_entity().v.x)
-		<<   ", vy: " << ftos(&this->player_entity().v.y)
-	;
-}
 	//------------------------------------------------------------------------
 	// Help
 	auto& help_hud = ui_gebi(HelpPanel);
