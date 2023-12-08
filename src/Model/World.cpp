@@ -249,14 +249,16 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 			} else if (!body->superpower.gravity_immunity) { // process gravity if not colliding
 //#ifdef _LEGACY_GRAVITY_CALC_
 if (gravity_mode == Normal) {
-				float g = Physics::G * other->mass / (distance * distance);
+//!!				float g = Physics::G * other->mass / (distance * distance);
+				float g = gravity * other->mass / (distance * distance);
 				Vector2f gvect(dx * g, dy * g);
 				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
 				Vector2f dv = gvect * dt;
 				body->v += dv;
 //#else //!! #65...:
 } else if (gravity_mode == Skewed) {
-				float G_per_DD = Physics::G / (distance * distance);
+//!!				float G_per_DD = Physics::G / (distance * distance);
+				float G_per_DD = gravity / (distance * distance);
 				// New accel. of the "inner" body:
 				float a1 = G_per_DD * other->mass;
 				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
@@ -324,6 +326,7 @@ void World::_copy(World const& other)
 		FRICTION = other.FRICTION;
 		_interact_all = other._interact_all;
 		gravity_mode = other.gravity_mode;
+		gravity = other.gravity;
 
 		bodies.clear();
 		for (const auto& b : other.bodies) {
@@ -344,7 +347,10 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	out << "drag = " << FRICTION << '\n';
 	out << "interactions = " << _interact_all << '\n';
-	out << "gravity_mode = " << (unsigned)gravity_mode << '\n';
+	if (saved_version >= semver::version("0.1.0"))
+		{ out << "gravity_mode = " << (unsigned)gravity_mode << '\n'; }
+	if (saved_version >= semver::version("0.1.1"))
+		{ out << "gravity_strength = " << (unsigned)gravity << '\n'; }
 
 	out << "objects = " << bodies.size() << '\n'; // Saving for verification + preallocation on load!
 	out << "- - -" << '\n'; //!! mandatory separator to not break the idiotic loader! :)
@@ -382,13 +388,13 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	//!! Verify a prev. save assuming a locked state, so the world hasn't changed since.
 	//!! This might be a very stupid idea actually...
-	if (loaded_version > semver::version("0.1.0")) {
+	if (loaded_version > runtime_version) {
 		cerr << "- ERROR: Unsupported snapshot version \"" << props["MODEL_VERSION"] << "\"\n";
 		return false;
 	}
 	if (loaded_version != runtime_version) {
-		cerr << "- NOTE: Loading version " << loaded_version << " different from the runtime version ("
-			<< runtime_version <<")\n";
+		cerr << "- NOTE: Loading a version ("<< loaded_version <<") older than the runtime ("
+			<< runtime_version <<").\n  Consider resaving in the new format to avoid obsolescence!\n";
 	}
 
 	/*
@@ -411,11 +417,12 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	try { // stof & friends are throw-happy
 		++_prop_ndx_; w_new.FRICTION = stof(props["drag"]);
 		++_prop_ndx_; w_new._interact_all = stof(props["interactions"]);
-		if (loaded_version != semver::version("0.0.1"))	{
-			++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]);
-		}
+		if (loaded_version >= semver::version("0.1.0"))
+			{ ++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]); }
+		if (loaded_version >= semver::version("0.1.1"))
+			{ ++_prop_ndx_; w_new.gravity = stof(props["gravity_strength"]); }
 	} catch (...) {
-		cerr << "- ERROR: Invalid world property #"<<_prop_ndx_<<" in the loaded snapshot.\n";
+		cerr << "- ERROR: Invalid (type of) property #"<<_prop_ndx_<<" in the loaded snapshot.\n";
 		return false;
 	}
 

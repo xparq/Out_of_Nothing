@@ -117,17 +117,8 @@ string Config::get(string_view prop, const char* def)
 	return _get(prop, string(def));
 }
 
-int Config::get(string_view prop, int def)
-{
-	return _get(prop, def);
-}
-
-float Config::get(string_view prop, float def)
-{
-	return _get(prop, def);
-}
-
-bool Config::get(string_view prop, bool def)
-{
-	return _get(prop, def);
-}
+//----------------------------------------------------------------------------
+bool     Config::get(string_view prop, bool def)     { return _get(prop, def); }
+int      Config::get(string_view prop, int def)      { return _get(prop, def); }
+unsigned Config::get(string_view prop, unsigned def) { return _get(prop, def); }
+float    Config::get(string_view prop, float def)    { return _get(prop, def); }

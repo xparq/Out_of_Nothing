@@ -1,5 +1,5 @@
-#ifndef __MODEL__PHYSICS__
-#define __MODEL__PHYSICS__
+#ifndef _Y8GVVY7TC880X820KS272475BTBT7V_
+#define _Y8GVVY7TC880X820KS272475BTBT7V_
 
 #include "Math.hpp"
 
@@ -24,7 +24,7 @@ struct Physics
 	// OK, but now just using this quick-and-dirty impromptu hack, instead of all the above... ;)
 	static float T_to_RGB_and_BV(float T, uint32_t* p_color = nullptr);
 
-	//! `const` can't do non-integer statics! :-/
+	//! Wow, C++ `const` can't do non-integer static?! :-o
 	static constexpr float G = 6.673e-11f; //!! No point keeping this real and all the others stretched,
 	               //!! const unless a real orbital simulation is the goal (which isn't)!...
 	static constexpr float DENSITY_ROCK = 2000.0f; // kg/m3
@@ -32,4 +32,4 @@ struct Physics
 
 }; // namespace Model
 
-#endif // __MODEL__PHYSICS__
+#endif // _Y8GVVY7TC880X820KS272475BTBT7V_

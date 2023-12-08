@@ -9,6 +9,8 @@
 
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
+#include <cmath>
+	using std::pow;
 #include <iostream>
 	using std::cerr, std::endl;
 #include <cassert>
@@ -182,7 +184,10 @@ void OON::_setup_UI()
 			g_select->add("Off",    World::GravityMode::Off);
 			//g_select->set(World::GravityMode::Off);
 			g_select->setCallback([&](auto* w){ this->world().gravity_mode = w->get(); });
-		phys_form->add("Gravity", g_select);
+		phys_form->add("Gravity mode", g_select);
+		phys_form->add(" - bias", new sfw::Slider({.range={-3.0, 3.0}, .step=0, .orientation=sfw::Horizontal}, 80))
+			->setCallback([&](auto* w){ this->world().gravity = Model::Physics::G * pow(10.f, w->get()); })
+			->set(0);
 		phys_form->add("Fixed model Δt", new CheckBox(
 			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
 
@@ -232,9 +237,9 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 		};
 	};
 
-	auto& debug_hud = ui_gebi(PlayerData);
-
 #ifdef DEBUG
+	auto& debug_hud = ui_gebi(WorldData);
+
 //!!Should be Rejected compile-time (with a static_assert):
 //!! - well, rejected indeed, but only "fortunately", and NOT by my static_assert!... :-/
 //!!	debug_hud << "DBG>" << string("debug");
@@ -259,41 +264,7 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 	<< "test val. double: " << 1e300 << "\n"
 //!!NOT YET:	<< "test val. bool: " << true << "\n"
 	<< "\n";
-#endif
 
-	debug_hud
-		<< "# of objs.: " << [=](){ return to_string(this->entity_count()); }
-		<< "\nBody interactions: " << &this->const_world()._interact_all
-		<< "\nGravity mode: " << [=](){ return to_string((unsigned)this->const_world().gravity_mode); }
-		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
-		<< "\n"
-	;
-	//! Setting up player data watches below requires that the player
-	//! entity have actually been created already!
-	//! If not, an assertion will fail, but only in the DEBUG build!
-	//! So... Just checking it run-time, too, as I have made this mistake
-	//! too many times now... :)
-if ( !(player_entity_ndx() < entity_count()) ) {
-	cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
-} else {
-	debug_hud
-		<< "\nPlayer #1:"
-		<< "\n"
-		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
-		<< "\n  T: " << ftos(&this->player_entity().T)
-		<< "\n  M: " << ftos(&this->player_entity().mass)
-		<< "\n  x: " << ftos(&this->player_entity().p.x)
-		<<   ", y: " << ftos(&this->player_entity().p.y)
-		<< "\n  vx: " << ftos(&this->player_entity().v.x)
-		<<   ", vy: " << ftos(&this->player_entity().v.y)
-		<< "\n"
-	;
-}
-	debug_hud
-		<< "\nCAMERA: "
-		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
-		<< "\n  ZOOM: " << &view.scale
-	;
 /*	debug_hud
 		<< "\n"
 		<< "\nSHIFT" << (bool*)&_kbd_state[SHIFT]);
@@ -304,10 +275,10 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 		<< "\nNUM LOCK" << (bool*)&_kbd_state[NUM_LOCK]);
 	;
 */
-//	debug_hud << "\n"
-//	          << "\nPress ? for help...";
+#endif
 
 	//------------------------------------------------------------------------
+	// Timing
 	auto& timing_hud = ui_gebi(TimingStats);
 	timing_hud
 		<< "FPS: " << [=](){ return to_string(1 / (float)this->avg_frame_delay); }
@@ -334,45 +305,94 @@ if ( !(player_entity_ndx() < entity_count()) ) {
 //cerr << timing_hud;
 
 	//------------------------------------------------------------------------
+	// World
+	auto& debug_hud = ui_gebi(WorldData); //!! Create a properly named world watch HUD instead!
+	debug_hud
+		<< "# of objs.: " << [=](){ return to_string(this->entity_count()); }
+		<< "\nBody interactions: " << &this->const_world()._interact_all
+		<< "\nGravity mode: " << [=](){ return to_string((unsigned)this->const_world().gravity_mode); }
+		<< "\n  - strength: " << &this->const_world().gravity
+		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
+		<< "\n"
+	;
+
+	//------------------------------------------------------------------------
+	// View
+	debug_hud //!! Createa a proper View HUD instead!
+		<< "\nCAMERA: "
+		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
+		<< "\n  ZOOM: " << &view.scale
+	;
+
+//	debug_hud << "\n"
+//	          << "\nPress ? for help...";
+
+	//------------------------------------------------------------------------
+	// "Object Observer"
+
+	//! Setting up player data watches below requires that the player
+	//! entity have actually been created already!
+	//! If not, an assertion will fail, but only in the DEBUG build!
+	//! So... Just checking it run-time, too, as I have made this mistake
+	//! too many times now... :)
+if ( !(player_entity_ndx() < entity_count()) ) {
+	cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
+} else {
+
+	auto& object_hud = ui_gebi(ObjectData);
+	object_hud
+		<< "Player #1:" //!! Adjust to the real POI object!
+		<< "\n"
+		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
+		<< "\n  T: " << ftos(&this->player_entity().T)
+		<< "\n  M: " << ftos(&this->player_entity().mass)
+		<< "\n  x: " << ftos(&this->player_entity().p.x)
+		<<   ", y: " << ftos(&this->player_entity().p.y)
+		<< "\n  vx: " << ftos(&this->player_entity().v.x)
+		<<   ", vy: " << ftos(&this->player_entity().v.y)
+	;
+}
+	//------------------------------------------------------------------------
+	// Help
 	auto& help_hud = ui_gebi(HelpPanel);
 	help_hud
-		<< "------------ Actions:\n"
-		<< "← → ↑ ↓      Thrust\n"
-		<< "SPACE        \"Exhaust\" sprinkle\n"
-		<< "INS          Spawn object(s), +CTRL: 10, +SHIFT: 100\n"
-		<< "DEL          Remove object(s), +CTRL: 10, +SHIFT: 100\n"
-		<< "------------ God Mode - Metaphysics:\n"
-		<< "TAB          Toggle object interactions\n"
-		<< "G            Gravity mode\n"
-		<< "F            Decrease friction, +SHIFT: increase\n"
-        //	<< "C            chg. collision mode: pass/stick/bounce\n"
-		<< "------------ God Mode - Time Control:\n"
-		<< "PAUSE, H     Halt time (model time only, sorry)\n"
-		<< "ENTER        Step 1 time slice forward\n"
-		<< "BACKSPACE    Step 1 time slice backward\n"
-		<< "R            Reverse time\n"
-		<< "T            Time accel. (double), +SHIFT: decel. (half)\n"
-		<< "X            Toggle fixed Δt for model updates\n"
-		<< "------------ View:\n"
-		<< "A W S D      Pan\n"
+		<< "------------- Actions:\n"
+		<< "← → ↑ ↓       Thrust\n"
+		<< "SPACE         \"Exhaust\" sprinkle\n"
+		<< "INS           Spawn object(s), +CTRL: 10, +SHIFT: 100\n"
+		<< "DEL           Remove object(s), +CTRL: 10, +SHIFT: 100\n"
+		<< "------------- God Mode - Metaphysics:\n"
+		<< "TAB           Toggle object interactions\n"
+		<< "G             Gravity mode\n"
+		<< "F             Decrease friction, +SHIFT: increase\n"
+        //	<< "C             chg. collision mode: pass/stick/bounce\n"
+		<< "------------- God Mode - Time Control:\n"
+		<< "PAUSE, H      Halt time (model time only, sorry)\n"
+		<< "ENTER         Step 1 time slice forward\n"
+		<< "BACKSPACE     Step 1 time slice backward\n"
+		<< "R             Reverse time (not 100% exact even with fix Δt!)\n" // #376...
+		<< "T             Time speedup (half resol.), +SHIFT: slowdn.\n"
+		<< "X             Toggle fixed Δt for model updates\n"
+		<< "------------- View:\n"
+		<< "A W S D       Pan\n"
 		<< "MOUSE WHEEL,\n"
-		<< "NUMPAD +/-   Zoom\n"
-		<< "SHIFT        Auto-scroll to follow player (or other obj.)\n"
-		<< "SCROLL LOCK  Toggle locked auto-scroll\n"
-		<< "LEFT CLICK   Set focused obj., or point for zoom center\n"
-		<< "             +SHIFT: Follow player or clicked object\n"
-		<< "HOME         Home in on the player\n"
-		<< "CTRL+HOME    Reset view to Home position & default zoom\n"
-		<< "CTRL+ALT     Trace trajectories while held\n"
-		<< "F11          Toggle fullscreen\n"
-		<< "F12          Toggle HUD overlays\n"
-		<< "------------ Admin:\n"
-		<< "F1 - F8      Quicksave (overwrites!), +SHIFT: qickload\n"
-		<< "M            Mute/unmute music, N: sound fx\n"
-		<< "SHIFT+M      Mute/unmute all audio\n"
-		<< "SHIFT+P      Toggle FPS throttling\n"
+		<< "NUMPAD +/-    Zoom\n"
+		<< "SHIFT         Auto-scroll to follow player (or other obj.)\n"
+		<< "SCROLL LOCK   Toggle locked auto-scroll\n"
+		<< "LEFT MOUSE B. Set POI: obj. to follow, or just zoom center\n"
+		<< "              +SHIFT: bring player to mouse and/or follow obj.\n"
+		<< "HOME          Home in on (center) the player\n"
+		<< "CTRL+HOME     Reset view (to Home position & default zoom)\n"
+		<< "CTRL+ALT      Leave temp. trails (to trace trajectories)\n"
+		<< "F11           Toggle fullscreen\n"
+		<< "F12           Toggle HUD overlays\n"
+		<< "------------- Admin:\n"
+		<< "F1-F8         Quicksave (overwrites!), +SHIFT: qickload\n"
+		<< "M             Mute/unmute music, N: sound fx\n"
+		<< "SHIFT+M       Mute/unmute all audio\n"
+		<< "SHIFT+P       Performance (FPS) throttling on/off\n"
 		<< "\n"
-		<< "ESC          Quit\n"
+		<< "ESC           Quit\n"
 		<< "\n"
 		<< "Command-line options: " << args.exename() << " /?"
 	;

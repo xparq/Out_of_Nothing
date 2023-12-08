@@ -54,11 +54,14 @@ struct SimAppConfig : Config
 	std::string model_dir;
 //	std::string addon_dir;
 	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with session_dir
+	// UI
 	bool        start_fullscreen;
 	std::string window_title;
 	std::string default_font_file;
 	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (sfw hex color string) + name!
 	std::string hud_font_file;
+	unsigned    hud_line_height;
+	unsigned    hud_line_spacing;
 	// Sim.
 	Time::CycleCount iteration_limit;
 	unsigned exhaust_burst_particles;

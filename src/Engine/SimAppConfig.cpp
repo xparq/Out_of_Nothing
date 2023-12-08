@@ -8,6 +8,12 @@
 #include <string_view>
 #include <iostream>
 
+
+//!! This is an outlier for now: its own config should be reconciled with this,
+//!! which in turn should be split from the Engine cfg... -> #272!
+#include "UI/hud.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
+
+
 using namespace Szim;
 using namespace std;
 
@@ -59,17 +65,20 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
 	default_font_file = get("appearance/default_font_file", "gui/font/default.font");
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
+	hud_line_height   = get("appearance/HUD/line_height", UI::HUD::DEFAULT_LINE_HEIGHT);
+	hud_line_spacing  = get("appearance/HUD/line_spacing", UI::HUD::DEFAULT_LINE_SPACING);
+
 	background_music  = get("audio/background_music", "sound/music/background.ogg");
+
 	iteration_limit  = get("sim/loop_cap", -1);
-
-	exhaust_burst_particles = get("sim/exhaust_particles_add", 5);
-	exhaust_v_factor        = get("sim/exhaust_v_factor", -1.0f);
-	exhaust_offset_factor   = get("sim/exhaust_offset_factor", 0.1f);
-
 	exit_on_finish   = get("sim/exit_on_finish", false);
 	fixed_model_dt   = get("sim/timing/fixed_dt", 0.0333f);
 	fixed_model_dt_enabled = get("sim/timing/fixed_dt_enabled", false);
 	fps_limit        = get("sim/timing/fps_limit", DEFAULT_FPS_LIMIT);
+
+	exhaust_burst_particles = get("sim/exhaust_particles_add", 5);
+	exhaust_v_factor        = get("sim/exhaust_v_factor", -1.0f);
+	exhaust_offset_factor   = get("sim/exhaust_offset_factor", 0.1f);
 
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 

@@ -1,6 +1,8 @@
 #ifndef __WORLD_SFML__
 #define __WORLD_SFML__
 
+#include "Engine/Config.hpp"
+
 #include "Physics.hpp" // #includes Math.hpp
 #include "Math/Vector2.hpp"
 //	using namespace Math;
@@ -35,10 +37,12 @@ class SimApp; //! Sigh, must predeclare it here, outside the namespace...
 
 namespace Model {
 
-static constexpr char const* VERSION = "0.1.0";
+static constexpr char const* VERSION = "0.1.1";
 
 //============================================================================
 class World // The model world
+//!! Should be split into an abstract base in the Engine to facilitate universal
+//!! features like interactions etc., and the detailed, specific one of the app!
 {
 //----------------------------------------------------------------------------
 // API Config... (!!Parts being migrated from the "Controller"...)
@@ -154,7 +158,8 @@ public:
 	float FRICTION = 0.03f; //!!Take its default from the cfg!
 	bool _interact_all = false; // Bodies react to each other too, or only the player(s)?
 
-	GravityMode gravity_mode; //! v0.1.0
+	GravityMode gravity_mode;   //! v0.1.0
+	float gravity = Physics::G; //! v0.1.1
 
 	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
 

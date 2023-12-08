@@ -71,16 +71,17 @@ public:
 protected:
 	View::Renderer_SFML renderer;
 #ifndef DISABLE_HUD
-//!!	UI::HUD& debug_hud;
-//!!	UI::HUD& help_hud;
+//!!	UI::HUD& ...;
 	UI::HUD_SFML timing_hud;
 	UI::HUD_SFML debug_hud;
+	UI::HUD_SFML object_hud;
 	UI::HUD_SFML help_hud;
 
 	UI::HUD& ui_gebi(HUD_ID which) override { switch (which) {
 		case HelpPanel:   return help_hud;
 		case TimingStats: return timing_hud;
-		case PlayerData:  return debug_hud;
+		case WorldData:   return debug_hud;
+		case ObjectData:  return object_hud;
 		default: std::unreachable(); // c++23 only; and this is c++600: [[unreachable]];
 			//return help_hud; // Dummy, to shut up some compiler warnings
 	}}

@@ -57,19 +57,28 @@ namespace sync {
 //----------------------------------------------------------------------------
 OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
 #ifndef DISABLE_HUD
+//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(sfw::Color(cfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
 	, timing_hud(SFML_WINDOW(),{ .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height  = (unsigned)cfg.get("appearance/HUD/line_height", HUD::DEFAULT_LINE_HEIGHT),
-		.line_spacing = (unsigned)cfg.get("appearance/HUD/line_spacing", HUD::DEFAULT_LINE_SPACING),
-		.panel_left = -250, .panel_top = 10})
+		.line_height = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+		.panel_left = cfg.get("appearance/HUD/timing_left", -250), .panel_top = cfg.get("appearance/HUD/timing_top", 10),
+		.fgcolor = cfg.get("appearance/HUD/timing_fg", HUD::DEFAULT_TEXT_COLOR),
+		.bgcolor = cfg.get("appearance/HUD/timing_bg", HUD::DEFAULT_BACKGROUND_COLOR)})
 	, debug_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height  = (unsigned)cfg.get("appearance/HUD/line_height", HUD::DEFAULT_LINE_HEIGHT),
-		.line_spacing = (unsigned)cfg.get("appearance/HUD/line_spacing", HUD::DEFAULT_LINE_SPACING),
-		.panel_left = -250, .panel_top = 350, .fgcolor = 0x90e040ff, .bgcolor = 0x90e040ff/4})
+		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+		.panel_left = cfg.get("appearance/HUD/world_state_left", -250), .panel_top = cfg.get("appearance/HUD/world_state_top", 320),
+		.fgcolor = cfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
+		.bgcolor = cfg.get("appearance/HUD/world_state_bg", 0x90e040ff/4)})
+	, object_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
+		.line_height = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+		.panel_left = cfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = cfg.get("appearance/HUD/object_monitor_top", 500),
+		.fgcolor = cfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaff),
+		.bgcolor = cfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)}) //!!?? Dear C++, WTF is this not unsigned just like the one above?!
 	, help_hud( SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height  = (unsigned)cfg.get("appearance/HUD/line_height", HUD::DEFAULT_LINE_HEIGHT),
-		.line_spacing = (unsigned)cfg.get("appearance/HUD/line_spacing", HUD::DEFAULT_LINE_SPACING),
-		.panel_left = 10, .panel_top = 10, .fgcolor = 0x40d040ff, .bgcolor = 0x40f040ff/4})
+		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+		.panel_left = cfg.get("appearance/HUD/help_left", 10), .panel_top = cfg.get("appearance/HUD/help_top", 10),
+		.fgcolor = cfg.get("appearance/HUD/help_fg", 0x40d040ffu),
+		.bgcolor = cfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)})
 #endif
 {
 }
@@ -200,6 +209,8 @@ void OON_sfml::draw() // override
 	if (_show_huds) {
 		timing_hud.draw(SFML_WINDOW());
 		debug_hud.draw(SFML_WINDOW());
+		object_hud.draw(SFML_WINDOW());
+
 		if (help_hud.active())
 			help_hud.draw(SFML_WINDOW()); //!! This active-chk is redundant: HUD::draw() does the same. TBD, who's boss!
 		                                      //!! "Activity" may mean more than drawing. So... (Or actually both should control it?)
@@ -474,7 +485,7 @@ try {
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
 				case 'g':
-					sfw::getWidget<sfw::OptionsBox<Model::World::GravityMode>>("Gravity")->selectNext();
+					sfw::getWidget<sfw::OptionsBox<Model::World::GravityMode>>("Gravity mode")->selectNext();
 					break;
 				case 'f': world().FRICTION -= 0.01f; break;
 				case 'F': world().FRICTION += 0.01f; break;
@@ -643,6 +654,7 @@ void OON_sfml::onResize() // override
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
 #ifndef DISABLE_HUD
 	((UI::HUD_SFML&)debug_hud) .onResize(((SFML_Backend&)backend).SFML_window());
+	((UI::HUD_SFML&)object_hud).onResize(((SFML_Backend&)backend).SFML_window());
 	((UI::HUD_SFML&)timing_hud).onResize(((SFML_Backend&)backend).SFML_window());
 	((UI::HUD_SFML&)help_hud)  .onResize(((SFML_Backend&)backend).SFML_window());
 #endif

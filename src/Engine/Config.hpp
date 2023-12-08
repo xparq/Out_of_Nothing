@@ -47,11 +47,12 @@ struct Config
 	std::string get(std::string_view name, const char* def = ""); // 'name' can also be "section/name"
 	std::string get(std::string_view name, const std::string& def) { return get(name, def.c_str()); }
 	//!! Jesuschrist (C++ again), get("...", "default") won't select the string version above,
-	//!! but rather some of the numbers below, without the const char* variant!... :-o
-	int         get(std::string_view name, int def);
-	float       get(std::string_view name, float def);
+	//!! but rather some of the numbers below, without the const char* variant!... :-/
 	bool        get(std::string_view name, bool def);
-	//! Alas, only one of these can be meaningfully omit the 2nd arg, to not be ambiguous!
+	int         get(std::string_view name, int def);
+	unsigned    get(std::string_view name, unsigned def);
+	float       get(std::string_view name, float def);
+	//! Alas, only one of these can meaningfully omit the 2nd arg to not be ambiguous!
 
 	//----------------------------------------------------------------------------
 	// Misc. helpers...
