@@ -438,11 +438,15 @@ try {
 			// -- except for some that really don't belong there:
 			if (gui.focused() &&
 				event.type != sf::Event::LostFocus && // Yeah, so this is an entirely different "focus"! :-o
-				event.type != sf::Event::GainedFocus)
+				event.type != sf::Event::GainedFocus &&
+				(event.type != sf::Event::MouseButtonPressed ||
+				 event.type == sf::Event::MouseButtonPressed && gui.contains(gui.getMousePosition()))) //!!{event.mouseButton.x, event.mouseButton.y})))
 			{
 				goto process_ui_event;
 			}
-			else switch (event.type) //!! See above: morph into using abstracted events!
+			// Else:
+			gui.unfocus(); // A bit hamfisted, but: the event is ours, let the UI know!...
+			switch (event.type) //!! See above: morph into using abstracted events!
 			{
 			case sf::Event::KeyPressed:
 #ifdef DEBUG
@@ -545,7 +549,7 @@ try {
 //cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...
-				if (gui.focused() || gui.contains(gui.getMousePosition()))
+				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
 				view.focus_offset = {event.mouseButton.x - view.width/2,
@@ -582,7 +586,7 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 				ui_event_state = UIEventState::IDLE;
 
 				break;
-			}
+			} // switch
 
 //cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
 

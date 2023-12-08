@@ -608,7 +608,9 @@ bool OON::pan_control() //!!override
 	//AUTO_CONST CFG_PAN_INITIAL_STEP = 5; // pixel
 	AUTO_CONST CFG_PAN_AUTOCHANGE_STEP = 1; // +/- pixel
 
-	auto fps_factor = (float)avg_frame_delay * 30.f; // Params. have been calibrated for 30 FPS
+	auto fps_factor = (float)avg_frame_delay * 30.f; // Adjust relative to the 30 FPS calibration reference
+		//! Note: this weird cast is required to avoid an "operator ambiguous" error!
+
 	//auto CFG_PAN_INITIAL_STEP_fps = CFG_PAN_INITIAL_STEP * fps_factor;
 	auto CFG_PAN_AUTOCHANGE_STEP_fps = CFG_PAN_AUTOCHANGE_STEP * fps_factor;
 //!!??auto CFG_PAN_AUTOCHANGE_STEP_fps = CFG_PAN_AUTOCHANGE_STEP;
@@ -642,16 +644,21 @@ bool OON::zoom_control(float mousewheel_delta) //!!override
 	// directly by the mouse events, independently of frame rate!
 	// See more about FPS norm. at pan_control()!
 	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.08f; // 8%
-	AUTO_CONST CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = 0.2f; // 20%
+//	AUTO_CONST CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = 0.2f; // 20%
+	static float CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = cfg.get("controls/zoom_speed_factor_mousewheel", 0.13f); // 13%
+
 	AUTO_CONST CFG_ZOOM_AUTOCHANGE_STEP = 0.01f; // +/- ratio delta
 
-	auto fps_factor = (float)avg_frame_delay * 30.f;
+	auto fps_factor = (float)avg_frame_delay * 30.f; // Adjust relative to the 30 FPS calibration reference
+		//! Note: this weird cast is required to avoid an "operator ambiguous" error!
+
 	auto CFG_ZOOM_CHANGE_RATIO_fps = CFG_ZOOM_CHANGE_RATIO * fps_factor;
 	auto CFG_ZOOM_AUTOCHANGE_STEP_fps = CFG_ZOOM_AUTOCHANGE_STEP * fps_factor;
 
 	auto action = false;
-	if      (mousewheel_delta > 0)  { action = true; zoom_step =  CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
-	else if (mousewheel_delta < 0)  { action = true; zoom_step = -CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
+	// Mouse-wheel zoom?
+	if (mousewheel_delta) { action = true; zoom_step = mousewheel_delta * CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
+	// Keyboard zoom?
 	else if (keystate(NUMPAD_PLUS)) { action = true; zoom_step += zoom_step == 0 ?
 	                                                        CFG_ZOOM_CHANGE_RATIO_fps : CFG_ZOOM_AUTOCHANGE_STEP_fps; }
 	else if (keystate(NUMPAD_MINUS)){ action = true; zoom_step -= zoom_step == 0 ?

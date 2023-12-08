@@ -102,7 +102,7 @@ private:
 	float m_boxLength;
 	// Internal model state:
 	float m_value;
-	// Internal UI control state to track dragging with the mouse:
+	// Internal UI control state for dragging:
 	bool m_thumb_pressed = false;
 	// Visual ("view") state:
 	Box m_track;
