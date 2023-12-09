@@ -9,8 +9,9 @@
 namespace Szim {
 
 //----------------------------------------------------------------------------
-Config::Config(std::string_view cfg_path, std::string defaults, const CALLBACK& post_load)
-	: defaults(defaults)
+Config::Config(std::string_view cfg_path, Config* base, std::string defaults, const CALLBACK& post_load)
+	: _base(base)
+	, defaults(defaults)
 {
 	_impl = new Config_impl(*this);
 

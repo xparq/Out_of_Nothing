@@ -22,8 +22,8 @@ using namespace std;
 
 //----------------------------------------------------------------------------
 OONConfig::OONConfig(Szim::SimAppConfig& syscfg, const Args& args) :
-	Config(sz::prefix_if_rel(syscfg.base_path(), "OON.cfg")),
-	syscfg(syscfg)            // Save it...
+	Config(sz::prefix_if_rel(syscfg.base_path(), "OON.cfg"), &syscfg), // Also chain to syscfg!
+	syscfg(syscfg) //!! Just for convenience, as chaining already sets it as the '_base' ptr...
 {
 	// 1. Preset hardcoded baseline defaults...
 	// ...Well, just default them in one step with loading; see below!
@@ -50,8 +50,6 @@ OONConfig::OONConfig(Szim::SimAppConfig& syscfg, const Args& args) :
 	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
 	hud_line_height   = get("appearance/HUD/line_height", UI::HUD::DEFAULT_LINE_HEIGHT);
 	hud_line_spacing  = get("appearance/HUD/line_spacing", UI::HUD::DEFAULT_LINE_SPACING);
-
-	background_music  = get("audio/background_music", "sound/music/background.ogg");
 
 	exhaust_burst_particles = get("sim/exhaust_particles_add", 5);
 	exhaust_v_factor        = get("sim/exhaust_v_factor", -1.0f);

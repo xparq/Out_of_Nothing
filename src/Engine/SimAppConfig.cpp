@@ -19,7 +19,7 @@ using namespace std;
 
 //----------------------------------------------------------------------------
 SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::string defaults)
-	: Config(cfg_path, defaults)
+	: Config(cfg_path, nullptr, defaults)
 {
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!! NOTE:
@@ -75,10 +75,6 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	fixed_model_dt   = get("sim/timing/fixed_dt", 0.0333f);
 	fixed_model_dt_enabled = get("sim/timing/fixed_dt_enabled", false);
 	fps_limit        = get("sim/timing/fps_limit", DEFAULT_FPS_LIMIT);
-
-	exhaust_burst_particles = get("sim/exhaust_particles_add", 5);
-	exhaust_v_factor        = get("sim/exhaust_v_factor", -1.0f);
-	exhaust_offset_factor   = get("sim/exhaust_offset_factor", 0.1f);
 
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 

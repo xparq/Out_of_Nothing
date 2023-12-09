@@ -20,10 +20,10 @@ public:
 	//!! Support comfy cfg tagging, at least by filename!
 
 	// Calls select(), throws on error:
-	Config(std::string_view cfg_path, std::string defaults = "",
-		const CALLBACK& post_load = [](auto&&...) {});
-
-//!!??	Config() = default; // Allow default empty init with a later select()
+	Config(std::string_view cfg_path,  //!!?? = "" to allow default empty init with a later select()?
+	       Config* base = nullptr,     // Chained "base" cfg. instance for defaults
+	       std::string defaults = "",  // Final internal fallback defaults (as raw cfg. text)
+	       const CALLBACK& post_load = [](auto&&...) {});
 
 	~Config();
 
@@ -71,6 +71,7 @@ public:
 private:
 	friend class Config_impl;
 	Config_impl* _impl;
+	Config* _base = nullptr;     // Optional chained "fallback" instance for queries
 
 	std::string _current_config; // path (string)
 	std::string _cfg_base_path; //!!TBD: append trailing (back)slash? BEWARE:

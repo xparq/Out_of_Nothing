@@ -55,37 +55,38 @@ namespace sync {
 
 //============================================================================
 //----------------------------------------------------------------------------
-OON_sfml::OON_sfml(int argc, char** argv) : OON(argc, argv)
+OON_sfml::OON_sfml(int argc, char** argv)
+	: OON(argc, argv)
 #ifndef DISABLE_HUD
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(sfw::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
-	, timing_hud(SFML_WINDOW(),{ .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height = appcfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+	, timing_hud(SFML_WINDOW(),{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/timing_left", -250), .panel_top = appcfg.get("appearance/HUD/timing_top", 10),
 		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUD::DEFAULT_TEXT_COLOR),
 		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUD::DEFAULT_BACKGROUND_COLOR)})
-	, world_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+	, world_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 320),
 		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ff/4)})
-	, view_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+	, view_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 470),
 		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ff/4)})
-	, object_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+	, object_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 500),
 		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaff),
 		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)}) //!!?? Dear C++, WTF is this not unsigned just like the one above?!
-	, help_hud( SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+	, help_hud( SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/help_left", 10), .panel_top = appcfg.get("appearance/HUD/help_top", 10),
 		.fgcolor = appcfg.get("appearance/HUD/help_fg", 0x40d040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)})
-	, debug_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + cfg.hud_font_file,
-		.line_height  = cfg.hud_line_height, .line_spacing = cfg.hud_line_spacing,
+	, debug_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/debug_left", -250), .panel_top = appcfg.get("appearance/HUD/debug_top", -350),
 		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ff/4)})

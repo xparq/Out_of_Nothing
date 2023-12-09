@@ -453,7 +453,7 @@ bool OON::poll_and_process_controls()
 	// Allow this now irrespective of any engine firing:
 	if (keystate(SPACE)) {
 		action = true;
-		exhaust_burst(player_entity_ndx(), cfg.exhaust_burst_particles);
+		exhaust_burst(player_entity_ndx(), appcfg.exhaust_burst_particles);
 	}
 
 	return action;
@@ -782,28 +782,21 @@ void OON::spawn(size_t parent_ndx, size_t n)
 {
 if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"<<parent_ndx<<" is spawning...\n";
 
-	// -> #41: Enable inheritance
-	const auto& parent = const_entity(parent_ndx);
+	const auto& parent = const_entity(parent_ndx); // #41: Support inheritance
 	for (size_t i = 0; i < n; ++i) {
 		auto ndx = add_body();
 		auto& newborn = entity(ndx);
-		newborn.T = parent.T; // #155: Inherit T
-		newborn.v = parent.v;
+		newborn.T = parent.T; // #155: Inherit temperature
+		newborn.v = parent.v; // 1e5e8be3: Inherit speed
 	}
 }
 
 //----------------------------------------------------------------------------
 void OON::exhaust_burst(size_t entity/* = 0*/, size_t n/* = 50*/)
 {
-	float exhaust_v_factor = cfg.exhaust_v_factor; //!! Should just be calculated instead!
-	float exhaust_offset_factor = cfg.exhaust_offset_factor; //!! Should just be calculated instead!
+	float exhaust_v_factor = appcfg.exhaust_v_factor; //!! Should just be calculated instead!
+	float exhaust_offset_factor = appcfg.exhaust_offset_factor; //!! Should just be calculated instead!
 
-/*!! Too boring with all these small particles:
-	auto constexpr r_min = const_world().CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = const_world().CFG_GLOBE_RADIUS * 0.3;
-	auto constexpr p_range = const_world().CFG_GLOBE_RADIUS * 2;
-	auto constexpr v_range = const_world().CFG_GLOBE_RADIUS * 3; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-*/
 	const auto& cw = const_world();
 	auto constexpr r_min = cw.CFG_GLOBE_RADIUS / 10;
 	auto constexpr r_max = cw.CFG_GLOBE_RADIUS * 0.5;

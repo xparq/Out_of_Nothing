@@ -43,9 +43,8 @@ friend class Config;
 	T _get(string_view propname, T def) {
 		auto [section, name] = split(propname);
 		return section.empty() ? _config[name].value_or(def)
-		                       : _config[section][name].value_or(def);
+		                       : _config[section][name].value_or(_cfgi._base ? _cfgi._base->get(propname, def) : def);
 	}
-
 };
 
 bool Config_impl::select(std::string_view cfg_path, bool can_throw, const Config::CALLBACK& post_load)
