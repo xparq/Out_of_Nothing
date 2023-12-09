@@ -11,5 +11,3 @@ busybox sh -c "export SZ_PRJDIR=. && . tooling/_setenv.sh && busybox make -f bbM
 
 :: The original (BB/sh-scripted) build process with auto-rebuild:
 ::busybox sh %~dp0tooling/build/_auto-rebuild.sh %*
-
-if not errorlevel 1 if not defined GITHUB_ACTION %SZ_TEST_DIR%\regression\tc-smoke

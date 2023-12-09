@@ -24,7 +24,7 @@ set "new_endstate=%regdir%\END.state.tmp"
 ::set bodies=500
 set loop=20
 
-:: Empty means use the latest:
+:: Empty means use the latest, otherwise SZ_RUN_DIR/%1:
 set oon_use_exe=%1
 
 %SZ_PRJDIR%/tooling/diag/wtime run-latest ^
