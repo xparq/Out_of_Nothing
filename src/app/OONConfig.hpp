@@ -1,16 +1,19 @@
-#ifndef _DF8M99506BFN4735R9686OK_
-#define _DF8M99506BFN4735R9686OK_
+#ifndef _8PA37GTB7NX73945Y6B2V6C7X245Y45_
+#define _8PA37GTB7NX73945Y6B2V6C7X245Y45_
 
-#include "Config.hpp"
-#include "Time.hpp"
+#include "Engine/Config.hpp"
+#include "extern/Args.hpp"
+
 #include "sz/unilang.hh" // AUTO_CONST
 
 class Args; // Enough to actually #include it in the .cpp
 
-namespace Szim {
+// Fw.-declare the System config (the app cfg. will have a reference to it):
+namespace Szim { struct SimAppConfig; }
 
-struct SimAppConfig : Config
+struct OONConfig : Szim::Config
 {
+	const Szim::SimAppConfig& syscfg;
 /*!!
 	struct UI
 	{
@@ -43,16 +46,6 @@ struct SimAppConfig : Config
 	//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	//!! SOME OF THESARE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
 	//!! Possibly move the post-load callback hook here!
-	// Sys.
-	std::string exe_dir;
-	std::string cfg_dir;
-	std::string asset_dir;
-	std::string engine_state_dir;
-	std::string log_dir;
-	std::string user_dir;
-	std::string session_dir;
-	std::string model_dir;
-//	std::string addon_dir;
 	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with session_dir
 	// UI
 	bool        start_fullscreen;
@@ -63,7 +56,6 @@ struct SimAppConfig : Config
 	unsigned    hud_line_height;
 	unsigned    hud_line_spacing;
 	// Sim.
-	Time::CycleCount iteration_limit;
 	unsigned exhaust_burst_particles;
 	float    exhaust_v_factor;
 	float    exhaust_offset_factor;
@@ -77,10 +69,9 @@ struct SimAppConfig : Config
 	bool DEBUG_show_keycode = false;
 
 	//----------------------------------------------------------------------------
-	SimAppConfig(const std::string& cfg_path, const Args& args, std::string defaults = "");
+	OONConfig(Szim::SimAppConfig& syscfg, const Args& args);
 
-	SimAppConfig(const SimAppConfig&) = delete; // Could actually be copied _now_, but I'll forget, and make mistakes...
+	OONConfig(const OONConfig&) = delete; // Could actually be copied _now_, but I'll forget, and make mistakes...
 };
 
-} // namespace Szim
-#endif // _DF8M99506BFN4735R9686OK_
+#endif // _8PA37GTB7NX73945Y6B2V6C7X245Y45_

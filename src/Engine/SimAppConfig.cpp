@@ -18,8 +18,8 @@ using namespace Szim;
 using namespace std;
 
 //----------------------------------------------------------------------------
-SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args) :
-	Config(cfg_path)
+SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::string defaults)
+	: Config(cfg_path, defaults)
 {
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!! NOTE:

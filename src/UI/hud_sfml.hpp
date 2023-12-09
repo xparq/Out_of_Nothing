@@ -2,33 +2,21 @@
 #define _M09827N4536R87B4M9O8HG_
 
 #include "hud.hpp"
+#include "Engine/Config.hpp" //!! Move to szlib (#398)
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Text.hpp>
 
 #include <vector>
-	//using std::vector;
-#include <typeinfo>
-#include <tuple>
-	//using std::tuple, std::make_tuple;
-#include <any>
-	//using std::any;
-#include <functional>
-	//using std::function;
 #include <string>
-	//using std::string;
-//!!#include <string_view>
-//!!	//using std::string_view;
-#include <utility>
-	//using std::exchange;
-
 
 namespace UI {
 
 //----------------------------------------------------------------------------
-struct HUD_SFML : public HUD
+class HUD_SFML : public HUD
 {
+public:
 	void _setup(sf::RenderWindow& window);
 
 	void renderstate_clear() { lines.clear(); }

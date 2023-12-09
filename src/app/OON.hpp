@@ -1,8 +1,10 @@
-#ifndef __OON__
-#define __OON__
+#ifndef _OSE8975BQ7C785C639406C824X782C6YNB5_
+#define _OSE8975BQ7C785C639406C824X782C6YNB5_
+
+#include "OONConfig.hpp"
 
 #include "Engine/SimApp.hpp"
-namespace UI { class HUD; }
+namespace UI { class HUD; } //!!...
 
 #include <cassert>
 
@@ -128,13 +130,15 @@ public:
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	using SimApp::SimApp;
+	OON(int argc, char** argv);
 	OON(const OON&) = delete;
 
 //----------------------------------------------------------------------------
 // Data / Internals...
 //----------------------------------------------------------------------------
 protected:
+	OONConfig appcfg; // See also syscfg from this->SimApp
+
 	// See view_control() for these:
 	float pan_step_x = 0, pan_step_y = 0;
 	float zoom_step = 0;
@@ -145,4 +149,4 @@ protected:
 	size_t focused_entity_ndx = 0; // The player entity (globe_ndx) by default
 };
 
-#endif // __OON__
+#endif // _OSE8975BQ7C785C639406C824X782C6YNB5_

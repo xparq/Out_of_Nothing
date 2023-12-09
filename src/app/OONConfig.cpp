@@ -1,0 +1,75 @@
+#include "OONConfig.hpp"
+
+#include "Engine/SimAppConfig.hpp"
+
+#include "extern/Args.hpp" //!! See also in SimApp.hpp!
+#include "sz/fs.hh"
+	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
+#include "sz/stringtools.hh"
+//	using sz::to_bool
+#include <string>
+#include <string_view>
+#include <iostream>
+
+
+//!! This is an outlier for now: its own config should be reconciled with this,
+//!! which in turn should be split from the Engine cfg... -> #272!
+#include "UI/hud.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
+
+
+using namespace Szim;
+using namespace std;
+
+//----------------------------------------------------------------------------
+OONConfig::OONConfig(Szim::SimAppConfig& syscfg, const Args& args) :
+	Config(sz::prefix_if_rel(syscfg.base_path(), "OON.cfg")),
+	syscfg(syscfg)            // Save it...
+{
+	// 1. Preset hardcoded baseline defaults...
+	// ...Well, just default them in one step with loading; see below!
+	quick_snapshot_filename_pattern = DEFAULT_SNAPSHOT_FILE_PATTERN;
+
+	// 2. Override from the config...
+
+	//!! These assignments are kinda silly... I don't like storing them here _again_,
+	//!! the direct cfg.get() queries could be used, too! Or cache them in the app inst.
+	//!! if still needed (for tight loops) -- for another kind of silly duplication. ;)
+	//!! Well, the reason we're here is to fixup the inputs, so no raw get() queries
+	//!! later!... But: the parsed TOML tables can be modified, too!...
+	//!!
+	//!!BTW: WITH get() THERE'S NO WAY TO GET VALUES WITHOUT ALWAYS SUPPLYING THE DEFAULTS, TOO! :-/
+
+	// "" is the current dir (e.g. sz::getcwd())
+
+	// Relative to engine_state_dir (unless absolute paths):
+
+	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
+
+	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
+	default_font_file = get("appearance/default_font_file", "gui/font/default.font");
+	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
+	hud_line_height   = get("appearance/HUD/line_height", UI::HUD::DEFAULT_LINE_HEIGHT);
+	hud_line_spacing  = get("appearance/HUD/line_spacing", UI::HUD::DEFAULT_LINE_SPACING);
+
+	background_music  = get("audio/background_music", "sound/music/background.ogg");
+
+	exhaust_burst_particles = get("sim/exhaust_particles_add", 5);
+	exhaust_v_factor        = get("sim/exhaust_v_factor", -1.0f);
+	exhaust_offset_factor   = get("sim/exhaust_offset_factor", 0.1f);
+
+	// 3. Process cmdline args to override again...
+//!! See also main.cpp! And if main goes to Szim [turning all this essentially into a framework, not a lib, BTW...],
+//!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's also likely gonna be an app
+//!! configuration/layout/mode, where the client retains its own main()!
+
+	//!! 4. Fixup...
+
+	//!! Decide & consolidate whether to go with normalized abs. paths, or keep them as-is,
+	//!! and rely on the CWD (which might need some explicit care)!
+
+	background_music = sz::prefix_if_rel(syscfg.asset_dir, background_music);
+
+cerr << "DBG> current config: " << (current().empty() ? "built-in defaults(!)" : current()) << '\n';
+cerr << "DBG> cfg.base_path(): " << base_path() << '\n';
+//!!cerr << "DBG> cfg_dir: " << appcfg_dir << '\n';
+}

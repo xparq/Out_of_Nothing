@@ -62,7 +62,7 @@ protected:
 //------------------------------------------------------------------------
 public:
 //!!	using OON::OON;
-	OON_sfml(int atgc, char** argv);
+	OON_sfml(int argc, char** argv);
 	OON_sfml(const OON_sfml&) = delete;
 
 //------------------------------------------------------------------------

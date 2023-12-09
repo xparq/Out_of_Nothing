@@ -47,6 +47,12 @@ void OON::show_cmdline_help(const Args& args, const char* banner)
 }
 
 
+//============================================================================
+OON::OON(int argc, char** argv) :
+	SimApp(argc, argv),
+	appcfg(cfg, args) //!! appcfg(SimApp::syscfg)
+{}
+
 //----------------------------------------------------------------------------
 void OON::init() // override
 {
@@ -645,7 +651,7 @@ bool OON::zoom_control(float mousewheel_delta) //!!override
 	// See more about FPS norm. at pan_control()!
 	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.08f; // 8%
 //	AUTO_CONST CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = 0.2f; // 20%
-	static float CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = cfg.get("controls/zoom_speed_factor_mousewheel", 0.13f); // 13%
+	static float CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = appcfg.get("controls/zoom_speed_factor_mousewheel", 0.13f); // 13%
 
 	AUTO_CONST CFG_ZOOM_AUTOCHANGE_STEP = 0.01f; // +/- ratio delta
 

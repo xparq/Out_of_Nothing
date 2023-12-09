@@ -52,7 +52,12 @@ void Renderer_SFML::render(SimApp& game)
 //			         << ", y = " << game.cfg.VIEWPORT_WIDTH/2 + (body->p.y - body->r) * game.view.zoom + game.view.offset.y <<endl;
 //		auto vpos = game.view.world_to_view_coord(body->p.x - body->r, body->p.y - body->r); //!! Make the centered origin an implicit default!
 //		trshape.setPosition({vpos.x + sf::Vector2f(game.cfg.VIEWPORT_WIDTH/2, vpos.y + game.cfg.VIEWPORT_HEIGHT/2)); //!! Make the centered origin an implicit default!
+
+		//!! The size of the view pane (viewport) is NOT directly related to [Model::]View, but
+		//!! whould obviously be best if if could be mapped directly to display (viewport) coords!...
+
 		auto vpos = game.view.world_to_view_coord(body->p - Math::Vector2f(body->r, body->r)); //!! Make the centered origin an implicit default!
+
 		trshape.setPosition(to_sfVector2(vpos) + sf::Vector2f(float(game.cfg.VIEWPORT_WIDTH/2), float(game.cfg.VIEWPORT_HEIGHT/2))); //!! Make the centered origin an implicit default!
 	}
 }

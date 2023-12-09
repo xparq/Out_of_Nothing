@@ -49,17 +49,8 @@ SimApp::SimApp(int argc, char** argv)
 		{"C", 1}, {"cfg", 1},
 	  })
 	// Load & fixup the SimApp config...
-	, cfg(
-	      ( // COMMA-OP. HACK TO PRESET CFG. DEFAULTS... (THX FOR NOTHING, C++ ;-p )
-	        //! Note: this default config here is just a pretty redundant placeholder,
-		//! as the fixup in the cfg ctor takes care of the defaults anyway!
-		Config::Defaults = R"(
-		app_name = "Don't put the app name to the config, FFS! ;) "
-		[appearance]
-		window_title = "OON <Running with hardcoded defaults!>"
-		)",
-		args("cfg").empty()
-		? args("C").empty() ? DEFAULT_CFG_FILE // `... ? ""` would use Config::Defaults instead
+	, cfg(args("cfg").empty()
+		? args("C").empty() ? DEFAULT_CFG_FILE // `... ? ""` would use .defaults instead
 			            : args("C")
 		: args("cfg")
 /* For a pedantic warning:
@@ -72,8 +63,14 @@ SimApp::SimApp(int argc, char** argv)
 			: (cerr << "- WARNING: Both -C and --cfg have been specified; ignoring \"-C " << args("C") << "\"!\n",
 			  args("C"))
 */
-	      ) // END OF COMMA-OP. HACK
 	      , args
+	      , //! Note: this default config here is pretty redundant, basically only useful for debugging,
+		//! as the cfg ctor takes care of the defaults anyway...:
+	        R"(
+		app_name = "Don't put the app name to the config, FFS! ;) "
+		[appearance]
+		window_title = "OON <Running with hardcoded defaults!>"
+		)"
 	  ) // cfg()
 	// Bootstrap the backend...
 	, backend(SFML_Backend::use(cfg))
@@ -89,7 +86,7 @@ SimApp::SimApp(int argc, char** argv)
 	, view({.base_scale = SimAppConfig::DEFAULT_ZOOM})
 	, session(*this/*!!, args("session")!!*/)
 {
-/*!! See instead the sad "functional" approach in the member init list above now:
+/*!! See instead the sad "functional" approach above in the member init list:
 	// Check the cmdline for custom-config location...
 	string cfgfile = args("cfg");
 	if (cfgfile.empty()) cfgfile = args("C"); // OK if still empty, we'll fall back to the default.

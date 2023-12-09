@@ -32,13 +32,6 @@ public:
 class Renderer_SFML : public Renderer// "View"
 {
 public:
-//!!->cfg:
-//!!	constexpr static auto WINDOW_WIDTH  = 1024;
-//!!	constexpr static auto WINDOW_HEIGHT = 768;
-
-	// Size of the view pane (viewport); NOT directly related to Model::View, but
-	// should obviously be mapped directly to display (viewport) coords, if at all possible.
-
 	constexpr static auto ALPHA_ACTIVE = 255;
 	constexpr static auto ALPHA_INACTIVE = 127;
 
