@@ -1,5 +1,5 @@
-#ifndef __MODEL__OBJECT__
-#define __MODEL__OBJECT__
+#ifndef _DM04785YTB0872ND45076Y20745Y68CN74_
+#define _DM04785YTB0872ND45076Y20745Y68CN74_
 
 #include "Thruster.hpp"
 
@@ -13,4 +13,4 @@ namespace Model {
 //! - See it defined inside the World class!
 
 }; // namespace
-#endif // __MODEL__OBJECT__
+#endif // _DM04785YTB0872ND45076Y20745Y68CN74_

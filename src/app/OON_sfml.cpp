@@ -216,6 +216,7 @@ void OON_sfml::draw() // override
 		SFML_WINDOW().clear();
 
 	renderer.draw(*this);
+
 #ifndef DISABLE_HUD
 	if (_show_huds) {
 		timing_hud.draw(SFML_WINDOW());
@@ -302,8 +303,18 @@ void OON_sfml::updates_for_next_frame()
 		//
 		//!! Move to a SimApp virtual, I guess (so at least the counter capping can be implicitly done there; see also time_step()!):
 		if (!iterations.maxed()) {
+
 			update_world(Δt);
 			++iterations;
+
+			// Clean-up decayed bodies:
+			for (size_t i = player_entity_ndx() + 1; i < entity_count(); ++i) {
+				auto& e = entity(i);
+				if (e.lifetime != World::Body::Unlimited && e.lifetime <= 0) {
+					remove_body(i); // Takes care of "known" references, too!
+				}
+			}
+
 		} else {
 			if (cfg.exit_on_finish) {
 				cerr << "Exiting (as requested): iterations finished.\n";
@@ -330,6 +341,9 @@ void OON_sfml::updates_for_next_frame()
 	// - Auto-scroll to follow pinned player/object
 	// - Manual panning
 	// - Zoom
+
+	ui_gebi(ObjectData).active(focused_entity_ndx != ~0u && focused_entity_ndx < entity_count());
+
 	auto _focus_locked_ = false;
 	if (scroll_locked()) {
 		// Panning follows focused obj. with locked focus point:

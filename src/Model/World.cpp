@@ -104,14 +104,15 @@ static int skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
 	{
 		auto& body = bodies[i];
 
-		// Lifecycle mgmt... (kill decaying objects before wasting effort on them)
-		if (body->can_decay()) {
+		// Lifecycle mgmt... -- mark and skip decaying objects:
+		if (body->can_expire()) {
 			body->lifetime -= dt;
 			if (body->lifetime <= 0) {
-				body->on_event(Event::Decay); //! NOTE: it's not the obj. that does the decaying it's just notified!
+				body->terminate(); // Set to a well-defined state that's easy to check later!
+				body->on_event(Event::Terminated);
 
 				//!!bodies.erase(i);... //!!Watch out for the loop then, as this would make the indexes/iterators invalid!!
-										//!!Better just to mark it DELETED, and let another loop remove them later!
+				                        //!!Better just to mark it DELETED, and let another loop remove them later!
 //cerr << "#"<<i <<" DECAYED\n";
 				continue;
 			}
@@ -163,6 +164,9 @@ if (_SKIP_SOME_STATE_UPDATES_ && --skipping_n_interactions) {
 //!!This line below is hard-coded to globe-ndx == 0, and also ignores any other (potential) players!...
 for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 1); ++actor_obj_ndx)
 {
+	if (bodies[actor_obj_ndx]->terminated())
+		continue;
+
 //#ifdef _LEGACY_GRAVITY_CALC_
 //	for (size_t i = 0; i < bodies.size(); ++i)
 //#else
@@ -171,7 +175,9 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 	assert(gravity_mode == Normal || gravity_mode == Skewed || gravity_mode == Off);
 	for (size_t i = gravity_mode == Normal ? 0 : actor_obj_ndx + 1; i < bodies.size(); ++i)
 	{
-		auto& body = bodies[i];
+		auto& body = bodies[i]; //!!?? shared_ptr... worth the &?
+
+		if (body->terminated()) continue;
 
 		// Collisions & gravity...
 		//!! see the relative looping now! if (i != actor_obj_ndx)
@@ -244,7 +250,7 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				}
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
-				game.interaction_hook(this, Event::Collision, body.get(), other.get());
+				game.interaction_hook(this, Event::Collided, body.get(), other.get());
 
 			} else if (!body->superpower.gravity_immunity) { // process gravity if not colliding
 //#ifdef _LEGACY_GRAVITY_CALC_

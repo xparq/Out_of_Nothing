@@ -54,6 +54,7 @@ OONConfig::OONConfig(Szim::SimAppConfig& syscfg, const Args& args) :
 	exhaust_burst_particles = get("sim/exhaust_particles_add", 5);
 	exhaust_v_factor        = get("sim/exhaust_v_factor", -1.0f);
 	exhaust_offset_factor   = get("sim/exhaust_offset_factor", 0.1f);
+	exhaust_lifetime        = get("sim/exhaust_lifetime", 10.f); // s
 
 	// 3. Process cmdline args to override again...
 //!! See also main.cpp! And if main goes to Szim [turning all this essentially into a framework, not a lib, BTW...],

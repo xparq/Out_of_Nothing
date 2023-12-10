@@ -38,7 +38,7 @@ void Renderer_SFML::reset()
 void Renderer_SFML::render(SimApp& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	// The indexes match the corresponding physical bodies!
+	// Shape indexes must be the same as the corresponding entity indexes!
 	for (size_t i = 0; i < shapes_to_change.size(); ++i) {
 		auto& body = game.world().bodies[i];
 
@@ -121,7 +121,7 @@ void Renderer_SFML::create_cached_body_shape(const SimApp& game, const Model::Wo
 void Renderer_SFML::delete_cached_body_shape([[maybe_unused]] const SimApp& game, size_t body_ndx)
 {
 	assert(body_ndx != (size_t)-1);
-	// Require the body already been deleted from the world:
+	// Requires the body already been deleted from the world:
 	assert(game.entity_count() == shapes_to_draw.size() - 1);
 	assert(game.entity_count() == shapes_to_change.size() -1);
 	// Some runtime check, too:

@@ -309,13 +309,16 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 			else return "Object #"s + to_string(this->focused_entity_ndx); }
 		<< "\n"
 //		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
+		<< "\n  lifetime: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else return this->entity(this->focused_entity_ndx).lifetime == World::Body::Unlimited ?
+		                                 "(infinite)" : to_string(this->entity(this->focused_entity_ndx).lifetime); }
 		<< "\n  R: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
 		                     else return to_string(this->entity(this->focused_entity_ndx).r); }
 		<< "\n  T: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
 		                     else return to_string(this->entity(this->focused_entity_ndx).T); }
 //		<< "\n  M: " << ftos(&this->player_entity().mass)
-		<< "\n  M: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return (ftos(&this->entity(this->focused_entity_ndx).mass))(); }
+		<< "\n  M (x Earth): " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else { auto M = this->entity(this->focused_entity_ndx).mass / 6e24f; return ftos(&M)(); } } // x Earth-mass
 //		<< "\n  x: " << ftos(&this->player_entity().p.x)
 //		<<   ", y: " << ftos(&this->player_entity().p.y)
 //		<< "\n  vx: " << ftos(&this->player_entity().v.x)
@@ -723,6 +726,23 @@ size_t OON::add_body(World::Body&& obj)
 void OON::remove_body(size_t ndx)
 {
 	world().remove_body(ndx);
+
+	//-------------------------
+	// Adjust references...
+	//--------------
+
+	// Focus obj.:
+	if (focused_entity_ndx != ~0u) {
+		if (focused_entity_ndx > ndx) {
+//cerr << "- NOTE: Index of the followed object has changed due to object removal.\n";
+			--focused_entity_ndx;
+		} else if (focused_entity_ndx == ndx) {
+cerr << "- WARNING: The followed object has ceased to exist...\n";
+			focused_entity_ndx = ~0u; //!! Don't just fall back to the player!
+		}                                 //!! That'd be too subtle/unexpected/unwanted.
+	}
+
+	assert(focused_entity_ndx == ~0u || focused_entity_ndx < entity_count());
 }
 
 //----------------------------------------------------------------------------
@@ -786,6 +806,7 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 	for (size_t i = 0; i < n; ++i) {
 		auto ndx = add_body();
 		auto& newborn = entity(ndx);
+		newborn.lifetime = World::Body::Unlimited;
 		newborn.T = parent.T; // #155: Inherit temperature
 		newborn.v = parent.v; // 1e5e8be3: Inherit speed
 	}
@@ -794,8 +815,9 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 //----------------------------------------------------------------------------
 void OON::exhaust_burst(size_t entity/* = 0*/, size_t n/* = 50*/)
 {
-	float exhaust_v_factor = appcfg.exhaust_v_factor; //!! Should just be calculated instead!
-	float exhaust_offset_factor = appcfg.exhaust_offset_factor; //!! Should just be calculated instead!
+	static float exhaust_v_factor      = appcfg.exhaust_v_factor; //!! Should just be calculated instead!
+	static float exhaust_offset_factor = appcfg.exhaust_offset_factor; //!! Should just be calculated instead!
+	static float exhaust_lifetime      = appcfg.exhaust_lifetime;
 
 	const auto& cw = const_world();
 	auto constexpr r_min = cw.CFG_GLOBE_RADIUS / 10;
@@ -805,6 +827,7 @@ void OON::exhaust_burst(size_t entity/* = 0*/, size_t n/* = 50*/)
 	const auto& rocket = const_entity(entity);
 	for (int i = 0; i++ < n;) {
 		add_body({
+			.lifetime = exhaust_lifetime,
 			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! Suppress warning "conversion from double to float..."
 					+ r_min,
  			//!!...Jesus, those hamfixted "pseudo Δts" here! :-o :)

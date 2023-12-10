@@ -1,5 +1,5 @@
-#ifndef __WORLD_SFML__
-#define __WORLD_SFML__
+#ifndef _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_
+#define _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_
 
 #include "Engine/Config.hpp"
 
@@ -55,9 +55,9 @@ public:
 // API Types...
 //----------------------------------------------------------------------------
 public:
-	enum Event { None, Collision, Decay };
+	enum Event { None, Collided, Terminated };
 
-	enum GravityMode : unsigned { Off, Normal, Skewed };
+	enum GravityMode : unsigned { Off, Normal, Skewed }; //!! #405
 
 	struct Body //!! : public Serializable //! No: this would kill the C++ init list syntax!...
 	                                       //! So, just keep it a memcpy-able POD type for easy loading!
@@ -73,7 +73,7 @@ public:
 		// Presets:
 		float lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
 		float r = 0;
-		float density{Physics::DENSITY_ROCK / 2}; //!!low-density objects should look like Swiss cheese! ;)
+		float density = Physics::DENSITY_ROCK / 2; //!!low-density objects should look like Swiss cheese! ;)
 		Math::Vector2f p{0, 0};
 		Math::Vector2f v{0, 0};
 		float T = 0; // affected by various events; represented by color
@@ -101,7 +101,9 @@ public:
 		//! Alas, can't do this with designated inits: Body() : mass(powf(r, 3) * density) {} :-(
 		//! So... (see e.g. add_body()):
 		void recalc();
-		bool can_decay() { return lifetime > 0; }
+		bool can_expire() const noexcept { return lifetime > 0; }
+		void terminate()  noexcept { lifetime = 0; } // Currently the best fit...
+		bool terminated() const noexcept { return lifetime == 0; }
 		void on_event(Event e, ...); //! Alas, can't be virtual: that would kill the C++ init. list syntax! :-o :-/
 
 		// Ops.:
@@ -183,4 +185,4 @@ public:
 
 } // namespace Model
 
-#endif // __WORLD_SFML__
+#endif // _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_

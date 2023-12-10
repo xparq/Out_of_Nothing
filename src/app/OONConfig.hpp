@@ -59,10 +59,7 @@ struct OONConfig : Szim::Config
 	unsigned exhaust_burst_particles;
 	float    exhaust_v_factor;
 	float    exhaust_offset_factor;
-	bool  exit_on_finish; // If iteration_limit > 0, close the app when finished.
-	bool  fixed_model_dt_enabled;
-	float fixed_model_dt;
-	unsigned fps_limit; // 0: no limit
+	float    exhaust_lifetime; // s
 	// UI, presentation
 	std::string background_music; //!!?? Awkward... App stuff that needs convenient engine support. How exactly?
 	// Misc.
