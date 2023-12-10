@@ -355,8 +355,8 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	out << "interactions = " << _interact_all << '\n';
 	if (saved_version >= semver::version("0.1.0"))
 		{ out << "gravity_mode = " << (unsigned)gravity_mode << '\n'; }
-	if (saved_version >= semver::version("0.1.1"))
-		{ out << "gravity_strength = " << (unsigned)gravity << '\n'; }
+	if (saved_version >= semver::version("0.1.2"))
+		{ out << "gravity_strength = " << gravity << '\n'; }
 
 	out << "objects = " << bodies.size() << '\n'; // Saving for verification + preallocation on load!
 	out << "- - -" << '\n'; //!! mandatory separator to not break the idiotic loader! :)
@@ -374,6 +374,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	return out && !out.bad();
 }
 
+//----------------------------------------------------------------------------
 //!!optional<World> World::load(std::istream& in) // static (factory)
 //!!{
 //!!	optional<World> w0;
@@ -387,7 +388,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 		&& (in >> name >> eq >> quoted(val)) && eq == "=";) {
 		props[name] = val;
 	}
-//for (auto& [n, v] : props) cerr << n << ": " << v << endl;
+//cerr << "DBG> LOADED:\n"; for (auto& [n, v] : props) cerr << n << ": " << v << endl;
 
 	const semver::version runtime_version(Model::VERSION);
 	const semver::version loaded_version(props["MODEL_VERSION"]);
@@ -424,9 +425,13 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 		++_prop_ndx_; w_new.FRICTION = stof(props["drag"]);
 		++_prop_ndx_; w_new._interact_all = stof(props["interactions"]);
 		if (loaded_version >= semver::version("0.1.0"))
-			{ ++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]); }
-		if (loaded_version >= semver::version("0.1.1"))
-			{ ++_prop_ndx_; w_new.gravity = stof(props["gravity_strength"]); }
+			{ ++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]);
+//cerr << "DBG> gravity mode after load: " << w_new.gravity_mode << '\n';
+			}
+		if (loaded_version >= semver::version("0.1.2")) // G was saved incorrectly (cast to unsigned) in 0.1.1; ignore that
+			{ ++_prop_ndx_; w_new.gravity = stof(props["gravity_strength"]);
+//cerr << "DBG> gravity strength after load: " << w_new.gravity << '\n';
+			}
 	} catch (...) {
 		cerr << "- ERROR: Invalid (type of) property #"<<_prop_ndx_<<" in the loaded snapshot.\n";
 		return false;

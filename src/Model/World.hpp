@@ -37,7 +37,7 @@ class SimApp; //! Sigh, must predeclare it here, outside the namespace...
 
 namespace Model {
 
-static constexpr char const* VERSION = "0.1.1";
+static constexpr char const* VERSION = "0.1.2";
 
 //============================================================================
 class World // The model world
