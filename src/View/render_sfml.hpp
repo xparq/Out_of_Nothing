@@ -46,6 +46,7 @@ public:
 // Internals
 //!!protected: //!!STILL USED DIRECTLY BY THE GAME CONTROLLER CLASS! :-/
 	void resize_objects(float factor);
+	void resize_object(size_t ndx, float factor);
 
 	void transform_objects(const auto& op) // c++20 auto lambda ref (but why the `const` required by MSVC?); https://stackoverflow.com/a/67718838/1479945
 	// op = [](Transformable& shape);
@@ -54,6 +55,11 @@ public:
 			auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
 			op(trshape);
 		}
+	}
+
+	void transform_object(size_t ndx, const auto& op) {
+		auto& trshape = dynamic_cast<sf::Transformable&>(shapes_to_change[ndx]);
+		op(trshape);
 	}
 
 	void reset() override;

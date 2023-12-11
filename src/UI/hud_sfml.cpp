@@ -113,8 +113,8 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 		(sf::Color(cfg.bgcolor).a) // + sf::Color(cfg.fgcolor).a) / 2
 	));
 	rect.setOutlineThickness(1);
-	window.draw(rect);
 
+	window.draw(rect);
 	for (auto& text : lines) {
 		window.draw(text);
 	}

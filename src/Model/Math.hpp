@@ -29,7 +29,8 @@
 
 namespace Math {
 
-constexpr float MyNaN = 2e31f; // cringy way to avoid the pain of using the std NAN ;)
+constexpr const float MyNaN = 2e31f; // cringy way to avoid the pain of using the std NAN ;)
+constexpr const float FOUR_THIRD_PI = 4.1887902f;
 
 //!! There might also be a need for a "fast" version (like mag2_sq) that's only used
 //!! to sort/select/differentiate objects by distance, so the sqrt can be skipped!

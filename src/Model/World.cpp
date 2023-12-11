@@ -34,7 +34,6 @@ using namespace Szim;
 using namespace Math;
 
 
-
 //============================================================================
 World::World() :
 	gravity_mode(Normal)
@@ -74,7 +73,7 @@ void World::update(float dt, SimApp& game)
 
 #define _SKIP_SOME_STATE_UPDATES_ 10
 	// Slow changes (like cooling bodies) don't need updates in every frame
-	//!! Make it actually timed, so it can be independent of frame rate!
+	//!! Normalize for frame rate! (Needs the avg. frame-time as input then!)
 
 //#define _SKIP_SOME_INTERACTIONS_ 3
 	//!! Should spread the "skippage" across varied blocks of entities

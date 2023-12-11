@@ -21,12 +21,21 @@ struct Physics
 	//! E.g. that's exactly what the OON renderer does, so it's
 	//! fine to just store this directly in the objects.
 
+	constexpr     static float mass_from_radius_and_density(float r, float d)
+	                               { return Math::FOUR_THIRD_PI*r*r*r * d; } //!!?? powf() is not constepxr?! WTF??}
+	/*constexpr*/ static float radius_from_mass_and_density(float m, float d)
+	                               { return std::powf(m/d/Math::FOUR_THIRD_PI, 1/3.f); } //!!?? powf() is not constepxr?! WTF??}
+
 	// OK, but now just using this quick-and-dirty impromptu hack, instead of all the above... ;)
 	static float T_to_RGB_and_BV(float T, uint32_t* p_color = nullptr);
 
 	//! Wow, C++ `const` can't do non-integer static?! :-o
 	static constexpr float G = 6.673e-11f; //!! No point keeping this real and all the others stretched,
-	               //!! const unless a real orbital simulation is the goal (which isn't)!...
+	                                       //!! unless a real orbital simulation is the goal (which isn't)!...
+
+	static constexpr float RADIUS_OF_EARTH = 6371000.f; // km
+	static constexpr float MASS_OF_EARTH = 6e24f; // kg
+	static constexpr float DENSITY_OF_EARTH = 5500.0f; // kg/m3
 	static constexpr float DENSITY_ROCK = 2000.0f; // kg/m3
 };
 

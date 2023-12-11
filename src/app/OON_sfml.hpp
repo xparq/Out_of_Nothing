@@ -43,8 +43,8 @@ private:
 	void onResize() override;
 
 	// Game control
-	virtual void post_zoom_hook(float factor) override; // Resize cached shapes
-
+	virtual void resize_shapes(float factor) override;
+	virtual void resize_shape(size_t ndx, float factor) override;
 
 //------------------------------------------------------------------------
 // Internals...

@@ -140,5 +140,13 @@ void Renderer_SFML::resize_objects(float factor)
 	});
 }
 
+//----------------------------------------------------------------------------
+void Renderer_SFML::resize_object(size_t ndx, float factor)
+{
+	assert(ndx < shapes_to_change.size());
+	sf::Transformable& shape = *(shapes_to_change[ndx]);
+	shape.setScale(shape.getScale() * factor);
+}
+
 
 } // namespace View

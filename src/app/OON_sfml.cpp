@@ -476,7 +476,7 @@ try {
 
 				case sf::Keyboard::Insert: spawn(player_entity_ndx(),
 						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
-				case sf::Keyboard::Delete: remove_bodies(
+				case sf::Keyboard::Delete: remove_random_bodies(
 						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
 
 				case sf::Keyboard::F1:  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
@@ -657,7 +657,7 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 
 
 //----------------------------------------------------------------------------
-size_t OON_sfml::add_body(World::Body&& obj)
+size_t OON_sfml::add_body(World::Body&& obj) //override
 {
 	auto ndx = OON::add_body(std::forward<decltype(obj)>(obj));
 	// Pre-cache shapes for rendering... (!! Likely pointless, but this is just what I started with...)
@@ -666,16 +666,22 @@ size_t OON_sfml::add_body(World::Body&& obj)
 }
 
 //----------------------------------------------------------------------------
-void OON_sfml::remove_body(size_t ndx)
+void OON_sfml::remove_body(size_t ndx) //override
 {
 	OON::remove_body(ndx);
 	renderer.delete_cached_body_shape(*this, ndx);
 }
 
-void OON_sfml::post_zoom_hook(float factor)
+void OON_sfml::resize_shapes(float factor) //override
 {
 	renderer.resize_objects(factor);
 }
+
+void OON_sfml::resize_shape(size_t ndx, float factor) //override
+{
+	renderer.resize_object(ndx, factor);
+}
+
 
 //----------------------------------------------------------------------------
 //!!Sink this into the UI!

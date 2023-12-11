@@ -36,10 +36,12 @@ public:
 	// Gameplay...
 
 	virtual void spawn(size_t parent_ndx = 0, size_t n = 1);      //!! requires: 0 == player_entity_ndx()
-	virtual void exhaust_burst(size_t entity = 0, size_t n = 50);
+	void exhaust_burst(size_t entity_ndx = 0, /* Math::Vector2f thrust_vector, */size_t n = 20);
+	void chemtrail_burst(size_t emitter_ndx = 0, size_t n = 10);
 
-	auto interact_all(bool state = true)  { world()._interact_all = state; }
-	auto toggle_interact_all()  { interact_all(!const_world()._interact_all); }
+
+	void interact_all(bool state = true)  { world()._interact_all = state; }
+	void toggle_interact_all()  { interact_all(!const_world()._interact_all); }
 
 	//!!These should be idempotent, to tolerate keyboard repeats (which could be disabled but may be problematic)!
 	//!!Also -> #105: sanitize thrusters...
@@ -103,10 +105,10 @@ public:
 	virtual size_t add_body(Model::World::Body&& obj);
 //!!	virtual size_t add_body(Model::World::Body const& obj);
 	virtual void   remove_body(size_t ndx);
-	size_t add_body(); // add a random one
-	void   remove_body(); // delete a random one
-	void   add_bodies(size_t n);
-	void   remove_bodies(size_t n = -1); // -1 -> all
+	size_t add_random_body_near(size_t base_ndx);
+	void   add_random_bodies_near(size_t base_ndx, size_t n);
+	void   remove_random_body();
+	void   remove_random_bodies(size_t n = -1); // -1 -> all
 
 	unsigned add_player(Model::World::Body&& obj) override;
 	void     remove_player(unsigned ndx) override;
@@ -118,13 +120,34 @@ public:
 
 	bool _ctrl_update_thrusters(); // true if any engine is firing
 
+
+	//----------------------------------------------------------------------------
+	struct EmitterConfig
+	{
+		Math::Vector2f eject_velocity; // Relative to the emitter's v
+		float v_factor = 0.1f; //!! May be redundant with eject_velocity now!
+		float offset_factor = 0.2f;
+		float particle_lifetime = Model::World::Body::Unlimited;
+		bool  create_mass = true;
+		float particle_density = Model::Physics::DENSITY_ROCK * 0.001f;
+		float position_divergence = 5.f; // Relative to emitter radius
+		float velocity_divergence = 1.f; //!! Just an exp. "randomness factor" for now!...
+		float particle_mass_min;
+		float particle_mass_max;
+		uint32_t color = 0x706080; // 0xRRGGBB
+	};
+	void _emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx = 0, size_t n = 10);
+
 	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
 	void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
 	bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
 	//--------------------------------------------------------------------
 	// New overridables introduced:
-	virtual void post_zoom_hook([[maybe_unused]] float factor) {}
+	virtual void resize_shapes(float /*factor*/) {}
+	virtual void resize_shape(size_t /*ndx*/, float /*factor*/) {}
+
+
 
 //----------------------------------------------------------------------------
 // C++ mechanics...

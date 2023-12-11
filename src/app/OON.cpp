@@ -65,10 +65,11 @@ void OON::init() // override
 
 	// Add the "Player Superglobe" first
 	//!!
-	//!! THIS MUST COME BEFORE CALLING add_bodies()! :-o
+	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
 	//!!
 	[[maybe_unused]] auto player_entity_index
-		= add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_ROCK, .p = {0,0}, .v = {0,0}, .color = 0xffff20});
+		= add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_OF_EARTH, .p = {0,0}, .v = {0,0}, .color = 0xffff20,
+		              .mass = appcfg.get("sim/player_globe_mass", 50 * Physics::MASS_OF_EARTH)});
 	assert(entity_count() > player_entity_index);
 	assert(player_entity_ndx() == player_entity_index);
 
@@ -93,9 +94,9 @@ void OON::init() // override
 		//!!
 		// Add 2 "moons" with fixed parameters (mainly for testing):
 		add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-					.color = 0xff2020});
+					.color = 0xff2020, .mass = 3e24f});
 		add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
-					.color = 0x3060ff});
+					.color = 0x3060ff, .mass = 3e24f});
 	}
 
 	// App-level cmdline options (overrides)...
@@ -105,8 +106,8 @@ void OON::init() // override
 		if (args["interact"]) {
 			interact_all();
 		}; if (args["bodies"]) {
-			auto n = stoi(args("bodies")) - 2; // 2 have already been created
-			add_bodies(n < 0 ? 0 : n); // Avoid possible overflow!
+			auto n = stoi(args("bodies")) - 2; // 2 have already been created above
+			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
 			world().FRICTION = f;
@@ -207,7 +208,6 @@ void OON::_setup_UI()
 				->setCallback([&]{
 					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
-cerr << "FILENAME EDITOR: " << fname << '\n';
 						this->save_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
 					}
 				});
@@ -216,7 +216,6 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 				->setCallback([&]{
 					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
-cerr << "FILENAME EDITOR: " << fname << '\n';
 						this->load_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
 					}
 				});
@@ -317,8 +316,9 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 		<< "\n  T: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
 		                     else return to_string(this->entity(this->focused_entity_ndx).T); }
 //		<< "\n  M: " << ftos(&this->player_entity().mass)
-		<< "\n  M (x Earth): " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else { auto M = this->entity(this->focused_entity_ndx).mass / 6e24f; return ftos(&M)(); } } // x Earth-mass
+		<< "\n  M: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
+		                     else { auto M = this->entity(this->focused_entity_ndx).mass / 6e24f;
+		                            return ftos(&M)(); } } << " x Earth"
 //		<< "\n  x: " << ftos(&this->player_entity().p.x)
 //		<<   ", y: " << ftos(&this->player_entity().p.y)
 //		<< "\n  vx: " << ftos(&this->player_entity().v.x)
@@ -379,7 +379,7 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 	help_hud
 		<< "------------- Actions:\n"
 		<< "← → ↑ ↓       Thrust\n"
-		<< "SPACE         \"Exhaust\" sprinkle\n"
+		<< "SPACE         \"Chemtrail\" sprinkle\n"
 		<< "INS           Spawn object(s), +CTRL: 10, +SHIFT: 100\n"
 		<< "DEL           Remove object(s), +CTRL: 10, +SHIFT: 100\n"
 		<< "------------- God Mode - Metaphysics:\n"
@@ -424,11 +424,11 @@ cerr << "FILENAME EDITOR: " << fname << '\n';
 }
 
 //----------------------------------------------------------------------------
-unsigned OON::add_player(World::Body&& obj)
+unsigned OON::add_player(World::Body&& obj) //override
 {
 	// These are the player modelling differences:
 	obj.add_thrusters();
-	obj.superpower.gravity_immunity = true;
+	obj.superpower.gravity_immunity = appcfg.get("sim/player_antigravity", true);
 	obj.superpower.free_color = true;
 	obj/*.superpower*/.lifetime = World::Body::Unlimited; //!!?? Should this be a superpower instead?
 
@@ -446,27 +446,27 @@ void OON::remove_player(unsigned)
 bool OON::poll_and_process_controls()
 {
 	bool action = false;
+
+	// Thruster plumes
 	if (_ctrl_update_thrusters()) {
 		action = true;
-//		if (keystate(SPACE)) {
-//			action = true;
-//			exhaust_burst(player_entity_ndx(), 5);
-//		}
+		exhaust_burst(player_entity_ndx(), 5); // 5 per thruster by default, unless reconfigured
 	}
-	// Allow this now irrespective of any engine firing:
+
+	// "Chemtrail" release
 	if (keystate(SPACE)) {
 		action = true;
-		exhaust_burst(player_entity_ndx(), appcfg.exhaust_burst_particles);
+		chemtrail_burst(player_entity_ndx(), appcfg.chemtrail_burst_particles);
 	}
 
 	return action;
 }
 
 //----------------------------------------------------------------------------
-void OON::up_thruster_start()    { entity(player_entity_ndx()).thrust_up.thrust_level(cfg.THRUST_FORCE); }
-void OON::down_thruster_start()  { entity(player_entity_ndx()).thrust_down.thrust_level(cfg.THRUST_FORCE); }
-void OON::left_thruster_start()  { entity(player_entity_ndx()).thrust_left.thrust_level(cfg.THRUST_FORCE); }
-void OON::right_thruster_start() { entity(player_entity_ndx()).thrust_right.thrust_level(cfg.THRUST_FORCE); }
+void OON::up_thruster_start()    { entity(player_entity_ndx()).thrust_up.thrust_level(appcfg.player_thrust_force); }
+void OON::down_thruster_start()  { entity(player_entity_ndx()).thrust_down.thrust_level(appcfg.player_thrust_force); }
+void OON::left_thruster_start()  { entity(player_entity_ndx()).thrust_left.thrust_level(appcfg.player_thrust_force); }
+void OON::right_thruster_start() { entity(player_entity_ndx()).thrust_right.thrust_level(appcfg.player_thrust_force); }
 void OON::up_thruster_stop()     { entity(player_entity_ndx()).thrust_up.thrust_level(0); }
 void OON::down_thruster_stop()   { entity(player_entity_ndx()).thrust_down.thrust_level(0); }
 void OON::left_thruster_stop()   { entity(player_entity_ndx()).thrust_left.thrust_level(0); }
@@ -544,7 +544,7 @@ void OON::zoom(float factor)
 {
 	//!!pre_zoom_hook(factor);
 	view.zoom(factor);
-	post_zoom_hook(factor);
+	resize_shapes(factor);
 }
 // These can't call view.zoom_in/out directly, because we need to trigger our zoom_hook!...
 void OON::zoom_in (float amount) { zoom(1.f + amount); }
@@ -569,7 +569,7 @@ void OON::zoom(float factor)
 
 	view.zoom *= factor;
 
-	post_zoom_hook(factor);
+	resize_shapes(factor);
 }
 
 //----------------------------------------------------------------------------
@@ -716,14 +716,58 @@ bool OON::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 }
 
 
+
 //----------------------------------------------------------------------------
-size_t OON::add_body(World::Body&& obj)
+void OON::add_random_bodies_near(size_t base_ndx, size_t n)
+{
+	while (n--) add_random_body_near(base_ndx);
+}
+
+//----------------------------------------------------------------------------
+void OON::remove_random_bodies(size_t n/* = -1*/)
+{
+	if (n == (unsigned)-1) n = entity_count();
+	while (n--) remove_random_body();
+}
+
+
+//----------------------------------------------------------------------------
+size_t OON::add_body(World::Body&& obj) //virtual
+// Add new entity (moved) from a template (temporary) obj.
 {
 	return world().add_body(std::forward<decltype(obj)>(obj));
 }
 
 //----------------------------------------------------------------------------
-void OON::remove_body(size_t ndx)
+size_t OON::add_random_body_near(size_t base_ndx)
+//!! This is still a version of (mass-ignoring) spawn()!...
+//!! Callers may not know, but this depends on the properties of the player body!
+//!! See also spawn() (that calls this), which is at least is explicit about it!
+{
+	//!! These should be either static, or actually depend on dynamic state...
+	const auto& cw = const_world();
+//	auto constexpr r_min = cw.CFG_GLOBE_RADIUS / 9;
+//	auto constexpr r_max = cw.CFG_GLOBE_RADIUS * 3;
+	auto constexpr p_range = cw.CFG_GLOBE_RADIUS * 30;
+	auto constexpr v_range = cw.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
+
+	const auto& base = const_entity(base_ndx);
+	auto M_min = base.mass / 9;
+	auto M_max = base.mass * 3;
+
+//cerr << "Adding new object #" << cw.bodies.size() + 1 << "...\n";
+	return add_body({
+		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + base.p.x,
+		       (rand() * p_range) / RAND_MAX - p_range/2 + base.p.y },
+		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + base.v.x * 0.05f,
+		       (rand() * v_range) / RAND_MAX - v_range/2 + base.v.y * 0.05f },
+		.color = 0xffffff & ((uint32_t) rand() * rand()),
+		.mass = M_min + (M_max - M_min) * float(rand())/RAND_MAX,
+	});
+}
+
+//----------------------------------------------------------------------------
+void OON::remove_body(size_t ndx) //virtual
 {
 	world().remove_body(ndx);
 
@@ -746,28 +790,7 @@ cerr << "- WARNING: The followed object has ceased to exist...\n";
 }
 
 //----------------------------------------------------------------------------
-size_t OON::add_body()
-{
-	const auto& cw = const_world();
-	auto constexpr r_min = cw.CFG_GLOBE_RADIUS / 9;
-	auto constexpr r_max = cw.CFG_GLOBE_RADIUS * 3;
-	auto constexpr p_range = cw.CFG_GLOBE_RADIUS * 30;
-	auto constexpr v_range = cw.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-//cerr << "Adding new object #" << cw.bodies.size() + 1 << "...\n";
-	const auto& player = const_entity(player_entity_ndx());
-	return add_body({
-		.r = (float) (((float)rand() * (r_max - r_min)) / RAND_MAX ) //! suppress warning "conversion from double to float..."
-				+ r_min,
-		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + player.p.x,
-		       (rand() * p_range) / RAND_MAX - p_range/2 + player.p.y },
-		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + player.v.x * 0.05f,
-		       (rand() * v_range) / RAND_MAX - v_range/2 + player.v.y * 0.05f },
-		.color = 0xffffff & ((uint32_t) rand() * rand()),
-	});
-}
-
-//----------------------------------------------------------------------------
-void OON::remove_body()
+void OON::remove_random_body()
 {
 	auto entities = entity_count();
 	if (entities <= 1) { // Leave the player "superglobe", so not just checking for empty()!
@@ -783,28 +806,15 @@ void OON::remove_body()
 }
 
 //----------------------------------------------------------------------------
-void OON::add_bodies(size_t n)
-{
-	while (n--) add_body();
-}
-
-//----------------------------------------------------------------------------
-void OON::remove_bodies(size_t n/* = -1*/)
-{
-	if (n == (unsigned)-1) n = entity_count();
-	while (n--) remove_body();
-}
-
-
-//----------------------------------------------------------------------------
 void OON::spawn(size_t parent_ndx, size_t n)
-//!!??Should gradually become a method of the object itself
+//!! Should not ignore mass!...
+//!!??Should gradually become a method of the object itself?
 {
 if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"<<parent_ndx<<" is spawning...\n";
 
 	const auto& parent = const_entity(parent_ndx); // #41: Support inheritance
 	for (size_t i = 0; i < n; ++i) {
-		auto ndx = add_body();
+		auto ndx = add_random_body_near(player_entity_ndx());
 		auto& newborn = entity(ndx);
 		newborn.lifetime = World::Body::Unlimited;
 		newborn.T = parent.T; // #155: Inherit temperature
@@ -812,30 +822,160 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 	}
 }
 
-//----------------------------------------------------------------------------
-void OON::exhaust_burst(size_t entity/* = 0*/, size_t n/* = 50*/)
-{
-	static float exhaust_v_factor      = appcfg.exhaust_v_factor; //!! Should just be calculated instead!
-	static float exhaust_offset_factor = appcfg.exhaust_offset_factor; //!! Should just be calculated instead!
-	static float exhaust_lifetime      = appcfg.exhaust_lifetime;
 
-	const auto& cw = const_world();
-	auto constexpr r_min = cw.CFG_GLOBE_RADIUS / 10;
-	auto constexpr r_max = cw.CFG_GLOBE_RADIUS * 0.5;
-	auto constexpr p_range = cw.CFG_GLOBE_RADIUS * 5;
-	auto constexpr v_range = cw.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
-	const auto& rocket = const_entity(entity);
+//----------------------------------------------------------------------------
+//!! Move to SimApp!
+void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t n)
+{
+	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
+
+//if (!ecfg.create_mass) cerr <<"DBG> emitter.mass BEFORE burst: "<< emitter.mass <<'\n';
+
+	float p_range = emitter.r * ecfg.velocity_divergence;
+	float v_range = Model::World::CFG_GLOBE_RADIUS * ecfg.velocity_divergence; //!! ...by magic, right? :-/
+
+	float emitter_old_r = emitter.r;
+
 	for (int i = 0; i++ < n;) {
-		add_body({
-			.lifetime = exhaust_lifetime,
-			.r = (float) ((rand() * (r_max - r_min)) / RAND_MAX ) //! Suppress warning "conversion from double to float..."
-					+ r_min,
- 			//!!...Jesus, those hamfixted "pseudo Δts" here! :-o :)
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.x - rocket.v.x * exhaust_offset_factor,
-			       (rand() * p_range) / RAND_MAX - p_range/2 + rocket.p.y - rocket.v.y * exhaust_offset_factor },
-			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.x * exhaust_v_factor,
-			       (rand() * v_range) / RAND_MAX - v_range/2 + rocket.v.y * exhaust_v_factor },
-			.color = (uint32_t) (float)0xffffff * rand(),
+		auto particle_mass = ecfg.particle_mass_min + (ecfg.particle_mass_max - ecfg.particle_mass_min) * float(rand())/RAND_MAX;
+
+		if (!ecfg.create_mass && emitter.mass < particle_mass) {
+//cerr << "- Not enough mass to emit particle!\n";
+			continue;
+		}
+//cerr <<"DBG> density: "<< ecfg.particle_density <<'\n';
+//cerr <<"DBG>   ==?  : "<< Model::Physics::DENSITY_ROCK * 0.0000000123f <<'\n';
+
+		auto pndx = add_body({
+			.lifetime = ecfg.particle_lifetime,
+			.density = ecfg.particle_density,
+			//!!...Jesus, those "hamfixted" pseudo Δt "factors" here! :-o :)
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.x - emitter.v.x * ecfg.offset_factor,
+			       (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.y - emitter.v.y * ecfg.offset_factor },
+			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.x * ecfg.v_factor + ecfg.eject_velocity.x,
+			       (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.y * ecfg.v_factor + ecfg.eject_velocity.y },
+			.color = ecfg.color,
+			.mass = particle_mass,
 		});
+//cerr <<"DBG> particle.r: "<< entity(pndx).r <<'\n';
+
+//cerr <<"DBG> emitter v:  "<< emitter.v.x <<", "<< emitter.v.y <<'\n';
+//cerr <<"     - eject Δv: "<< ecfg.eject_velocity.x <<", "<< ecfg.eject_velocity.y <<'\n';
+//cerr <<"     - part. v:  "<< entity(pndx).v.x <<", "<< entity(entity_count()-1).v.y <<'\n';
+
+		if (!ecfg.create_mass) {
+			emitter.mass -= particle_mass;
+//cerr <<"DBG> Decreasing emitter.mass by: "<< particle_mass <<'\n';
+		}
 	}
+
+	if (!ecfg.create_mass) {
+		assert(emitter.mass >= 0);
+//cerr <<"DBG> emitter.r before recalc: "<< emitter.r <<'\n';
+		emitter.recalc();
+//cerr <<"DBG> emitter.r after recalc: "<< emitter.r <<'\n';
+		resize_shape(emitter_ndx, emitter.r/emitter_old_r);
+//cerr <<"DBG> emitter.mass AFTER burst: "<< emitter.mass <<'\n';
+	}
+}
+
+
+//----------------------------------------------------------------------------
+//!! An exhaust jet should be created for each thruster!
+void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ size_t n/* = ...*/)
+{
+	static size_t   add_particles = appcfg.get("sim/exhaust_particles_add", 0);
+	static float    exhaust_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
+	static uint32_t exhaust_color = appcfg.get("sim/exhaust_color", 0xaaaaaa);
+	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
+	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_max_size_ratio", 0.1f);
+
+//cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
+//cerr <<"DBG> -> exhaust_density: "<< exhaust_density <<'\n';
+
+	static EmitterConfig thrust_exhaust_emitter =
+	{
+		.eject_velocity = {0, 0},
+		.v_factor = appcfg.exhaust_v_factor, //!! Should just be calculated instead!,
+		.offset_factor = 0, //!!appcfg.exhaust_offset_factor, //!! Should just be calculated instead!
+		.particle_lifetime = appcfg.exhaust_lifetime,
+		.create_mass = appcfg.get("sim/exhaust_creates_mass", true),
+		.particle_density = exhaust_density,
+		.position_divergence = 5.f, // Relative to emitter radius
+		.velocity_divergence = 1.f, //!! Just an exp. "randomness factor" for now!...
+		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
+		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
+		.color = exhaust_color,
+	};
+
+	auto& base = entity(base_ndx); // Not const: will deplete!
+
+// This accidentally creates a lovely rainbow color pattern in the plumes!... :-o
+	constexpr const float color_spread = 0x111111f;
+	thrust_exhaust_emitter.color = (uint32_t) exhaust_color + color_spread - 2 * color_spread * float(rand())/RAND_MAX;
+
+	if (base.thrust_up.thrust_level()) {
+		thrust_exhaust_emitter.eject_velocity = {0, 4e9f};
+		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+	}
+	if (base.thrust_down.thrust_level()) {
+		thrust_exhaust_emitter.eject_velocity = {0, -4e9f};
+		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+	}
+	if (base.thrust_left.thrust_level()) {
+		thrust_exhaust_emitter.eject_velocity = {4e9f, 0};
+		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+	}
+	if (base.thrust_right.thrust_level()) {
+		thrust_exhaust_emitter.eject_velocity = {-4e9f, 0};
+		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+	}
+}
+
+//----------------------------------------------------------------------------
+void OON::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
+{
+	static float chemtrail_v_factor      = appcfg.get("sim/chemtrail_v_factor", 0.1f);
+	static float chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
+	static float chemtrail_lifetime      = appcfg.get("sim/chemtrail_lifetime", Model::World::Body::Unlimited);
+	static bool  chemtrail_creates_mass  = appcfg.get("sim/chemtrail_creates_mass", true);
+	static float chemtrail_density       = Model::Physics::DENSITY_ROCK * appcfg.get("sim/chemtrail_density_ratio", 0.001f);
+	static float chemtrail_divergence    = appcfg.get("sim/chemtrail_divergence", 1.f);
+	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_min_size_ratio", 0.02f);
+	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_max_size_ratio", 0.1f);
+	static float M_min = Model::Physics::mass_from_radius_and_density(r_min, chemtrail_density);
+	static float M_max = Model::Physics::mass_from_radius_and_density(r_max, chemtrail_density);
+
+	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
+	float p_range = emitter.r * 5;
+	float v_range = Model::World::CFG_GLOBE_RADIUS * chemtrail_divergence; //!! ...by magic, right? :-/
+
+	float emitter_old_r = emitter.r;
+
+	for (int i = 0; i++ < n;) {
+		auto particle_mass = M_min + (M_max - M_min) * float(rand())/RAND_MAX;
+		if (!chemtrail_creates_mass && emitter.mass < particle_mass) {
+//cerr << "- Not enough mass to emit particle...\n";
+			continue;
+		}
+
+		add_body({
+			.lifetime = chemtrail_lifetime,
+			.density = chemtrail_density,
+			//!!...Jesus, those "hamfixted" pseudo Δts here! :-o :)
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.x - emitter.v.x * chemtrail_offset_factor,
+			       (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.y - emitter.v.y * chemtrail_offset_factor },
+			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.x * chemtrail_v_factor,
+			       (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.y * chemtrail_v_factor },
+			.color = (uint32_t) (float)0xffffff * rand(),
+			.mass = particle_mass,
+		});
+
+		if (!chemtrail_creates_mass) emitter.mass -= particle_mass;
+//cerr <<"emitter.mass -= emitter_mass_loss: "<< emitter.mass <<" -= "<< particle_mass <<'\n';
+	}
+
+	assert(emitter.mass >= 0);
+	emitter.recalc();
+	resize_shape(emitter_ndx, emitter.r / emitter_old_r);
 }

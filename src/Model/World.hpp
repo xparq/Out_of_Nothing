@@ -72,18 +72,17 @@ public:
 
 		// Presets:
 		float lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
-		float r = 0;
+		float r = 0; // Calculated from mass and density
 		float density = Physics::DENSITY_ROCK / 2; //!!low-density objects should look like Swiss cheese! ;)
 		Math::Vector2f p{0, 0};
 		Math::Vector2f v{0, 0};
 		float T = 0; // affected by various events; represented by color
 
 		// Preset/recomputed:
-		uint32_t color = 0; // if left 0, it'll recalculated from T (if not 0)
+		uint32_t color = 0; // if left 0, it'll be recalculated from T (if not 0)
 			// RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
 			// The reason is easier add_body() calls here.)
 
-		// Always computed:
 		float mass;
 
 		//!! Ugly hack to start generalizing object compositions & to allow the world

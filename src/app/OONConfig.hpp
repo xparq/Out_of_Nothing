@@ -33,7 +33,7 @@ struct OONConfig : Szim::Config
 	AUTO_CONST DEFAULT_SNAPSHOT_FILE_PATTERN = "snapshot_{}.save";
 	AUTO_CONST DEFAULT_FPS_LIMIT = 30;
 
-	AUTO_CONST THRUST_FORCE = 6.0e34f; // N (kg*m/s^2)
+	float player_thrust_force; // N (kg*m/s^2)
 		//!!Move the rest of these to the Model, too, for now:
 		//!!static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
 		//!!(They will become props initialized from a real config!)
@@ -56,6 +56,7 @@ struct OONConfig : Szim::Config
 	unsigned    hud_line_height;
 	unsigned    hud_line_spacing;
 	// Sim.
+	unsigned chemtrail_burst_particles;
 	unsigned exhaust_burst_particles;
 	float    exhaust_v_factor;
 	float    exhaust_offset_factor;

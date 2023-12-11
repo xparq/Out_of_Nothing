@@ -207,8 +207,8 @@ protected:
 		// But for longer runs (on persistent-world servers), or for higher resolutions, let's go 64...
 	sz::Counter<int> timestepping; // # of scheduled steps to advance/retrace, while in halt (paused) mode
 	//!!??Move to the Metrics system and resuse it from there:
-//!!	sz::SmoothRollingAverage<0.993f, 1/30.f> avg_frame_delay;
-	sz::RollingAverage<30> avg_frame_delay;
+	sz::SmoothRollingAverage<0.991f, 1/30.f> avg_frame_delay;
+//	sz::RollingAverage<30> avg_frame_delay;
 
 	//--------------------------------------------------------------------
 	// - Workflow control...

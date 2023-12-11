@@ -46,15 +46,17 @@ OONConfig::OONConfig(Szim::SimAppConfig& syscfg, const Args& args) :
 	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
 
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
-	default_font_file = get("appearance/default_font_file", "gui/font/default.font");
-	hud_font_file     = get("appearance/HUD/font_file", default_font_file);
-	hud_line_height   = get("appearance/HUD/line_height", UI::HUD::DEFAULT_LINE_HEIGHT);
-	hud_line_spacing  = get("appearance/HUD/line_spacing", UI::HUD::DEFAULT_LINE_SPACING);
+	default_font_file   = get("appearance/default_font_file", "gui/font/default.font");
+	hud_font_file       = get("appearance/HUD/font_file", default_font_file);
+	hud_line_height     = get("appearance/HUD/line_height", UI::HUD::DEFAULT_LINE_HEIGHT);
+	hud_line_spacing    = get("appearance/HUD/line_spacing", UI::HUD::DEFAULT_LINE_SPACING);
 
-	exhaust_burst_particles = get("sim/exhaust_particles_add", 5);
-	exhaust_v_factor        = get("sim/exhaust_v_factor", -1.0f);
-	exhaust_offset_factor   = get("sim/exhaust_offset_factor", 0.1f);
-	exhaust_lifetime        = get("sim/exhaust_lifetime", 10.f); // s
+	player_thrust_force       = get("sim/player_thrust_force", 1e35f); // N (kg*m/s^2)
+	chemtrail_burst_particles = get("sim/chemtrail_particles_add", 5);
+	exhaust_burst_particles   = get("sim/exhaust_particles_add", 5);
+	exhaust_v_factor          = get("sim/exhaust_v_factor", -1.0f);
+	exhaust_offset_factor     = get("sim/exhaust_offset_factor", 0.1f); // depends on player v
+	exhaust_lifetime          = get("sim/exhaust_lifetime", 10.f); // s
 
 	// 3. Process cmdline args to override again...
 //!! See also main.cpp! And if main goes to Szim [turning all this essentially into a framework, not a lib, BTW...],

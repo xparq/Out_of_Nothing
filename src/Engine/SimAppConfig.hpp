@@ -30,16 +30,6 @@ struct SimAppConfig : Config
 	AUTO_CONST DEFAULT_SNAPSHOT_FILE_PATTERN = "snapshot_{}.save";
 	AUTO_CONST DEFAULT_FPS_LIMIT = 30;
 
-	AUTO_CONST THRUST_FORCE = 6.0e34f; // N (kg*m/s^2)
-		//!!Move the rest of these to the Model, too, for now:
-		//!!static constexpr float CFG_GLOBE_RADIUS = 50000000.0f; // m
-		//!!(They will become props initialized from a real config!)
-		
-		//! See also: World physics! The specific values here depend on the laws there,
-		//! so replacing the physics may very well invalidate these! :-o
-		//! The depencendies should be formalized e.g. via using virtual units
-		//! provided by the physics there!
-
 	//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	//!! SOME OF THESARE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
 	//!! Possibly move the post-load callback hook here!
