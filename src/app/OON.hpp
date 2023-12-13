@@ -72,8 +72,9 @@ public:
 		// Returns true if view adjustments have been requested/performed.
 		// Note: this is irrespective of modelling, and is also enabled while paused.
 	// - view_control() calls these:
-	bool pan_control(); //!!override
-	bool zoom_control(float mousewheel_delta = 0); //!!override
+	enum ViewControlMode : short { UserKeys, UserMouseWheel, AutoFollow };
+	bool pan_control(ViewControlMode mode = UserKeys);                              //!!?? should be an override already?
+	bool zoom_control(ViewControlMode mode = UserKeys, float mousewheel_delta = 0); //!!?? should be an override already?
 
 	void center_to_entity(size_t id);
 	void center_to_player(unsigned player_id = 1);
@@ -120,7 +121,6 @@ public:
 
 	bool _ctrl_update_thrusters(); // true if any engine is firing
 
-
 	//----------------------------------------------------------------------------
 	struct EmitterConfig
 	{
@@ -147,8 +147,6 @@ public:
 	virtual void resize_shapes(float /*factor*/) {}
 	virtual void resize_shape(size_t /*ndx*/, float /*factor*/) {}
 
-
-
 //----------------------------------------------------------------------------
 // C++ mechanics...
 //----------------------------------------------------------------------------
@@ -166,8 +164,8 @@ protected:
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;
 
 	// See view_control() for these:
-	float pan_step_x = 0, pan_step_y = 0;
-	float zoom_step = 0;
+	float _pan_step_x = 0, _pan_step_y = 0;
+	float _zoom_step = 0;
 
 	size_t globe_ndx = 0;   // Paranoid safety init; see init()!
 

@@ -57,7 +57,7 @@ struct ViewPort
 	bool visible_x(float view_pos_x) const { return view_pos_x >= _edge_x_min && view_pos_x < _edge_x_max; }
 	bool visible_y(float view_pos_y) const { return view_pos_y >= _edge_y_min && view_pos_y < _edge_y_max; }
 
-	void confine(Math::Vector2f world_pos);
+	bool confine(Math::Vector2f world_pos, float viewpos_margin = 0, float throwback = 2); // returns true if the player was out of view
 
 
 	// --- "API Data" ----------------------------------------------------

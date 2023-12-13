@@ -27,13 +27,17 @@ void ViewPort::reset()
 }
 
 
-void ViewPort::confine(Math::Vector2f world_pos)
+bool ViewPort::confine(Math::Vector2f world_pos, float margin, float throwback)
 {
 	auto vpos = world_to_view_coord(world_pos);
-	if      (vpos.x <  _edge_x_min) offset.x -= _edge_x_min - vpos.x + 2;
-	else if (vpos.x >= _edge_x_max) offset.x += vpos.x - _edge_x_max + 2;
-	if      (vpos.y <  _edge_y_min) offset.y -= _edge_y_min - vpos.y + 2;
-	else if (vpos.y >= _edge_y_max) offset.y += vpos.y - _edge_y_max + 2;
+	bool out_of_view = false;
+
+	if      (vpos.x <  _edge_x_min + margin) { out_of_view = true; offset.x -= _edge_x_min - vpos.x + margin + throwback; }
+	else if (vpos.x >= _edge_x_max - margin) { out_of_view = true; offset.x += vpos.x - _edge_x_max + margin + throwback; }
+	if      (vpos.y <  _edge_y_min + margin) { out_of_view = true; offset.y -= _edge_y_min - vpos.y + margin + throwback; }
+	else if (vpos.y >= _edge_y_max - margin) { out_of_view = true; offset.y += vpos.y - _edge_y_max + margin + throwback; }
+
+	return out_of_view;
 }
 
 

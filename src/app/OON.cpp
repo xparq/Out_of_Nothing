@@ -1,4 +1,4 @@
-#include "OON.hpp"
+﻿#include "OON.hpp"
 
 #include "sfw/GUI.hpp" //!! Used to be in OON_sfml only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
@@ -503,7 +503,7 @@ bool OON::_ctrl_update_thrusters()
 //----------------------------------------------------------------------------
 void OON::pan_reset()
 {
-	pan_step_x = pan_step_y = 0;
+	_pan_step_x = _pan_step_y = 0;
 
 	view.offset = {0, 0};
 
@@ -618,12 +618,13 @@ bool OON::view_control(float mousewheel_delta) //!!override
 {
 	auto action = false;
 	action |= pan_control();
-	action |= zoom_control(mousewheel_delta);
+	action |= zoom_control(mousewheel_delta ? UserMouseWheel : UserKeys, mousewheel_delta);
 	return action;
 }
 
 //----------------------------------------------------------------------------
-bool OON::pan_control() //!!override
+bool OON::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
+//!! ViewControlMode support is not implemented here at all; see zoom_control()!
 {
 	//
 	// Calibrated for 30FPS; normalized below (#306)
@@ -633,70 +634,78 @@ bool OON::pan_control() //!!override
 	// Also, since I've set things for 30 PFS, skip-frame compensation can't help with <30 FPS!...)
 	//
 	//AUTO_CONST CFG_PAN_INITIAL_STEP = 5; // pixel
-	AUTO_CONST CFG_PAN_AUTOCHANGE_STEP = 1; // +/- pixel
+	AUTO_CONST CFG_PAN_EASEOUT_STEP = 1; // +/- pixel
 
 	auto fps_factor = (float)avg_frame_delay * 30.f; // Adjust relative to the 30 FPS calibration reference
 		//! Note: this weird cast is required to avoid an "operator ambiguous" error!
 
 	//auto CFG_PAN_INITIAL_STEP_fps = CFG_PAN_INITIAL_STEP * fps_factor;
-	auto CFG_PAN_AUTOCHANGE_STEP_fps = CFG_PAN_AUTOCHANGE_STEP * fps_factor;
-//!!??auto CFG_PAN_AUTOCHANGE_STEP_fps = CFG_PAN_AUTOCHANGE_STEP;
+	auto CFG_PAN_EASEOUT_STEP_fps = CFG_PAN_EASEOUT_STEP * fps_factor;
+//!!??auto CFG_PAN_EASEOUT_STEP_fps = CFG_PAN_EASEOUT_STEP;
 
 	auto action = false;
-	if (keystate(W)) { action = true; pan_step_y -= CFG_PAN_AUTOCHANGE_STEP_fps; } // = !pan_step_y ? -CFG_PAN_INITIAL_STEP_fps : pan_step_y - CFG_PAN_AUTOCHANGE_STEP_fps; } // approach 2
-	if (keystate(S)) { action = true; pan_step_y += CFG_PAN_AUTOCHANGE_STEP_fps; } // = !pan_step_y ?  CFG_PAN_INITIAL_STEP_fps : pan_step_y + CFG_PAN_AUTOCHANGE_STEP_fps; }
-	if (keystate(A)) { action = true; pan_step_x -= CFG_PAN_AUTOCHANGE_STEP_fps; } // = -CFG_PAN_INITIAL_STEP_fps; } // approach 1
-	if (keystate(D)) { action = true; pan_step_x += CFG_PAN_AUTOCHANGE_STEP_fps; } // =  CFG_PAN_INITIAL_STEP_fps; }
+	if (keystate(W)) { action = true; _pan_step_y -= CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ? -CFG_PAN_INITIAL_STEP_fps : _pan_step_y - CFG_PAN_EASEOUT_STEP_fps; } // approach 2
+	if (keystate(S)) { action = true; _pan_step_y += CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ?  CFG_PAN_INITIAL_STEP_fps : _pan_step_y + CFG_PAN_EASEOUT_STEP_fps; }
+	if (keystate(A)) { action = true; _pan_step_x -= CFG_PAN_EASEOUT_STEP_fps; } // = -CFG_PAN_INITIAL_STEP_fps; } // approach 1
+	if (keystate(D)) { action = true; _pan_step_x += CFG_PAN_EASEOUT_STEP_fps; } // =  CFG_PAN_INITIAL_STEP_fps; }
+
+	// Ease-out:
 	if (!action) {
-		if (pan_step_x) pan_step_x -= sz::sign(pan_step_x) * CFG_PAN_AUTOCHANGE_STEP_fps;
-		if (pan_step_y) pan_step_y -= sz::sign(pan_step_y) * CFG_PAN_AUTOCHANGE_STEP_fps;
-		if (abs(pan_step_x) < CFG_PAN_AUTOCHANGE_STEP_fps) pan_step_x = 0;
-		if (abs(pan_step_y) < CFG_PAN_AUTOCHANGE_STEP_fps) pan_step_y = 0;
+		if (_pan_step_x) _pan_step_x -= sz::sign(_pan_step_x) * CFG_PAN_EASEOUT_STEP_fps;
+		if (_pan_step_y) _pan_step_y -= sz::sign(_pan_step_y) * CFG_PAN_EASEOUT_STEP_fps;
+		if (abs(_pan_step_x) < CFG_PAN_EASEOUT_STEP_fps) _pan_step_x = 0;
+		if (abs(_pan_step_y) < CFG_PAN_EASEOUT_STEP_fps) _pan_step_y = 0;
 	}
+
+	// Do the actual panning:
 	if (scroll_locked()) { // Shift, Scroll Lock etc.
-		if (pan_step_x) view.focus_offset.x -= pan_step_x * fps_factor;
-		if (pan_step_y) view.focus_offset.y -= pan_step_y * fps_factor;
+		if (_pan_step_x) view.focus_offset.x -= _pan_step_x * fps_factor;
+		if (_pan_step_y) view.focus_offset.y -= _pan_step_y * fps_factor;
 	} else {
-		if (pan_step_x) pan_x(pan_step_x * fps_factor);
-		if (pan_step_y) pan_y(pan_step_y * fps_factor);
+		if (_pan_step_x) pan_x(_pan_step_x * fps_factor);
+		if (_pan_step_y) pan_y(_pan_step_y * fps_factor);
 	}
 
 	return action;
 }
 
 //----------------------------------------------------------------------------
-bool OON::zoom_control(float mousewheel_delta) //!!override
+bool OON::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewheel_delta) //!!override
+//!! ViewControlMode is not actually used, as autofollow just emulates a mousewheel action directly! :-o
 {
 	// Note: the mouse-wheel case needs no calibration, as it's triggered
 	// directly by the mouse events, independently of frame rate!
 	// See more about FPS norm. at pan_control()!
-	AUTO_CONST CFG_ZOOM_CHANGE_RATIO = 0.08f; // 8%
-//	AUTO_CONST CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = 0.2f; // 20%
-	static float CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO = appcfg.get("controls/zoom_speed_factor_mousewheel", 0.13f); // 13%
-
-	AUTO_CONST CFG_ZOOM_AUTOCHANGE_STEP = 0.01f; // +/- ratio delta
+	static const float CFG_ZOOM_BUTTONS_CHANGE_RATE = appcfg.get("controls/zoom_button_strength", 0.08f); // change / Δt
+	static const float CFG_ZOOM_MOUSEWHEEL_FACTOR   = appcfg.get("controls/zoom_wheel_strength", 0.12f);  // change / event
+	static const float CFG_ZOOM_EASEOUT_STEP        = appcfg.get("controls/zoom_inertia", 0.1f)           // change / Δt
+	                                                  * CFG_ZOOM_BUTTONS_CHANGE_RATE;                     // ...normalized to chg. rate
 
 	auto fps_factor = (float)avg_frame_delay * 30.f; // Adjust relative to the 30 FPS calibration reference
-		//! Note: this weird cast is required to avoid an "operator ambiguous" error!
+		//! Note: this weird cast is required to avoid an "operator ambiguous" error (on avg_frame_delay)!
 
-	auto CFG_ZOOM_CHANGE_RATIO_fps = CFG_ZOOM_CHANGE_RATIO * fps_factor;
-	auto CFG_ZOOM_AUTOCHANGE_STEP_fps = CFG_ZOOM_AUTOCHANGE_STEP * fps_factor;
+	auto CFG_ZOOM_BUTTONS_CHANGE_RATE_fps = CFG_ZOOM_BUTTONS_CHANGE_RATE * fps_factor;
+	auto CFG_ZOOM_EASEOUT_STEP_fps = CFG_ZOOM_EASEOUT_STEP * fps_factor;
 
 	auto action = false;
 	// Mouse-wheel zoom?
-	if (mousewheel_delta) { action = true; zoom_step = mousewheel_delta * CFG_ZOOM_CHANGE_MOUSEWHEEL_RATIO; }
+	if (mousewheel_delta) { action = true; _zoom_step = mousewheel_delta * CFG_ZOOM_MOUSEWHEEL_FACTOR; }
 	// Keyboard zoom?
-	else if (keystate(NUMPAD_PLUS)) { action = true; zoom_step += zoom_step == 0 ?
-	                                                        CFG_ZOOM_CHANGE_RATIO_fps : CFG_ZOOM_AUTOCHANGE_STEP_fps; }
-	else if (keystate(NUMPAD_MINUS)){ action = true; zoom_step -= zoom_step == 0 ?
-	                                                        CFG_ZOOM_CHANGE_RATIO_fps : CFG_ZOOM_AUTOCHANGE_STEP_fps; }
+	//!! TRY WITHOUT THAT `else` below, so that power users can mega-zoon using both! :)
+	else if (/*mode == UserKeys &&*/keystate(NUMPAD_PLUS)) { action = true; _zoom_step += _zoom_step == 0 ? // Speed up gradually...
+	                                                        CFG_ZOOM_BUTTONS_CHANGE_RATE_fps : CFG_ZOOM_EASEOUT_STEP_fps; }
+	else if (/*mode == UserKeys &&*/keystate(NUMPAD_MINUS)){ action = true; _zoom_step -= _zoom_step == 0 ? // ...by the easeout step!
+	                                                        CFG_ZOOM_BUTTONS_CHANGE_RATE_fps : CFG_ZOOM_EASEOUT_STEP_fps; }
+	// Ease-out:
 	if (!action) {
-		if (zoom_step) zoom_step -= sz::sign(zoom_step) * CFG_ZOOM_AUTOCHANGE_STEP_fps;
-		if (abs(zoom_step) < CFG_ZOOM_AUTOCHANGE_STEP_fps) zoom_step = 0;
+		if (_zoom_step) _zoom_step -= sz::sign(_zoom_step) * CFG_ZOOM_EASEOUT_STEP_fps;
+		if (abs(_zoom_step) < CFG_ZOOM_EASEOUT_STEP_fps) _zoom_step = 0;
 	}
-	if (zoom_step) {
-		if (zoom_step > 0) zoom_in(  zoom_step * fps_factor);
-		else               zoom_out(-zoom_step * fps_factor);
+
+	// Do the actual zooming:
+	if (_zoom_step) {
+		if (_zoom_step > 0) zoom_in(  _zoom_step * fps_factor);
+		else                zoom_out(-_zoom_step * fps_factor);
 	}
 
 	return action;

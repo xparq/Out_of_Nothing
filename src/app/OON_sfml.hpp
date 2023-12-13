@@ -41,10 +41,8 @@ public:
 //------------------------------------------------------------------------
 private:
 	void onResize() override;
-
-	// Game control
-	virtual void resize_shapes(float factor) override;
-	virtual void resize_shape(size_t ndx, float factor) override;
+	void resize_shapes(float factor) override;
+	void resize_shape(size_t ndx, float factor) override;
 
 //------------------------------------------------------------------------
 // Internals...

@@ -353,8 +353,16 @@ void OON_sfml::updates_for_next_frame()
 	} else {
 		// Focus point follows focused obj., with panning only if drifting off-screen:
 		if (focused_entity_ndx != ~0u) {
+static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
+static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
+static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
 			view.focus_offset = view.world_to_view_coord(entity(focused_entity_ndx).p);
-			view.confine(entity(focused_entity_ndx).p);
+			if (view.confine(entity(focused_entity_ndx).p,
+			    autofollow_margin + autofollow_margin/2 * view.scale/Szim::SimAppConfig::DEFAULT_ZOOM,
+			    autofollow_throwback)) { // true = drifted off
+				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...
+//cerr << "view.scale: "<<view.scale<<", DEFAULT_ZOOM: "<<view.scale<<", ratio: "<<view.scale / Szim::SimAppConfig::DEFAULT_ZOOM<<'\n';
+			}
 		}
 	}
 	// Update the focus lock indicator:
