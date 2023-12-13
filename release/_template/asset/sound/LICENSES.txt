@@ -1,0 +1,15 @@
+﻿Music:
+	Mine
+	LICENSE: Public Domain
+
+Sound effects:
+	Source: freesound.org
+	LICENSE: Creative Commons 0
+
+	clack.wav: 539854__za-games__billiard-ball-clack.wav
+	pwhiz.wav: 404740__owlstorm__retro-video-game-sfx-move.wav
+	plop_low.flac: 19987__acclivity__fingerplop1.flac
+	plop1.wav, 2.wav: 352672__xenluo__owi_plop-sound.wav
+	reverbed_plop.ogg: 683102__florianreichelt__water-drop.mp3
+	jingle_discharge.ogg: 344527__newagesoup__electric-cicadas01.wav
+

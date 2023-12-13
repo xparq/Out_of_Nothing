@@ -32,8 +32,9 @@ gcm.cache
 !**/sound/music/README.*
 !**/sound/music/default.ogg
 
-release/
-_release/
+#!! This fkn thing again doesn't do what's expected, I'm tired of it...
+#!!?? release/
+#!!?? !release/_template/
 
 import/
 
