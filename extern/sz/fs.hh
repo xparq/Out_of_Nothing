@@ -1,6 +1,4 @@
-/*
-	v0.1.1
-*/
+// v0.1.1 + negligible cosmetics
 
 #ifndef _LSF39847G45796GK890G676G42GF35_
 #define _LSF39847G45796GK890G676G42GF35_
