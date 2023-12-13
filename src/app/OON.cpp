@@ -467,7 +467,7 @@ bool OON::poll_and_process_controls()
 		chemtrail_burst(player_entity_ndx(), appcfg.chemtrail_burst_particles);
 		if (!chemtrail_releasing) { // Just starting...
 			chemtrail_releasing = true;
-			chemtrail_fx_channel = backend.audio.play_sound(snd_jingle_loop, true); // true: loop
+			chemtrail_fx_channel = backend.audio.play_sound(snd_jingle_loop, {.loop=true});
 				//! Can be INVALID_SOUND_CHANNEL, if not playing actually (disabled, muted etc.)
 		}
 	} else if (chemtrail_releasing) { // Stop it!

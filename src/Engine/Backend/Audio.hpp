@@ -12,6 +12,16 @@ public://!! <- protected
 	sz::Toggle enabled = true; // all-audio override
 	sz::Toggle music_enabled = true;
 	sz::Toggle fx_enabled = true;
+
+public:
+	struct PlayReq // Playing options -- (kinda) used to find the optimal free channel
+	{
+		bool loop = false;
+		unsigned short sample_rate = 0; // Use whatever the sound object (buffer) itself defined!
+	};
+
+	static const constexpr PlayReq DefaultPlayMode = {.loop = false, .sample_rate = 0};
+
 public:
 	virtual bool   toggle_audio()  { return sz::toggle(&enabled); }
 	virtual bool   toggle_music()  { return sz::toggle(&music_enabled); }
@@ -25,7 +35,7 @@ public:
 	constexpr const static size_t INVALID_SOUND_BUFFER = ~0u;
 	virtual size_t add_sound(const char* /*filename*/)  { return INVALID_SOUND_BUFFER; } // Returns buffer #
 	constexpr const static short INVALID_SOUND_CHANNEL = -1;
-	virtual short  play_sound(size_t, [[maybe_unused]] bool loop = false) { return INVALID_SOUND_CHANNEL; } // Returns channel #
+	virtual short  play_sound(size_t /*buffer*/, [[maybe_unused]] PlayReq options = DefaultPlayMode) { return INVALID_SOUND_CHANNEL; } // Returns channel #
 	virtual void   kill_sound(short /*channel*/) {}; // Tolerates channel == INVALID_SOUND_CHANNEL
 	virtual void   kill_sounds() {}
 	virtual void   toggle_sound(size_t /*buffer*/) {}

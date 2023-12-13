@@ -59,19 +59,13 @@ public:
 	bool   play_music(const char* filename) override;
 
 	size_t add_sound(const char* filename) override;
-	short  play_sound(size_t buffer, bool loop = false) override;
+	short  play_sound(size_t buffer_ndx, PlayReq options = DefaultPlayMode) override;
 	void   kill_sound(short channel) override;
 	void   kill_sounds() override;
 	void   toggle_sound(size_t buffer) override;
 
 protected:
-	//!! Mature this up to the generic API! (Needs sensible def. of the total channels!)
-	short  _get_sound_channel_ndx() {
-		auto slot = _LRU_channel;
-		_LRU_channel = ++_LRU_channel % MAX_FX_CHANNELS;
-		return slot;
-	}
-
+	short  _get_sound_channel_ndx(const PlayReq& options); // const&: always called on lvalues internally
 	SoundPlayer& _get_channel(short ndx);
 
 private:

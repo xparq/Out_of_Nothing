@@ -97,6 +97,43 @@ bool SFML_Audio::toggle_music()
 }
 
 
+
+//----------------------------------------------------------------------------
+//!! Mature this up to the generic API! (Needs sensible def. of the total channels!)
+short SFML_Audio::_get_sound_channel_ndx(const PlayReq& opt)
+//	short  play_sound(size_t, PlayReq options = DefaultPlayMode) override;
+//
+// - The round-robin (not really "LRU"...) index advances by one upon every call to this.
+// - The newly allocated slot may advance by more than one, in case the LRU slot had priority!
+//
+{
+#define _next(chn) ( ((chn) + 1) % MAX_FX_CHANNELS )
+
+	short slot = _LRU_channel;
+	_LRU_channel = _next(_LRU_channel);
+
+	// It's crucial to run the loop below at least once (unless there's only one channel),
+	// to advance the LRU index!
+
+	if (!opt.loop) { // Only looped sounds need prioritizing (for now) -> #427
+		for (short tries = MAX_FX_CHANNELS - 1; _fx_channels[slot].getLoop() && tries > 0; --tries) {
+			// Oh, and BTW, if we are at it... :) Check if the last 'slot' candidate has stopped
+			// playing, because that'd be a better LRU index than "guess by increment"! :)
+			if (_fx_channels[slot].getStatus() == sf::Sound::Stopped)
+				_LRU_channel = slot;
+
+			// Try another slot:
+			slot = _next(slot);
+		}
+	}
+	assert(_LRU_channel != slot || _LRU_channel == slot && MAX_FX_CHANNELS == 1);
+
+	return slot;
+
+#undef _next_channel
+}
+
+
 //----------------------------------------------------------------------------
 SoundPlayer& SFML_Audio::_get_channel(short ndx)
 {
@@ -119,18 +156,20 @@ size_t SFML_Audio::add_sound(const char* filename)
 
 	if (_sound_buffer_autoptrs.back()->empty) {
 		_sound_buffer_autoptrs.pop_back();
-cerr << "- Error loading sound #"<< buffer_ndx <<" from "<< filename << endl;
+cerr << "- Error loading sound #"<< buffer_ndx <<" from "<< filename <<'\n';
 cerr << "DBG> NOTE: Removing empty sound after load failure.\n";
 		return INVALID_SOUND_BUFFER;
 	}
 
 //	play_sound(buffer_ndx);
-//cerr << "- SFML_Audio::add_sound returning #"<<buffer_ndx<< endl;
+cerr << "DBG> SFML_Audio::add_sound Loaded buffer #"<<buffer_ndx<<" from file: "<<filename<<"\n"
+     << "DBG> - sample rate: "<<_sound_buffer_autoptrs.back()->getSampleRate()
+     <<         ", channels: "<<_sound_buffer_autoptrs.back()->getChannelCount()<<'\n';
 	return buffer_ndx;
 }
 
 //----------------------------------------------------------------------------
-short SFML_Audio::play_sound(size_t buffer_ndx, bool loop)
+short SFML_Audio::play_sound(size_t buffer_ndx, PlayReq options)
 {
 	if (buffer_ndx >= _sound_buffer_autoptrs.size()) {
 cerr << "DBG> play_sound: WARNING: invalid sound index #"<<buffer_ndx<<" ignored.\n";
@@ -143,13 +182,15 @@ cerr << "DBG> play_sound: WARNING: invalid sound index #"<<buffer_ndx<<" ignored
 		return INVALID_SOUND_CHANNEL;
 	}
 
-	auto channel_ndx = _get_sound_channel_ndx();
+	auto channel_ndx = _get_sound_channel_ndx(options);
 	auto& channel = _get_channel(channel_ndx);
 	channel.stop(); // May be playing some other channel! (May not be a problem for SFML tho.)
 	channel.setBuffer(*(_sound_buffer_autoptrs[buffer_ndx]));
 //cerr << "DBG> play_sound: setting channel #"<<channel_ndx<<" to buffer #"<<buffer_ndx<<" for playing\n";
 	channel.setVolume(_master_volume);
-	channel.setLoop(loop);
+	channel.setLoop(options.loop);
+//!!No (need for?) explicit resampling for SFML:
+//!!	channel.setSesampleRate(options.loop);
 	channel.play();
 
 	return channel_ndx;
