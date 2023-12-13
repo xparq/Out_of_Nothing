@@ -1,4 +1,4 @@
-﻿#include "OON.hpp"
+#include "OON.hpp"
 
 #include "sfw/GUI.hpp" //!! Used to be in OON_sfml only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
@@ -103,7 +103,8 @@ void OON::init() // override
 	// Note: the (!!actually: "some"...!!) system-/engine-level options have been processed/applied already!
 	try { // <- Absolutely required, as sto...() are very throw-happy.
 		// Doing the ones that can't fail first, so an excpt. won't skip them:
-		if (args["interact"]) {
+		if (appcfg.get("sim/global_interactions",
+		                                          cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
 			interact_all();
 		}; if (args["bodies"]) {
 			auto n = stoi(args("bodies")) - 2; // 2 have already been created above

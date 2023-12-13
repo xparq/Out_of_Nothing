@@ -53,6 +53,7 @@ struct SimAppConfig : Config
 	unsigned    hud_line_height;
 	unsigned    hud_line_spacing;
 	// Sim.
+	bool global_interactions;
 	Time::CycleCount iteration_limit;
 	bool  exit_on_finish; // If iteration_limit > 0, close the app when finished.
 	bool  fixed_model_dt_enabled;

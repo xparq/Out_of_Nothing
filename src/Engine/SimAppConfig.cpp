@@ -76,6 +76,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	fixed_model_dt_enabled = get("sim/timing/fixed_dt_enabled", false);
 	fps_limit        = get("sim/timing/fps_limit", DEFAULT_FPS_LIMIT);
 
+	global_interactions = get("sim/global_interactions", true);
+
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 
 	// 3. Process cmdline args to override again...
@@ -110,6 +112,9 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 			cerr << "- WRNING: --fps_limit ignored! \""<<args("fps_limit")<<"\" must be a valid positive integer.\n"; }
 	} if (args["dbg-keys"]) {
 		DEBUG_show_keycode = true;
+	} if (args["interact"]) {
+cerr << "- NOTE: --interact overrides \"sim/global_interactions\".\n";
+		global_interactions = sz::to_bool(args("interact"), sz::str::empty_is_true);
 	}
 
 	//!! 4. Fixup...
