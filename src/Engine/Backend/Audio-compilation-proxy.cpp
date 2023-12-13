@@ -1,3 +1,4 @@
+/*!!
 #include "_adapter_switcher.hpp"
 
 #ifdef DISABLE_AUDIO
@@ -5,3 +6,4 @@
 #else
 #  include SWITCHED(AUDIO_BACKEND, _Audio.cpp.inc)
 #endif
+!!*/

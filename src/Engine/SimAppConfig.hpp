@@ -31,7 +31,7 @@ struct SimAppConfig : Config
 	AUTO_CONST DEFAULT_FPS_LIMIT = 30;
 
 	//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	//!! SOME OF THESARE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
+	//!! SOME OF THESE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
 	//!! Possibly move the post-load callback hook here!
 	// Sys.
 	std::string exe_dir;

@@ -126,12 +126,20 @@ void OON::init() // override
 	//!! Later, with more mature session mgmt., music loading etc. should NOT
 	//!! happen here, ignoring all that!
 	//!!
-	// Note: --snd=off has been taken care of by the engine already, so it's
-	// safe to start playing here no matter what; it will not unmute.
-	clack_sound = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
+	// Note: muting by --snd=off has been taken care of by the engine already, so
+	// it's OK to start playing right away, it won't accidentally unmute...
+	snd_clack =       backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
+	snd_plop1 =       backend.audio.add_sound(string(cfg.asset_dir + "sound/plop1.wav").c_str());
+	snd_plop2 =       backend.audio.add_sound(string(cfg.asset_dir + "sound/plop_low.flac").c_str());
+	snd_plop3 =       backend.audio.add_sound(string(cfg.asset_dir + "sound/reverbed_plop.ogg").c_str());
+	snd_pwhiz =       backend.audio.add_sound(string(cfg.asset_dir + "sound/pwhiz.wav").c_str());
+	snd_jingle_loop = backend.audio.add_sound(string(cfg.asset_dir + "sound/jingle_discharge.ogg").c_str());
+
+	//backend.audio.play_sound(snd_plop_low, true); // checking
+
 	backend.audio.play_music(cfg.background_music.c_str());
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
-}
+} //
 
 
 //----------------------------------------------------------------------------
@@ -457,6 +465,15 @@ bool OON::poll_and_process_controls()
 	if (keystate(SPACE)) {
 		action = true;
 		chemtrail_burst(player_entity_ndx(), appcfg.chemtrail_burst_particles);
+		if (!chemtrail_releasing) { // Just starting...
+			chemtrail_releasing = true;
+			chemtrail_fx_channel = backend.audio.play_sound(snd_jingle_loop, true); // true: loop
+				//! Can be INVALID_SOUND_CHANNEL, if not playing actually (disabled, muted etc.)
+		}
+	} else if (chemtrail_releasing) { // Stop it!
+		chemtrail_releasing = false;
+		backend.audio.kill_sound(chemtrail_fx_channel); // Tolerates INVALID_SOUND_CHANNEL!
+		chemtrail_fx_channel = -1;
 	}
 
 	return action;
@@ -703,7 +720,7 @@ void OON::interaction_hook(Model::World* w, Model::World::Event event, Model::Wo
 bool OON::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 {w;
 	if (obj1->is_player() || obj2->is_player()) {
-		backend.audio.play_sound(clack_sound);
+		backend.audio.play_sound(snd_clack);
 	}
 
 	obj1->T += 100;
@@ -726,6 +743,10 @@ void OON::add_random_bodies_near(size_t base_ndx, size_t n)
 //----------------------------------------------------------------------------
 void OON::remove_random_bodies(size_t n/* = -1*/)
 {
+	if (!n) return;
+
+	backend.audio.play_sound(snd_pwhiz);
+
 	if (n == (unsigned)-1) n = entity_count();
 	while (n--) remove_random_body();
 }
@@ -812,7 +833,12 @@ void OON::spawn(size_t parent_ndx, size_t n)
 {
 if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"<<parent_ndx<<" is spawning...\n";
 
+	if (!n) return;
+
 	const auto& parent = const_entity(parent_ndx); // #41: Support inheritance
+
+	backend.audio.play_sound(n == 1 ? snd_plop1 : n <= 10 ? snd_plop2 : snd_plop3 );
+
 	for (size_t i = 0; i < n; ++i) {
 		auto ndx = add_random_body_near(player_entity_ndx());
 		auto& newborn = entity(ndx);
@@ -846,7 +872,8 @@ void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t 
 //cerr <<"DBG> density: "<< ecfg.particle_density <<'\n';
 //cerr <<"DBG>   ==?  : "<< Model::Physics::DENSITY_ROCK * 0.0000000123f <<'\n';
 
-		auto pndx = add_body({
+		[[maybe_unused]] auto pndx =
+		add_body({
 			.lifetime = ecfg.particle_lifetime,
 			.density = ecfg.particle_density,
 			//!!...Jesus, those "hamfixted" pseudo Δt "factors" here! :-o :)
@@ -911,8 +938,8 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 	auto& base = entity(base_ndx); // Not const: will deplete!
 
 // This accidentally creates a lovely rainbow color pattern in the plumes!... :-o
-	constexpr const float color_spread = 0x111111f;
-	thrust_exhaust_emitter.color = (uint32_t) exhaust_color + color_spread - 2 * color_spread * float(rand())/RAND_MAX;
+	constexpr const float color_spread = (float)0x111111;
+	thrust_exhaust_emitter.color = uint32_t(exhaust_color + color_spread - 2 * color_spread * float(rand())/RAND_MAX);
 
 	if (base.thrust_up.thrust_level()) {
 		thrust_exhaust_emitter.eject_velocity = {0, 4e9f};

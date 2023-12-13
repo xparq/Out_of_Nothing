@@ -162,12 +162,23 @@ public:
 protected:
 	OONConfig appcfg; // See also syscfg from this->SimApp
 
+	bool chemtrail_releasing = false;
+	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;
+
 	// See view_control() for these:
 	float pan_step_x = 0, pan_step_y = 0;
 	float zoom_step = 0;
 
 	size_t globe_ndx = 0;   // Paranoid safety init; see init()!
-	size_t clack_sound = 0; // Paranoid safety init; see init()!
+
+	// See init()!
+	//!! Use sz::lockers for the storage:
+	size_t snd_clack;
+	size_t snd_plop1;
+	size_t snd_plop2;
+	size_t snd_plop3;
+	size_t snd_pwhiz;
+	size_t snd_jingle_loop;
 
 	size_t focused_entity_ndx = 0; // The player entity (globe_ndx) by default
 };

@@ -13,17 +13,22 @@ public://!! <- protected
 	sz::Toggle music_enabled = true;
 	sz::Toggle fx_enabled = true;
 public:
-	virtual bool   play_music(const char* /*filename*/) { return false; }
-	virtual size_t add_sound(const char* /*filename*/)  { return 0; }
-	virtual void   play_sound(size_t) {}
-	virtual void   toggle_sound(size_t) {}
-	virtual void   kill_sounds() {}
-	virtual void   volume(float)  {}
-	virtual float  volume() const { return 0; }
-
 	virtual bool   toggle_audio()  { return sz::toggle(&enabled); }
 	virtual bool   toggle_music()  { return sz::toggle(&music_enabled); }
 	virtual bool   toggle_sounds() { if (!sz::toggle(&fx_enabled)) { kill_sounds(); } return fx_enabled; }
+
+	virtual void   volume(float)  {}
+	virtual float  volume() const { return 0; }
+
+	virtual bool   play_music(const char* /*filename*/) { return false; }
+
+	constexpr const static size_t INVALID_SOUND_BUFFER = ~0u;
+	virtual size_t add_sound(const char* /*filename*/)  { return INVALID_SOUND_BUFFER; } // Returns buffer #
+	constexpr const static short INVALID_SOUND_CHANNEL = -1;
+	virtual short  play_sound(size_t, [[maybe_unused]] bool loop = false) { return INVALID_SOUND_CHANNEL; } // Returns channel #
+	virtual void   kill_sound(short /*channel*/) {}; // Tolerates channel == INVALID_SOUND_CHANNEL
+	virtual void   kill_sounds() {}
+	virtual void   toggle_sound(size_t /*buffer*/) {}
 
 	virtual ~Audio() = default;
 
