@@ -119,8 +119,11 @@ short SFML_Audio::_get_sound_channel_ndx(const PlayReq& opt)
 		for (short tries = MAX_FX_CHANNELS - 1; _fx_channels[slot].getLoop() && tries > 0; --tries) {
 			// Oh, and BTW, if we are at it... :) Check if the last 'slot' candidate has stopped
 			// playing, because that'd be a better LRU index than "guess by increment"! :)
-			if (_fx_channels[slot].getStatus() == sf::Sound::Stopped)
-				_LRU_channel = slot;
+			//!!Except: no... It's perfect for the next sound, but then, in the subsequent
+			//!!round (right after that), it would just go ahead and kill the one we're
+			//!!starting right now...
+			//!!if (_fx_channels[slot].getStatus() == sf::Sound::Stopped)
+			//!!	_LRU_channel = slot;
 
 			// Try another slot:
 			slot = _next(slot);
