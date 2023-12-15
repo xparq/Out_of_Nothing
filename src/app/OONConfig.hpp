@@ -47,28 +47,30 @@ struct OONConfig : Szim::Config
 	//!! SOME OF THESARE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
 	//!! Possibly move the post-load callback hook here!
 	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with session_dir
-	// UI
+
+	// UX
 	bool        start_fullscreen;
-	std::string window_title;
 	std::string default_font_file;
 	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (sfw hex color string) + name!
 	std::string hud_font_file;
 	unsigned    hud_line_height;
 	unsigned    hud_line_spacing;
+
+	std::string background_music; //!!?? Awkward... App stuff that needs convenient engine support. How exactly?
+
 	// Sim.
 	unsigned chemtrail_burst_particles;
 	unsigned exhaust_burst_particles;
 	float    exhaust_v_factor;
-	float    exhaust_offset_factor;
+	float    exhaust_offset_factor; // depends on player v
 	float    exhaust_lifetime; // s
-	// UI, presentation
-	std::string background_music; //!!?? Awkward... App stuff that needs convenient engine support. How exactly?
-	// Misc.
-	bool DEBUG_show_keycode = false;
+	//!!float shield_feed_rate;
+	float    shield_depletion_time; // s
+	float    shield_recharge_time;  // s
+	unsigned shield_burst_particles; // new particles/frame (normalized to 30FPS)
 
 	//----------------------------------------------------------------------------
 	OONConfig(Szim::SimAppConfig& syscfg, const Args& args);
-
 	OONConfig(const OONConfig&) = delete; // Could actually be copied _now_, but I'll forget, and make mistakes...
 };
 

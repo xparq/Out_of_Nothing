@@ -38,7 +38,7 @@ public:
 	virtual void spawn(size_t parent_ndx = 0, size_t n = 1);      //!! requires: 0 == player_entity_ndx()
 	void exhaust_burst(size_t entity_ndx = 0, /* Math::Vector2f thrust_vector, */size_t n = 20);
 	void chemtrail_burst(size_t emitter_ndx = 0, size_t n = 10);
-
+	void shield_energize(size_t emitter_ndx = 0, /*Math::Vector2f shoot_vector,*/ size_t n = 5);
 
 	void interact_all(bool state = true)  { world()._interact_all = state; }
 	void toggle_interact_all()  { interact_all(!const_world()._interact_all); }
@@ -160,8 +160,12 @@ public:
 protected:
 	OONConfig appcfg; // See also syscfg from this->SimApp
 
-	bool chemtrail_releasing = false;
+	bool  chemtrail_releasing = false;
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;
+
+	short shield_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;
+	int   shield_active = 0; // 1: active; <0: depleted, recovering
+	float shield_depletion_timestamp; // session time in s
 
 	// See view_control() for these:
 	float _pan_step_x = 0, _pan_step_y = 0;
@@ -177,6 +181,7 @@ protected:
 	size_t snd_plop3;
 	size_t snd_pwhiz;
 	size_t snd_jingle_loop;
+	size_t snd_shield;
 
 	size_t focused_entity_ndx = 0; // The player entity (globe_ndx) by default
 };

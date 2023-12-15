@@ -123,24 +123,25 @@ void OON::init() // override
 	}
 
 	// Audio...
-	//!!
+	//!
 	//!! Later, with more mature session mgmt., music loading etc. should NOT
-	//!! happen here, ignoring all that!
-	//!!
-	// Note: muting by --snd=off has been taken care of by the engine already, so
-	// it's OK to start playing right away, it won't accidentally unmute...
-	snd_clack =       backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
-	snd_plop1 =       backend.audio.add_sound(string(cfg.asset_dir + "sound/plop1.wav").c_str());
-	snd_plop2 =       backend.audio.add_sound(string(cfg.asset_dir + "sound/plop_low.flac").c_str());
-	snd_plop3 =       backend.audio.add_sound(string(cfg.asset_dir + "sound/reverbed_plop.ogg").c_str());
-	snd_pwhiz =       backend.audio.add_sound(string(cfg.asset_dir + "sound/pwhiz.wav").c_str());
+	//!! happen here, ignoring non-app-level user preferences etc...
+	//!
+	// Note: muting by --snd=off has been taken care of by the engine already,
+	// so we can just go ahead and play things nonchalantly. ;)
+	snd_clack       = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
+	snd_plop1       = backend.audio.add_sound(string(cfg.asset_dir + "sound/plop1.wav").c_str());
+	snd_plop2       = backend.audio.add_sound(string(cfg.asset_dir + "sound/plop_low.flac").c_str());
+	snd_plop3       = backend.audio.add_sound(string(cfg.asset_dir + "sound/reverbed_plop.ogg").c_str());
+	snd_pwhiz       = backend.audio.add_sound(string(cfg.asset_dir + "sound/pwhiz.wav").c_str());
 	snd_jingle_loop = backend.audio.add_sound(string(cfg.asset_dir + "sound/jingle_discharge.ogg").c_str());
-
-	//backend.audio.play_sound(snd_plop_low, true); // checking
+	snd_shield	= backend.audio.add_sound(string(cfg.asset_dir + "sound/shield1.flac").c_str());
 
 	backend.audio.play_music(cfg.background_music.c_str());
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
-} //
+
+//backend.audio.play_sound(snd_plop_low, true); //!! just checking
+} // init
 
 
 //----------------------------------------------------------------------------
@@ -450,7 +451,6 @@ void OON::remove_player(unsigned)
 }
 
 
-
 //----------------------------------------------------------------------------
 bool OON::poll_and_process_controls()
 {
@@ -473,8 +473,46 @@ bool OON::poll_and_process_controls()
 		}
 	} else if (chemtrail_releasing) { // Stop it!
 		chemtrail_releasing = false;
-		backend.audio.kill_sound(chemtrail_fx_channel); // Tolerates INVALID_SOUND_CHANNEL!
-		chemtrail_fx_channel = -1;
+		backend.audio.kill_sound(chemtrail_fx_channel); // Tolerates INVALID_SOUND_CHANNEL.
+		chemtrail_fx_channel = Audio::INVALID_SOUND_CHANNEL;
+	}
+
+
+	// Shield
+	if (shield_active < 0) { // Disabled while recovering...
+		++shield_active;
+	} else {
+		if (keystate(RCTRL)) {
+			action = true;
+			if (shield_active == 0) { // Just starting?
+				shield_active = 1;
+				shield_depletion_timestamp = time.real_session_time + appcfg.shield_depletion_time;
+				shield_fx_channel = backend.audio.play_sound(snd_shield, {.priority=1});
+					//! Can be INVALID_SOUND_CHANNEL, if not playing actually (disabled, muted etc.)
+			}
+			// Feed the shield:
+			shield_energize(player_entity_ndx(), appcfg.shield_burst_particles); // "replenish rate" -- effectively density!
+		}
+
+		if (shield_active > 0) {
+			// Depleted?
+			if (time.real_session_time > shield_depletion_timestamp) {
+
+				shield_active = -int(appcfg.shield_recharge_time / float(avg_frame_delay));
+cerr << "- Shield depleted! Recharging for " << -shield_active << " frames...\n";
+
+				//!! Not killing the sound, as its length is supposed to be the same
+				//!! as the shield depletion time, and an accidental miscalibration
+				//!! error could at least be noticed this way! :)
+				//!!backend.audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
+			}
+			// Stopped firing?
+			else if (!keystate(RCTRL)) {
+cerr << "DBG> SHIELD_ENERGIZE button released.\n";
+				shield_active = 0;
+				backend.audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
+			}
+		}
 	}
 
 	return action;
@@ -867,7 +905,10 @@ void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t 
 
 //if (!ecfg.create_mass) cerr <<"DBG> emitter.mass BEFORE burst: "<< emitter.mass <<'\n';
 
-	float p_range = emitter.r * ecfg.velocity_divergence;
+	float p_range = emitter.r * ecfg.position_divergence;
+	auto  p_offset = emitter.v.normalized() * emitter.r * ecfg.offset_factor;
+		//!! Also needs a non-linearity (decoupling) factor so higher v can affect it less!
+
 	float v_range = Model::World::CFG_GLOBE_RADIUS * ecfg.velocity_divergence; //!! ...by magic, right? :-/
 
 	float emitter_old_r = emitter.r;
@@ -887,10 +928,11 @@ void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t 
 			.lifetime = ecfg.particle_lifetime,
 			.density = ecfg.particle_density,
 			//!!...Jesus, those "hamfixted" pseudo Δt "factors" here! :-o :)
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.x - emitter.v.x * ecfg.offset_factor,
-			       (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.y - emitter.v.y * ecfg.offset_factor },
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.x + p_offset.x,
+			       (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.y + p_offset.y },
 			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.x * ecfg.v_factor + ecfg.eject_velocity.x,
 			       (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.y * ecfg.v_factor + ecfg.eject_velocity.y },
+				// Can't just do `...} + ecfg.eject_velocity` above, because C++
 			.color = ecfg.color,
 			.mass = particle_mass,
 		});
@@ -925,7 +967,7 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 	static float    exhaust_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
 	static uint32_t exhaust_color = appcfg.get("sim/exhaust_color", 0xaaaaaa);
 	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
-	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_max_size_ratio", 0.1f);
+	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_max_size_ratio", 0.01f);
 
 //cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
 //cerr <<"DBG> -> exhaust_density: "<< exhaust_density <<'\n';
@@ -969,6 +1011,36 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 	}
 }
 
+
+//----------------------------------------------------------------------------
+void OON::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ size_t n/* = ...*/)
+{
+	static float    particle_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
+	static uint32_t color = appcfg.get("sim/shield_color", 0xffff99);
+	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_min_size_ratio", 0.02f);
+	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_max_size_ratio", 0.01f);
+//cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
+//cerr <<"DBG> -> shield_density: "<< particle_density <<'\n';
+	static EmitterConfig emitter_cfg =
+	{
+		.eject_velocity = {0, 0},
+		.v_factor = appcfg.get("sim/shield_v_factor", 0.1f),
+		.offset_factor = appcfg.get("sim/shield_offset_factor", 4.f),
+		.particle_lifetime = appcfg.get("sim/shield_decay_time", 5.f),
+		.create_mass = false, // Disabled: appcfg.get("sim/shield_creates_mass", false),
+		.particle_density = particle_density,
+		.position_divergence = appcfg.get("sim/shield_initial_spread", 10.f), //!! Just an exp. "randomness factor" for now!... Relative to emitter radius.
+		.velocity_divergence = appcfg.get("sim/shield_divergence", 1.f), //!! Just an exp. "randomness factor" for now!...
+		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH),
+		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH),
+		.color = color,
+	};
+
+//	emitter_cfg.eject_velocity = entity(emitter_ndx).v;
+	_emit_particles(emitter_cfg, emitter_ndx, n ? n : appcfg.shield_burst_particles);
+}
+
+
 //----------------------------------------------------------------------------
 void OON::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 {
@@ -1000,8 +1072,8 @@ void OON::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 			.lifetime = chemtrail_lifetime,
 			.density = chemtrail_density,
 			//!!...Jesus, those "hamfixted" pseudo Δts here! :-o :)
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.x - emitter.v.x * chemtrail_offset_factor,
-			       (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.y - emitter.v.y * chemtrail_offset_factor },
+			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.x + emitter.v.x * chemtrail_offset_factor,
+			       (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.y + emitter.v.y * chemtrail_offset_factor },
 			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.x * chemtrail_v_factor,
 			       (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.y * chemtrail_v_factor },
 			.color = (uint32_t) (float)0xffffff * rand(),

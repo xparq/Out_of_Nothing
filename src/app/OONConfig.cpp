@@ -52,11 +52,20 @@ OONConfig::OONConfig(Szim::SimAppConfig& syscfg, const Args& args) :
 	hud_line_spacing    = get("appearance/HUD/line_spacing", UI::HUD::DEFAULT_LINE_SPACING);
 
 	player_thrust_force       = get("sim/player_thrust_force", 1e35f); // N (kg*m/s^2)
+
 	chemtrail_burst_particles = get("sim/chemtrail_particles_add", 5);
+
 	exhaust_burst_particles   = get("sim/exhaust_particles_add", 5);
 	exhaust_v_factor          = get("sim/exhaust_v_factor", -1.0f);
-	exhaust_offset_factor     = get("sim/exhaust_offset_factor", 0.1f); // depends on player v
-	exhaust_lifetime          = get("sim/exhaust_lifetime", 10.f); // s
+	exhaust_offset_factor     = get("sim/exhaust_offset_factor", 0.1f);
+	exhaust_lifetime          = get("sim/exhaust_lifetime", 10.f);
+
+	shield_depletion_time     = get("sim/shield_depletion_time", 2.5f); // Sync to snd_shield manually!
+
+	shield_recharge_time      = get("sim/shield_recharge_time", 4.f);
+//!!	shield_feed_rate          = get("sim/shield_replenish_rate", 5.f);
+	shield_burst_particles    = get("sim/shield_replenish_rate", 5);
+
 
 	// 3. Process cmdline args to override again...
 //!! See also main.cpp! And if main goes to Szim [turning all this essentially into a framework, not a lib, BTW...],
