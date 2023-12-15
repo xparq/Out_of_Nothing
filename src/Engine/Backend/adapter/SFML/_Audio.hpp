@@ -22,6 +22,7 @@ namespace Szim {
 //!! Sigh, amending the botched sf::Sound API that has no default ctor any more, as of SFML/9cbcd56... :-/
 struct _cpp_cringe_base_from_other_base : sf::SoundBuffer { using sf::SoundBuffer::SoundBuffer; };
 struct SoundPlayer : _cpp_cringe_base_from_other_base, sf::Sound {
+
 	using sf::Sound::Sound;
 	SoundPlayer() : sf::Sound(_SFML_cringe_get_dummy_buffer()) {}
 	private: sf::SoundBuffer& _SFML_cringe_get_dummy_buffer() { return (sf::SoundBuffer&) *this; }
@@ -34,6 +35,10 @@ struct SoundPlayer : _cpp_cringe_base_from_other_base, sf::Sound {
 //!!	shared_ptr<buffer_wrapper> buffer_playing;
 //!!
 //!! Oh, but then it should also derive from an API-level abstraction, via TRIPLE inheritance! :-o :)
+public:
+	bool playing() const { return getStatus() == sf::Sound::Playing; } //!!?? or != sf::Sound::Stopped?!
+
+	short priority = 0;
 };
 
 
@@ -43,6 +48,9 @@ class SFML_Audio : public Audio
 	{
 		bool empty = true;
 		bool muted = false;
+		float length = 0; // s
+		unsigned short sample_rate = 0;
+
 		buffer_wrapper(const char* filename);
 		buffer_wrapper(const buffer_wrapper&) = delete;
 	};
@@ -59,14 +67,19 @@ public:
 	bool   play_music(const char* filename) override;
 
 	size_t add_sound(const char* filename) override;
+	float  length(size_t buffer_ndx) const override; //!! Add an overload for music, too!
 	short  play_sound(size_t buffer_ndx, PlayReq options = DefaultPlayMode) override;
+
 	void   kill_sound(short channel) override;
 	void   kill_sounds() override;
 	void   toggle_sound(size_t buffer) override;
+	bool   playing(short channel) const override;
 
 protected:
-	short  _get_sound_channel_ndx(const PlayReq& options); // const&: always called on lvalues internally
-	SoundPlayer& _get_channel(short ndx);
+	short  _get_sound_channel_ndx(const PlayReq& options) const; // const&: always called on lvalues internally
+	bool   _channel_ndx_valid(short ndx) const;
+	SoundPlayer& _get_channel(short ndx); //!! Mature it up to the generic API!
+	const SoundPlayer& _get_channel(short ndx) const { return ((SFML_Audio*)this)->_get_channel(ndx); }
 
 private:
 	float _master_volume = 75;
@@ -76,11 +89,10 @@ private:
 	//!! Not needed! sz::lockers<SoundPlayer, MAX_FX_CHANNELS> _fx_channels;
 	static constexpr unsigned MAX_FX_CHANNELS = 10;
 	SoundPlayer _fx_channels[MAX_FX_CHANNELS];
-	short _LRU_channel = 0; // Round-robin channel index
+	short mutable _LRU_channel = 0; // Round-robin channel index
 
 public:
 	SFML_Audio();
-	static Audio& get();
 }; // class SFML_Audio
 
 } // namespace Szim
