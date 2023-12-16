@@ -288,7 +288,7 @@ if (gravity_mode == Normal) {
 /*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
 		// Friction:
 		Vector2f dv = friction_decel * (dt);
-		Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+		Vector2f friction_decel(-body->v.x * friction, -body->v.y * friction);
 		body->v += dv;
 !!*/		
 //cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
@@ -307,7 +307,7 @@ dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 		auto& body = bodies[i];
 
 		// Friction:
-		Vector2f friction_decel(-body->v.x * FRICTION, -body->v.y * FRICTION);
+		Vector2f friction_decel(-body->v.x * friction, -body->v.y * friction);
 		Vector2f dv = friction_decel * dt;
 		body->v += dv;
 		
@@ -328,7 +328,7 @@ void World::_copy(World const& other)
 		//!! some, when manip. them one by one! :-/
 		//!! There might anyway be a distinction between these and
 		//!! throw-away volatile state (like caches) in the future.
-		FRICTION = other.FRICTION;
+		friction = other.friction;
 		_interact_all = other._interact_all;
 		gravity_mode = other.gravity_mode;
 		gravity = other.gravity;
@@ -350,7 +350,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	out << "MODEL_VERSION = " << saved_version << '\n';
 
-	out << "drag = " << FRICTION << '\n';
+	out << "drag = " << friction << '\n';
 	out << "interactions = " << _interact_all << '\n';
 	if (saved_version >= semver::version("0.1.0"))
 		{ out << "gravity_mode = " << (unsigned)gravity_mode << '\n'; }
@@ -421,7 +421,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	unsigned _prop_ndx_ = 0;
 	try { // stof & friends are throw-happy
-		++_prop_ndx_; w_new.FRICTION = stof(props["drag"]);
+		++_prop_ndx_; w_new.friction = stof(props["drag"]);
 		++_prop_ndx_; w_new._interact_all = stof(props["interactions"]);
 		if (loaded_version >= semver::version("0.1.0"))
 			{ ++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]);

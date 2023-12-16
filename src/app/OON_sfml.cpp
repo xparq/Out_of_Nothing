@@ -531,8 +531,8 @@ try {
 				case 'g':
 					sfw::getWidget<sfw::OptionsBox<Model::World::GravityMode>>("Gravity mode")->selectNext();
 					break;
-				case 'f': world().FRICTION -= 0.01f; break;
-				case 'F': world().FRICTION += 0.01f; break;
+//				case 'f': world().friction -= 0.01f; break;
+//				case 'F': world().friction += 0.01f; break;
 				case 'r': time.reversed = !time.reversed; break;
 				case 't': time.scale *= 2.0f; break;
 				case 'T': time.scale /= 2.0f; break;

@@ -156,9 +156,8 @@ public:
 //!!So just allow public access for now:
 public:
 	//!! REVISE _copy(), and save/load, WHENEVER CHANGING THE DATA HERE!
-	float FRICTION = 0.03f; //!!Take its default from the cfg!
-	bool _interact_all = false; // Bodies react to each other too, or only the player(s)?
-
+	float friction = 0.03f; //!!Take its default from the cfg!
+	bool  _interact_all = false; // Bodies react to each other too, or only the player(s)?
 	GravityMode gravity_mode;   //! v0.1.0
 	float gravity = Physics::G; //! v0.1.1
 

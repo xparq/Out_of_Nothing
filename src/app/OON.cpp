@@ -114,7 +114,7 @@ void OON::init() // override
 			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
-			world().FRICTION = f;
+			world().friction = f;
 		}; if (!args("zoom").empty()) { //!! Should be done by SimApp, and then the audio init
 			float factor = stof(args("zoom"));
 			if (factor) zoom_reset(factor);
@@ -195,7 +195,7 @@ void OON::_setup_UI()
 		view_form->add("Pan override", new CheckBox); // Will be polled by the control loop!
 		view_form->add(" - pan locked", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 
-	// Physics props...
+	// Physics tweaking...
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
 	auto	phys_form = gui_main_hbox->add(new Form);
 		auto g_select = new OptionsBox<World::GravityMode>();
@@ -208,6 +208,9 @@ void OON::_setup_UI()
 		phys_form->add(" - bias", new sfw::Slider({.range={-3.0, 3.0}, .step=0, .orientation=sfw::Horizontal}, 80))
 			->setCallback([&](auto* w){ this->world().gravity = Model::Physics::G * pow(10.f, w->get()); })
 			->set(0);
+		phys_form->add("Friction", new sfw::Slider({.range={-1.0, 1.0}, .step=0, .orientation=sfw::Horizontal}, 80))
+			->setCallback([&](auto* w){ this->world().friction = w->get(); })
+			->set(world().friction);
 		phys_form->add("Fixed model Δt", new CheckBox(
 			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
 
@@ -288,7 +291,7 @@ void OON::_setup_UI()
 		<< "\nBody interactions: " << &this->const_world()._interact_all
 		<< "\nGravity mode: " << [&](){ return to_string((unsigned)this->const_world().gravity_mode); }
 		<< "\n  - strength: " << &this->const_world().gravity
-		<< "\nDrag: " << ftos(&this->const_world().FRICTION)
+		<< "\nDrag: " << ftos(&this->const_world().friction)
 		<< "\n"
 	;
 
@@ -398,7 +401,7 @@ void OON::_setup_UI()
 		<< "------------- God Mode - Metaphysics:\n"
 		<< "TAB           Toggle object interactions\n"
 		<< "G             Gravity mode\n"
-		<< "F             Decrease friction, +SHIFT: increase\n"
+	//	<< "F             Decrease friction, +SHIFT: increase\n"
         //	<< "C             chg. collision mode: pass/stick/bounce\n"
 		<< "------------- God Mode - Time Control:\n"
 		<< "PAUSE, H      Halt time (model time only, sorry)\n"
