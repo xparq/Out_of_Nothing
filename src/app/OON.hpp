@@ -2,6 +2,7 @@
 #define _OSE8975BQ7C785C639406C824X782C6YNB5_
 
 #include "OONConfig.hpp"
+#include "OONControls.hpp"
 
 #include "Engine/SimApp.hpp"
 namespace UI { class HUD; } //!!...
@@ -117,8 +118,10 @@ public:
 	       Entity& player_entity(unsigned p = 1)       override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 	 const Entity& player_entity(unsigned p = 1) const override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 
-	bool poll_and_process_controls() override; // true if there was any input
+	void poll_controls() override;
+	bool perform_control_actions() override; // true if there have been some actions
 
+protected:
 	bool _ctrl_update_thrusters(); // true if any engine is firing
 
 	//----------------------------------------------------------------------------
@@ -159,6 +162,7 @@ public:
 //----------------------------------------------------------------------------
 protected:
 	OONConfig appcfg; // See also syscfg from this->SimApp
+	OONController controls;
 
 	bool  chemtrail_releasing = false;
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;

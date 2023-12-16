@@ -55,7 +55,8 @@ public:
 	                     // No need to call the "upstream" init() from an override.
 	virtual void done(); // Optional cleanup; will not be called if init() was aborted.
 	                     // No need to call the "upstream" done() from an override.
-	virtual bool poll_and_process_controls() { return false; } // false: no inputs, nothing to do
+	virtual void poll_controls() {}
+	virtual bool perform_control_actions() { return false; } // false: no changes to the model
 	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
 
 	unsigned fps_throttling(unsigned fps = (unsigned)-1);

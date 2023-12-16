@@ -452,7 +452,16 @@ void OON::remove_player(unsigned)
 
 
 //----------------------------------------------------------------------------
-bool OON::poll_and_process_controls()
+void OON::poll_controls() //override
+{
+	controls.update(); // Refreshing polled states now, nothing else
+		//!! Should be moved to the event loop, but only after the
+		//!! current hamfisted threading is resolved; there could be
+		//!! much delay between polling and actually reacting now!
+}
+
+//----------------------------------------------------------------------------
+bool OON::perform_control_actions() //override
 {
 	bool action = false;
 
@@ -463,7 +472,7 @@ bool OON::poll_and_process_controls()
 	}
 
 	// "Chemtrail" release
-	if (keystate(SPACE)) {
+	if (controls.Chemtrail) {
 		action = true;
 		chemtrail_burst(player_entity_ndx(), appcfg.chemtrail_burst_particles);
 		if (!chemtrail_releasing) { // Just starting...
@@ -482,7 +491,7 @@ bool OON::poll_and_process_controls()
 	if (shield_active < 0) { // Disabled while recovering...
 		++shield_active;
 	} else {
-		if (keystate(RCTRL)) {
+		if (controls.Shield) {
 			action = true;
 			if (shield_active == 0) { // Just starting?
 				shield_active = 1;
@@ -507,7 +516,7 @@ cerr << "- Shield depleted! Recharging for " << -shield_active << " frames...\n"
 				//!!backend.audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
 			}
 			// Stopped firing?
-			else if (!keystate(RCTRL)) {
+			else if (!controls.Shield) {
 cerr << "DBG> SHIELD_ENERGIZE button released.\n";
 				shield_active = 0;
 				backend.audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
@@ -531,10 +540,10 @@ void OON::right_thruster_stop()  { entity(player_entity_ndx()).thrust_right.thru
 bool OON::_ctrl_update_thrusters()
 {
 	auto drv = false;
-	if (keystate(UP))    { drv = true;    up_thruster_start(); } else    up_thruster_stop();
-	if (keystate(DOWN))  { drv = true;  down_thruster_start(); } else  down_thruster_stop();
-	if (keystate(LEFT))  { drv = true;  left_thruster_start(); } else  left_thruster_stop();
-	if (keystate(RIGHT)) { drv = true; right_thruster_start(); } else right_thruster_stop();
+	if (controls.ThrustUp)    { drv = true;    up_thruster_start(); } else    up_thruster_stop();
+	if (controls.ThrustDown)  { drv = true;  down_thruster_start(); } else  down_thruster_stop();
+	if (controls.ThrustLeft)  { drv = true;  left_thruster_start(); } else  left_thruster_stop();
+	if (controls.ThrustRight) { drv = true; right_thruster_start(); } else right_thruster_stop();
 	return drv;
 }
 
@@ -586,8 +595,11 @@ void OON::follow_player(unsigned player_id)
 
 bool OON::scroll_locked()
 {
-	return keystate(SCROLL_LOCKED) || keystate(SHIFT)
+	return controls.PanLock || controls.PanFollow
 		|| ((sfw::CheckBox*)gui.recall("Pan override"))->get();
+		//!!?? Should this GUI poll actually be in controller.update()?!...
+		//!!?? Kinda depends on the intent of that UI element: input emu., or
+		//!!?? "high-level control" <-- but then this should make some actual sense! :)
 }
 
 void OON::zoom_reset(float factor/* = 0*/)
@@ -682,10 +694,10 @@ bool OON::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 //!!??auto CFG_PAN_EASEOUT_STEP_fps = CFG_PAN_EASEOUT_STEP;
 
 	auto action = false;
-	if (keystate(W)) { action = true; _pan_step_y -= CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ? -CFG_PAN_INITIAL_STEP_fps : _pan_step_y - CFG_PAN_EASEOUT_STEP_fps; } // approach 2
-	if (keystate(S)) { action = true; _pan_step_y += CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ?  CFG_PAN_INITIAL_STEP_fps : _pan_step_y + CFG_PAN_EASEOUT_STEP_fps; }
-	if (keystate(A)) { action = true; _pan_step_x -= CFG_PAN_EASEOUT_STEP_fps; } // = -CFG_PAN_INITIAL_STEP_fps; } // approach 1
-	if (keystate(D)) { action = true; _pan_step_x += CFG_PAN_EASEOUT_STEP_fps; } // =  CFG_PAN_INITIAL_STEP_fps; }
+	if (controls.PanUp)    { action = true; _pan_step_y -= CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ? -CFG_PAN_INITIAL_STEP_fps : _pan_step_y - CFG_PAN_EASEOUT_STEP_fps; } // approach 2
+	if (controls.PanDown)  { action = true; _pan_step_y += CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ?  CFG_PAN_INITIAL_STEP_fps : _pan_step_y + CFG_PAN_EASEOUT_STEP_fps; }
+	if (controls.PanLeft)  { action = true; _pan_step_x -= CFG_PAN_EASEOUT_STEP_fps; } // = -CFG_PAN_INITIAL_STEP_fps; } // approach 1
+	if (controls.PanRight) { action = true; _pan_step_x += CFG_PAN_EASEOUT_STEP_fps; } // =  CFG_PAN_INITIAL_STEP_fps; }
 
 	// Ease-out:
 	if (!action) {
@@ -730,9 +742,9 @@ bool OON::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewheel_d
 	if (mousewheel_delta) { action = true; _zoom_step = mousewheel_delta * CFG_ZOOM_MOUSEWHEEL_FACTOR; }
 	// Keyboard zoom?
 	//!! TRY WITHOUT THAT `else` below, so that power users can mega-zoon using both! :)
-	else if (/*mode == UserKeys &&*/keystate(NUMPAD_PLUS)) { action = true; _zoom_step += _zoom_step == 0 ? // Speed up gradually...
+	else if (/*mode == UserKeys &&*/controls.ZoomIn) { action = true; _zoom_step += _zoom_step == 0 ? // Speed up gradually...
 	                                                        CFG_ZOOM_BUTTONS_CHANGE_RATE_fps : CFG_ZOOM_EASEOUT_STEP_fps; }
-	else if (/*mode == UserKeys &&*/keystate(NUMPAD_MINUS)){ action = true; _zoom_step -= _zoom_step == 0 ? // ...by the easeout step!
+	else if (/*mode == UserKeys &&*/controls.ZoomOut){ action = true; _zoom_step -= _zoom_step == 0 ? // ...by the easeout step!
 	                                                        CFG_ZOOM_BUTTONS_CHANGE_RATE_fps : CFG_ZOOM_EASEOUT_STEP_fps; }
 	// Ease-out:
 	if (!action) {
@@ -906,7 +918,10 @@ void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t 
 //if (!ecfg.create_mass) cerr <<"DBG> emitter.mass BEFORE burst: "<< emitter.mass <<'\n';
 
 	float p_range = emitter.r * ecfg.position_divergence;
-	auto  p_offset = emitter.v.normalized() * emitter.r * ecfg.offset_factor;
+	auto  p_offset =
+		(emitter.v == Math::Vector2f()) ? //! SFML-DEBUG asserts this, so must be prevented... :-/
+			  Math::Vector2f()
+			: emitter.v.normalized() * emitter.r * ecfg.offset_factor;
 		//!! Also needs a non-linearity (decoupling) factor so higher v can affect it less!
 
 	float v_range = Model::World::CFG_GLOBE_RADIUS * ecfg.velocity_divergence; //!! ...by magic, right? :-/

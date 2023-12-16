@@ -139,6 +139,8 @@ void OON_sfml::update_thread_main_loop()
 cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_lock() << ")\n";
 			}
 #endif
+			poll_controls();
+
 			updates_for_next_frame();
 
 			//!!?? Why is this redundant?!
@@ -277,7 +279,7 @@ void OON_sfml::updates_for_next_frame()
 		//!!? in addition to the async. event_loop()!...
 		//!! This doesn't just do low-level controls, but "fires" gameplay-level actions!
 		//!! (Not any actual processing, just input translation... HOPEFULLY! :) )
-		poll_and_process_controls();
+		perform_control_actions();
 
 		//----------------------------
 		// Determine the size of the next model iteration time slice...
@@ -370,6 +372,7 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 
 	view_control(); // Manual view adjustments
 }
+
 
 //----------------------------------------------------------------------------
 void OON_sfml::pause_hook(bool)

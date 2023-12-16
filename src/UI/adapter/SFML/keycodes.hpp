@@ -29,7 +29,7 @@ constexpr auto key_from_SFML(auto sfml_keycode);
 
 //!! Simple, but FRAGILE map from SFML keys to ours -- SFML codes can change at any time!
 //!! (Especially as they haven't released a stable v3 API yet!)
-constinit enum VKEY _SFML_KBD_XLAT[] = {
+static inline constinit enum VKEY _SFML_KBD_XLAT[] = {
 	VKEY::A, VKEY::B, VKEY::C, VKEY::D, VKEY::E, VKEY::F, VKEY::G, VKEY::H,
 		VKEY::I, VKEY::J, VKEY::K, VKEY::L, VKEY::M, VKEY::N, VKEY::O, VKEY::P,
 	VKEY::Q, VKEY::R, VKEY::S, VKEY::T, VKEY::U, VKEY::V, VKEY::W, VKEY::X,
