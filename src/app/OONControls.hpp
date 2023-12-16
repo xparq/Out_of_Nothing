@@ -107,37 +107,38 @@ struct OONController : public Szim::VirtualController
 //!! This also means that Toggle values make no sense
 {
 	// View control
-	PushButton ZoomIn;
-	PushButton ZoomOut;
-	PushButton PanLeft;
-	PushButton PanRight;
-	PushButton PanUp;
-	PushButton PanDown;
+	PushButton ZoomIn{};
+	PushButton ZoomOut{};
+	PushButton PanLeft{};
+	PushButton PanRight{};
+	PushButton PanUp{};
+	PushButton PanDown{};
 
-	PushButton PanFollow;
-	HardToggle PanLock;
+	PushButton PanFollow{};
+	HardToggle PanLock{};
 
-	PushButton ShowOrbits;
+	PushButton ShowOrbits{};
 
 	// Player movement
 	//!! Could/should be a joystick levels instead!
 //!!/*!! OBSOLETE:
-	Level8u ThrustLeft;
-	Level8u ThrustRight;
-	Level8u ThrustUp;
-	Level8u ThrustDown;
+	Level8u ThrustLeft{};
+	Level8u ThrustRight{};
+	Level8u ThrustUp{};
+	Level8u ThrustDown{};
 //!!!!*/
-	Level8 ThrustX;
-	Level8 ThrustY;
+	Level8 ThrustX{};
+	Level8 ThrustY{};
 
 	// Player actions
-	PushButton Chemtrail;
-	PushButton Shield;
+	PushButton Chemtrail{};
+	PushButton Shield{};
 
 	// Meta/Admin actions
 //!!...	LatchedToggle Pause;
 
 	void update() override; // Implemented in the backend-specific part of the app!
+//	OONController();
 };
 
 //} // namespace OON

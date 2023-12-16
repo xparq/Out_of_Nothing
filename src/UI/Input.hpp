@@ -1,5 +1,5 @@
-﻿#ifndef _UI_Input_hpp_
-#define _UI_Input_hpp_
+﻿#ifndef _04857BVNC2V4687N89MX4567N9845667B89CX6MV4778M78_
+#define _04857BVNC2V4687N89MX4567N9845667B89CX6MV4778M78_
 
 namespace UI {
 
@@ -90,10 +90,12 @@ enum VKEY : unsigned {
 
 
 extern volatile bool _kbd_state[];
+
 inline auto keystate(VKEY k) { return _kbd_state[k]; }
 
+//!!inline void update_keystates() { return update_keys(...); }
 void reset_keys();
 
 } // namespace UI
 
-#endif //_UI_Input_hpp_
+#endif // _04857BVNC2V4687N89MX4567N9845667B89CX6MV4778M78_

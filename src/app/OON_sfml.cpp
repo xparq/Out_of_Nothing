@@ -139,8 +139,6 @@ void OON_sfml::update_thread_main_loop()
 cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_lock() << ")\n";
 			}
 #endif
-			poll_controls();
-
 			updates_for_next_frame();
 
 			//!!?? Why is this redundant?!
@@ -445,9 +443,11 @@ try {
 			//!! game.inputs.push(event);
 			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
 
-			UI::update_keys(event); // Using the SFML adapter (via #include UI/adapter/SFML/...)
+			UI::update_keys_from_SFML(event); // Using the SFML adapter (via #include UI/adapter/SFML/...)
 				//!! This should be generalized beyond keys, and should also make it possible
 				//!! to use abstracted event types/codes for dispatching (below)!
+
+			poll_controls(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
 
 			// Close req.?
 			if (event.type == sf::Event::Closed ||

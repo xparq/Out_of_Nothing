@@ -1,10 +1,20 @@
 #include "OONControls.hpp"
 
 #include "UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
-using namespace UI;
+
+/*!!
+#include <cstring>
+OONController::OONController()
+{
+// We have a virtual fn., so this is out:
+//	std::memset(this, 0, sizeof(*this));
+}
+!!*/
 
 void OONController::update()
 {
+	using namespace UI;
+
 	PanUp    = keystate(W);
 	PanDown  = keystate(S);
 	PanLeft  = keystate(A);
