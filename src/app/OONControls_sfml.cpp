@@ -15,10 +15,14 @@ void OONController::update()
 {
 	using namespace UI;
 
-	PanUp    = keystate(W);
-	PanDown  = keystate(S);
-	PanLeft  = keystate(A);
-	PanRight = keystate(D);
+//	PanUp    = keystate(W);
+//	PanDown  = keystate(S);
+//	PanLeft  = keystate(A);
+//	PanRight = keystate(D);
+	PanUp    = keystate(UP);
+	PanDown  = keystate(DOWN);
+	PanLeft  = keystate(LEFT);
+	PanRight = keystate(RIGHT);
 
 	PanFollow = keystate(SHIFT);
 	PanLock   = keystate(SCROLL_LOCKED);
@@ -26,13 +30,17 @@ void OONController::update()
 	ZoomIn   = keystate(NUMPAD_PLUS);
 	ZoomOut  = keystate(NUMPAD_MINUS);
 
-	ThrustUp    = keystate(UP);
-	ThrustDown  = keystate(DOWN);
-	ThrustLeft  = keystate(LEFT);
-	ThrustRight = keystate(RIGHT);
+//	ThrustUp    = keystate(UP);
+//	ThrustDown  = keystate(DOWN);
+//	ThrustLeft  = keystate(LEFT);
+//	ThrustRight = keystate(RIGHT);
+	ThrustUp    = keystate(W);
+	ThrustDown  = keystate(S);
+	ThrustLeft  = keystate(A);
+	ThrustRight = keystate(D);
 	ThrustX     = -((decltype(ThrustX))ThrustLeft) + ((decltype(ThrustX))ThrustRight);
 	ThrustY     = -((decltype(ThrustY))ThrustUp)   + ((decltype(ThrustY))ThrustDown);
 
 	Chemtrail = keystate(SPACE);
-	Shield    = keystate(RCTRL);
+	Shield    = keystate(LALT);
 }

@@ -127,7 +127,8 @@ protected:
 	//----------------------------------------------------------------------------
 	struct EmitterConfig
 	{
-		Math::Vector2f eject_velocity; // Relative to the emitter's v
+		Math::Vector2f eject_velocity{}; // Relative to the emitter's v
+		Math::Vector2f eject_offset{};   // Relative to the emitter's origin
 		float v_factor = 0.1f; //!! May be redundant with eject_velocity now!
 		float offset_factor = 0.2f;
 		float particle_lifetime = Model::World::Body::Unlimited;
@@ -135,8 +136,8 @@ protected:
 		float particle_density = Model::Physics::DENSITY_ROCK * 0.001f;
 		float position_divergence = 5.f; // Relative to emitter radius
 		float velocity_divergence = 1.f; //!! Just an exp. "randomness factor" for now!...
-		float particle_mass_min;
-		float particle_mass_max;
+		float particle_mass_min{};
+		float particle_mass_max{};
 		uint32_t color = 0x706080; // 0xRRGGBB
 	};
 	void _emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx = 0, size_t n = 10);

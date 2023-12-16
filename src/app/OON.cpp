@@ -68,7 +68,10 @@ void OON::init() // override
 	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
 	//!!
 	[[maybe_unused]] auto player_entity_index
-		= add_player({.r = w.CFG_GLOBE_RADIUS, .density = Physics::DENSITY_OF_EARTH, .p = {0,0}, .v = {0,0}, .color = 0xffff20,
+		= add_player({.r = w.CFG_GLOBE_RADIUS, // Will be recalculated anyway...
+		              .density = appcfg.get("sim/player_globe_density", Physics::DENSITY_OF_EARTH / 10.f),
+		              .p = {0,0}, .v = {0,0},
+		              .color = 0xffff20,
 		              .mass = appcfg.get("sim/player_globe_mass", 50 * Physics::MASS_OF_EARTH)});
 	assert(entity_count() > player_entity_index);
 	assert(player_entity_ndx() == player_entity_index);
@@ -517,7 +520,6 @@ cerr << "- Shield depleted! Recharging for " << -shield_active << " frames...\n"
 			}
 			// Stopped firing?
 			else if (!controls.Shield) {
-cerr << "DBG> SHIELD_ENERGIZE button released.\n";
 				shield_active = 0;
 				backend.audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
 			}
@@ -918,7 +920,8 @@ void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t 
 //if (!ecfg.create_mass) cerr <<"DBG> emitter.mass BEFORE burst: "<< emitter.mass <<'\n';
 
 	float p_range = emitter.r * ecfg.position_divergence;
-	auto  p_offset =
+	auto  p_offset = ecfg.eject_offset;
+	p_offset += // Also add a portion proportional to the emitter's velocity:
 		(emitter.v == Math::Vector2f()) ? //! SFML-DEBUG asserts this, so must be prevented... :-/
 			  Math::Vector2f()
 			: emitter.v.normalized() * emitter.r * ecfg.offset_factor;
@@ -983,6 +986,7 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 	static uint32_t exhaust_color = appcfg.get("sim/exhaust_color", 0xaaaaaa);
 	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
 	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_max_size_ratio", 0.01f);
+	static float airgap = appcfg.get("sim/exhaust_gap", 2.f);
 
 //cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
 //cerr <<"DBG> -> exhaust_density: "<< exhaust_density <<'\n';
@@ -991,11 +995,11 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 	{
 		.eject_velocity = {0, 0},
 		.v_factor = appcfg.exhaust_v_factor, //!! Should just be calculated instead!,
-		.offset_factor = 0, //!!appcfg.exhaust_offset_factor, //!! Should just be calculated instead!
+		.offset_factor = appcfg.exhaust_offset_factor, //!! Should just be calculated instead!
 		.particle_lifetime = appcfg.exhaust_lifetime,
 		.create_mass = appcfg.get("sim/exhaust_creates_mass", true),
 		.particle_density = exhaust_density,
-		.position_divergence = 5.f, // Relative to emitter radius
+		.position_divergence = appcfg.get("sim/exhaust_divergence", 1.f), // Relative to the emitter radius
 		.velocity_divergence = 1.f, //!! Just an exp. "randomness factor" for now!...
 		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
 		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
@@ -1008,20 +1012,27 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 	constexpr const float color_spread = (float)0x111111;
 	thrust_exhaust_emitter.color = uint32_t(exhaust_color + color_spread - 2 * color_spread * float(rand())/RAND_MAX);
 
+	//!! This should be calculated from player_thrust_force (around 3e36 N curerently)!
+	const auto eject_v = 4e9f;// * abs(appcfg.exhaust_v_factor/2); //! Since this is a property of the thrusters, don't
+	                                                               //! adjust with the full v-factor!... Just a hint! :)
 	if (base.thrust_up.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {0, 4e9f};
+		thrust_exhaust_emitter.eject_velocity = {0, eject_v};
+		thrust_exhaust_emitter.eject_offset = {0, base.r * airgap};
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 	if (base.thrust_down.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {0, -4e9f};
+		thrust_exhaust_emitter.eject_velocity = {0, -eject_v};
+		thrust_exhaust_emitter.eject_offset = {0, -base.r * airgap};
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 	if (base.thrust_left.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {4e9f, 0};
+		thrust_exhaust_emitter.eject_velocity = {eject_v, 0};
+		thrust_exhaust_emitter.eject_offset = {base.r * airgap, 0};
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 	if (base.thrust_right.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {-4e9f, 0};
+		thrust_exhaust_emitter.eject_velocity = {-eject_v, 0};
+		thrust_exhaust_emitter.eject_offset = {-base.r * airgap, 0};
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 }
