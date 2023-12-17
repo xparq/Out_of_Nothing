@@ -16,8 +16,16 @@ SFML_HCI::Window::Window(unsigned width, unsigned height, const char* title, boo
 		auto modes = sf::VideoMode::getFullscreenModes();
 //cerr <<"--- fullscreen mode[0]: "<< modes[0].size.x <<", " << modes[0].size.y <<'\n';
 //cerr <<"--- fullscreen mode[1]: "<< modes[1].size.x <<", " << modes[1].size.y <<'\n';
-		_owned_sfml_window.create(modes[0], //!! Should be a control to select!
+		auto& mode = modes[0];
+		_owned_sfml_window.create(mode, //!! Should be a control to select!
 			title, sf::Style::Fullscreen);
+		//!!
+		//!! ERROR CHK!... BUT HOW?
+		//!!
+		//!!if (ok) { // adjust the size to reality...:
+			width  = mode.size.x;
+			height = mode.size.y;
+		//!!}
 	} else {
 		_owned_sfml_window.create(sf::VideoMode({width, height}),
 			title);
@@ -27,6 +35,14 @@ SFML_HCI::Window::Window(unsigned width, unsigned height, const char* title, boo
 	//!!??
 	//sf::glEnable(sf::GL_TEXTURE_2D); //!!?? why would this bw needed, if SFML already draws into an OpenGL canvas?!
 	//!!??	--> https://en.sfml-dev.org/forums/index.php?topic=11967.0
+
+//!!??	[this->width, this->height] = _owned_sfml_window.getSize();
+	this->width  = _owned_sfml_window.getSize().x;
+	this->height = _owned_sfml_window.getSize().y;
+//!! Or:
+//!!	this->width  = width;
+//!!	this->height = height;
+cerr << "DBG> "<<__FUNCTION__<<": HCI Window size set to: "<<width<<" x "<<height<<"\n";
 }
 
 //----------------------------------------------------------------------------
@@ -74,6 +90,10 @@ void SFML_HCI::switch_fullscreen(bool fullscreen) // override
 //	} else {
 //		// windowed
 //	}
+
+	_main_window.width  = SFML_window().getSize().x;
+	_main_window.height = SFML_window().getSize().y;
+cerr << "DBG> "<<__FUNCTION__<<": HCI Window size updated to: "<<_main_window.width<<" x "<<_main_window.height<<"\n";
 }
 
 //----------------------------------------------------------------------------

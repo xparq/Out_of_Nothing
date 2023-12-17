@@ -40,7 +40,6 @@ public:
 // Callback impl. (overrides)...
 //------------------------------------------------------------------------
 private:
-	void onResize() override;
 	void resize_shapes(float factor) override;
 	void resize_shape(size_t ndx, float factor) override;
 

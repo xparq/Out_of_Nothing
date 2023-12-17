@@ -157,7 +157,7 @@ protected:
 	virtual void update_thread_main_loop() = 0;
 	virtual void updates_for_next_frame() = 0;
 	virtual void draw() = 0;
-	virtual void onResize() {}
+	virtual void onResize(unsigned /*width*/, unsigned /*height*/) {}
 
 //----------------------------------------------------------------------------
 // C++ mechanics...

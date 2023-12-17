@@ -581,8 +581,10 @@ try {
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				view.focus_offset = {event.mouseButton.x - view.width/2,
-				                     event.mouseButton.y - view.height/2};
+				//!! DO SG. WITH THIS DIRECT HACKERY!...:
+				view.focus_offset = {(float)event.mouseButton.x - view.cfg.width/2,
+				                     (float)event.mouseButton.y - view.cfg.height/2};
+
 				size_t clicked_entity_id = ~0u;
 				//!!??auto vpos = view.screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o Where did this x,y=={-520,-391} come from?! :-ooo
 				Math::Vector2f vpos = view.screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
@@ -698,22 +700,6 @@ void OON_sfml::resize_shape(size_t ndx, float factor) //override
 
 
 //----------------------------------------------------------------------------
-//!!Sink this into the UI!
-void OON_sfml::onResize() // override
-{
-//cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
-#ifndef DISABLE_HUD
-	((UI::HUD_SFML&)timing_hud).onResize(((SFML_Backend&)backend).SFML_window());
-	((UI::HUD_SFML&)world_hud) .onResize(((SFML_Backend&)backend).SFML_window());
-	((UI::HUD_SFML&)view_hud)  .onResize(((SFML_Backend&)backend).SFML_window());
-	((UI::HUD_SFML&)object_hud).onResize(((SFML_Backend&)backend).SFML_window());
-	((UI::HUD_SFML&)debug_hud) .onResize(((SFML_Backend&)backend).SFML_window());
-	((UI::HUD_SFML&)help_hud)  .onResize(((SFML_Backend&)backend).SFML_window());
-#endif
-	gui.setPosition(4, SFML_WINDOW().getSize().y - gui.getSize().y - 4);
-}
-
-
 bool OON_sfml::load_snapshot(const char* fname) //override
 {
 	// This should load the model back, but can't rebuild the rendering state:

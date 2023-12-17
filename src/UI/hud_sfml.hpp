@@ -17,14 +17,14 @@ namespace UI {
 class HUD_SFML : public HUD
 {
 public:
-	void _setup(sf::RenderWindow& window);
+	void _setup(unsigned width, unsigned height);
 
 	void renderstate_clear() { lines.clear(); }
 	void renderstate_append_line(const std::string& str);
 	auto renderstate_line_count() const { return lines.size(); }
 	void draw(sf::RenderWindow& window);
 
-	virtual void onResize(sf::RenderWindow& window);
+	virtual void onResize(unsigned width, unsigned height) override;
 
 public:
 	HUD_SFML(sf::RenderWindow& window, const Config& cfg);

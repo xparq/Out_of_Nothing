@@ -1,5 +1,5 @@
-﻿#ifndef _37H6FG50V6BC2376T24MYHM0_
-#define _37H6FG50V6BC2376T24MYHM0_
+﻿#ifndef _37H6FG50V6BC2376T24MYHM022CJU9I45_
+#define _37H6FG50V6BC2376T24MYHM022CJU9I45_
 
 //!!#include <string> //!! Sigh... I really shouldn't be introducing this dependency here! :-/
 
@@ -15,7 +15,7 @@ struct HCI
 		std::string window_title;
 	} cfg;
 ??!!*/
-	struct Window {};
+	struct Window { unsigned width = 0, height = 0; };
 	public: virtual Window& window() = 0;
 	public: virtual void switch_fullscreen(bool fullscreen) = 0;
 	public: virtual void set_frame_rate_limit(unsigned fps) = 0;
@@ -29,4 +29,4 @@ protected:
 
 } // namespace Szim
 
-#endif // _37H6FG50V6BC2376T24MYHM0_
+#endif // _37H6FG50V6BC2376T24MYHM022CJU9I45_

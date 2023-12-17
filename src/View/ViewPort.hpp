@@ -2,7 +2,6 @@
 #define _DP2M97FG6MF98D59NH7_
 
 #include "Model/Math/Vector2.hpp"
-#include "Engine/SimAppConfig.hpp"
 
 namespace View {
 
@@ -16,16 +15,22 @@ namespace View {
 //
 // Origin: center of the screen (window, view pane...)
 
+
 struct ViewPort
 {
 	struct Config
 	{
+		// Why float dimensions? -> #221: Camera concept/definitions...
+		float width  = 1024;
+		float height = 768;
 		float base_scale = 1; // Depends on the physics, so pretty much always set it!
 	};
 
 	// -------------------------------------------------------------------
 	ViewPort(Config cfg);
-	void reset();
+	void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
+	void reset(Config&& recfg);
+	void resize(float width, float height);
 
 	// -------------------------------------------------------------------
 	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * scale - offset; }
@@ -63,18 +68,15 @@ struct ViewPort
 	// --- "API Data" ----------------------------------------------------
 	Config cfg;
 
+	float scale = 1;
 	Math::Vector2f offset = {0, 0}; // Displacement of the view relative to the initial implicit origin, in View (screen) coordinates
 	Math::Vector2f focus_offset = {0, 0}; // Pos. of a focus point in the view rect (in View coord.)
-	                                      // Used as the zoom origin etc. Usually set to the player's
-	                                      // on-screen pos, or some other interesting subject...
+	                                      // Used as the zoom origin for now. (Usually set to the player's
+	                                      // on-screen pos, or some other interesting subject...)
 
-	//!! Remove these awkward defaults from here! Get them via the ctor!
-	float width  = Szim::SimAppConfig::VIEWPORT_WIDTH;
-	float height = Szim::SimAppConfig::VIEWPORT_HEIGHT;
-	float scale  = Szim::SimAppConfig::DEFAULT_ZOOM;
-
-	// --- Internal Data --------------------------------------------------
-	// Calculated:
+	// --- Internals -----------------------------------------------------
+protected:
+	// Frequently needed convenience params. (i.e. cached values calculated from the cfg.):
 	float _edge_x_min, _edge_x_max;
 	float _edge_y_min, _edge_y_max;
 

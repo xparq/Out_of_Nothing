@@ -146,6 +146,12 @@ protected:
 	void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
 	bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
 
+
+	//------------------------------------------------------------------------
+	// Callback impl. (overrides)...
+	//------------------------------------------------------------------------
+	void onResize(unsigned width, unsigned height) override;
+
 	//--------------------------------------------------------------------
 	// New overridables introduced:
 	virtual void resize_shapes(float /*factor*/) {}

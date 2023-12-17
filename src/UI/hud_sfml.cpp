@@ -32,11 +32,11 @@ HUD_SFML::HUD_SFML(sf::RenderWindow& window, const Config& cfg) :
 //	int xpos, int ypos, uint32_t fgcolor, uint32_t bgcolor) :
 	cfg(cfg)
 {
-	_setup(window);
+	_setup(window.getSize().x, window.getSize().y);
 }
 
 //----------------------------------------------------------------------------
-void HUD_SFML::_setup(sf::RenderWindow& window)
+void HUD_SFML::_setup(unsigned width, unsigned height)
 {
 	if (!font.loadFromFile(cfg.font_file)) {
 		//! SFML has already written the error to the console.
@@ -44,10 +44,8 @@ void HUD_SFML::_setup(sf::RenderWindow& window)
 	}
 
 	// Adjust for negative "virtual" offsets:
-	sf::Vector2u winsize = window.getSize();
-
-	_panel_left = cfg.panel_left < 0 ? winsize.x + cfg.panel_left : cfg.panel_left;
-	_panel_top  = cfg.panel_top  < 0 ? winsize.y + cfg.panel_top  : cfg.panel_top;
+	_panel_left = cfg.panel_left < 0 ? width  + cfg.panel_left : cfg.panel_left;
+	_panel_top  = cfg.panel_top  < 0 ? height + cfg.panel_top  : cfg.panel_top;
 }
 
 
@@ -123,7 +121,7 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 }
 
 //----------------------------------------------------------------------------
-void HUD_SFML::onResize(sf::RenderWindow& window)
+void HUD_SFML::onResize(unsigned width, unsigned height)
 {
-	_setup(window);
+	_setup(width, height);
 }

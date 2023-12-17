@@ -5,26 +5,54 @@
 
 #include "ViewPort.hpp"
 
-using namespace Szim;
-using namespace View;
+#include <iostream>
+
+namespace View {
 
 ViewPort::ViewPort(Config cfg) :
 	cfg(cfg)
 {
-	reset();
+	reset(); // Calc. initial state
 }
 
-void ViewPort::reset()
+void ViewPort::reset(const Config* recfg/* = nullptr*/)
 {
-	scale = cfg.base_scale;
+	if (!recfg) recfg = &cfg;
+	else cfg = *recfg;
 
-	//!! These might need to be adjusted dynamically though!
-	//!! Also, use .cfg!!! :-o
-	_edge_x_min = -width/2;
-	_edge_x_max =  width/2;
-	_edge_y_min = -height/2;
-	_edge_y_max =  height/2;
+//std::cerr << "DBG> "<<__FUNCTION__<<": width="<<cfg.width<<", height="<<cfg.height<<"\n";
+
+	// Reset all the derived state, too...
+	scale = cfg.base_scale;
+	offset = {0, 0};
+	focus_offset = {0, 0};
+
+	_edge_x_min = -cfg.width/2;
+	_edge_x_max =  cfg.width/2;
+	_edge_y_min = -cfg.height/2;
+	_edge_y_max =  cfg.height/2;
 }
+
+
+void ViewPort::resize(float width, float height)
+{
+	//!! Adjust the offsets only if the resize would shift them off-screen!
+	//!! But even then, such a forced `confine()` may be undesired in some cases!
+	//!!new_offset = ...
+	//!!focus_offset = new_offset - offset; //!! Or what exactly is this relative to? I forgot... :)
+
+	cfg.width  = width;
+	cfg.height = height;
+	_edge_x_min = -cfg.width/2;
+	_edge_x_max =  cfg.width/2;
+	_edge_y_min = -cfg.height/2;
+	_edge_y_max =  cfg.height/2;
+
+//std::cerr << "DBG> "<<__FUNCTION__<<": new size: width="<<cfg.width<<", height="<<cfg.height<<"\n";
+}
+
+
+void ViewPort::reset(Config&& recfg) { reset(&recfg); } // ...it should live long enough for this, right? ;)
 
 
 bool ViewPort::confine(Math::Vector2f world_pos, float margin, float throwback)
@@ -51,3 +79,5 @@ void ViewPort::zoom(float change_ratio)
 	        //!!?? What to make of that `world + view` coord type "mismatch"?! :-o
 	        //!!?? And how would it translate to 3D?
 }
+
+} // namespace View

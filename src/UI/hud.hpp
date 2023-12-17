@@ -119,6 +119,22 @@ public:
 
 //!!??friend std::ostream& operator << (std::ostream& out, const UI::HUD& hud);
 	const std::vector<std::any>& elements() const { return _elements; }
+
+
+//----------------------------------------------------------------------------
+// Geometry...
+//----------------------------------------------------------------------------
+//!!public:
+//!!	void resize(unsigned width, unsigned height);
+
+//----------------------------------------------------------------------------
+// Overridables...
+//----------------------------------------------------------------------------
+protected:
+public: //!! Kludge to spare another public API like resize(), as this is gonna
+        //!! become an SFW widget later anyway, with its API revamped!...
+	virtual void onResize(unsigned /*width*/, unsigned /*height*/) {}
+
 }; // class HUD
 
 }; // namespace UI

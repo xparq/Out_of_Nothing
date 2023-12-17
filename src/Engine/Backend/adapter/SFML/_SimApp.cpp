@@ -83,7 +83,9 @@ SimApp::SimApp(int argc, char** argv)
 		}, false // Don't manage the window
 	  )
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(backend.hci.window())}
-	, view({.base_scale = SimAppConfig::DEFAULT_ZOOM})
+	, view({.width  = Szim::SimAppConfig::VIEWPORT_WIDTH, //!!?? Should come from the backend!
+		.height = Szim::SimAppConfig::VIEWPORT_HEIGHT,//!! backend.hci.window().height
+		.base_scale = SimAppConfig::DEFAULT_ZOOM})
 	, session(*this/*!!, args("session")!!*/)
 {
 /*!! See instead the sad "functional" approach above in the member init list:

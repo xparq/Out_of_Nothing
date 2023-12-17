@@ -301,7 +301,13 @@ void OON::_setup_UI()
 		<< "CAMERA: "
 		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
 		<< "\n  ZOOM: " << &view.scale
-	;
+/*		<< "\nVIEWPORT:"
+		<< "\n_edge_x_min: "<< &view._edge_x_min
+		<< "\n_edge_x_min: "<< &view._edge_x_max
+		<< "\n_edge_y_min: "<< &view._edge_y_min
+		<< "\n_edge_y_min: "<< &view._edge_y_max
+		<< "\nfocus point: "<< &view.focus_offset.x << ", " << &view.focus_offset.y
+*/	;
 
 //	???_hud << "\nPress ? for help...";
 
@@ -438,6 +444,24 @@ void OON::_setup_UI()
 	help_hud.active(cfg.get("show_help_on_start", true));
 #endif
 }
+
+//----------------------------------------------------------------------------
+void OON::onResize(unsigned width, unsigned height) //override
+//!!Sink this into the UI!
+{
+//cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
+#ifndef DISABLE_HUD
+	ui_gebi(TimingStats).onResize(width, height);
+	ui_gebi(WorldData)  .onResize(width, height);
+	ui_gebi(ViewData)   .onResize(width, height);
+	ui_gebi(ObjectData) .onResize(width, height);
+	ui_gebi(HelpPanel)  .onResize(width, height);
+	ui_gebi(Debug)      .onResize(width, height);
+#endif
+	gui.setPosition(4, backend.hci.window().height - gui.getSize().y - 4);
+}
+
+
 
 //----------------------------------------------------------------------------
 unsigned OON::add_player(World::Body&& obj) //override

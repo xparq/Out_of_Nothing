@@ -472,12 +472,14 @@ void SimApp::toggle_fullscreen()
 {
 	is_fullscreen = !is_fullscreen;
 	backend.hci.switch_fullscreen(is_fullscreen);
-	onResize();
-//	if (!(is_full = !is_full) /* :) */) {
-//		// full
-//	} else {
-//		// windowed
-//	}
+	auto width  = backend.hci.window().width;
+	auto height = backend.hci.window().height;
+
+	/// Sync the engine state to the new setup...
+	view.resize(float(width), float(height));
+
+	// OK, notify the client:
+	onResize(backend.hci.window().width, backend.hci.window().height);
 }
 
 //----------------------------------------------------------------------------
@@ -485,6 +487,7 @@ unsigned SimApp::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 {
 	if (new_fps_limit != (unsigned)-1) {
 	// Set...
+cerr << "DBG> "<<__FUNCTION__<<": Setting FPS limit to "<<new_fps_limit<<"\n";
 		backend.hci.set_frame_rate_limit(new_fps_limit); // 0: no limit
 	}
 

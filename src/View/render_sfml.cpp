@@ -58,7 +58,8 @@ void Renderer_SFML::render(SimApp& game)
 
 		auto vpos = game.view.world_to_view_coord(body->p - Math::Vector2f(body->r, body->r)); //!! Make the centered origin an implicit default!
 
-		trshape.setPosition(to_sfVector2(vpos) + sf::Vector2f(float(game.cfg.VIEWPORT_WIDTH/2), float(game.cfg.VIEWPORT_HEIGHT/2))); //!! Make the centered origin an implicit default!
+		trshape.setPosition(to_sfVector2(vpos)
+			+ sf::Vector2f(game.view.cfg.width/2, game.view.cfg.height/2)); //!! Make the centered origin an implicit default!
 	}
 }
 
