@@ -37,6 +37,20 @@ class SimApp; //! Sigh, must predeclare it here, outside the namespace...
 
 namespace Model {
 
+
+// World coordinate system (Right-handed, like OpenGL):
+//
+//         +y  -z
+//          | /
+//          |/
+//  -x ---- 0 ---- +x
+//         /|
+//        / |
+//     +z  -y
+//
+// Origin: center of the screen (window, view pane...)
+
+
 static constexpr char const* VERSION = "0.1.2";
 
 //============================================================================
@@ -106,14 +120,14 @@ public:
 		void on_event(Event e, ...); //! Alas, can't be virtual: that would kill the C++ init. list syntax! :-o :-/
 
 		// Ops.:
-		bool has_thrusters() { return thrust_up.thrust_level() != MyNaN; }
+		bool has_thruster() { return thrust_up.thrust_level() != MyNaN; } //!! Ugh!... :-o :)
 		void add_thrusters() { // Umm...: ;)
 			thrust_up.thrust_level(0);
 			thrust_down.thrust_level(0);
 			thrust_left.thrust_level(0);
 			thrust_right.thrust_level(0);
 		}
-		bool is_player() { return has_thrusters(); } // ;)
+		bool is_player() { return has_thruster(); } //!! ;)
 
 //!!		class std::ostream; class std::istream;
 		bool        save(std::ostream&);

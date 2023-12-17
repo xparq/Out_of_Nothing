@@ -138,10 +138,10 @@ static int skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
 //cerr << "#"<<i <<" Cooled to " << body->T << "...\n";
 		}
 
-		// Thrust -- for objects with working thrusters...:
-		if (body->has_thrusters()) {
+		// Thrust -- for objects with (working) thrusters...:
+		if (body->has_thruster()) {
 			Vector2f F_thr( (-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
-							    (-body->thrust_up.thrust_level() + body->thrust_down.thrust_level()) * dt);
+			                ( body->thrust_up.thrust_level()   - body->thrust_down.thrust_level() ) * dt);
 			body->v += (F_thr / body->mass);
 		}
 	}

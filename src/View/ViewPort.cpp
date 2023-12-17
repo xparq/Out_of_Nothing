@@ -4,8 +4,10 @@
 #include <type_traits>
 
 #include "ViewPort.hpp"
+#include "sz/sign.hh"
 
-#include <iostream>
+#include <iostream> //!! DEBUG
+	using std::cerr;
 
 namespace View {
 
@@ -79,5 +81,20 @@ void ViewPort::zoom(float change_ratio)
 	        //!!?? What to make of that `world + view` coord type "mismatch"?! :-o
 	        //!!?? And how would it translate to 3D?
 }
+
+
+Math::Vector2f ViewPort::grid_offset() const
+{
+//!!	auto vpos = world_to_view_coord(offset);
+//cerr <<"pan offset to view: "<< vpos.x <<", "<< vpos.y << '\n'; // BTW, non-zero if there's an off-center focus point
+
+	auto vpos = offset;
+	auto v = Math::Vector2f{ // Easy-peasy, right?... ;)
+		- (float(int(abs(vpos.x + _edge_x_max)) % int(cfg.width))  - _edge_x_max) * sz::sign(vpos.x + _edge_x_max),
+		- (float(int(abs(vpos.y + _edge_y_max)) % int(cfg.height)) - _edge_y_max) * sz::sign(vpos.y + _edge_y_max)};
+//cerr <<"- gridline pos. for offset ("<<offset.x<<", "<<offset.y<<"): "<< (v.x)<<", "<< (v.y) << '\n';
+	return v;
+}
+
 
 } // namespace View

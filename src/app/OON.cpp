@@ -192,8 +192,9 @@ void OON::_setup_UI()
 	// View...
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
 	auto	view_form = gui_main_hbox->add(new Form);
-		view_form->add("Pan override", new CheckBox); // Will be polled by the control loop!
-		view_form->add(" - pan locked", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
+		view_form->add("Pan follow object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
+		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
+		view_form->add("Grid lines", new CheckBox([&](auto* w){view.cfg.gridlines = w->get();}, view.cfg.gridlines));
 
 	// Physics tweaking...
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
@@ -625,7 +626,7 @@ void OON::follow_player(unsigned player_id)
 bool OON::scroll_locked()
 {
 	return controls.PanLock || controls.PanFollow
-		|| ((sfw::CheckBox*)gui.recall("Pan override"))->get();
+		|| sfw::getWidget<sfw::CheckBox>("  - forced follow")->get();
 		//!!?? Should this GUI poll actually be in controller.update()?!...
 		//!!?? Kinda depends on the intent of that UI element: input emu., or
 		//!!?? "high-level control" <-- but then this should make some actual sense! :)
@@ -723,8 +724,8 @@ bool OON::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 //!!??auto CFG_PAN_EASEOUT_STEP_fps = CFG_PAN_EASEOUT_STEP;
 
 	auto action = false;
-	if (controls.PanUp)    { action = true; _pan_step_y -= CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ? -CFG_PAN_INITIAL_STEP_fps : _pan_step_y - CFG_PAN_EASEOUT_STEP_fps; } // approach 2
-	if (controls.PanDown)  { action = true; _pan_step_y += CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ?  CFG_PAN_INITIAL_STEP_fps : _pan_step_y + CFG_PAN_EASEOUT_STEP_fps; }
+	if (controls.PanUp)    { action = true; _pan_step_y += CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ? -CFG_PAN_INITIAL_STEP_fps : _pan_step_y - CFG_PAN_EASEOUT_STEP_fps; } // approach 2
+	if (controls.PanDown)  { action = true; _pan_step_y -= CFG_PAN_EASEOUT_STEP_fps; } // = !_pan_step_y ?  CFG_PAN_INITIAL_STEP_fps : _pan_step_y + CFG_PAN_EASEOUT_STEP_fps; }
 	if (controls.PanLeft)  { action = true; _pan_step_x -= CFG_PAN_EASEOUT_STEP_fps; } // = -CFG_PAN_INITIAL_STEP_fps; } // approach 1
 	if (controls.PanRight) { action = true; _pan_step_x += CFG_PAN_EASEOUT_STEP_fps; } // =  CFG_PAN_INITIAL_STEP_fps; }
 
@@ -1043,13 +1044,13 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 	const auto eject_v = 4e9f;// * abs(appcfg.exhaust_v_factor/2); //! Since this is a property of the thrusters, don't
 	                                                               //! adjust with the full v-factor!... Just a hint! :)
 	if (base.thrust_up.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {0, eject_v};
-		thrust_exhaust_emitter.eject_offset = {0, base.r * airgap};
+		thrust_exhaust_emitter.eject_velocity = {0, -eject_v};
+		thrust_exhaust_emitter.eject_offset = {0, -base.r * airgap};
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 	if (base.thrust_down.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {0, -eject_v};
-		thrust_exhaust_emitter.eject_offset = {0, -base.r * airgap};
+		thrust_exhaust_emitter.eject_velocity = {0, eject_v};
+		thrust_exhaust_emitter.eject_offset = {0, base.r * airgap};
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 	if (base.thrust_left.thrust_level()) {

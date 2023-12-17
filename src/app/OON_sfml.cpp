@@ -368,7 +368,7 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 		}
 	}
 	// Update the focus lock indicator:
-	sfw::getWidget<sfw::CheckBox>(" - pan locked")->set(_focus_locked_);
+	sfw::getWidget<sfw::CheckBox>("Pan follow object")->set(_focus_locked_);
 
 	view_control(); // Manual view adjustments
 }
@@ -504,7 +504,10 @@ try {
 
 				case sf::Keyboard::Home:
 					if (keystate(CTRL)) {
-						pan_reset(); //!!Should be "upgraded" to "Camera/view reset"
+						//!! These should be "upgraded" to "Camera/view reset"!
+						//!! view.reset() already exists, but is not quite the same... RECONCILE!
+						view.reset(); //!!??
+						pan_reset();
 						zoom_reset();
 					} else {
 						center_to_player();
@@ -581,21 +584,18 @@ try {
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				//!! DO SG. WITH THIS DIRECT HACKERY!...:
-				view.focus_offset = {(float)event.mouseButton.x - view.cfg.width/2,
-				                     (float)event.mouseButton.y - view.cfg.height/2};
-
-				size_t clicked_entity_id = ~0u;
 				//!!??auto vpos = view.screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o Where did this x,y=={-520,-391} come from?! :-ooo
 				Math::Vector2f vpos = view.screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
-				if (entity_at_wiewpos(vpos.x, vpos.y, &clicked_entity_id))
+				view.focus_offset = vpos;
+				size_t clicked_entity_id = ~0u;
+				if (entity_at_wiewpos(vpos.x, vpos.y, &clicked_entity_id)) {
 cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
-				else
+				} else {
 cerr << "- Nothing there, focusing on the deep void...\n";
-				focused_entity_ndx =
-					scroll_locked()
-						? (clicked_entity_id == ~0u ? player_entity_ndx() : clicked_entity_id)
-						: clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
+				}
+				focused_entity_ndx = scroll_locked()
+					? (clicked_entity_id == ~0u ? player_entity_ndx() : clicked_entity_id)
+					: clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
 				break;
 			}
 

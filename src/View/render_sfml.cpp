@@ -15,6 +15,8 @@
 #include "sfw/GUI.hpp"  // Theme.hpp is not enough, it doesn't include sfw::Text!
 
 #include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/Graphics/Vertex.hpp>
+#include <SFML/Graphics/PrimitiveType.hpp>
 
 #include <memory>
 	using std::make_shared;
@@ -48,18 +50,17 @@ void Renderer_SFML::render(SimApp& game)
 
 		auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
 
-//cerr << "shape.setPos -> x = " << game.cfg.VIEWPORT_WIDTH/2 + (body->p.x - body->r) * game.view.zoom + game.view.offset.x
-//			         << ", y = " << game.cfg.VIEWPORT_WIDTH/2 + (body->p.y - body->r) * game.view.zoom + game.view.offset.y <<endl;
-//		auto vpos = game.view.world_to_view_coord(body->p.x - body->r, body->p.y - body->r); //!! Make the centered origin an implicit default!
-//		trshape.setPosition({vpos.x + sf::Vector2f(game.cfg.VIEWPORT_WIDTH/2, vpos.y + game.cfg.VIEWPORT_HEIGHT/2)); //!! Make the centered origin an implicit default!
+		//!! The size and coords. of the screen view pane (UI viewport) are NOT directly
+		//!! related to the camera view, but would obviously be best if they were identical!...
+		auto vpos = game.view.world_to_view_coord(body->p - Math::Vector2f(body->r, body->r)); //!! Rely on the objects' own origin offset instead!
+		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
+		//!! a) inverted wrt. SFML (draw) coords., b) is at the center of the camera view.
+		//!! -> #221, #445
+		trshape.setPosition({ vpos.x + float(game.backend.hci.window().width/2),
+			             -vpos.y + float(game.backend.hci.window().height/2)}); //!! "Standardize" on the view's centered origin instead!
 
-		//!! The size of the view pane (viewport) is NOT directly related to [Model::]View, but
-		//!! whould obviously be best if if could be mapped directly to display (viewport) coords!...
-
-		auto vpos = game.view.world_to_view_coord(body->p - Math::Vector2f(body->r, body->r)); //!! Make the centered origin an implicit default!
-
-		trshape.setPosition(to_sfVector2(vpos)
-			+ sf::Vector2f(game.view.cfg.width/2, game.view.cfg.height/2)); //!! Make the centered origin an implicit default!
+//cerr << "render(): shape.setPos -> x = " << game.view.cfg.width /2 + (body->p.x - body->r) * game.view.scale + game.view.offset.x
+//			       << ", y = " << game.view.cfg.height/2 + (body->p.y - body->r) * game.view.scale + game.view.offset.y <<'\n';
 	}
 }
 
@@ -67,6 +68,30 @@ void Renderer_SFML::render(SimApp& game)
 void Renderer_SFML::draw(SimApp& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
+	// Grid lines...
+	static sf::Color color{0x77777788};
+	if (game.view.cfg.gridlines) {
+//		float min_x = -float(game.backend.hci.window().width)/2, max_x = float(game.backend.hci.window().width)/2;
+//		float min_y = -float(game.backend.hci.window().height)/2, max_y = float(game.backend.hci.window().height)/2;
+		float min_x = 0, max_x = float(game.backend.hci.window().width);
+		float min_y = 0, max_y = float(game.backend.hci.window().height);
+		auto [vx, vy] = game.view.grid_offset();//!!?? + Math::Vector2f{max_x/2, max_y/2};
+		vx += max_x/2;
+		vy = max_y/2 - vy;
+
+		sf::Vertex vhair[] = {{{vx, min_y}, color}, {{vx, max_y}, color}};
+		sf::Vertex hhair[] = {{{min_x, vy}, color}, {{max_x, vy}, color}};
+		SFML_WINDOW(game).draw(vhair, 2, sf::PrimitiveType::Lines);
+		SFML_WINDOW(game).draw(hhair, 2, sf::PrimitiveType::Lines);
+
+/* Just do double-check the default SFML draw coords.:
+sf::Vertex vcenterline[] = {{{max_x/2, min_y}, sf::Color::Black}, {{max_x/2, max_y}, sf::Color(0x88888844)}}; //!!?? WTF: no
+sf::Vertex hcenterline[] = {{{min_x, max_y/2}, sf::Color::Black}, {{max_x, max_y/2}, sf::Color(0x88888844)}}; //!!?? alpha?! :-o
+SFML_WINDOW(game).draw(vcenterline, 2, sf::PrimitiveType::Lines);
+SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
+*/
+	}
+
 	for (const auto& entity : shapes_to_draw) {
 		SFML_WINDOW(game).draw(*entity);
 	}
