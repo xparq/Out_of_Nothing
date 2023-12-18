@@ -2,6 +2,8 @@
 
 #include "SimApp.hpp"
 
+#include "View/ScreenView.hpp"
+
 #include "sz/stringtools.hh"
 //	using sz::to_bool
 
@@ -409,36 +411,34 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 
 //----------------------------------------------------------------------------
-bool SimApp::entity_at_wiewpos(float x, float y, size_t* entity_id OUT) const
+bool SimApp::is_entity_at_viewpos(size_t entity_id, float x, float y) const // virtual
 {
-	for (size_t i = entity_count(); i-- != 0;) { //!! Poor man's Z-order...
-		const auto& e = entity(i);
-		//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
-		//!! Actully, in OON_sfml it is -- make this "tunnellable"!...
-		auto ep = main_camera.world_to_view_coord(e.p);
-		//!! ... = e.bounding_box();
-		auto box_R = e.r * main_camera.scale; //!! Not a terribly robust method to get that size...
-		auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327
+	const auto& e = entity(entity_id);
+	//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
+	//!! Actully, in OON_sfml it is -- make this "tunnellable"!...
+	const auto& camera = main_view().camera();
+	auto ep = camera.world_to_view_coord(e.p);
+	//!! ... = e.bounding_box();
+	auto box_R = e.r * camera.scale(); //!! Not a terribly robust method to get that size...
+	auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327
 //cerr << "---> ...checking click at ("<<x<<", "<<y<<") against entity #"<<i<<" at ("<<ep.x<<", "<<ep.y<<")...\n";
 
-		if (distance <= box_R) {
-			*entity_id = i;
+	if (distance <= box_R) {
 //cerr << "- FOUND entity #" << i << "!\n";
+		return true;
+	} else  return false;
+}
+
+//----------------------------------------------------------------------------
+bool SimApp::entity_at_viewpos(float x, float y, size_t* entity_id OUT) const // virtual
+{
+	for (size_t i = entity_count(); i-- != 0;) { //!! Poor man's Z-order... Override for less hamfisted ways!
+		if (is_entity_at_viewpos(i, x, y)) {
+			*entity_id = i;
 			return true;
 		}
 	}
-
 	return false;
-}
-
-bool SimApp::entity_at_wiewpos(float x, float y, Entity** entity OUT)
-{
-	size_t entity_id;
-	if (!entity_at_wiewpos(x, y, &entity_id))
-		return false;
-
-	*entity = &(this->entity(entity_id));
-	return true;
 }
 
 
@@ -475,8 +475,8 @@ void SimApp::toggle_fullscreen()
 	auto width  = backend.hci.window().width;
 	auto height = backend.hci.window().height;
 
-	/// Sync the engine state to the new setup...
-	main_camera.resize(float(width), float(height));
+	/// Refresh engine state...
+	main_view().resize(width, height);
 
 	// OK, notify the client:
 	onResize(backend.hci.window().width, backend.hci.window().height);

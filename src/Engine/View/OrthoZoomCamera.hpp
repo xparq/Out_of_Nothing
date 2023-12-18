@@ -5,7 +5,7 @@
 
 #include "Model/Math/Vector2.hpp"
 
-namespace View {
+namespace Szim::View {
 
 // Camera View coordinate system (right-handed, like OpenGL):
 //
@@ -42,11 +42,13 @@ struct OrthoZoomCamera : Camera
 	// -------------------------------------------------------------------
 
 	// Simple orthographic projection, plus scaling:
-	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * scale - offset; }
-	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * scale - offset.x, y * scale - offset.y }; }
+	Math::Vector2f world_to_view_coord(Math::Vector2f wp) const override { return wp * _scale - offset; } 
+//	Math::Vector2f world_to_view_coord(float wx, float wy) const { return world_to_view_coord({wx, wy}); }
 
-	Math::Vector2f view_to_world_coord(Math::Vector2f vp) const { return (vp + offset)/scale; }
-	//!!Math::Vector2f view_to_world_coord(float x, float y) const { ... }
+	Math::Vector2f view_to_world_coord(Math::Vector2f vp) const override { return (vp + offset)/_scale; }
+//	Math::Vector2f view_to_world_coord(float vx, float vy) const { return view_to_world_coord({vx, vy}); }
+
+	float scale() const override { return _scale; }
 
 	bool visible(Math::Vector2f world_pos) const {
 		auto vpos = world_to_view_coord(world_pos);
@@ -81,7 +83,7 @@ struct OrthoZoomCamera : Camera
 	void pan(Math::Vector2f delta) { pan_x(delta.x); pan_y(delta.y); }
 	void pan_x(float delta)        { offset.x += delta; }
 	void pan_y(float delta)        { offset.y += delta; }
-	void center_to(Math::Vector2f world_pos) { offset = world_pos * scale; }
+	void center_to(Math::Vector2f world_pos) { offset = world_pos * _scale; }
 
 	// Moving the focus center only
 	void move_focus(Math::Vector2f delta) { focus_offset += delta; }
@@ -104,7 +106,7 @@ struct OrthoZoomCamera : Camera
 	// --- "API Data" ----------------------------------------------------
 	Config cfg;
 
-	float scale = 1;
+	float _scale = 1;
 	Math::Vector2f offset = {0, 0}; // Displacement of the view relative to the initial implicit origin, in View (screen) coordinates
 	Math::Vector2f focus_offset = {0, 0}; // Pos. of a focus point in the image rect (in Camera View coord.)
 	                                      // Used as the zoom origin for now. (Usually set to the player's
@@ -118,6 +120,6 @@ protected:
 
 }; // class OrthoZoomCamera
 
-} // namespace View
+} // namespace Szim::View
 
 #endif // _DP2M97FG6MF98D59NH70873456874G3076589_

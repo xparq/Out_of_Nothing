@@ -18,6 +18,8 @@
 int main(int argc, char* argv[])
 //============================================================================
 {
+	using namespace OON;
+
 	//!! Sad kludge util #348...:
 	Args args(argc, argv); // Just for -h -V etc.
 	if (args["?"] || args["h"] || args["help"]) {

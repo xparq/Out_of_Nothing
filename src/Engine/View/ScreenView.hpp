@@ -5,7 +5,10 @@
 
 //#include "Model/Math/Vector2.hpp"
 
-namespace View {
+#include <cassert>
+
+
+namespace Szim::View {
 
 // Screen View(Port) coordinate system:
 //
@@ -19,6 +22,10 @@ namespace View {
 class ScreenView
 {
 public:
+	// -------------------------------------------------------------------
+	// Setup...
+	// -------------------------------------------------------------------
+
 	struct Config
 	{
 		// Why float dimensions? -> #221: Camera concept/definitions...
@@ -27,19 +34,16 @@ public:
 //!!		bool  gridlines = true; //!! -> false, as soon as it involves complexity beyond a simple direct query!
 	};
 
-	// -------------------------------------------------------------------
-	// Setup...
-	// -------------------------------------------------------------------
-
-	ScreenView() {}
-	ScreenView(Config cfg);
+//	ScreenView(Config cfg);
 	ScreenView(Config cfg, Camera& cam);
 
-	void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
-	void reset(Config&& recfg);
-	void resize(unsigned width, unsigned height);
+	virtual void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
+	virtual void reset(Config&& recfg);
+	virtual void resize(unsigned width, unsigned height);
 
 	void attach(Camera& camera);
+	      Camera& camera()       { assert(_camera); return *_camera; }
+	const Camera& camera() const { assert(_camera); return *_camera; }
 
 	// -------------------------------------------------------------------
 	// Data...
@@ -50,6 +54,6 @@ protected:
 
 }; // class ScreenView
 
-} // namespace View
+} // namespace Szim::View
 
 #endif // _GHF0286SXT7BV5CNZ2MK3X7TYB45087BYVRT87_

@@ -3,12 +3,14 @@
 #include <iostream> //!! DEBUG
 	using std::cerr;
 
-namespace View {
+namespace Szim::View {
 
+/*
 ScreenView::ScreenView(Config cfg) : _cfg(cfg)
 {
 	reset(); // Calc. initial state
 }
+*/
 
 ScreenView::ScreenView(Config cfg, Camera& cam) : _cfg(cfg), _camera(&cam)
 {
@@ -37,4 +39,4 @@ void ScreenView::attach(Camera& camera)
 	_camera = &camera;
 }
 
-} // namespace View
+} // namespace Szim::View

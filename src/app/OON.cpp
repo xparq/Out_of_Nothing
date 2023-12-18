@@ -1,5 +1,7 @@
 ﻿#include "OON.hpp"
 
+#include "Engine/Backend/HCI.hpp"
+
 #include "sfw/GUI.hpp" //!! Used to be in OON_sfml only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
 #include "UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
@@ -28,9 +30,11 @@ static std::string hud_test_callback_string() { return "this is a std::string"; 
 static const char* hud_test_callback_ccptr()  { return "this is a const char*"; }
 #endif
 
+namespace OON {
+
 
 //----------------------------------------------------------------------------
-void OON::show_cmdline_help(const Args& args, const char* banner)
+void OONApp::show_cmdline_help(const Args& args, const char* banner)
 {
 	banner = "\"Out of Nothing\" - experimental simulation toy\n";
 
@@ -48,13 +52,39 @@ void OON::show_cmdline_help(const Args& args, const char* banner)
 
 
 //============================================================================
-OON::OON(int argc, char** argv) :
-	SimApp(argc, argv),
-	appcfg(cfg, args) //!! appcfg(SimApp::syscfg)
-{}
+//============================================================================
+namespace _internal {
+FUCpp_CameraViewPack::_oon_view_and_cam_container::_oon_view_and_cam_container()
+//!!: oon_main_camera({.width  = (float)backend.hci.window().width, //!!WAS: Szim::SimAppConfig::VIEWPORT_WIDTH, //!! Would (should!) be reset later from "real data" from the backend anyway...
+//!!                   .height = (float)backend.hci.window().height, //!!WAS: Szim::SimAppConfig::VIEWPORT_HEIGHT,
+: _oon_main_camera({.width  = Szim::SimAppConfig::VIEWPORT_WIDTH, //!! Supposed to be reset with "real data" by SimApp anyway...
+                    .height = Szim::SimAppConfig::VIEWPORT_HEIGHT,
+                    .base_scale = SimAppConfig::DEFAULT_ZOOM})
+, _oon_main_view({.width = Szim::SimAppConfig::VIEWPORT_WIDTH,
+                  .height = Szim::SimAppConfig::VIEWPORT_HEIGHT},
+                  _oon_main_camera)
+{
+//cerr << "DBG> _oon_view_and_cam_container: _oon_main_view.camera ptr: "<<&_oon_main_view.camera()<<"\n";
+}
+}
+
+//============================================================================
+OONApp::OONApp(int argc, char** argv)
+	: FUCpp_CameraViewPack()
+	, SimApp(argc, argv, oon_main_view())
+	, appcfg(cfg, args) //!! appcfg(SimApp::syscfg)
+{
+//!! This shouldn't be needed, the engine should take care of it:
+//!! And the view resize should also implicitly take care of any camera adjustments, too, so
+//!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
+//!!	oon_main_view().resize((float)backend.hci.window().width,
+//!!	                         (float)backend.hci.window().height);
+	oon_main_camera().resize((float)backend.hci.window().width,
+	                         (float)backend.hci.window().height);
+}
 
 //----------------------------------------------------------------------------
-void OON::init() // override
+void OONApp::init() // override
 {
 	//!! Currently, the data watcher HUD setup depends directly on the player objects
 	//!! that have just been created above, so the UI init CAN'T happen before that...:
@@ -148,7 +178,7 @@ void OON::init() // override
 
 
 //----------------------------------------------------------------------------
-void OON::done() // override
+void OONApp::done() // override
 {
 //	cerr << __FUNCTION__ << ": Put any 'onExit' tasks (like saving the last state) here!...\n";
 
@@ -161,13 +191,13 @@ void OON::done() // override
 
 //----------------------------------------------------------------------------
 #ifndef DISABLE_HUD
-void OON::toggle_huds()  { _show_huds = !_show_huds; }
-bool OON::huds_active()  { return _show_huds; }
-void OON::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }
+void OONApp::toggle_huds()  { _show_huds = !_show_huds; }
+bool OONApp::huds_active()  { return _show_huds; }
+void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }
 #endif
 
 //----------------------------------------------------------------------------
-void OON::_setup_UI()
+void OONApp::_setup_UI()
 {
 	using namespace sfw;
 	// The SFW GUI is used as a translucent overlay, so an alpha-enabled bgColor
@@ -194,7 +224,7 @@ void OON::_setup_UI()
 	auto	view_form = gui_main_hbox->add(new Form);
 		view_form->add("Pan follow object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
-		view_form->add("Grid lines", new CheckBox([&](auto* w){main_camera.cfg.gridlines = w->get();}, main_camera.cfg.gridlines));
+		view_form->add("Grid lines", new CheckBox([&](auto* w){oon_main_camera().cfg.gridlines = w->get();}, oon_main_camera().cfg.gridlines));
 
 	// Physics tweaking...
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
@@ -300,14 +330,14 @@ void OON::_setup_UI()
 	// View
 	ui_gebi(ViewData)
 		<< "MAIN CAMERA:"
-		<< "\n  X: " << &main_camera.offset.x << ", Y: " << &main_camera.offset.y
-		<< "\n  ZOOM: " << &main_camera.scale
-		<< "\n  focus pt: "<< &main_camera.focus_offset.x << ", " << &main_camera.focus_offset.y
+		<< "\n  X: " << &oon_main_camera().offset.x << ", Y: " << &oon_main_camera().offset.y
+		<< "\n  ZOOM: " << [&](){ return to_string(this->oon_main_camera().scale()); }
+		<< "\n  focus pt: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
 /*		<< "\nVIEWPORT:"
-		<< "\n_edge_x_min: "<< &main_camera._edge_x_min
-		<< "\n_edge_x_min: "<< &main_camera._edge_x_max
-		<< "\n_edge_y_min: "<< &main_camera._edge_y_min
-		<< "\n_edge_y_min: "<< &main_camera._edge_y_max
+		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_min
+		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_max
+		<< "\n_edge_y_min: "<< &oon_main_camera()._edge_y_min
+		<< "\n_edge_y_min: "<< &oon_main_camera()._edge_y_max
 */	;
 
 //	???_hud << "\nPress ? for help...";
@@ -448,7 +478,7 @@ void OON::_setup_UI()
 }
 
 //----------------------------------------------------------------------------
-void OON::onResize(unsigned width, unsigned height) //override
+void OONApp::onResize(unsigned width, unsigned height) //override
 //!!Sink this into the UI!
 {
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
@@ -466,7 +496,7 @@ void OON::onResize(unsigned width, unsigned height) //override
 
 
 //----------------------------------------------------------------------------
-unsigned OON::add_player(World::Body&& obj) //override
+unsigned OONApp::add_player(World::Body&& obj) //override
 {
 	// These are the player modelling differences:
 	obj.add_thrusters();
@@ -478,13 +508,13 @@ unsigned OON::add_player(World::Body&& obj) //override
 		add_body(std::forward<World::Body>(obj));
 }
 
-void OON::remove_player(unsigned)
+void OONApp::remove_player(unsigned)
 {
 }
 
 
 //----------------------------------------------------------------------------
-void OON::poll_controls() //override
+void OONApp::poll_controls() //override
 {
 	controls.update(); // Refreshing polled states now, nothing else
 		//!! Should be moved to the event loop, but only after the
@@ -493,7 +523,7 @@ void OON::poll_controls() //override
 }
 
 //----------------------------------------------------------------------------
-bool OON::perform_control_actions() //override
+bool OONApp::perform_control_actions() //override
 {
 	bool action = false;
 
@@ -559,16 +589,16 @@ cerr << "- Shield depleted! Recharging for " << -shield_active << " frames...\n"
 }
 
 //----------------------------------------------------------------------------
-void OON::up_thruster_start()    { entity(player_entity_ndx()).thrust_up.thrust_level(appcfg.player_thrust_force); }
-void OON::down_thruster_start()  { entity(player_entity_ndx()).thrust_down.thrust_level(appcfg.player_thrust_force); }
-void OON::left_thruster_start()  { entity(player_entity_ndx()).thrust_left.thrust_level(appcfg.player_thrust_force); }
-void OON::right_thruster_start() { entity(player_entity_ndx()).thrust_right.thrust_level(appcfg.player_thrust_force); }
-void OON::up_thruster_stop()     { entity(player_entity_ndx()).thrust_up.thrust_level(0); }
-void OON::down_thruster_stop()   { entity(player_entity_ndx()).thrust_down.thrust_level(0); }
-void OON::left_thruster_stop()   { entity(player_entity_ndx()).thrust_left.thrust_level(0); }
-void OON::right_thruster_stop()  { entity(player_entity_ndx()).thrust_right.thrust_level(0); }
+void OONApp::up_thruster_start()    { entity(player_entity_ndx()).thrust_up.thrust_level(appcfg.player_thrust_force); }
+void OONApp::down_thruster_start()  { entity(player_entity_ndx()).thrust_down.thrust_level(appcfg.player_thrust_force); }
+void OONApp::left_thruster_start()  { entity(player_entity_ndx()).thrust_left.thrust_level(appcfg.player_thrust_force); }
+void OONApp::right_thruster_start() { entity(player_entity_ndx()).thrust_right.thrust_level(appcfg.player_thrust_force); }
+void OONApp::up_thruster_stop()     { entity(player_entity_ndx()).thrust_up.thrust_level(0); }
+void OONApp::down_thruster_stop()   { entity(player_entity_ndx()).thrust_down.thrust_level(0); }
+void OONApp::left_thruster_stop()   { entity(player_entity_ndx()).thrust_left.thrust_level(0); }
+void OONApp::right_thruster_stop()  { entity(player_entity_ndx()).thrust_right.thrust_level(0); }
 
-bool OON::_ctrl_update_thrusters()
+bool OONApp::_ctrl_update_thrusters()
 {
 	auto drv = false;
 	if (controls.ThrustUp)    { drv = true;    up_thruster_start(); } else    up_thruster_stop();
@@ -579,11 +609,11 @@ bool OON::_ctrl_update_thrusters()
 }
 
 //----------------------------------------------------------------------------
-void OON::pan_reset()
+void OONApp::pan_reset()
 {
 	_pan_step_x = _pan_step_y = 0;
 
-	main_camera.center_to({0, 0});
+	oon_main_camera().center_to({0, 0});
 
 	// Since the player entity may have moved out of view, stop focusing on it:
 	//!!
@@ -593,70 +623,71 @@ void OON::pan_reset()
 	focused_entity_ndx = ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
-void OON::pan(Vector2f delta) { main_camera.pan_x(delta.x); main_camera.pan_y(delta.y); }
-void OON::pan_x(float delta)  { main_camera.pan_x(delta); }
-void OON::pan_y(float delta)  { main_camera.pan_y(delta); }
+void OONApp::pan(Vector2f delta) { oon_main_camera().pan_x(delta.x); oon_main_camera().pan_y(delta.y); }
+void OONApp::pan_x(float delta)  { oon_main_camera().pan_x(delta); }
+void OONApp::pan_y(float delta)  { oon_main_camera().pan_y(delta); }
 
-void OON::center_to_entity(size_t id)
+void OONApp::center_entity(size_t id)
 {
-	main_camera.center_to(entity(id).p);
-	main_camera.focus_to({0, 0});
+	oon_main_camera().center_to(entity(id).p);
+	oon_main_camera().focus_to({0, 0});
+//!!??	oon_main_camera().focus_to(entity(id).p);
 }
 
-void OON::center_to_player(unsigned player_id)
+void OONApp::center_player(unsigned player_id)
 {
 	assert(player_id == 1);
-	center_to_entity(player_entity_ndx(player_id));
+	center_entity(player_entity_ndx(player_id));
 }
 
-void OON::follow_entity(size_t id)
+void OONApp::follow_entity(size_t id)
 {
-	auto vpos = main_camera.world_to_view_coord(entity(id).p);
-	main_camera.pan(vpos - main_camera.focus_offset);
+	auto vpos = oon_main_camera().world_to_view_coord(entity(id).p);
+	oon_main_camera().pan(vpos - oon_main_camera().focus_offset);
 }
 
-void OON::follow_player(unsigned player_id)
+void OONApp::follow_player(unsigned player_id)
 {
 	assert(player_id == 1);
 	follow_entity(player_entity_ndx(player_id));
 }
 
 
-void OON::zoom_reset(float factor/* = 0*/)
+void OONApp::zoom_reset(float factor/* = 0*/)
 {
-	// Can't just call main_camera.zoom(...), because we need to trigger our zoom_hook!
-	if (factor) main_camera.cfg.base_scale *= factor;
-	zoom(main_camera.cfg.base_scale / main_camera.scale);
+	// Can't just call oon_main_camera().zoom(...), because we need to trigger our zoom_hook!
+	if (factor) oon_main_camera().cfg.base_scale *= factor;
+	zoom(oon_main_camera().cfg.base_scale / oon_main_camera().scale());
 }
 
-void OON::zoom(float factor)
+void OONApp::zoom(float factor)
 {
 	//!!pre_zoom_hook(factor);
-	main_camera.zoom(factor);
+	oon_main_camera().zoom(factor);
 	resize_shapes(factor);
 }
-// These can't call main_camera.zoom_in/out directly either, because we need to trigger our zoom_hook!...
-void OON::zoom_in (float amount) { zoom(1.f + amount); }
-void OON::zoom_out(float amount) { zoom(1.f / (1.f + amount)); }
+// These can't call oon_main_camera().zoom_in/out directly either, because we need to trigger our zoom_hook!...
+void OONApp::zoom_in (float amount) { zoom(1.f + amount); }
+void OONApp::zoom_out(float amount) { zoom(1.f / (1.f + amount)); }
 
 
 /*!!
-void OON::zoom(float factor)
+void OONApp::zoom(float factor)
 {
-//auto viewpos = main_camera.world_to_view_coord(player_entity().p);
-//cerr << "- focus vs player diff: " << (viewpos - main_camera.focus_offset).x << ", " << (viewpos - main_camera.focus_offset).y << '\n';
+//auto viewpos = oon_main_camera().world_to_view_coord(player_entity().p);
+//cerr << "- focus vs player diff: " << (viewpos - oon_main_camera().focus_offset).x << ", " << (viewpos - oon_main_camera().focus_offset).y << '\n';
 
 //!!pre_zoom_hook(factor);
 	// Compensate for zoom displacement when the player object is not centered
-	auto v = main_camera.world_to_view_coord(main_camera.offset);
-	pan((main_camera.focus_offset - v) * main_camera.zoom/factor);
-//	auto viewpos = main_camera.focus_offset + main_camera.offset;
+	auto v = oon_main_camera().world_to_view_coord(oon_main_camera().offset);
+	pan((oon_main_camera().focus_offset - v) * oon_main_camera().zoom/factor);
+//	auto viewpos = oon_main_camera().focus_offset + oon_main_camera().offset;
 //	pan(viewpos - viewpos/factor);
 
-//	auto vpos = main_camera.world_to_view_coord(main_camera.offset);
-//	pan(main_camera.focus_offset/factor);
+//	auto vpos = oon_main_camera().world_to_view_coord(oon_main_camera().offset);
+//	pan(oon_main_camera().focus_offset/factor);
 
-	main_camera.zoom *= factor;
+	oon_main_camera().zoom *= factor;
 
 	resize_shapes(factor);
 }
@@ -667,12 +698,12 @@ void OON_sfml::_adjust_pan_after_zoom(float factor)
 	// If the new zoom level would put the player object out of view, reposition the view so that
 	// it would keep being visible; also roughly at the same view-offset as before!
 
-	auto visible_R = player_entity().r * main_camera.zoom; //!! Not a terribly robust method to get that size...
+	auto visible_R = player_entity().r * oon_main_camera().zoom; //!! Not a terribly robust method to get that size...
 
 	if (abs(vpos.x) > cfg.VIEWPORT_WIDTH/2  - visible_R ||
 	    abs(vpos.y) > cfg.VIEWPORT_HEIGHT/2 - visible_R)
 	{
-cerr << "R-viewsize: " << main_camera.zoom * plm->r
+cerr << "R-viewsize: " << oon_main_camera().zoom * plm->r
 	 << " abs(vpos.x): " << abs(vpos.x) << ", "
      << " abs(vpos.u): " << abs(vpos.y) << endl;
 
@@ -683,7 +714,7 @@ cerr << "R-viewsize: " << main_camera.zoom * plm->r
 }
 !!*/
 
-bool OON::scroll_locked()
+bool OONApp::scroll_locked()
 {
 	return controls.PanLock || controls.PanFollow
 		|| sfw::getWidget<sfw::CheckBox>("  - forced follow")->get();
@@ -694,7 +725,7 @@ bool OON::scroll_locked()
 
 
 //----------------------------------------------------------------------------
-bool OON::view_control(float mousewheel_delta) //!!override
+bool OONApp::view_control(float mousewheel_delta) //!!override
 {
 	auto action = false;
 	action |= pan_control();
@@ -703,7 +734,7 @@ bool OON::view_control(float mousewheel_delta) //!!override
 }
 
 //----------------------------------------------------------------------------
-bool OON::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
+bool OONApp::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 //!! ViewControlMode support is not implemented here at all; see zoom_control()!
 {
 	//
@@ -739,8 +770,8 @@ bool OON::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 
 	// Do the actual panning:
 	if (scroll_locked()) { // Allow adjusting the pan position while follow-locked (with Shift, Scroll Lock etc.)
-		if (_pan_step_x) main_camera.move_focus_x(- _pan_step_x * fps_factor);
-		if (_pan_step_y) main_camera.move_focus_y(- _pan_step_y * fps_factor);
+		if (_pan_step_x) oon_main_camera().move_focus_x(- _pan_step_x * fps_factor);
+		if (_pan_step_y) oon_main_camera().move_focus_y(- _pan_step_y * fps_factor);
 	} else {
 		if (_pan_step_x) pan_x(_pan_step_x * fps_factor);
 		if (_pan_step_y) pan_y(_pan_step_y * fps_factor);
@@ -750,7 +781,7 @@ bool OON::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 }
 
 //----------------------------------------------------------------------------
-bool OON::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewheel_delta) //!!override
+bool OONApp::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewheel_delta) //!!override
 //!! ViewControlMode is not actually used, as autofollow just emulates a mousewheel action directly! :-o
 {
 	// Note: the mouse-wheel case needs no calibration, as it's triggered
@@ -794,20 +825,20 @@ bool OON::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewheel_d
 
 //----------------------------------------------------------------------------
 //!!Move chores like this to the Szim API!
-void OON::toggle_muting() { backend.audio.toggle_audio(); }
-void OON::toggle_music() { backend.audio.toggle_music(); }
-void OON::toggle_sound_fx() { backend.audio.toggle_sounds(); }
+void OONApp::toggle_muting() { backend.audio.toggle_audio(); }
+void OONApp::toggle_music() { backend.audio.toggle_music(); }
+void OONApp::toggle_sound_fx() { backend.audio.toggle_sounds(); }
 
 
 //----------------------------------------------------------------------------
-void OON::interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...)
+void OONApp::interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...)
 {w, event, obj1, obj2;
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
 }
 
 //----------------------------------------------------------------------------
-bool OON::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
+bool OONApp::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 {w;
 	if (obj1->is_player() || obj2->is_player()) {
 		backend.audio.play_sound(snd_clack);
@@ -825,13 +856,13 @@ bool OON::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
 
 
 //----------------------------------------------------------------------------
-void OON::add_random_bodies_near(size_t base_ndx, size_t n)
+void OONApp::add_random_bodies_near(size_t base_ndx, size_t n)
 {
 	while (n--) add_random_body_near(base_ndx);
 }
 
 //----------------------------------------------------------------------------
-void OON::remove_random_bodies(size_t n/* = -1*/)
+void OONApp::remove_random_bodies(size_t n/* = -1*/)
 {
 	if (!n) return;
 
@@ -843,14 +874,14 @@ void OON::remove_random_bodies(size_t n/* = -1*/)
 
 
 //----------------------------------------------------------------------------
-size_t OON::add_body(World::Body&& obj) //virtual
+size_t OONApp::add_body(World::Body&& obj) //virtual
 // Add new entity (moved) from a template (temporary) obj.
 {
 	return world().add_body(std::forward<decltype(obj)>(obj));
 }
 
 //----------------------------------------------------------------------------
-size_t OON::add_random_body_near(size_t base_ndx)
+size_t OONApp::add_random_body_near(size_t base_ndx)
 //!! This is still a version of (mass-ignoring) spawn()!...
 //!! Callers may not know, but this depends on the properties of the player body!
 //!! See also spawn() (that calls this), which is at least is explicit about it!
@@ -878,7 +909,7 @@ size_t OON::add_random_body_near(size_t base_ndx)
 }
 
 //----------------------------------------------------------------------------
-void OON::remove_body(size_t ndx) //virtual
+void OONApp::remove_body(size_t ndx) //virtual
 {
 	world().remove_body(ndx);
 
@@ -901,7 +932,7 @@ cerr << "- WARNING: The followed object has ceased to exist...\n";
 }
 
 //----------------------------------------------------------------------------
-void OON::remove_random_body()
+void OONApp::remove_random_body()
 {
 	auto entities = entity_count();
 	if (entities <= 1) { // Leave the player "superglobe", so not just checking for empty()!
@@ -917,7 +948,7 @@ void OON::remove_random_body()
 }
 
 //----------------------------------------------------------------------------
-void OON::spawn(size_t parent_ndx, size_t n)
+void OONApp::spawn(size_t parent_ndx, size_t n)
 //!! Should not ignore mass!...
 //!!??Should gradually become a method of the object itself?
 {
@@ -941,7 +972,7 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 
 //----------------------------------------------------------------------------
 //!! Move to SimApp!
-void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t n)
+void OONApp::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t n)
 {
 	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
 
@@ -1007,7 +1038,7 @@ void OON::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t 
 
 //----------------------------------------------------------------------------
 //!! An exhaust jet should be created for each thruster!
-void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ size_t n/* = ...*/)
+void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ size_t n/* = ...*/)
 {
 	static size_t   add_particles = appcfg.get("sim/exhaust_particles_add", 0);
 	static float    exhaust_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
@@ -1067,7 +1098,7 @@ void OON::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,
 
 
 //----------------------------------------------------------------------------
-void OON::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ size_t n/* = ...*/)
+void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ size_t n/* = ...*/)
 {
 	static float    particle_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
 	static uint32_t color = appcfg.get("sim/shield_color", 0xffff99);
@@ -1096,7 +1127,7 @@ void OON::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ s
 
 
 //----------------------------------------------------------------------------
-void OON::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
+void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 {
 	static float chemtrail_v_factor      = appcfg.get("sim/chemtrail_v_factor", 0.1f);
 	static float chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
@@ -1142,3 +1173,5 @@ void OON::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 	emitter.recalc();
 	resize_shape(emitter_ndx, emitter.r / emitter_old_r);
 }
+
+} // namespace OON

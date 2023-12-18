@@ -1,7 +1,7 @@
-#ifndef _RENDER_SFML_HPP_
-#define _RENDER_SFML_HPP_
+#ifndef _8467T9B84C5XC9678456Y2897WB597TY6793_
+#define _8467T9B84C5XC9678456Y2897WB597TY6793_
 
-//!!#include "Engine/Renderer.hpp"
+#include "Engine/View/Renderer.hpp"
 
 #include "Model/World.hpp"
 
@@ -12,24 +12,16 @@
 #include <memory> // shared_ptr
 
 
-namespace Szim {
-class SimApp; //!! Sigh... Should really only depend on the generic app class,
-                //!! but then parallell polymorphic derivation (of both the app
+namespace Szim { class SimApp; }
+		//!! Should only depend on the generic app class,
+                //!! but the parallel polymorphic derivation (of both the app
                 //!! and the renderer) is a nightmare, involving also a Platform
 		//!! abstraction (or at least a Window -> Window_SFML wrapper)...
-}
-namespace View {
+
+namespace OON {
 
 //----------------------------------------------------------------------------
-class Renderer
-{
-public:
-	virtual void reset() = 0;
-};
-
-
-//----------------------------------------------------------------------------
-class Renderer_SFML : public Renderer// "View"
+class Renderer_SFML : public Szim::View::Renderer
 {
 public:
 	constexpr static auto ALPHA_ACTIVE = 255;
@@ -78,5 +70,6 @@ protected:
 
 }; // class Renderer_SFML
 
-} // namespace View
-#endif // _RENDER_SFML_HPP_
+} // namespace OON
+
+#endif // _8467T9B84C5XC9678456Y2897WB597TY6793_

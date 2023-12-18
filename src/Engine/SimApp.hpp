@@ -14,10 +14,9 @@
                       //!! (mostly?) client .cpps that use should include it individually!)
 //!!#include "UI/HUD.hpp"
 #include "UI/Input.hpp"
-
 #include "Model/World.hpp"
-#include "View/OrthoZoomCamera.hpp"
-#include "View/ScreenView.hpp"
+//#include "View/ScreenView.hpp"
+namespace Szim::View { class ScreenView; }
 
 #include "sz/unilang.hh" // ON/OFF, AUTO_CONST, OUT
 #include "sz/counter.hh"
@@ -86,8 +85,14 @@ public:
 
 	      Model::World& world();
 	const Model::World& world() const;
-	const Model::World& const_world(); // Explicit const World& of non-const SimApp
+	const Model::World& const_world(); // Explicit const World& of non-const SimApp (to spare a cast)
 	void set_world(const Model::World&);
+
+	// Visualizing, rendering...
+	//!! Tentative! This "main_view" name is just a placeholder/reminder
+	//!! that there can be any kinds of (multiple) views!
+	      View::ScreenView& main_view()       { return _main_view; }
+	const View::ScreenView& main_view() const { return _main_view; }
 
 	// Session save/load...
 	virtual bool save_snapshot(const char* filename);
@@ -118,13 +123,9 @@ public:
 
 //!!	bool entity_at(model::Math::Vector2f world_pos, size_t* entity_id OUT) const;
 //!!	bool entity_at(model::Math::Vector3f world_pos, size_t* entity_id OUT) const;
-//!!	bool entity_at_wiewpos(View::Vector2f view_pos, size_t* entity_id OUT) const;
-	bool entity_at_wiewpos(float x, float y, size_t* entity_id OUT) const;
-	bool entity_at_wiewpos(float x, float y, Entity** entity OUT);
-//!!	bool entity_at_wiewpos(float x, float y, Entity** entity OUT) const;
-//!!??	bool entity_at_wiewpos(unsigned x, unsigned y, size_t* entity_id OUT) const;
-//!!?? For SFML mouse coords:
-//!!??	bool entity_at_wiewpos(int x, int y, size_t* entity_id OUT) const;
+//!!	bool entity_at_viewpos(View::Vector2f view_pos, size_t* entity_id OUT) const;
+	virtual bool entity_at_viewpos(float x, float y, size_t* entity_id OUT) const;
+	virtual bool is_entity_at_viewpos(size_t entity_id, float x, float y) const;
 
 	virtual unsigned add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
 	                //!! (This can't really be done in C++ properly, without RTTI etc.
@@ -157,14 +158,15 @@ protected:
 	virtual void event_loop() = 0;
 	virtual void update_thread_main_loop() = 0;
 	virtual void updates_for_next_frame() = 0;
-	virtual void draw() = 0;
 	virtual void onResize(unsigned /*width*/, unsigned /*height*/) {}
+	// Rendering... (See also main_view()!)
+	virtual void draw() = 0;
 
 //----------------------------------------------------------------------------
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	SimApp(int argc, char** argv);
+	SimApp(int argc, char** argv, View::ScreenView& main_view);
 	virtual ~SimApp();
 
 	SimApp(const SimApp&) = delete;
@@ -195,11 +197,8 @@ protected:
 
 private: // <- Forcing the use of accessors
 	Model::World _world; // See the *world() accessors!
-public://!! Alas, the renderer still accesses the camera directly:
-       //!! Oh, but move the renderer here, and the OrthoZoomCamera should be part of that, too, BTW!
-       //!! (But the renderer is both SFML *and* app dependent yet!... :-/ )
-	View::OrthoZoomCamera main_camera;
-	View::ScreenView main_view;
+
+	View::ScreenView& _main_view;
 
 protected:
 	//--------------------------------------------------------------------

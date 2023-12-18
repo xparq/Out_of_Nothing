@@ -3,7 +3,7 @@
 
 #include "Model/Math/Vector2.hpp"
 
-namespace View {
+namespace Szim::View {
 
 // Camera image (view) coordinates (right-handed, like OpenGL):
 //
@@ -17,8 +17,15 @@ namespace View {
 
 class Camera
 {
+public:
+	virtual Math::Vector2f world_to_view_coord(Math::Vector2f wpos) const = 0;
+	virtual Math::Vector2f view_to_world_coord(Math::Vector2f vpos) const = 0;
+
+	virtual float scale() const { return 1; }
+
+	virtual ~Camera() = default;
 }; // class Camera
 
-} // namespace View
+} // namespace Szim::View
 
 #endif // _FNVNB807K8CD893IO3OIEWOIXMO9822894567B_

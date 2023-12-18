@@ -54,9 +54,11 @@ namespace sync {
 
 
 //============================================================================
+namespace OON {
+
 //----------------------------------------------------------------------------
 OON_sfml::OON_sfml(int argc, char** argv)
-	: OON(argc, argv)
+	: OONApp(argc, argv)
 #ifndef DISABLE_HUD
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(sfw::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
@@ -345,6 +347,10 @@ void OON_sfml::updates_for_next_frame()
 	// - Zoom
 
 	ui_gebi(ObjectData).active(focused_entity_ndx != ~0u && focused_entity_ndx < entity_count());
+//if (!ui_gebi(ObjectData).active()) {
+//cerr << "----- focused_entity_ndx: "<<focused_entity_ndx<<'\n';
+//}
+
 
 	auto _focus_locked_ = false;
 	if (scroll_locked()) {
@@ -358,12 +364,12 @@ void OON_sfml::updates_for_next_frame()
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
-			main_camera.focus_offset = main_camera.world_to_view_coord(entity(focused_entity_ndx).p);
-			if (main_camera.confine(entity(focused_entity_ndx).p,
-			    autofollow_margin + autofollow_margin/2 * main_camera.scale/Szim::SimAppConfig::DEFAULT_ZOOM,
+			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(entity(focused_entity_ndx).p);
+			if (oon_main_camera().confine(entity(focused_entity_ndx).p,
+			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/Szim::SimAppConfig::DEFAULT_ZOOM,
 			    autofollow_throwback)) { // true = drifted off
 				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...
-//cerr << "main_camera.scale: "<<main_camera.scale<<", DEFAULT_ZOOM: "<<main_camera.scale<<", ratio: "<<main_camera.scale / Szim::SimAppConfig::DEFAULT_ZOOM<<'\n';
+//cerr << "oon_main_camera().scale(): "<<oon_main_camera().scale()<<", DEFAULT_ZOOM: "<<oon_main_camera().scale()<<", ratio: "<<oon_main_camera().scale() / Szim::SimAppConfig::DEFAULT_ZOOM<<'\n';
 			}
 		}
 	}
@@ -505,12 +511,16 @@ try {
 				case sf::Keyboard::Home:
 					if (keystate(CTRL)) {
 						//!! These should be "upgraded" to "Camera/view reset"!
-						//!! main_camera.reset() already exists:
-						main_camera.reset(); //!! ...but is not enough. :-/
+						//!! oon_main_camera().reset() already exists:
+						oon_main_camera().reset(); //!! ...but is not enough. :-/
 						pan_reset();         //!! And these also overlap the camera reset...
 						zoom_reset();        //!! SO, RECONCILE THEM!
+					} else if (keystate(SHIFT)) {
+						if (focused_entity_ndx != ~0u)
+							center_entity(focused_entity_ndx);
 					} else {
-						center_to_player();
+						center_player();
+						focused_entity_ndx = player_entity_ndx();
 					}
 					break;
 
@@ -580,7 +590,7 @@ try {
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
 //cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
 
-//!!??auto vpos = main_camera.screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o
+//!!??auto vpos = oon_main_camera().screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o
 //!!?? Where did this x,y=={-520,-391} come from?! :-ooo
 cerr << "???? x = " << x << ", y = " << y << " <-- WHAT THE HELL ARE THESE??? :-ooo\n";
 
@@ -589,10 +599,10 @@ cerr << "???? x = " << x << ", y = " << y << " <-- WHAT THE HELL ARE THESE??? :-
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				Math::Vector2f vpos = main_camera.screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
-				main_camera.focus_offset = vpos;
+				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
+				oon_main_camera().focus_offset = vpos;
 				size_t clicked_entity_id = ~0u;
-				if (entity_at_wiewpos(vpos.x, vpos.y, &clicked_entity_id)) {
+				if (entity_at_viewpos(vpos.x, vpos.y, &clicked_entity_id)) {
 cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
 				} else {
 cerr << "- Nothing there, focusing on the deep void...\n";
@@ -679,7 +689,7 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 //----------------------------------------------------------------------------
 size_t OON_sfml::add_body(World::Body&& obj) //override
 {
-	auto ndx = OON::add_body(std::forward<decltype(obj)>(obj));
+	auto ndx = OONApp::add_body(std::forward<decltype(obj)>(obj));
 	// Pre-cache shapes for rendering... (!! Likely pointless, but this is just what I started with...)
 	renderer.create_cached_body_shape(*this, obj, ndx);
 	return ndx;
@@ -688,7 +698,7 @@ size_t OON_sfml::add_body(World::Body&& obj) //override
 //----------------------------------------------------------------------------
 void OON_sfml::remove_body(size_t ndx) //override
 {
-	OON::remove_body(ndx);
+	OONApp::remove_body(ndx);
 	renderer.delete_cached_body_shape(*this, ndx);
 }
 
@@ -735,3 +745,5 @@ bool OON_sfml::load_snapshot(const char* fname) //override
 //cerr << "Game state restored from \"" << fname << "\".\n";
 	return true;
 }
+
+} // namespace OON

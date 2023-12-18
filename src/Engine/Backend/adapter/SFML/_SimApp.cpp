@@ -41,7 +41,7 @@ using namespace Szim;
 //      the GUI init there, too, for good measure...
 //      (The ctor still has work left to do, so its body is not empty though.)
 // 
-SimApp::SimApp(int argc, char** argv)
+SimApp::SimApp(int argc, char** argv, View::ScreenView& main_view)
 	: args(argc, argv, {
 		// Long options with 1 param. don't need to be defined:
 		//{"moons", 1}, // number of moons to start with
@@ -82,13 +82,8 @@ SimApp::SimApp(int argc, char** argv)
 		.fontFile = cfg.default_font_file.c_str(),
 		}, false // Don't manage the window
 	  )
+	, _main_view(main_view)
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(backend.hci.window())}
-	, main_camera({.width  = Szim::SimAppConfig::VIEWPORT_WIDTH, //!!?? Should come from the backend!
-	               .height = Szim::SimAppConfig::VIEWPORT_HEIGHT,//!! backend.hci.window().height
-	               .base_scale = SimAppConfig::DEFAULT_ZOOM})
-	, main_view({.width = Szim::SimAppConfig::VIEWPORT_WIDTH,
-	             .height = Szim::SimAppConfig::VIEWPORT_HEIGHT},
-		     main_camera)
 	, session(*this/*!!, args("session")!!*/)
 {
 /*!! See instead the sad "functional" approach above in the member init list:

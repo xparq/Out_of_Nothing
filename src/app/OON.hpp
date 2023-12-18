@@ -3,14 +3,31 @@
 
 #include "OONConfig.hpp"
 #include "OONControls.hpp"
+#include "OONMainDisplay.hpp"
 
 #include "Engine/SimApp.hpp"
+#include "Engine/View/OrthoZoomCamera.hpp"
+
 namespace UI { class HUD; } //!!...
 
 #include <cassert>
 
+namespace OON {
+
 //============================================================================
-class OON : public Szim::SimApp
+
+namespace _internal {
+struct FUCpp_CameraViewPack {
+	struct _oon_view_and_cam_container {
+		Szim::View::OrthoZoomCamera _oon_main_camera;
+		OON::OONMainDisplay         _oon_main_view;
+		_oon_view_and_cam_container();
+	} _oon_view_and_cam;
+};
+}
+
+//----------------------------------------------------------------------------
+class OONApp : private _internal::FUCpp_CameraViewPack, public Szim::SimApp
 {
 //----------------------------------------------------------------------------
 // Config/Setup...
@@ -77,8 +94,8 @@ public:
 	bool pan_control(ViewControlMode mode = UserKeys);                              //!!?? should be an override already?
 	bool zoom_control(ViewControlMode mode = UserKeys, float mousewheel_delta = 0); //!!?? should be an override already?
 
-	void center_to_entity(size_t id);
-	void center_to_player(unsigned player_id = 1);
+	void center_entity(size_t id);
+	void center_player(unsigned player_id = 1);
 	void follow_entity(size_t id);
 	void follow_player(unsigned player_id = 1);
 
@@ -161,8 +178,8 @@ protected:
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	OON(int argc, char** argv);
-	OON(const OON&) = delete;
+	OONApp(int argc, char** argv);
+	OONApp(const OONApp&) = delete;
 
 //----------------------------------------------------------------------------
 // Data / Internals...
@@ -170,6 +187,18 @@ public:
 protected:
 	OONConfig appcfg; // See also syscfg from this->SimApp
 	OONController controls;
+
+	auto&       oon_main_camera()       { return _oon_view_and_cam._oon_main_camera; }
+	const auto& oon_main_camera() const { return _oon_view_and_cam._oon_main_camera; }
+//!! JUST main_view() COLLIDES WITH SimApp's:
+	      OONMainDisplay& oon_main_view()       { return _oon_view_and_cam._oon_main_view; }
+	const OONMainDisplay& oon_main_view() const { return _oon_view_and_cam._oon_main_view; }
+/*!!
+	Szim::View::OrthoZoomCamera oon_main_camera;
+	      auto& main_camera()       { return oon_main_camera; }
+	const auto& main_camera() const { return oon_main_camera; }
+	OON::OONMainDisplay oon_main_view;
+!!*/
 
 	bool  chemtrail_releasing = false;
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;
@@ -196,5 +225,7 @@ protected:
 
 	size_t focused_entity_ndx = 0; // The player entity (globe_ndx) by default
 };
+
+} // namespace OON
 
 #endif // _OSE8975BQ7C785C639406C824X782C6YNB5_

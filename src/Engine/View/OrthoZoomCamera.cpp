@@ -5,7 +5,7 @@
 #include <iostream> //!! DEBUG
 	using std::cerr;
 
-namespace View {
+namespace Szim::View {
 
 OrthoZoomCamera::OrthoZoomCamera(Config cfg) :
 	cfg(cfg)
@@ -20,7 +20,7 @@ void OrthoZoomCamera::reset(const Config* recfg/* = nullptr*/)
 //std::cerr << "DBG> "<<__FUNCTION__<<": width="<<cfg.width<<", height="<<cfg.height<<"\n";
 
 	// Reset all the derived state, too...
-	scale = cfg.base_scale;
+	_scale = cfg.base_scale;
 	offset = {0, 0};
 	focus_offset = {0, 0};
 
@@ -66,7 +66,7 @@ bool OrthoZoomCamera::confine(Math::Vector2f world_pos, float margin, float thro
 
 void OrthoZoomCamera::zoom(float change_ratio)
 {
-	scale *= change_ratio;
+	_scale *= change_ratio;
 
 	// Compensate for zoom displacement when the player object is not centered
 	pan((focus_offset + offset) * (change_ratio - 1));
@@ -98,5 +98,4 @@ Math::Vector2f OrthoZoomCamera::screen_to_view_coord(int x, int y) const
 //	return v;
 }
 
-
-} // namespace View
+} // namespace Szim::View

@@ -3,17 +3,19 @@
 
 #include "OON.hpp"
 
-#include "View/render_sfml.hpp"//!!...
-//!!#include <SFML/Window/Event.hpp>
+#include "OONRender_sfml.hpp"
+
 #include "sfw/GUI.hpp"
 #include "UI/hud_sfml.hpp"
 
 #include <utility> // std::unreachable
 
+namespace OON {
+
 //============================================================================
-class OON_sfml : public OON
+class OON_sfml : public OONApp
 {
-friend class View::Renderer_SFML;
+friend class Renderer_SFML;
 
 //------------------------------------------------------------------------
 // API Op. Overrides...
@@ -58,15 +60,18 @@ protected:
 // C++ mechanics...
 //------------------------------------------------------------------------
 public:
-//!!	using OON::OON;
 	OON_sfml(int argc, char** argv);
 	OON_sfml(const OON_sfml&) = delete;
+
+	Szim::View::ScreenView& getView()     { return oon_main_view(); }
+	Szim::View::Renderer&   getRenderer() { return renderer; }
 
 //------------------------------------------------------------------------
 // Data / Internals...
 //------------------------------------------------------------------------
 protected:
-	View::Renderer_SFML renderer;
+	OON::Renderer_SFML renderer;
+
 #ifndef DISABLE_HUD
 //!!	UI::HUD& ...;
 	UI::HUD_SFML timing_hud;
@@ -88,5 +93,7 @@ protected:
 	}}
 #endif
 };
+
+} // namespace OON
 
 #endif // _WILIRTHG029828Y9VCY37829045YGCM4EDF_

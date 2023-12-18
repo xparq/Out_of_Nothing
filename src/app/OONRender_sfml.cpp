@@ -1,4 +1,8 @@
-#include "View/render_sfml.hpp"
+#include "OONRender_sfml.hpp"
+
+#include "Engine/View/OrthoZoomCamera.hpp"
+#include "Engine/View/ScreenView.hpp"
+
 #include "Engine/SimApp.hpp" //!!This stinks: should only use the Model,
                         //!!perhaps *some* of the _generic_ OON stuff,
                         //!!and either have or get (as params) any gfx infrastr. resources directly!
@@ -27,7 +31,7 @@
 
 using namespace Szim;
 
-namespace View {
+namespace OON {
 
 //----------------------------------------------------------------------------
 void Renderer_SFML::reset()
@@ -52,16 +56,23 @@ void Renderer_SFML::render(SimApp& game)
 
 		//!! The size and coords. of the screen view pane (UI viewport) are NOT directly
 		//!! related to the camera view, but would obviously be best if they were identical!...
-		auto vpos = game.main_camera.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
-		                                                                            //!! Mind the inverted camera & model y, too!
+
+	// a)
+		auto vpos = game.main_view().camera()
+			.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
+			                                                                   //!! Mind the inverted camera & model y, too!
+	// b)
+	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
+	//	auto vpos = oon_camera.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
+	//	                                                                                         //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
 		//!! -> #221, #445
 		trshape.setPosition({ vpos.x + float(game.backend.hci.window().width/2),
 			             -vpos.y + float(game.backend.hci.window().height/2)}); //!! "Standardize" on the view's centered origin instead!
 
-//cerr << "render(): shape.setPos -> x = " << game.main_camera.cfg.width /2 + (body->p.x - body->r) * game.main_camera.scale + game.main_camera.offset.x
-//			       << ", y = " << game.main_camera.cfg.height/2 + (body->p.y - body->r) * game.main_camera.scale + game.main_camera.offset.y <<'\n';
+//cerr << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x - body->r) * oon_camera.scale() + oon_camera.offset.x
+//			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y - body->r) * oon_camera.scale() + oon_camera.offset.y <<'\n';
 	}
 }
 
@@ -70,18 +81,17 @@ void Renderer_SFML::draw(SimApp& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	// Grid lines...
-	static sf::Color color{0x77777788};
-	if (game.main_camera.cfg.gridlines) {
-//		float min_x = -float(game.backend.hci.window().width)/2, max_x = float(game.backend.hci.window().width)/2;
-//		float min_y = -float(game.backend.hci.window().height)/2, max_y = float(game.backend.hci.window().height)/2;
+	static sf::Color hair_color{0x44444488};
+	if (const auto& camera = (const Szim::View::OrthoZoomCamera&) game.main_view().camera();
+	    camera.cfg.gridlines) {
 		float min_x = 0, max_x = float(game.backend.hci.window().width);
 		float min_y = 0, max_y = float(game.backend.hci.window().height);
-		auto [vx, vy] = game.main_camera.grid_offset();//!!?? + Math::Vector2f{max_x/2, max_y/2};
+		auto [vx, vy] = camera.grid_offset();//!!?? + Math::Vector2f{max_x/2, max_y/2};
 		vx += max_x/2;
 		vy = max_y/2 - vy;
 
-		sf::Vertex vhair[] = {{{vx, min_y}, color}, {{vx, max_y}, color}};
-		sf::Vertex hhair[] = {{{min_x, vy}, color}, {{max_x, vy}, color}};
+		sf::Vertex vhair[] = {{{vx, min_y}, hair_color}, {{vx, max_y}, hair_color}};
+		sf::Vertex hhair[] = {{{min_x, vy}, hair_color}, {{max_x, vy}, hair_color}};
 		SFML_WINDOW(game).draw(vhair, 2, sf::PrimitiveType::Lines);
 		SFML_WINDOW(game).draw(hhair, 2, sf::PrimitiveType::Lines);
 
@@ -134,9 +144,11 @@ void Renderer_SFML::create_cached_body_shape(const SimApp& game, const Model::Wo
 	if (body_ndx == (size_t)-1) body_ndx = game.world().bodies.size() - 1;
 //	assert(body_ndx == game.world().bodies.size() - 1);
 
+	const Szim::View::OrthoZoomCamera& oon_camera = (const Szim::View::OrthoZoomCamera&) game.main_view().camera();
+
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
-	auto shape = make_shared<sf::CircleShape>(body.r * game.main_camera.scale);
+	auto shape = make_shared<sf::CircleShape>(body.r * oon_camera.scale());
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
 
@@ -175,5 +187,4 @@ void Renderer_SFML::resize_object(size_t ndx, float factor)
 	shape.setScale(shape.getScale() * factor);
 }
 
-
-} // namespace View
+} // namespace OON
