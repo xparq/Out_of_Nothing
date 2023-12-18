@@ -58,6 +58,7 @@ size_t World::add_body(Body&& obj)
 
 void World::remove_body(size_t ndx)
 {
+IPROF_FUNC;
 	assert(bodies.size() > 0);
 	assert(ndx != (size_t)-1);
 	bodies.erase(bodies.begin() + ndx);

@@ -415,9 +415,9 @@ bool SimApp::entity_at_wiewpos(float x, float y, size_t* entity_id OUT) const
 		const auto& e = entity(i);
 		//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
 		//!! Actully, in OON_sfml it is -- make this "tunnellable"!...
-		auto ep = view.world_to_view_coord(e.p);
+		auto ep = main_camera.world_to_view_coord(e.p);
 		//!! ... = e.bounding_box();
-		auto box_R = e.r * view.scale; //!! Not a terribly robust method to get that size...
+		auto box_R = e.r * main_camera.scale; //!! Not a terribly robust method to get that size...
 		auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327
 //cerr << "---> ...checking click at ("<<x<<", "<<y<<") against entity #"<<i<<" at ("<<ep.x<<", "<<ep.y<<")...\n";
 
@@ -476,7 +476,7 @@ void SimApp::toggle_fullscreen()
 	auto height = backend.hci.window().height;
 
 	/// Sync the engine state to the new setup...
-	view.resize(float(width), float(height));
+	main_camera.resize(float(width), float(height));
 
 	// OK, notify the client:
 	onResize(backend.hci.window().width, backend.hci.window().height);

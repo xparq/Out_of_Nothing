@@ -194,7 +194,7 @@ void OON::_setup_UI()
 	auto	view_form = gui_main_hbox->add(new Form);
 		view_form->add("Pan follow object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
-		view_form->add("Grid lines", new CheckBox([&](auto* w){view.cfg.gridlines = w->get();}, view.cfg.gridlines));
+		view_form->add("Grid lines", new CheckBox([&](auto* w){main_camera.cfg.gridlines = w->get();}, main_camera.cfg.gridlines));
 
 	// Physics tweaking...
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
@@ -299,15 +299,15 @@ void OON::_setup_UI()
 	//------------------------------------------------------------------------
 	// View
 	ui_gebi(ViewData)
-		<< "CAMERA: "
-		<< "\n  X: " << &view.offset.x << ", Y: " << &view.offset.y
-		<< "\n  ZOOM: " << &view.scale
+		<< "MAIN CAMERA:"
+		<< "\n  X: " << &main_camera.offset.x << ", Y: " << &main_camera.offset.y
+		<< "\n  ZOOM: " << &main_camera.scale
+		<< "\n  focus pt: "<< &main_camera.focus_offset.x << ", " << &main_camera.focus_offset.y
 /*		<< "\nVIEWPORT:"
-		<< "\n_edge_x_min: "<< &view._edge_x_min
-		<< "\n_edge_x_min: "<< &view._edge_x_max
-		<< "\n_edge_y_min: "<< &view._edge_y_min
-		<< "\n_edge_y_min: "<< &view._edge_y_max
-		<< "\nfocus point: "<< &view.focus_offset.x << ", " << &view.focus_offset.y
+		<< "\n_edge_x_min: "<< &main_camera._edge_x_min
+		<< "\n_edge_x_min: "<< &main_camera._edge_x_max
+		<< "\n_edge_y_min: "<< &main_camera._edge_y_min
+		<< "\n_edge_y_min: "<< &main_camera._edge_y_max
 */	;
 
 //	???_hud << "\nPress ? for help...";
@@ -426,6 +426,7 @@ void OON::_setup_UI()
 		<< "LEFT MOUSE B. Set POI: obj. to follow, or just zoom center\n"
 		<< "              +SHIFT: bring player to mouse and/or follow obj.\n"
 		<< "HOME          Home in on (center) the player\n"
+		<< "SHIFT+HOME    Center (also non-player) followed object\n"
 		<< "CTRL+HOME     Reset view (to Home position & default zoom)\n"
 		<< "CTRL+ALT      Leave temp. trails (to trace trajectories)\n"
 		<< "F11           Toggle fullscreen\n"
@@ -582,7 +583,7 @@ void OON::pan_reset()
 {
 	_pan_step_x = _pan_step_y = 0;
 
-	view.offset = {0, 0};
+	main_camera.center_to({0, 0});
 
 	// Since the player entity may have moved out of view, stop focusing on it:
 	//!!
@@ -592,59 +593,49 @@ void OON::pan_reset()
 	focused_entity_ndx = ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
-void OON::pan(Vector2f delta) { view.pan_x(delta.x); view.pan_y(delta.y); }
-void OON::pan_x(float delta)  { view.pan_x(delta); }
-void OON::pan_y(float delta)  { view.pan_y(delta); }
+void OON::pan(Vector2f delta) { main_camera.pan_x(delta.x); main_camera.pan_y(delta.y); }
+void OON::pan_x(float delta)  { main_camera.pan_x(delta); }
+void OON::pan_y(float delta)  { main_camera.pan_y(delta); }
 
 void OON::center_to_entity(size_t id)
 {
-	view.offset = entity(id).p * view.scale;
-	view.focus_offset = {0, 0};
+	main_camera.center_to(entity(id).p);
+	main_camera.focus_to({0, 0});
 }
 
 void OON::center_to_player(unsigned player_id)
 {
 	assert(player_id == 1);
-	focused_entity_ndx = player_entity_ndx(player_id);
-	center_to_entity(focused_entity_ndx);
+	center_to_entity(player_entity_ndx(player_id));
 }
-
 
 void OON::follow_entity(size_t id)
 {
-	auto vpos = view.world_to_view_coord(entity(id).p);
-	view.offset += vpos - view.focus_offset;
+	auto vpos = main_camera.world_to_view_coord(entity(id).p);
+	main_camera.pan(vpos - main_camera.focus_offset);
 }
 
 void OON::follow_player(unsigned player_id)
 {
 	assert(player_id == 1);
-	auto new_player_vpos = view.world_to_view_coord(player_entity(player_id).p);
-	view.offset += new_player_vpos - view.focus_offset;
+	follow_entity(player_entity_ndx(player_id));
 }
 
-bool OON::scroll_locked()
-{
-	return controls.PanLock || controls.PanFollow
-		|| sfw::getWidget<sfw::CheckBox>("  - forced follow")->get();
-		//!!?? Should this GUI poll actually be in controller.update()?!...
-		//!!?? Kinda depends on the intent of that UI element: input emu., or
-		//!!?? "high-level control" <-- but then this should make some actual sense! :)
-}
 
 void OON::zoom_reset(float factor/* = 0*/)
 {
-	if (factor) view.cfg.base_scale *= factor;
-	zoom(view.cfg.base_scale / view.scale);
+	// Can't just call main_camera.zoom(...), because we need to trigger our zoom_hook!
+	if (factor) main_camera.cfg.base_scale *= factor;
+	zoom(main_camera.cfg.base_scale / main_camera.scale);
 }
 
 void OON::zoom(float factor)
 {
 	//!!pre_zoom_hook(factor);
-	view.zoom(factor);
+	main_camera.zoom(factor);
 	resize_shapes(factor);
 }
-// These can't call view.zoom_in/out directly, because we need to trigger our zoom_hook!...
+// These can't call main_camera.zoom_in/out directly either, because we need to trigger our zoom_hook!...
 void OON::zoom_in (float amount) { zoom(1.f + amount); }
 void OON::zoom_out(float amount) { zoom(1.f / (1.f + amount)); }
 
@@ -652,20 +643,20 @@ void OON::zoom_out(float amount) { zoom(1.f / (1.f + amount)); }
 /*!!
 void OON::zoom(float factor)
 {
-//auto viewpos = view.world_to_view_coord(player_entity().p);
-//cerr << "- focus vs player diff: " << (viewpos - view.focus_offset).x << ", " << (viewpos - view.focus_offset).y << '\n';
+//auto viewpos = main_camera.world_to_view_coord(player_entity().p);
+//cerr << "- focus vs player diff: " << (viewpos - main_camera.focus_offset).x << ", " << (viewpos - main_camera.focus_offset).y << '\n';
 
 //!!pre_zoom_hook(factor);
 	// Compensate for zoom displacement when the player object is not centered
-	auto v = view.world_to_view_coord(view.offset);
-	pan((view.focus_offset - v) * view.zoom/factor);
-//	auto viewpos = view.focus_offset + view.offset;
+	auto v = main_camera.world_to_view_coord(main_camera.offset);
+	pan((main_camera.focus_offset - v) * main_camera.zoom/factor);
+//	auto viewpos = main_camera.focus_offset + main_camera.offset;
 //	pan(viewpos - viewpos/factor);
 
-//	auto vpos = view.world_to_view_coord(view.offset);
-//	pan(view.focus_offset/factor);
+//	auto vpos = main_camera.world_to_view_coord(main_camera.offset);
+//	pan(main_camera.focus_offset/factor);
 
-	view.zoom *= factor;
+	main_camera.zoom *= factor;
 
 	resize_shapes(factor);
 }
@@ -676,12 +667,12 @@ void OON_sfml::_adjust_pan_after_zoom(float factor)
 	// If the new zoom level would put the player object out of view, reposition the view so that
 	// it would keep being visible; also roughly at the same view-offset as before!
 
-	auto visible_R = player_entity().r * view.zoom; //!! Not a terribly robust method to get that size...
+	auto visible_R = player_entity().r * main_camera.zoom; //!! Not a terribly robust method to get that size...
 
 	if (abs(vpos.x) > cfg.VIEWPORT_WIDTH/2  - visible_R ||
 	    abs(vpos.y) > cfg.VIEWPORT_HEIGHT/2 - visible_R)
 	{
-cerr << "R-viewsize: " << view.zoom * plm->r
+cerr << "R-viewsize: " << main_camera.zoom * plm->r
 	 << " abs(vpos.x): " << abs(vpos.x) << ", "
      << " abs(vpos.u): " << abs(vpos.y) << endl;
 
@@ -691,6 +682,15 @@ cerr << "R-viewsize: " << view.zoom * plm->r
 	}
 }
 !!*/
+
+bool OON::scroll_locked()
+{
+	return controls.PanLock || controls.PanFollow
+		|| sfw::getWidget<sfw::CheckBox>("  - forced follow")->get();
+		//!!?? Should this GUI poll actually be in controller.update()?!...
+		//!!?? Kinda depends on the intent of that UI element: input emu., or
+		//!!?? "high-level control" <-- but then this should make some actual sense! :)
+}
 
 
 //----------------------------------------------------------------------------
@@ -738,9 +738,9 @@ bool OON::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 	}
 
 	// Do the actual panning:
-	if (scroll_locked()) { // Shift, Scroll Lock etc.
-		if (_pan_step_x) view.focus_offset.x -= _pan_step_x * fps_factor;
-		if (_pan_step_y) view.focus_offset.y -= _pan_step_y * fps_factor;
+	if (scroll_locked()) { // Allow adjusting the pan position while follow-locked (with Shift, Scroll Lock etc.)
+		if (_pan_step_x) main_camera.move_focus_x(- _pan_step_x * fps_factor);
+		if (_pan_step_y) main_camera.move_focus_y(- _pan_step_y * fps_factor);
 	} else {
 		if (_pan_step_x) pan_x(_pan_step_x * fps_factor);
 		if (_pan_step_y) pan_y(_pan_step_y * fps_factor);

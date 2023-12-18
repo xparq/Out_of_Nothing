@@ -75,7 +75,7 @@ SimApp::SimApp(int argc, char** argv)
 	// Bootstrap the backend...
 	, backend(SFML_Backend::use(cfg))
 	// Init the GUI...
-	, gui( ((SFML_Backend&)backend).SFML_window(), {
+	, gui(((SFML_Backend&)backend).SFML_window(), {
 		.basePath = cfg.asset_dir.c_str(), // Trailing / provided by the cfg. fixup!
 		.textureFile = "gui/texture.png",
 		.bgColor = sfw::Color(cfg.default_bg_hexcolor),
@@ -83,9 +83,12 @@ SimApp::SimApp(int argc, char** argv)
 		}, false // Don't manage the window
 	  )
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(backend.hci.window())}
-	, view({.width  = Szim::SimAppConfig::VIEWPORT_WIDTH, //!!?? Should come from the backend!
-		.height = Szim::SimAppConfig::VIEWPORT_HEIGHT,//!! backend.hci.window().height
-		.base_scale = SimAppConfig::DEFAULT_ZOOM})
+	, main_camera({.width  = Szim::SimAppConfig::VIEWPORT_WIDTH, //!!?? Should come from the backend!
+	               .height = Szim::SimAppConfig::VIEWPORT_HEIGHT,//!! backend.hci.window().height
+	               .base_scale = SimAppConfig::DEFAULT_ZOOM})
+	, main_view({.width = Szim::SimAppConfig::VIEWPORT_WIDTH,
+	             .height = Szim::SimAppConfig::VIEWPORT_HEIGHT},
+		     main_camera)
 	, session(*this/*!!, args("session")!!*/)
 {
 /*!! See instead the sad "functional" approach above in the member init list:

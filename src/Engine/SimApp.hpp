@@ -16,7 +16,8 @@
 #include "UI/Input.hpp"
 
 #include "Model/World.hpp"
-#include "View/ViewPort.hpp"
+#include "View/OrthoZoomCamera.hpp"
+#include "View/ScreenView.hpp"
 
 #include "sz/unilang.hh" // ON/OFF, AUTO_CONST, OUT
 #include "sz/counter.hh"
@@ -194,9 +195,11 @@ protected:
 
 private: // <- Forcing the use of accessors
 	Model::World _world; // See the *world() accessors!
-public://!! Alas, the renderer still needs this:
-        //!! Oh, but move the renderer here, and the ViewPort should be part of that!too, BTW! But it's both SFML *and* app dependent yet!... :-/
-	View::ViewPort view;
+public://!! Alas, the renderer still accesses the camera directly:
+       //!! Oh, but move the renderer here, and the OrthoZoomCamera should be part of that, too, BTW!
+       //!! (But the renderer is both SFML *and* app dependent yet!... :-/ )
+	View::OrthoZoomCamera main_camera;
+	View::ScreenView main_view;
 
 protected:
 	//--------------------------------------------------------------------

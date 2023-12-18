@@ -1,5 +1,5 @@
-#ifndef _VECTOR2_HPP_
-#define _VECTOR2_HPP_
+#ifndef _HVCCB467VNC568957N6C3824894576893B5N6839C7845_
+#define _HVCCB467VNC568957N6C3824894576893B5N6839C7845_
 ////////////////////////////////////////////////////////////
 //
 // SFML - Simple and Fast Multimedia Library
@@ -401,9 +401,9 @@ template <typename T>
 template <typename T>
 [[nodiscard]] constexpr bool operator!=(const Vector2<T>& left, const Vector2<T>& right);
 
-#include "Vector2.inl"
+} // namespace Math
 
-} // namespace sf
+#include "Vector2.inl"
 
 
 ////////////////////////////////////////////////////////////
@@ -455,4 +455,4 @@ template <typename T>
 ///
 ////////////////////////////////////////////////////////////
 
-#endif // _VECTOR2_HPP_
+#endif // _HVCCB467VNC568957N6C3824894576893B5N6839C7845__

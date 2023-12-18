@@ -27,9 +27,13 @@
 //!---------------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////
+#include <cmath>
+#include <type_traits>
 
 
 ////////////////////////////////////////////////////////////
+namespace Math {
+
 template <typename T>
 constexpr Vector3<T>::Vector3() = default;
 
@@ -236,11 +240,15 @@ T Vector3<T>::length() const
     return std::sqrt(x * x + y * y + z * z);
 }
 
+} // namespace Math
+
 
 ////////////////////////////////////////////////////////////
 // Explicit template instantiations
 ////////////////////////////////////////////////////////////
 
-//template class sf::Vector3<float>;
-//template class sf::Vector3<double>;
-//template class sf::Vector3<long double>;
+//template class Math::Vector3<float>;
+//template class Math::Vector3<double>;
+//template class Math::Vector3<long double>;
+//template class Math::Vector3<unsigned>;
+//template class Math::Vector3<int>;

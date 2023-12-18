@@ -1,5 +1,5 @@
-#ifndef _VECTOR3_HPP_
-#define _VECTOR3_HPP_
+#ifndef _D78456789374589Y3NC657983478934787895365H465785_
+#define _D78456789374589Y3NC657983478934787895365H465785_
 ////////////////////////////////////////////////////////////
 //
 // SFML - Simple and Fast Multimedia Library
@@ -313,14 +313,13 @@ template <typename T>
 template <typename T>
 [[nodiscard]] constexpr bool operator!=(const Vector3<T>& left, const Vector3<T>& right);
 
-//#include <SFML/System/Vector3.inl>
-#include "Vector3.inl"
-
 // Define the most common types
 using Vector3i = Vector3<int>;
 using Vector3f = Vector3<float>;
 
-} // namespace sf
+} // namespace Math
+
+#include "Vector3.inl"
 
 
 ////////////////////////////////////////////////////////////
@@ -368,4 +367,4 @@ using Vector3f = Vector3<float>;
 ///
 ////////////////////////////////////////////////////////////
 
-#endif // _VECTOR3_HPP_
+#endif // _D78456789374589Y3NC657983478934787895365H465785_

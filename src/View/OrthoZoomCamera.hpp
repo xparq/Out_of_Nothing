@@ -1,11 +1,13 @@
-﻿#ifndef _DP2M97FG6MF98D59NH7_
-#define _DP2M97FG6MF98D59NH7_
+﻿#ifndef _DP2M97FG6MF98D59NH70873456874G3076589_
+#define _DP2M97FG6MF98D59NH70873456874G3076589_
+
+#include "Camera.hpp"
 
 #include "Model/Math/Vector2.hpp"
 
 namespace View {
 
-// View-local coordinate system (right-handed, like OpenGL):
+// Camera View coordinate system (right-handed, like OpenGL):
 //
 //       +y
 //        |
@@ -13,10 +15,9 @@ namespace View {
 //        |
 //       -y
 //
-// Origin: center of the screen (window, view pane...)
+// Origin: center of the view
 
-
-struct ViewPort
+struct OrthoZoomCamera : Camera
 {
 	struct Config
 	{
@@ -31,7 +32,7 @@ struct ViewPort
 	// Setup...
 	// -------------------------------------------------------------------
 
-	ViewPort(Config cfg);
+	OrthoZoomCamera(Config cfg);
 	void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
 	void reset(Config&& recfg);
 	void resize(float width, float height);
@@ -40,7 +41,7 @@ struct ViewPort
 	// Queries...
 	// -------------------------------------------------------------------
 
-	// Simple orthographic projection, with scaling:
+	// Simple orthographic projection, plus scaling:
 	Math::Vector2f world_to_view_coord(Math::Vector2f p) const { return p * scale - offset; }
 	Math::Vector2f world_to_view_coord(float x, float y) const { return { x * scale - offset.x, y * scale - offset.y }; }
 
@@ -61,10 +62,10 @@ struct ViewPort
 	Math::Vector2f grid_offset() const;
 
 	//!! This does NOT belong here! -> #221
-	Math::Vector2f screen_to_view_coord(int x, int y) const { return {(float)x + _edge_x_min, (float)y + _edge_y_min}; }
+	Math::Vector2f screen_to_view_coord(int x, int y) const; //!! { return {(float)x + _edge_x_min, _edge_y_max - (float)y}; }
 		//!! Used currently to map e.g. mouse positions back to the world.
 		//!! (See also entity_at_wiewpos(...)!)
-		//!! The UI certainly needs it, but it should do CameraView - ScreenView conversions
+		//!! The UI certainly needs it, but it should do OrthoZoomCamera - ScreenView conversions
 		//!! itself, and then ask the camera for Camera - World ("frustum line") conversion,
 		//!! and then ask the model to find the object hit by that line!
 		//!! Also, Renderer::render() does this conversion, too
@@ -76,18 +77,27 @@ struct ViewPort
 	// Operations...
 	// -------------------------------------------------------------------
 
-	void center_to(Math::Vector2f world_pos) {
-		offset = world_pos * scale;
-	}
-
+	// Movement
 	void pan(Math::Vector2f delta) { pan_x(delta.x); pan_y(delta.y); }
 	void pan_x(float delta)        { offset.x += delta; }
 	void pan_y(float delta)        { offset.y += delta; }
+	void center_to(Math::Vector2f world_pos) { offset = world_pos * scale; }
 
+	// Moving the focus center only
+	void move_focus(Math::Vector2f delta) { focus_offset += delta; }
+	void move_focus_x(float dx) { focus_offset.x += dx; }
+	void move_focus_y(float dy) { focus_offset.y += dy; }
+	void focus_to(Math::Vector2f view_pos) { focus_offset = view_pos; }
+
+	// Zoom
 	void zoom(float change_factor); // Zoom change ratio (zoom in if > 1)
 	void zoom_in  (float step) { zoom(1.f + step); }
 	void zoom_out (float step) { zoom(1.f / (1.f + step)); }
 
+	//!!?? This "intelligence" may be better elsewhere?
+	//!!?? This + all the visibility checks (mostly only used by this...) are the
+	//!!?? only reason view(finder) dimensions + resizing is needed here at all! :-o
+	//!!?? AFAIK it's also separated (as the clip space coordinate system) in OpenGL, too!
 	bool confine(Math::Vector2f world_pos, float viewpos_margin = 0, float throwback = 2); // returns true if the player was out of view
 
 
@@ -96,7 +106,7 @@ struct ViewPort
 
 	float scale = 1;
 	Math::Vector2f offset = {0, 0}; // Displacement of the view relative to the initial implicit origin, in View (screen) coordinates
-	Math::Vector2f focus_offset = {0, 0}; // Pos. of a focus point in the view rect (in View coord.)
+	Math::Vector2f focus_offset = {0, 0}; // Pos. of a focus point in the image rect (in Camera View coord.)
 	                                      // Used as the zoom origin for now. (Usually set to the player's
 	                                      // on-screen pos, or some other interesting subject...)
 
@@ -106,8 +116,8 @@ protected:
 	float _edge_x_min, _edge_x_max;
 	float _edge_y_min, _edge_y_max;
 
-}; // class ViewPort
+}; // class OrthoZoomCamera
 
 } // namespace View
 
-#endif // _DP2M97FG6MF98D59NH7_
+#endif // _DP2M97FG6MF98D59NH70873456874G3076589_

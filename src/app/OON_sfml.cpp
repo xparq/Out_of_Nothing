@@ -67,19 +67,19 @@ OON_sfml::OON_sfml(int argc, char** argv)
 		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUD::DEFAULT_BACKGROUND_COLOR)})
 	, world_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 320),
+		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 316),
 		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
-		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ff/4)})
+		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)})
 	, view_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 470),
+		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 424),
 		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
-		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ff/4)})
+		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)})
 	, object_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 500),
-		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaff),
-		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)}) //!!?? Dear C++, WTF is this not unsigned just like the one above?!
+		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 516),
+		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
+		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)})
 	, help_hud( SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/help_left", 10), .panel_top = appcfg.get("appearance/HUD/help_top", 10),
@@ -89,7 +89,7 @@ OON_sfml::OON_sfml(int argc, char** argv)
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/debug_left", -250), .panel_top = appcfg.get("appearance/HUD/debug_top", -350),
 		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
-		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ff/4)})
+		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)})
 #endif
 {
 }
@@ -358,12 +358,12 @@ void OON_sfml::updates_for_next_frame()
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
-			view.focus_offset = view.world_to_view_coord(entity(focused_entity_ndx).p);
-			if (view.confine(entity(focused_entity_ndx).p,
-			    autofollow_margin + autofollow_margin/2 * view.scale/Szim::SimAppConfig::DEFAULT_ZOOM,
+			main_camera.focus_offset = main_camera.world_to_view_coord(entity(focused_entity_ndx).p);
+			if (main_camera.confine(entity(focused_entity_ndx).p,
+			    autofollow_margin + autofollow_margin/2 * main_camera.scale/Szim::SimAppConfig::DEFAULT_ZOOM,
 			    autofollow_throwback)) { // true = drifted off
 				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...
-//cerr << "view.scale: "<<view.scale<<", DEFAULT_ZOOM: "<<view.scale<<", ratio: "<<view.scale / Szim::SimAppConfig::DEFAULT_ZOOM<<'\n';
+//cerr << "main_camera.scale: "<<main_camera.scale<<", DEFAULT_ZOOM: "<<main_camera.scale<<", ratio: "<<main_camera.scale / Szim::SimAppConfig::DEFAULT_ZOOM<<'\n';
 			}
 		}
 	}
@@ -505,10 +505,10 @@ try {
 				case sf::Keyboard::Home:
 					if (keystate(CTRL)) {
 						//!! These should be "upgraded" to "Camera/view reset"!
-						//!! view.reset() already exists, but is not quite the same... RECONCILE!
-						view.reset(); //!!??
-						pan_reset();
-						zoom_reset();
+						//!! main_camera.reset() already exists:
+						main_camera.reset(); //!! ...but is not enough. :-/
+						pan_reset();         //!! And these also overlap the camera reset...
+						zoom_reset();        //!! SO, RECONCILE THEM!
 					} else {
 						center_to_player();
 					}
@@ -579,14 +579,18 @@ try {
 			{
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
 //cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
+
+//!!??auto vpos = main_camera.screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o
+//!!?? Where did this x,y=={-520,-391} come from?! :-ooo
+cerr << "???? x = " << x << ", y = " << y << " <-- WHAT THE HELL ARE THESE??? :-ooo\n";
+
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				//!!??auto vpos = view.screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o Where did this x,y=={-520,-391} come from?! :-ooo
-				Math::Vector2f vpos = view.screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
-				view.focus_offset = vpos;
+				Math::Vector2f vpos = main_camera.screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
+				main_camera.focus_offset = vpos;
 				size_t clicked_entity_id = ~0u;
 				if (entity_at_wiewpos(vpos.x, vpos.y, &clicked_entity_id)) {
 cerr << "- Following object #"<<clicked_entity_id<<" now...\n";

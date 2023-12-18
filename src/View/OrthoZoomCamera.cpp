@@ -1,9 +1,5 @@
-//!! Fix Vector2f using std::is_floating_point_v or atan etc. without including these! :-o
-//!!?? Why has this been masked so far?!?
-#include <cmath>
-#include <type_traits>
+#include "OrthoZoomCamera.hpp"
 
-#include "ViewPort.hpp"
 #include "sz/sign.hh"
 
 #include <iostream> //!! DEBUG
@@ -11,16 +7,15 @@
 
 namespace View {
 
-ViewPort::ViewPort(Config cfg) :
+OrthoZoomCamera::OrthoZoomCamera(Config cfg) :
 	cfg(cfg)
 {
 	reset(); // Calc. initial state
 }
 
-void ViewPort::reset(const Config* recfg/* = nullptr*/)
+void OrthoZoomCamera::reset(const Config* recfg/* = nullptr*/)
 {
-	if (!recfg) recfg = &cfg;
-	else cfg = *recfg;
+	if (recfg) cfg = *recfg;
 
 //std::cerr << "DBG> "<<__FUNCTION__<<": width="<<cfg.width<<", height="<<cfg.height<<"\n";
 
@@ -29,14 +24,11 @@ void ViewPort::reset(const Config* recfg/* = nullptr*/)
 	offset = {0, 0};
 	focus_offset = {0, 0};
 
-	_edge_x_min = -cfg.width/2;
-	_edge_x_max =  cfg.width/2;
-	_edge_y_min = -cfg.height/2;
-	_edge_y_max =  cfg.height/2;
+	resize(cfg.width, cfg.height);
 }
 
 
-void ViewPort::resize(float width, float height)
+void OrthoZoomCamera::resize(float width, float height)
 {
 	//!! Adjust the offsets only if the resize would shift them off-screen!
 	//!! But even then, such a forced `confine()` may be undesired in some cases!
@@ -45,6 +37,7 @@ void ViewPort::resize(float width, float height)
 
 	cfg.width  = width;
 	cfg.height = height;
+
 	_edge_x_min = -cfg.width/2;
 	_edge_x_max =  cfg.width/2;
 	_edge_y_min = -cfg.height/2;
@@ -54,10 +47,10 @@ void ViewPort::resize(float width, float height)
 }
 
 
-void ViewPort::reset(Config&& recfg) { reset(&recfg); } // ...it should live long enough for this, right? ;)
+void OrthoZoomCamera::reset(Config&& recfg) { reset(&recfg); } // ...it should live long enough for this, right? ;)
 
 
-bool ViewPort::confine(Math::Vector2f world_pos, float margin, float throwback)
+bool OrthoZoomCamera::confine(Math::Vector2f world_pos, float margin, float throwback)
 {
 	auto vpos = world_to_view_coord(world_pos);
 	bool out_of_view = false;
@@ -71,7 +64,7 @@ bool ViewPort::confine(Math::Vector2f world_pos, float margin, float throwback)
 }
 
 
-void ViewPort::zoom(float change_ratio)
+void OrthoZoomCamera::zoom(float change_ratio)
 {
 	scale *= change_ratio;
 
@@ -83,9 +76,9 @@ void ViewPort::zoom(float change_ratio)
 }
 
 
-Math::Vector2f ViewPort::grid_offset() const
+Math::Vector2f OrthoZoomCamera::grid_offset() const
 {
-//!!	auto vpos = world_to_view_coord(offset);
+//!!vpos = world_to_view_coord(offset);
 //cerr <<"pan offset to view: "<< vpos.x <<", "<< vpos.y << '\n'; // BTW, non-zero if there's an off-center focus point
 
 	auto vpos = offset;
@@ -94,6 +87,15 @@ Math::Vector2f ViewPort::grid_offset() const
 		- (float(int(abs(vpos.y + _edge_y_max)) % int(cfg.height)) - _edge_y_max) * sz::sign(vpos.y + _edge_y_max)};
 //cerr <<"- gridline pos. for offset ("<<offset.x<<", "<<offset.y<<"): "<< (v.x)<<", "<< (v.y) << '\n';
 	return v;
+}
+
+
+Math::Vector2f OrthoZoomCamera::screen_to_view_coord(int x, int y) const
+{
+	return {(float)x + _edge_x_min, _edge_y_max - (float)y};
+//	Math::Vector2f v = {(float)x + _edge_x_min, _edge_y_max - (float)y};
+//cerr << "DBG> Camera coords. from screen pos ("<<x<<", "<<y<<"): "<<v.x <<", "<<v.y<<'\n';
+//	return v;
 }
 
 

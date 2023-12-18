@@ -52,15 +52,16 @@ void Renderer_SFML::render(SimApp& game)
 
 		//!! The size and coords. of the screen view pane (UI viewport) are NOT directly
 		//!! related to the camera view, but would obviously be best if they were identical!...
-		auto vpos = game.view.world_to_view_coord(body->p - Math::Vector2f(body->r, body->r)); //!! Rely on the objects' own origin offset instead!
+		auto vpos = game.main_camera.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
+		                                                                            //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
-		//!! a) inverted wrt. SFML (draw) coords., b) is at the center of the camera view.
+		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
 		//!! -> #221, #445
 		trshape.setPosition({ vpos.x + float(game.backend.hci.window().width/2),
 			             -vpos.y + float(game.backend.hci.window().height/2)}); //!! "Standardize" on the view's centered origin instead!
 
-//cerr << "render(): shape.setPos -> x = " << game.view.cfg.width /2 + (body->p.x - body->r) * game.view.scale + game.view.offset.x
-//			       << ", y = " << game.view.cfg.height/2 + (body->p.y - body->r) * game.view.scale + game.view.offset.y <<'\n';
+//cerr << "render(): shape.setPos -> x = " << game.main_camera.cfg.width /2 + (body->p.x - body->r) * game.main_camera.scale + game.main_camera.offset.x
+//			       << ", y = " << game.main_camera.cfg.height/2 + (body->p.y - body->r) * game.main_camera.scale + game.main_camera.offset.y <<'\n';
 	}
 }
 
@@ -70,12 +71,12 @@ void Renderer_SFML::draw(SimApp& game)
 {
 	// Grid lines...
 	static sf::Color color{0x77777788};
-	if (game.view.cfg.gridlines) {
+	if (game.main_camera.cfg.gridlines) {
 //		float min_x = -float(game.backend.hci.window().width)/2, max_x = float(game.backend.hci.window().width)/2;
 //		float min_y = -float(game.backend.hci.window().height)/2, max_y = float(game.backend.hci.window().height)/2;
 		float min_x = 0, max_x = float(game.backend.hci.window().width);
 		float min_y = 0, max_y = float(game.backend.hci.window().height);
-		auto [vx, vy] = game.view.grid_offset();//!!?? + Math::Vector2f{max_x/2, max_y/2};
+		auto [vx, vy] = game.main_camera.grid_offset();//!!?? + Math::Vector2f{max_x/2, max_y/2};
 		vx += max_x/2;
 		vy = max_y/2 - vy;
 
@@ -135,7 +136,7 @@ void Renderer_SFML::create_cached_body_shape(const SimApp& game, const Model::Wo
 
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
-	auto shape = make_shared<sf::CircleShape>(body.r * game.view.scale);
+	auto shape = make_shared<sf::CircleShape>(body.r * game.main_camera.scale);
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
 
