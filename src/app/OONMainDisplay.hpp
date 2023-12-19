@@ -4,15 +4,12 @@
 #include "Engine/View/ScreenView.hpp"
 #include "Engine/View/OrthoZoomCamera.hpp"
 
-#include <cstdint>
-
-
-namespace Szim::View { class Camera; }
-
 //!!namespace Model { class World; class World::Body; } //!! *Sigh*, C++, still nope! :-o https://stackoverflow.com/a/36736618/1479945
 #include "Model/World.hpp"
-
 //#include "Model/Math/Vector2.hpp"
+
+#include <cstdint>
+
 
 namespace OON {
 
@@ -26,6 +23,7 @@ public:
 	constexpr static uint8_t ALPHA_INACTIVE = 127;
 
 	using MainCameraType = Szim::View::OrthoZoomCamera;
+
 	// -------------------------------------------------------------------
 	// Setup...
 	// -------------------------------------------------------------------
@@ -34,29 +32,29 @@ public:
 	{
 	};
 
-//	OONMainDisplay() {}
-//	OONMainDisplay(Config cfg);
 	OONMainDisplay(OONViewConfig/*& to avoid slicing; but disallow temp.? No. Slicing's OK here.*/ cfg, OONApp& app);
 
-	auto& oon_app() { return (OONApp&)_app; }
-	Szim::SimApp& app() override { return (Szim::SimApp&) oon_app(); }
-	//!! These two should be the other way around later! :)
+	Szim::SimApp& app() override { return (Szim::SimApp&) _app; }
 
-/*
-	void reset(const Config* recfg = nullptr) override; // Resets things to the last cfg if null.
-	void reset(Config&& recfg) override;
-	void resize(unsigned width, unsigned height) override;
-*/
+	// -------------------------------------------------------------------
+	// App-specific features...
+	// -------------------------------------------------------------------
+
+	const auto& oon_camera() const { return (const MainCameraType&) camera(); }
+	      auto& oon_camera()       { return (      MainCameraType&) camera(); }
 
 	void dim()   { p_alpha = ALPHA_INACTIVE; }
 	void undim() { p_alpha = ALPHA_ACTIVE; }
 
-	// These are only pure virt. becasue we don't have an OON-generic, SFML-free 'renderer' member of this class... :-/
-	virtual void create_cached_body_shape(const Model::World::Body& body, size_t entity_ndx) = 0;
-	virtual void delete_cached_body_shape(size_t entity_ndx) = 0;
+	// -------------------------------------------------------------------
+	// Pure virtuals for the actual drawing impl...
+	virtual void create_cached_shape(const Model::World::Body& body, size_t entity_ndx) = 0;
+	virtual void delete_cached_shape(size_t entity_ndx) = 0;
 	virtual void resize_objects(float factor) = 0;
 	virtual void resize_object(size_t ndx, float factor) = 0;
 
+	//!! Sigh... Move this to the UI already:
+	virtual void draw_banner(const char* text) = 0;
 
 	// -------------------------------------------------------------------
 	// Data...
@@ -65,7 +63,7 @@ protected:
 	OONApp& _app;
 	MainCameraType _oon_default_camera;
 
-	// Rendering params:
+	// Rendering params etc.:
 	uint8_t p_alpha = ALPHA_ACTIVE;
 
 }; // class OONMainDisplay

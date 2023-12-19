@@ -164,9 +164,9 @@ public:
 // Data / World State... (!!-> Save/Load should cover this part (#76)!!)
 //----------------------------------------------------------------------------
 //protected: //!!NOT YET!
-//!!Can't even declare these here (which would still be depressing!) from the middle of our current namespace:
-//!!friend class OON;
-//!!friend class OON_sfml;
+//!!Can't even declare these here (which would still be depressing!) from the middle of the current namespace:
+//!!friend class OONApp;
+//!!friend class OONApp_sfml;
 //!!So just allow public access for now:
 public:
 	//!! REVISE _copy(), and save/load, WHENEVER CHANGING THE DATA HERE!

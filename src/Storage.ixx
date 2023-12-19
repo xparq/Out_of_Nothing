@@ -1,3 +1,5 @@
+//!! Just a dummy exercise & smoke test for the build procedure for now...
+
 module;
 
 #include "Model/World.hpp"

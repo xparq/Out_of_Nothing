@@ -171,6 +171,7 @@ void OONApp::done() // override
 	}
 }
 
+
 //----------------------------------------------------------------------------
 #ifndef DISABLE_HUD
 void OONApp::toggle_huds()  { _show_huds = !_show_huds; }
@@ -458,6 +459,7 @@ void OONApp::_setup_UI()
 	help_hud.active(cfg.get("show_help_on_start", true));
 #endif
 }
+
 
 //----------------------------------------------------------------------------
 void OONApp::onResize(unsigned width, unsigned height) //override
@@ -875,7 +877,7 @@ size_t OONApp::add_body(World::Body&& obj) //virtual
 {
 	auto ndx = world().add_body(std::forward<decltype(obj)>(obj));
 	// Pre-cache shapes for rendering... (!! May be pointless, but this is just what I started with...)
-	oon_main_view().create_cached_body_shape(obj, ndx);
+	oon_main_view().create_cached_shape(obj, ndx);
 	return ndx;
 }
 
@@ -930,7 +932,7 @@ cerr << "- WARNING: The followed object has ceased to exist...\n";
 	assert(focused_entity_ndx == ~0u || focused_entity_ndx < entity_count());
 
 	// Remove from the view cache, too:
-	oon_main_view().delete_cached_body_shape(ndx);
+	oon_main_view().delete_cached_shape(ndx);
 }
 
 
@@ -1176,5 +1178,200 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 	emitter.recalc();
 	resize_shape(emitter_ndx, emitter.r / emitter_old_r);
 }
+
+
+//----------------------------------------------------------------------------
+void OONApp::pause_hook(bool)
+{
+	//!! As a quick hack, time must restart from 0 when unpausing...
+	//!! (The other restart() on pausing is redundant; just keeping it simple...)
+cerr << "- INTERNAL: Main clock restarted on pause on/off (in the pause-hook)!\n";
+	backend.clock.restart();
+}
+
+
+//----------------------------------------------------------------------------
+//!! Move this to SimApp, but only together with its counterpart in the update loop!
+//!! Note that resetting the iter. counter and the model time should pro'ly be associated
+//!! with run(), which should then be non-empty in SimApp, and should also somehow
+//!! bring with it some main-loop logic to handle basic chores like time control & stepping!
+//!! Perhaps most of that ugly & brittle `update_thread_main_loop()` could be moved there,
+//!! and then updates_for_next_frame() could be an app callback (plus some new ones, handling
+//!! that Window Context bullshit etc.), and its wrapping in SimApp could hopefully handle the timing stuff.
+void OONApp::time_step(int steps)
+{
+	// Override the loop count limit, if reached (this may not always be applicable tho!); -> #216
+	if (iterations.maxed())
+		++iterations.limit;
+
+	timestepping = steps; //! See resetting it in updates_for_next_frame()!
+}
+
+//----------------------------------------------------------------------------
+void OONApp::updates_for_next_frame()
+// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
+{
+	//!! I guess this should come before processing the controls, so
+	//!! the controls & their follow-up updates are not split across
+	//!! time frames -- but I'm not sure if that's actually important!...
+	//!! (Note: they're still in the same "rendering frame" tho, that's
+	//!! why I'm not sure if this matters at all.)
+	//!!
+	//!! Also, the frame times should still be tracked (and, as a side-effect, the FPS gauge updated)
+	//!! even when paused (e.g. to support [dynamically accurate?] time-stepping etc.)!
+/*!!	time.last_frame_delay = time.Δt_since_last_query([](*this){
+		auto capture = clock.getElapsedTime().asSeconds();
+		clock.restart(); //! Must also be duly restarted on unpausing!
+		return capture;
+	});
+!!*/
+	//!! Most of this should be done by Time itself!
+	time.last_frame_delay = backend.clock.get();
+	time.real_session_time += time.last_frame_delay;
+	backend.clock.restart(); //! Must also be restarted on unpausing, because Pause stops it!
+	// Update the FPS gauge
+	avg_frame_delay.update(time.last_frame_delay);
+
+	//----------------------------
+	// Model updates...
+	//
+	// - Disabled when paused, unless explicitly single-stepping...
+	//
+	if (!paused() || timestepping) {
+
+		//----------------------------
+		//!!? Get some fresh immediate (continuous) input control state updates,
+		//!!? in addition to the async. event_loop()!...
+		//!! This doesn't just do low-level controls, but "fires" gameplay-level actions!
+		//!! (Not any actual processing, just input translation... HOPEFULLY! :) )
+		perform_control_actions();
+
+		//----------------------------
+		// Determine the size of the next model iteration time slice...
+		//
+		Time::Seconds Δt;
+		if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
+			//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
+			Δt = cfg.fixed_model_dt;
+			//!!Don't check: won't be true if changing cfg.fixed_model_dt_enabled at run-time!
+			//!!assert(Δt == time.last_model_Δt); // Should be initialized by the SimApp init!
+		} else {
+			Δt = time.last_model_Δt = time.last_frame_delay;
+				// Just an estimate; the last frame time can't guarantee anything about the next one, obviously.
+		}
+
+		Δt *= time.scale;
+		if (time.reversed || timestepping < 0) Δt = -Δt;
+
+		time.model_Δt_stats.update(Δt);
+
+		//----------------------------
+		// Update...
+		//
+		//!! Move to a SimApp virtual, I guess (so at least the counter capping can be implicitly done there; see also time_step()!):
+		if (!iterations.maxed()) {
+
+			update_world(Δt);
+			++iterations;
+
+			// Clean-up decayed bodies:
+			for (size_t i = player_entity_ndx() + 1; i < entity_count(); ++i) {
+				auto& e = entity(i);
+				if (e.lifetime != World::Body::Unlimited && e.lifetime <= 0) {
+					remove_body(i); // Takes care of "known" references, too!
+				}
+			}
+
+		} else {
+			if (cfg.exit_on_finish) {
+				cerr << "Exiting (as requested): iterations finished.\n";
+				request_exit();
+				// fallthrough
+			}
+		}
+
+		//!! Time-stepping should take precedence and prevent immediate exit
+		//!! in the "plain finished" case above! Since request_exit() doesn't
+		//!! abort/return on its own, it's *implicitly* doing the right thing,
+		//!! but that might change to actually aborting later (e.g. via an excpt.)
+		//!! -- so, this reminder has been added for that case...
+
+		// One less time-step to make next time (if any):
+		if (timestepping) if (timestepping < 0 ) ++timestepping; else --timestepping;
+	}
+
+	//----------------------------
+	// View adjustments...
+	//!
+	//! NOTE: MUST COME AFTER CALCULATING THE NEW MODEL STATE!
+	//!
+	// - Auto-scroll to follow pinned player/object
+	// - Manual panning
+	// - Zoom
+
+	ui_gebi(ObjectData).active(focused_entity_ndx != ~0u && focused_entity_ndx < entity_count());
+//if (!ui_gebi(ObjectData).active()) {
+//cerr << "----- focused_entity_ndx: "<<focused_entity_ndx<<'\n';
+//}
+
+
+	auto _focus_locked_ = false;
+	if (scroll_locked()) {
+		// Panning follows focused obj. with locked focus point:
+		_focus_locked_ = true;
+		if (focused_entity_ndx != ~0u)
+			follow_entity(focused_entity_ndx);
+	} else {
+		// Focus point follows focused obj., with panning only if drifting off-screen:
+		if (focused_entity_ndx != ~0u) {
+static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
+static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
+static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
+			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(entity(focused_entity_ndx).p);
+			if (oon_main_camera().confine(entity(focused_entity_ndx).p,
+			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/OONConfig::DEFAULT_ZOOM,
+			    autofollow_throwback)) { // true = drifted off
+				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...
+//cerr << "oon_main_camera().scale(): "<<oon_main_camera().scale()<<", DEFAULT_ZOOM: "<<oon_main_camera().scale()<<", ratio: "<<oon_main_camera().scale() / OONConfig::DEFAULT_ZOOM<<'\n';
+			}
+		}
+	}
+	// Update the focus lock indicator:
+	sfw::getWidget<sfw::CheckBox>("Pan follow object")->set(_focus_locked_);
+
+	view_control(); // Manual view adjustments
+}
+
+
+//----------------------------------------------------------------------------
+bool OONApp::load_snapshot(const char* fname) //override
+{
+	// This should load the model back, but can't rebuild the rendering state:
+	if (!SimApp::load_snapshot(fname)) {
+		return false;
+	}
+
+	//!! NOPE: set_world(world_snapshots[slot]);
+	//! Alas, somebody must resync the renderer, too!... :-/
+/* A cleaner, but slower way would be:
+	//! 1. Halt everything...
+	//     DONE, for now, by the event handler!
+	//! 2. Purge everything...
+	remove_bodies();
+	//! 3. Add the bodies back...
+	for (auto& bodyptr : world_snapshots[slot]) {
+		add_body(*bodyptr);
+	}
+*/// Faster, more under-the-hood method:
+	//! 1. Halt everything...
+	//     DONE, for now, by the event handler!
+	//! 2. Purge the renderer only...
+	oon_main_view().reset();
+// The engine has already written that:
+//cerr << "Game state restored from \"" << fname << "\".\n";
+	return true;
+}
+
+
 
 } // namespace OON

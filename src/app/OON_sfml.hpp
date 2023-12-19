@@ -2,52 +2,45 @@
 #define _WILIRTHG029828Y9VCY37829045YGCM4EDF_
 
 #include "OON.hpp"
-
 #include "OONMainDisplay_sfml.hpp"
-
-#include "sfw/GUI.hpp"
+//!!Move to a proper polymorphic UI (e.g. sfw):
 #include "UI/hud_sfml.hpp"
-
 #include <utility> // std::unreachable
 
 namespace OON {
 
 //============================================================================
 
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+//! Sigh... This C++ hack is so sad... :-/
+class OONApp_sfml;
 namespace _internal {
-struct FUCpp_ViewHack {
-	struct _oon_view_container {
-		OONMainDisplay_sfml _oon_main_view;
-		_oon_view_container(OON_sfml& app);
-	} _oon_view;
-	FUCpp_ViewHack(OON_sfml& app);
-};
+	struct FUCpp_ViewHack {
+		struct _oon_view_container {
+			OONMainDisplay_sfml _oon_main_view;
+			_oon_view_container(OONApp_sfml& app);
+		} _oon_view;
+		FUCpp_ViewHack(OONApp_sfml& app);
+	};
 }
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
-class OON_sfml : private _internal::FUCpp_ViewHack, public OONApp
+class OONApp_sfml : private _internal::FUCpp_ViewHack, public OONApp
 {
 //--------------------------------------------------------------------
 // SFML-specific overrides...
 //--------------------------------------------------------------------
 protected:
-	virtual void time_step(int steps) override;
-	void pause_hook(bool newstate) override;
-	bool load_snapshot(const char* fname) override;
-	//! The generic version of this is enough for now:
-	//virtual bool save_snapshot(const char* fname) override;
-
-	//!! DeSFMLize these & move to OONApp:
-	void event_loop() override;
-	void update_thread_main_loop() override;
-	void updates_for_next_frame() override;
-	void draw() override;
+	//!! DeSFMLize parts most of these & move to OONApp:
+	void event_loop() override; // Uses the SFML Event stuff + sf::Window
+	void update_thread_main_loop() override; // Uses sf::Window, sf::sleep
+	void draw() override; // Uses sf::Window
 
 //------------------------------------------------------------------------
 // C++ mechanics...
 //------------------------------------------------------------------------
 public:
-	OON_sfml(int argc, char** argv);
-	OON_sfml(const OON_sfml&) = delete;
+	OONApp_sfml(int argc, char** argv);
 
 //------------------------------------------------------------------------
 // Data / Internals...
@@ -74,7 +67,7 @@ protected:
 			//return help_hud; // Dummy, to shut up some pre-c++23 compiler warnings
 	}}
 #endif
-};
+}; // class OONApp_sfml
 
 } // namespace OON
 

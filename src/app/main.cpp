@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 	Args args(argc, argv); // Just for -h -V etc.
 	if (args["?"] || args["h"] || args["help"]) {
 		//!!game.show_cmdline_help();
-		OON_sfml::show_cmdline_help(args);
+		OONApp_sfml::show_cmdline_help(args);
 		return 0;
 	} else if (args["V"]) {
 		cout
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
 	int exit_code = 0;
 	try {
-		OON_sfml game(argc, argv);
+		OONApp_sfml game(argc, argv);
 
 		exit_code = game.run();
 

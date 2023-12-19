@@ -158,7 +158,12 @@ protected:
 	//------------------------------------------------------------------------
 	// Callback impl. (overrides)...
 	//------------------------------------------------------------------------
+	void updates_for_next_frame() override;
+	void time_step(int steps) override;
+	void pause_hook(bool newstate) override;
 	void onResize(unsigned width, unsigned height) override;
+	bool load_snapshot(const char* fname) override; // Needs to reset the rendering cache!
+	//bool save_snapshot(const char* fname) override; // Nothing special to do for this.
 
 	//--------------------------------------------------------------------
 	// New overridables introduced:

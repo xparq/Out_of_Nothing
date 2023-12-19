@@ -176,24 +176,24 @@ public:
 //----------------------------------------------------------------------------
 protected:
 	Args args;
-public://!! E.g. the renderer still needs these...
+
+public: // E.g. the renderer still needs these...
 	SimAppConfig cfg;
-
 	Backend& backend;
-	protected: bool is_fullscreen = false; //!! Move to the backend!
-
-//--------------
-protected:
-//!!
-	sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
-	              //!! -- e.g. via a unique_ptr!
-//!!	View::Renderer_SFML renderer; //! The SFML UI has its own, but sharing the same SFML window! :-o
-//--------------
+	private: bool is_fullscreen = false; //!! Move to a backend.hci query!
 
 	//--------------------------------------------------------------------
-	// - Abstract (Generic) Model World & View state...
+	// Engine-specific UI that the client app is also free to use
+	// The sim/app "content" has its own rendering, most likely its own UI too,
+	// but usually sharing the same (currently: SFML) window!
+protected:
+	sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
+	              //!! -- e.g. via a unique_ptr, or just a plain manual PIMPL. (Plus a gui() accessor then?!)
 
 	SessionManager session;
+
+	//--------------------------------------------------------------------
+	// Abstract (Generic) Model World & View state...
 
 private: // <- Forcing the use of accessors
 	Model::World _world; // See the *world() accessors!
@@ -202,7 +202,7 @@ private: // <- Forcing the use of accessors
 
 protected:
 	//--------------------------------------------------------------------
-	// - Time control...
+	// Time control...
 
 	Time::Control time;
 	sz::CappedCounter<Szim::Time::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
@@ -214,7 +214,7 @@ protected:
 //	sz::RollingAverage<30> avg_frame_delay;
 
 	//--------------------------------------------------------------------
-	// - Workflow control...
+	// Workflow control...
 
 	bool _terminated = false;
 	int  _exit_code = 0;
