@@ -11,7 +11,7 @@ OONController::OONController()
 }
 !!*/
 
-void OONController::update()
+void OONController::update() //!! Check the cost of keystate(), calling the Win32 API several times!!!
 {
 	using namespace UI;
 
@@ -29,6 +29,8 @@ void OONController::update()
 
 	ZoomIn   = keystate(NUMPAD_PLUS);
 	ZoomOut  = keystate(NUMPAD_MINUS);
+
+	ShowOrbits = keystate(ALT) && keystate(CTRL);
 
 //	ThrustUp    = keystate(UP);
 //	ThrustDown  = keystate(DOWN);

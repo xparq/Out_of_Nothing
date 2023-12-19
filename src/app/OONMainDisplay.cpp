@@ -1,4 +1,5 @@
 #include "OONMainDisplay.hpp"
+#include "OONConfig.hpp"
 
 #include <iostream> //!! DEBUG
 	using std::cerr;
@@ -14,8 +15,10 @@ OONMainDisplay::OONMainDisplay(Config cfg) : _cfg(cfg)
 }
 */
 
-OONMainDisplay::OONMainDisplay(Config cfg, Camera& cam)
-	: ScreenView(cfg, cam)
+OONMainDisplay::OONMainDisplay(OONViewConfig cfg, OONApp& app)
+	: ScreenView(cfg, _oon_default_camera)
+	, _app(app)
+	, _oon_default_camera({.base_scale = OONConfig::DEFAULT_ZOOM})
 {
 //	reset(); // Calc. initial state
 cerr <<	"DBG> OONMainDisplay ctor: camera pointer is now: " << _camera << "\n";
@@ -37,5 +40,6 @@ void OONMainDisplay::resize(unsigned width, unsigned height)
 	_cfg.height = height;
 }
 */
+
 
 } // namespace OON

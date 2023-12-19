@@ -56,9 +56,24 @@ namespace sync {
 //============================================================================
 namespace OON {
 
+//============================================================================
+namespace _internal {
+FUCpp_ViewHack::FUCpp_ViewHack(OON_sfml& app) : _oon_view(app) {}
+FUCpp_ViewHack::_oon_view_container::_oon_view_container(OON_sfml& app)
+//!!WAS:	: oon_main_camera({.width  = (float)backend.hci.window().width,  //!!WAS: Szim::SimAppConfig::VIEWPORT_WIDTH, //!! Would (should!) be reset later from "real data" from the backend anyway...
+//!!WAS:	                   .height = (float)backend.hci.window().height, //!!WAS: Szim::SimAppConfig::VIEWPORT_HEIGHT,
+//!!WAS:	, _oon_main_view({.width = Szim::SimAppConfig::VIEWPORT_WIDTH,
+//!!WAS:	                  .height = Szim::SimAppConfig::VIEWPORT_HEIGHT},
+	: _oon_main_view(app)
+{
+//cerr << "DBG> _oon_view_and_cam_container: _oon_main_view.camera ptr: "<<&_oon_main_view.camera()<<"\n";
+}
+}
+
 //----------------------------------------------------------------------------
 OON_sfml::OON_sfml(int argc, char** argv)
-	: OONApp(argc, argv)
+	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
+	, OONApp(argc, argv, _oon_view._oon_main_view) //!! Ugh...
 #ifndef DISABLE_HUD
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(sfw::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
@@ -209,18 +224,22 @@ cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.o
 
 //----------------------------------------------------------------------------
 void OON_sfml::draw() // override
+//!!?? Is there a nice, exact criteria by which UI rendering can be distinguished from model rendering?
 {
-	renderer.render(*this);
-		// Was in updates_for_next_frame(), but pause should not stop UI updates.
-		//!!...raising the question: at which point should UI rendering be separated from world rendering?
-
 //#ifdef DEBUG
-	if (!(keystate(ALT) && keystate(CTRL) /*&& keystate(Z)*/)) // -> #225
+	if (!controls.ShowOrbits) // -> #225
 //#endif
 		SFML_WINDOW().clear();
 
-	renderer.draw(*this);
+	oon_main_view().draw(); //!! Change it to draw(surface)!
 
+/*cerr << std::boolalpha
+	<< "wallpap? "<<gui.hasWallpaper() << ", "
+	<< "clea bg? "<<sfw::Theme::clearBackground << ", "
+	<< hex << sfw::Theme::bgColor.toInteger() << '\n';
+*/
+        gui.render(); // Draw last, as a translucent overlay!
+//!! These are (will be...) also part of the GUI:
 #ifndef DISABLE_HUD
 	if (_show_huds) {
 		timing_hud.draw(SFML_WINDOW());
@@ -233,13 +252,6 @@ void OON_sfml::draw() // override
 		                                      //!! "Activity" means more than just drawing, so... (Or actually both should control it?)
 	}
 #endif
-
-/*cerr << std::boolalpha
-	<< "wallpap? "<<gui.hasWallpaper() << ", "
-	<< "clea bg? "<<sfw::Theme::clearBackground << ", "
-	<< hex << sfw::Theme::bgColor.toInteger() << '\n';
-*/
-        gui.render(); // Draw last, as a translucent overlay!
 
 	SFML_WINDOW().display();
 }
@@ -366,10 +378,10 @@ static const float autofollow_throwback = appcfg.get("controls/autofollow_throwb
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
 			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(entity(focused_entity_ndx).p);
 			if (oon_main_camera().confine(entity(focused_entity_ndx).p,
-			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/Szim::SimAppConfig::DEFAULT_ZOOM,
+			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/OONConfig::DEFAULT_ZOOM,
 			    autofollow_throwback)) { // true = drifted off
 				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...
-//cerr << "oon_main_camera().scale(): "<<oon_main_camera().scale()<<", DEFAULT_ZOOM: "<<oon_main_camera().scale()<<", ratio: "<<oon_main_camera().scale() / Szim::SimAppConfig::DEFAULT_ZOOM<<'\n';
+//cerr << "oon_main_camera().scale(): "<<oon_main_camera().scale()<<", DEFAULT_ZOOM: "<<oon_main_camera().scale()<<", ratio: "<<oon_main_camera().scale() / OONConfig::DEFAULT_ZOOM<<'\n';
 			}
 		}
 	}
@@ -581,7 +593,7 @@ try {
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
 				view_control(event.mouseWheelScroll.delta); //! Apparently always 1 or -1...
-//renderer.p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4;
+//oon_main_view().p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4;
 				break;
 			}
 
@@ -614,13 +626,13 @@ cerr << "- Nothing there, focusing on the deep void...\n";
 			}
 
 			case sf::Event::LostFocus:
-				reset_keys();
-				renderer.p_alpha = Renderer_SFML::ALPHA_INACTIVE;
+				oon_main_view().dim();
+				reset_keys(); //!! Should be an engine-internal chore...
 				break;
 
 			case sf::Event::GainedFocus:
-				reset_keys();
-				renderer.p_alpha = Renderer_SFML::ALPHA_ACTIVE;
+				oon_main_view().undim();
+				reset_keys(); //!! Should be an engine-internal chore...
 				break;
 
 			default:
@@ -687,33 +699,6 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 
 
 //----------------------------------------------------------------------------
-size_t OON_sfml::add_body(World::Body&& obj) //override
-{
-	auto ndx = OONApp::add_body(std::forward<decltype(obj)>(obj));
-	// Pre-cache shapes for rendering... (!! Likely pointless, but this is just what I started with...)
-	renderer.create_cached_body_shape(*this, obj, ndx);
-	return ndx;
-}
-
-//----------------------------------------------------------------------------
-void OON_sfml::remove_body(size_t ndx) //override
-{
-	OONApp::remove_body(ndx);
-	renderer.delete_cached_body_shape(*this, ndx);
-}
-
-void OON_sfml::resize_shapes(float factor) //override
-{
-	renderer.resize_objects(factor);
-}
-
-void OON_sfml::resize_shape(size_t ndx, float factor) //override
-{
-	renderer.resize_object(ndx, factor);
-}
-
-
-//----------------------------------------------------------------------------
 bool OON_sfml::load_snapshot(const char* fname) //override
 {
 	// This should load the model back, but can't rebuild the rendering state:
@@ -736,11 +721,7 @@ bool OON_sfml::load_snapshot(const char* fname) //override
 	//! 1. Halt everything...
 	//     DONE, for now, by the event handler!
 	//! 2. Purge the renderer only...
-	renderer.reset();
-	//! 3. Recreate the shapes...
-	for (size_t n = 0; n < const_world().bodies.size(); ++n) {
-		renderer.create_cached_body_shape(*this, *world().bodies[n], n);
-	}
+	oon_main_view().reset();
 // The engine has already written that:
 //cerr << "Game state restored from \"" << fname << "\".\n";
 	return true;

@@ -41,42 +41,6 @@ void Renderer_SFML::reset()
 }
 
 //----------------------------------------------------------------------------
-void Renderer_SFML::render(SimApp& game)
-// Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
-{
-	// Shape indexes must be the same as the corresponding entity indexes!
-	for (size_t i = 0; i < shapes_to_change.size(); ++i) {
-		auto& body = game.world().bodies[i];
-
-		//!!Sigh, this will break as soon as not just circles would be there...
-		auto shape = dynamic_pointer_cast<sf::Shape>(shapes_to_change[i]);
-		shape->setFillColor(sf::Color((body->color << 8) | p_alpha));
-
-		auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
-
-		//!! The size and coords. of the screen view pane (UI viewport) are NOT directly
-		//!! related to the camera view, but would obviously be best if they were identical!...
-
-	// a)
-		auto vpos = game.main_view().camera()
-			.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
-			                                                                   //!! Mind the inverted camera & model y, too!
-	// b)
-	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
-	//	auto vpos = oon_camera.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
-	//	                                                                                         //!! Mind the inverted camera & model y, too!
-		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
-		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
-		//!! -> #221, #445
-		trshape.setPosition({ vpos.x + float(game.backend.hci.window().width/2),
-			             -vpos.y + float(game.backend.hci.window().height/2)}); //!! "Standardize" on the view's centered origin instead!
-
-//cerr << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x - body->r) * oon_camera.scale() + oon_camera.offset.x
-//			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y - body->r) * oon_camera.scale() + oon_camera.offset.y <<'\n';
-	}
-}
-
-//----------------------------------------------------------------------------
 void Renderer_SFML::draw(SimApp& game)
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {

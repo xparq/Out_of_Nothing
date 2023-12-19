@@ -23,12 +23,10 @@ namespace OON {
 //----------------------------------------------------------------------------
 class Renderer_SFML : public Szim::View::Renderer
 {
-public:
-	constexpr static auto ALPHA_ACTIVE = 255;
-	constexpr static auto ALPHA_INACTIVE = 127;
+friend class OONMainDisplay_sfml; //!! Only until #461...
 
+public:
 // Ops
-	void render(Szim::SimApp& game); // can't keep it inline here: uses the game object!
 	void draw(Szim::SimApp& game); // can't keep it inline here: uses the game object!
 	void draw_paused_banner(Szim::SimApp& game);
 
@@ -58,9 +56,6 @@ public:
 
 // Housekeeping
 	Renderer_SFML() = default;
-
-// Rendering params:
-	uint8_t p_alpha = ALPHA_ACTIVE;
 
 // Internals:
 protected:

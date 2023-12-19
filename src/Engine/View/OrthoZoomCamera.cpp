@@ -7,6 +7,12 @@
 
 namespace Szim::View {
 
+/*
+OrthoZoomCamera::OrthoZoomCamera()
+{
+	reset(); // Calc. initial state
+}
+*/
 OrthoZoomCamera::OrthoZoomCamera(Config cfg) :
 	cfg(cfg)
 {

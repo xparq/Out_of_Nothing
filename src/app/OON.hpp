@@ -6,7 +6,6 @@
 #include "OONMainDisplay.hpp"
 
 #include "Engine/SimApp.hpp"
-#include "Engine/View/OrthoZoomCamera.hpp"
 
 namespace UI { class HUD; } //!!...
 
@@ -14,20 +13,12 @@ namespace UI { class HUD; } //!!...
 
 namespace OON {
 
+class OONMainDisplay;
+
 //============================================================================
 
-namespace _internal {
-struct FUCpp_CameraViewPack {
-	struct _oon_view_and_cam_container {
-		Szim::View::OrthoZoomCamera _oon_main_camera;
-		OON::OONMainDisplay         _oon_main_view;
-		_oon_view_and_cam_container();
-	} _oon_view_and_cam;
-};
-}
-
 //----------------------------------------------------------------------------
-class OONApp : private _internal::FUCpp_CameraViewPack, public Szim::SimApp
+class OONApp : public Szim::SimApp
 {
 //----------------------------------------------------------------------------
 // Config/Setup...
@@ -171,14 +162,14 @@ protected:
 
 	//--------------------------------------------------------------------
 	// New overridables introduced:
-	virtual void resize_shapes(float /*factor*/) {}
-	virtual void resize_shape(size_t /*ndx*/, float /*factor*/) {}
+	virtual void resize_shapes(float /*factor*/);
+	virtual void resize_shape(size_t /*ndx*/, float /*factor*/);
 
 //----------------------------------------------------------------------------
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	OONApp(int argc, char** argv);
+	OONApp(int argc, char** argv, OONMainDisplay& main_view);
 	OONApp(const OONApp&) = delete;
 
 //----------------------------------------------------------------------------
@@ -188,17 +179,10 @@ protected:
 	OONConfig appcfg; // See also syscfg from this->SimApp
 	OONController controls;
 
-	auto&       oon_main_camera()       { return _oon_view_and_cam._oon_main_camera; }
-	const auto& oon_main_camera() const { return _oon_view_and_cam._oon_main_camera; }
-//!! JUST main_view() COLLIDES WITH SimApp's:
-	      OONMainDisplay& oon_main_view()       { return _oon_view_and_cam._oon_main_view; }
-	const OONMainDisplay& oon_main_view() const { return _oon_view_and_cam._oon_main_view; }
-/*!!
-	Szim::View::OrthoZoomCamera oon_main_camera;
-	      auto& main_camera()       { return oon_main_camera; }
-	const auto& main_camera() const { return oon_main_camera; }
-	OON::OONMainDisplay oon_main_view;
-!!*/
+	      auto& oon_main_view()         { return (      OONMainDisplay&) main_view(); }
+	const auto& oon_main_view()   const { return (const OONMainDisplay&) main_view(); }
+	      auto& oon_main_camera()       { return (      OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
+	const auto& oon_main_camera() const { return (const OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 
 	bool  chemtrail_releasing = false;
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;

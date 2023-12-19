@@ -2,7 +2,7 @@
 
 #include "Engine/Backend/HCI.hpp"
 
-#include "sfw/GUI.hpp" //!! Used to be in OON_sfml only, but since scroll_locked() requires it...
+#include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
 #include "UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
                        //!! And we're already using keystate() here, too, shamelessly! ;) )
@@ -52,29 +52,11 @@ void OONApp::show_cmdline_help(const Args& args, const char* banner)
 
 
 //============================================================================
-//============================================================================
-namespace _internal {
-FUCpp_CameraViewPack::_oon_view_and_cam_container::_oon_view_and_cam_container()
-//!!: oon_main_camera({.width  = (float)backend.hci.window().width, //!!WAS: Szim::SimAppConfig::VIEWPORT_WIDTH, //!! Would (should!) be reset later from "real data" from the backend anyway...
-//!!                   .height = (float)backend.hci.window().height, //!!WAS: Szim::SimAppConfig::VIEWPORT_HEIGHT,
-: _oon_main_camera({.width  = Szim::SimAppConfig::VIEWPORT_WIDTH, //!! Supposed to be reset with "real data" by SimApp anyway...
-                    .height = Szim::SimAppConfig::VIEWPORT_HEIGHT,
-                    .base_scale = SimAppConfig::DEFAULT_ZOOM})
-, _oon_main_view({.width = Szim::SimAppConfig::VIEWPORT_WIDTH,
-                  .height = Szim::SimAppConfig::VIEWPORT_HEIGHT},
-                  _oon_main_camera)
-{
-//cerr << "DBG> _oon_view_and_cam_container: _oon_main_view.camera ptr: "<<&_oon_main_view.camera()<<"\n";
-}
-}
-
-//============================================================================
-OONApp::OONApp(int argc, char** argv)
-	: FUCpp_CameraViewPack()
-	, SimApp(argc, argv, oon_main_view())
+OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
+	: SimApp(argc, argv, main_view)
 	, appcfg(cfg, args) //!! appcfg(SimApp::syscfg)
 {
-//!! This shouldn't be needed, the engine should take care of it:
+//!! This shouldn't be needed, the engine should take care of it: #462!
 //!! And the view resize should also implicitly take care of any camera adjustments, too, so
 //!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
 //!!	oon_main_view().resize((float)backend.hci.window().width,
@@ -496,6 +478,20 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 
 
 //----------------------------------------------------------------------------
+// Unrelated to onResize, but... where else is better to put these? :)
+void OONApp::resize_shapes(float factor) //virtual
+{
+	oon_main_view().resize_objects(factor);
+}
+
+void OONApp::resize_shape(size_t ndx, float factor) //virtual
+{
+	oon_main_view().resize_object(ndx, factor);
+}
+
+
+
+//----------------------------------------------------------------------------
 unsigned OONApp::add_player(World::Body&& obj) //override
 {
 	// These are the player modelling differences:
@@ -693,7 +689,7 @@ void OONApp::zoom(float factor)
 }
 
 //----------------------------------------------------------------------------
-void OON_sfml::_adjust_pan_after_zoom(float factor)
+void OONApp::_adjust_pan_after_zoom(float factor)
 {
 	// If the new zoom level would put the player object out of view, reposition the view so that
 	// it would keep being visible; also roughly at the same view-offset as before!
@@ -877,7 +873,10 @@ void OONApp::remove_random_bodies(size_t n/* = -1*/)
 size_t OONApp::add_body(World::Body&& obj) //virtual
 // Add new entity (moved) from a template (temporary) obj.
 {
-	return world().add_body(std::forward<decltype(obj)>(obj));
+	auto ndx = world().add_body(std::forward<decltype(obj)>(obj));
+	// Pre-cache shapes for rendering... (!! May be pointless, but this is just what I started with...)
+	oon_main_view().create_cached_body_shape(obj, ndx);
+	return ndx;
 }
 
 //----------------------------------------------------------------------------
@@ -929,7 +928,11 @@ cerr << "- WARNING: The followed object has ceased to exist...\n";
 	}
 
 	assert(focused_entity_ndx == ~0u || focused_entity_ndx < entity_count());
+
+	// Remove from the view cache, too:
+	oon_main_view().delete_cached_body_shape(ndx);
 }
+
 
 //----------------------------------------------------------------------------
 void OONApp::remove_random_body()

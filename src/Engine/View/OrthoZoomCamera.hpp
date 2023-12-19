@@ -32,6 +32,7 @@ struct OrthoZoomCamera : Camera
 	// Setup...
 	// -------------------------------------------------------------------
 
+//	OrthoZoomCamera();
 	OrthoZoomCamera(Config cfg);
 	void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
 	void reset(Config&& recfg);
