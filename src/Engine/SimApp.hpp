@@ -28,6 +28,8 @@ import Storage;
 #include <format> // vformat
 #include <string>
 #include <string_view>
+#include <cassert>
+
 
 namespace Szim {
 
@@ -81,6 +83,8 @@ public:
 
 	bool toggle_fixed_model_dt(); // Returns the new state
 
+
+	float session_time() const { return time.real_session_time; }
 	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
 
 	      Model::World& world();
@@ -131,8 +135,9 @@ public:
 	                //!! (This can't really be done in C++ properly, without RTTI etc.
 	                //!! Still added this cringy fn. for consistency & as a reminder.)
 	virtual void   remove_player(unsigned player_id) = 0; //!this should then be virtual, too (like destructors)
-	virtual       Entity& player_entity(unsigned player_id = 1) = 0;
-	virtual const Entity& player_entity(unsigned player_id = 1) const = 0;
+	virtual size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const = 0;
+	       Entity& player_entity(unsigned p = 1)       { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+	 const Entity& player_entity(unsigned p = 1) const { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)

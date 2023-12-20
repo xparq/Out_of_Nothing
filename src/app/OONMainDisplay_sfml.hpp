@@ -77,10 +77,14 @@ protected:
 	// Data...
 	// -------------------------------------------------------------------
 private:
-	//!! Forgot why the two sets! Explain!!!
-	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw; // ::Shape would be way too restritive here
-	//!!misnomer alert below! should be sg. like "body_images" (as they are not just any Transformables!!! -- these are linked to model entities!):
-	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change; // ::Shape would be way too restritive here
+	// Two lists ("views") for the same set of shapes, typed differently for
+	// convenience, in order to:
+	// - iterate for updates, and
+	// - iterate for drawing.
+	// (The common ancestor sf::Shape would be way too restritive alone, and
+	// the two lists may also diverge in the future.)
+	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw;
+	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change;
 
 }; // class OONMainDisplay_sfml
 

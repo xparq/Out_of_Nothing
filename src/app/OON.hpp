@@ -122,9 +122,7 @@ public:
 
 	unsigned add_player(Model::World::Body&& obj) override;
 	void     remove_player(unsigned ndx) override;
-	size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const { assert(player_id == 1); return globe_ndx; }
-	       Entity& player_entity(unsigned p = 1)       override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
-	 const Entity& player_entity(unsigned p = 1) const override { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+	size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const override { assert(player_id == 1); return globe_ndx; }
 
 	void poll_controls() override;
 	bool perform_control_actions() override; // true if there have been some actions

@@ -17,6 +17,7 @@
 
 #include <memory>
 	using std::make_shared;
+#include <cmath> // sin //!! Seriously, replace with a fast table lookup!
 #include <cassert>
 #include <iostream> //!! DEBUG
 	using std::cerr;
@@ -177,6 +178,32 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	// Draw the world/scene...
 	for (const auto& entity : shapes_to_draw) {
 		SFML_WINDOW(app()).draw(*entity);
+	}
+
+
+	// Player halo...
+	// Only if the real size is too small...
+	const auto player_ndx = app().player_entity_ndx();
+	const auto& player_body = app().player_entity();
+	const auto& player_shape = *(shapes_to_change[player_ndx]);
+	float rb = player_body.r * oon_camera().scale();
+//	float rb = ((sf::CircleShape&)player_shape).getRadius();
+	static float A = 1.f; // pixel
+	static float f = 2.0f; // Hz
+	float phase = app().session_time() * f * 2*3.141f;
+	float y = sin(phase);
+	if (rb < 12) {
+		float r = 16 + y * A/2;
+		//r -= sin(phase) * 2/2; // Compensate when only pulsating the outline thickness.
+		auto halo = sf::CircleShape(r);
+		halo.setOutlineThickness(2); //(y * 2);
+		halo.setOutlineColor(sf::Color(unsigned((app().entity(player_ndx).color << 8)
+		                                        | 0x60 + unsigned(y * 20))));
+		halo.setFillColor(sf::Color(0));
+		halo.setOrigin({r - rb, r - rb});
+		halo.setPosition(player_shape.getPosition());
+
+		SFML_WINDOW(app()).draw(halo);
 	}
 
 	//!!MOVE THIS TO THE UI:
