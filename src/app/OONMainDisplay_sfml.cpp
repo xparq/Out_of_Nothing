@@ -1,15 +1,14 @@
 #include "OONMainDisplay_sfml.hpp"
 
 //!! Keep it as tight as possible:
+//#include "Engine/SimApp.hpp"
+#include "OON.hpp" // for focused_entity_ndx (and, not yet, but...: app.appcfg)
 //#include "OON_sfml.hpp"
-//#include "OON.hpp"
-#include "Engine/SimApp.hpp"
 
 //!! This "backend tunneling" is so sad this way"... See notes in OON_sfml.cpp!
 #include "Engine/Backend/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW(app) (((Szim::SFML_Backend&)((app).backend)).SFML_window())
-
 
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
@@ -25,6 +24,18 @@
 
 namespace OON {
 
+const Avatar_sfml& OONMainDisplay_sfml::avatar(size_t ndx) const
+{
+//!!	assert(_avatars.size());
+if (!_avatars.size()) { static Avatar_sfml dummy({});
+cerr <<"- INTERNAL: Hey, avatar loading must happen before other View ops.!\n";
+return dummy; }
+
+	return *_avatars[ndx > _avatars.size() - 1
+	                     ? _avatars.size() - 1 : ndx];
+}
+
+
 //----------------------------------------------------------------------------
 OONMainDisplay_sfml::OONMainDisplay_sfml(OONApp& app)
 	: OONMainDisplay({
@@ -33,23 +44,40 @@ OONMainDisplay_sfml::OONMainDisplay_sfml(OONApp& app)
 		//!!
 	}, app)
 {
-//	reset(); // Calc. initial state
+//!! This would crash ('bad alloc') with the current construction logic,
+//!! i.e. no Engine (SimApp) init has been done at all yet! :-o :-/
+//!!	reset(); // Calc. initial state
+
 cerr <<	"DBG> OONMainDisplay ctor: camera pointer is now: " << _camera << "\n";
 }
 
 //----------------------------------------------------------------------------
 void OONMainDisplay_sfml::reset(const Config* recfg)
 {
+cerr << "----------------------------------------- "<<__FUNCTION__<<"\n";
+
 	if (recfg) _cfg = *recfg;
 
 	resize(_cfg.width, _cfg.height);
+
+	const auto& c_simapp = app();
+
+	// Load avatars -- !!TESTING ONLY!!
+	Avatar_sfml::prefix_path = c_simapp.cfg.asset_dir.c_str(); // Can be set per instance, too.
+	for (const auto& a : c_simapp.avatars) {
+		_avatars.emplace_back(std::make_unique<Avatar_sfml>(a));
+// OR:
+//		_avatars.emplace_back(std::make_unique<Avatar_sfml>(
+//			a, Avatar_sfml::PRELOAD, c_simapp.cfg.asset_dir.c_str()
+//		));
+	}
 
 	// Recreate the shapes...
 	shapes_to_change.clear();
 	shapes_to_draw.clear();
 
-	for (size_t n = 0; n < app().const_world().bodies.size(); ++n) {
-		create_cached_shape(*(app().const_world().bodies[n]), n); // * for smart_ptr
+	for (size_t n = 0; n < c_simapp.world().bodies.size(); ++n) {
+		create_cached_shape(*(c_simapp.world().bodies[n]), n); // * for smart_ptr
 	}
 }
 
@@ -69,11 +97,18 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::World::Body& body, si
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
 	auto shape = make_shared<sf::CircleShape>(body.r * oon_camera().scale());
+	shape->setOrigin({shape->getRadius(), shape->getRadius()});
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
 
 	assert(shapes_to_draw.size()   == entity_ndx + 1);
 	assert(shapes_to_change.size() == entity_ndx + 1);
+
+//!!!!!!!!!!!!!!!!!!!!!!!
+//!!!!!!!!!!!!!!!!!!!!!!! NOT HERE, NOT THIS WAY!
+//!!!!!!!!!!!!!!!!!!!!!!!
+	auto& player_shape = (sf::Shape&) *(shapes_to_draw[0]);
+	player_shape.setTexture(&( avatar(oon_app().focused_entity_ndx).image ), true);
 }
 
 //----------------------------------------------------------------------------
@@ -111,7 +146,7 @@ void OONMainDisplay_sfml::resize_object(size_t ndx, float factor) //override
 
 //----------------------------------------------------------------------------
 //!! Just directly moved from the legacy renderer for now:
-void OONMainDisplay_sfml::render()
+void OONMainDisplay_sfml::render_scene()
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	// Shape indexes must be the same as the corresponding entity indexes!
@@ -120,7 +155,14 @@ void OONMainDisplay_sfml::render()
 
 		//!!Sigh, this will break as soon as not just circles would be there...
 		auto shape = dynamic_pointer_cast<sf::Shape>(shapes_to_change[i]);
-		shape->setFillColor(sf::Color((body->color << 8) | p_alpha));
+
+		// Set color (!!AND CURRENTLY: ALSO TEXTURE!!) to the avatar bg. for those that have an avatar!
+		if (i != app().player_entity_ndx()) { //!! Currently only, also: "the", player has avatar...
+			shape->setFillColor(sf::Color((body->color << 8) | p_alpha));
+		} else {
+			shape->setFillColor(sf::Color(avatar(oon_app().focused_entity_ndx).tint_RGBA));
+			shape->setTexture(&(          avatar(oon_app().focused_entity_ndx).image));
+		}
 
 		auto& trshape = dynamic_cast<sf::Transformable&>(*shape);
 
@@ -129,27 +171,28 @@ void OONMainDisplay_sfml::render()
 
 	// a)
 		auto vpos = app().main_view().camera()
-			.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
-			                                                                   //!! Mind the inverted camera & model y, too!
+			.world_to_view_coord(body->p); //!! - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset!
+			                               //!! Mind the inverted camera & model y, too!
 	// b)
 	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
-	//	auto vpos = oon_camera.world_to_view_coord(body->p - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
-	//	                                                                                         //!! Mind the inverted camera & model y, too!
+	//	auto vpos = oon_camera.world_to_view_coord(body->p); //!! - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
+	//	                                                     //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
 		//!! -> #221, #445
 		trshape.setPosition({ vpos.x + float(app().backend.hci.window().width/2),
 			             -vpos.y + float(app().backend.hci.window().height/2)}); //!! "Standardize" on the view's centered origin instead!
 
-//cerr << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x - body->r) * oon_camera.scale() + oon_camera.offset.x
-//			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y - body->r) * oon_camera.scale() + oon_camera.offset.y <<'\n';
+//cerr << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x) * oon_camera.scale() + oon_camera.offset.x
+//			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y) * oon_camera.scale() + oon_camera.offset.y <<'\n';
 	}
 }
 
 
 void OONMainDisplay_sfml::draw() // override
 {
-	render(); //!!?? Is this worth keeping separated from draw()? Can't see a compelling use case yet.
+	render_scene(); //!!?? Is this worth keeping separated from draw()?
+	                //!!?? Probably, for occlusion etc. not relevant for any non-model frippery!
 
 	// Grid lines...
 	static sf::Color hair_color{0x44444488};
@@ -185,25 +228,40 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	// Only if the real size is too small...
 	const auto player_ndx = app().player_entity_ndx();
 	const auto& player_body = app().player_entity();
-	const auto& player_shape = *(shapes_to_change[player_ndx]);
+
+	//!! May not remain a circle forever:
+	auto& player_shape = (sf::CircleShape&) *(shapes_to_change[player_ndx]);
+
 	float rb = player_body.r * oon_camera().scale();
 //	float rb = ((sf::CircleShape&)player_shape).getRadius();
 	static float A = 1.f; // pixel
 	static float f = 2.0f; // Hz
 	float phase = app().session_time() * f * 2*3.141f;
 	float y = sin(phase);
-	if (rb < 12) {
-		float r = 16 + y * A/2;
+	if (rb < 16) {
+		float r = 20 + y * A/2;
 		//r -= sin(phase) * 2/2; // Compensate when only pulsating the outline thickness.
 		auto halo = sf::CircleShape(r);
 		halo.setOutlineThickness(2); //(y * 2);
 		halo.setOutlineColor(sf::Color(unsigned((app().entity(player_ndx).color << 8)
 		                                        | 0x60 + unsigned(y * 20))));
-		halo.setFillColor(sf::Color(0));
-		halo.setOrigin({r - rb, r - rb});
+		halo.setFillColor(sf::Color(0)); // sf::Color(0x66663333)
+		halo.setOrigin({r, r});
 		halo.setPosition(player_shape.getPosition());
 
 		SFML_WINDOW(app()).draw(halo);
+	}
+
+	// Idle-rotate the player avatar...
+	static float idle_rot_threshold = 2;
+	static float idle_rot_rate_inv = 5;
+	if (app().player_idle_time() > idle_rot_threshold)
+	{
+		player_shape.setRotation(
+			sf::radians((app().player_idle_time() - idle_rot_threshold) / idle_rot_rate_inv)
+		);
+	} else {
+		player_shape.setRotation(sf::radians(0));
 	}
 
 	//!!MOVE THIS TO THE UI:

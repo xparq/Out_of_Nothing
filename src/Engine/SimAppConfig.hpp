@@ -29,6 +29,8 @@ struct SimAppConfig : Config
 	AUTO_CONST DEFAULT_SNAPSHOT_FILE_PATTERN = "snapshot_{}.save";
 	AUTO_CONST DEFAULT_FPS_LIMIT = 30;
 
+	AUTO_CONST DEFAULT_PLAYER_IDLE_THRESHOLD = 0.5; // s
+
 	//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	//!! SOME OF THESE ARE CURRENTLY INITIALIZED BY THE SimApp ctor!
 	//!! Possibly move the post-load callback hook here!
@@ -58,6 +60,9 @@ struct SimAppConfig : Config
 	bool  fixed_model_dt_enabled;
 	float fixed_model_dt;
 	unsigned fps_limit; // 0: no limit
+
+	float player_idle_threshold; // s //!! Make it adjustable!
+
 	// UI, presentation
 	std::string background_music; //!!?? Awkward... App stuff that needs convenient engine support. How exactly?
 	// Misc.

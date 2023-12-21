@@ -36,6 +36,8 @@ public:
 
 	Szim::SimApp& app() override { return (Szim::SimApp&) _app; }
 
+	auto& oon_app() const { return (const OON::OONApp&) _app; }
+
 	// -------------------------------------------------------------------
 	// App-specific features...
 	// -------------------------------------------------------------------

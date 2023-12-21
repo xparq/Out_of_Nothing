@@ -411,6 +411,25 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 
 //----------------------------------------------------------------------------
+void SimApp::player_mark_active(unsigned player_id)
+{
+	assert(players.size());
+	assert(player_id <= players.size()); // <=, not just <, as player_id is 1-based!
+
+	player(player_id).last_action_time = time.real_session_time;
+}
+
+float SimApp::player_idle_time(unsigned player_id) const
+{
+	assert(players.size());
+	assert(player_id <= players.size()); // <=, not just <, as player_id is 1-based!
+
+	return time.real_session_time - player(player_id).last_action_time > cfg.player_idle_threshold ?
+	       time.real_session_time - player(player_id).last_action_time : 0;
+}
+
+
+//----------------------------------------------------------------------------
 bool SimApp::is_entity_at_viewpos(size_t entity_id, float x, float y) const // virtual
 {
 	const auto& e = entity(entity_id);

@@ -7,6 +7,8 @@
 #include "SimAppConfig.hpp"
 #include "SessionManager.hpp"
 #include "Time.hpp"
+#include "Avatar.hpp" // Fw-decl. is not enough for vector<Avatar>: namespace Szim { class Avatar; }
+#include "Player.hpp" // Fw-decl. is not enough for vector<Player>: namespace Szim { class Player; }
 
 //!!... The UI and IO etc. are gonna be tough to abstract...
 //!!namespace sfw { class GUI; }
@@ -28,6 +30,7 @@ import Storage;
 #include <format> // vformat
 #include <string>
 #include <string_view>
+#include <vector>
 #include <cassert>
 
 
@@ -131,13 +134,33 @@ public:
 	virtual bool entity_at_viewpos(float x, float y, size_t* entity_id OUT) const;
 	virtual bool is_entity_at_viewpos(size_t entity_id, float x, float y) const;
 
-	virtual unsigned add_player(Model::World::Body&&) = 0; //!!Questionable "generic config" input type!... ;)
-	                //!! (This can't really be done in C++ properly, without RTTI etc.
-	                //!! Still added this cringy fn. for consistency & as a reminder.)
+//!!	unsigned add_player(Player&& tempp); // Calls a virtual hook to let the app finish it...
+	virtual unsigned add_player(
+		Model::World::Body&& model,
+		Avatar& avatar,
+		VirtualController& controls
+	) = 0; //!! Ugh... Refine! (Can't really be done nicely in C++, though.)
 	virtual void   remove_player(unsigned player_id) = 0; //!this should then be virtual, too (like destructors)
-	virtual size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const = 0;
+	Player& player(unsigned player_id = 1) {
+		assert(player_id > 0); // 1-based player IDs
+		assert(players.size());
+		assert(players.size() >= player_id); //! >=, not >, for player_id is 1-based!
+		return players[player_id - 1];
+	}
+	const Player& player(unsigned player_id = 1) const { return ((SimApp*)this)->player(player_id); }
+
+	size_t player_entity_ndx(unsigned player_id = 1) const {
+		auto ndx = player(player_id).entity_ndx;
+		assert(entity_count());
+		assert(ndx < entity_count());
+		return ndx;
+	}
 	       Entity& player_entity(unsigned p = 1)       { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 	 const Entity& player_entity(unsigned p = 1) const { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+
+	float player_idle_time(  unsigned player_id = 1) const; // No input for so many seconds (0: busy; gated by cfg.player_idle_threshold)
+	bool  player_idle(       unsigned player_id = 1) const { return player_idle_time(player_id) > 0; }
+	void  player_mark_active(unsigned player_id = 1);
 
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)
@@ -225,6 +248,12 @@ protected:
 	int  _exit_code = 0;
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
 	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
+
+	//--------------------------------------------------------------------
+	// Player support...
+public: //!! <- For the View classes :-/
+	std::vector<Avatar> avatars;
+	std::vector<Player> players; //!!UNUSED YET, JUST FOR COMPILATION TESTING!!
 
 }; // class SimApp
 } // namespace Szim

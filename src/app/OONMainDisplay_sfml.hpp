@@ -3,15 +3,19 @@
 
 #include "OONMainDisplay.hpp"
 
+#include "OONAvatar_sfml.hpp" // for focused_entity_ndx (and, not yet, but...: app.appcfg)
+
 // For the cached SFML shapes:
 //#include <SFML/Graphics/Transformable.hpp>
 //#include <SFML/Graphics/Drawable.hpp>
 namespace sf { class Transformable; class Drawable; }
 #include <vector>
-#include <memory> // shared_ptr
+#include <memory> // shared_ptr, unique_ptr
 
 
 namespace OON {
+
+//!!class Avatar_sfml; // Alas, not enough to fw-decl for unique_ptr (unlike shared_ptr)! :-/
 
 class OONMainDisplay_sfml : public OONMainDisplay
 {
@@ -56,8 +60,7 @@ public:
 	// Internals...
 	// -------------------------------------------------------------------
 protected:
-	//!! Just directly moved from the legacy renderer for now:
-	void render(); //!!?? render(some target or context or options?) and is it worth separating from draw()?
+	void render_scene(); //!!?? render_scene(some target or context or options?)
 
 	// Note: these are templates (by the auto arg), so must be in the header!
 	void transform_object(size_t ndx, const auto& op) {
@@ -85,6 +88,9 @@ private:
 	// the two lists may also diverge in the future.)
 	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw;
 	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change;
+
+	std::vector< std::unique_ptr<Avatar_sfml> > _avatars;
+	const Avatar_sfml& avatar(size_t ndx = 0) const;
 
 }; // class OONMainDisplay_sfml
 

@@ -11,6 +11,8 @@ OONController::OONController()
 }
 !!*/
 
+namespace OON {
+
 void OONController::update() //!! Check the cost of keystate(), calling the Win32 API several times!!!
 {
 	using namespace UI;
@@ -46,3 +48,5 @@ void OONController::update() //!! Check the cost of keystate(), calling the Win3
 	Chemtrail = keystate(SPACE);
 	Shield    = keystate(LALT);
 }
+
+} // namespace OON

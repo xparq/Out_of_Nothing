@@ -1,7 +1,6 @@
 ﻿#include "OON.hpp"
 
 #include "Engine/Backend/HCI.hpp"
-
 #include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
 #include "UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
@@ -16,6 +15,7 @@
 #include <iostream>
 	using std::cerr, std::endl;
 #include <cassert>
+#include "sz/debug.hh"
 
 using namespace Szim;
 using namespace Model;
@@ -67,7 +67,7 @@ OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
 
 //----------------------------------------------------------------------------
 void OONApp::init() // override
-{
+{_
 	//!! Currently, the data watcher HUD setup depends directly on the player objects
 	//!! that have just been created above, so the UI init CAN'T happen before that...:
 	//_setup_UI();
@@ -75,20 +75,42 @@ void OONApp::init() // override
 	const auto& w = const_world();
 		//!! "Some" model world has been implicitly created by SimApp for now... :-o
 
+	// Images...
+//!!!!
+//!!!! Currently there's no automatic guidance: this must be manually placed before the first add_body() (etc.)!
+//!!!!
+	//!!
+	//!! THIS MUST COME BEFORE CALLING add_body() or its friends! :-o
+	//!!
+	avatars.emplace_back(Avatar{ .image_path = "image/HoryJesus.jpg", .tint_RGBA = 0xffff99ff });
+	tx_jesus = avatars.size() - 1;
+	avatars.emplace_back(Avatar{ .image_path = "image/SantaMatt.jpg", .tint_RGBA = 0xccccffff });
+	tx_santa = avatars.size() - 1;
+	avatars.emplace_back(Avatar{ .image_path = "image/KittyGod.jpg"});
+	tx_kittygod = avatars.size() - 1;
+	//!! Also this, called manually... Sigh... A temp. workaround for #472:
+	//!! (And this is a pretty arbitrary position for that, too! :-o :-/ )
+	oon_main_view().reset();
+
+
 	// Add the "Player Superglobe" first
 	//!!
 	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
 	//!!
-	[[maybe_unused]] auto player_entity_index
-		= add_player({.r = w.CFG_GLOBE_RADIUS, // Will be recalculated anyway...
-		              .density = appcfg.get("sim/player_globe_density", Physics::DENSITY_OF_EARTH / 10.f),
-		              .p = {0,0}, .v = {0,0},
-		              .color = 0xffff20,
-		              .mass = appcfg.get("sim/player_globe_mass", 50 * Physics::MASS_OF_EARTH)});
-	assert(entity_count() > player_entity_index);
-	assert(player_entity_ndx() == player_entity_index);
+	auto player_id = add_player(
+		{.r = w.CFG_GLOBE_RADIUS, // Will be recalculated anyway...
+		 .density = appcfg.get("sim/player_globe_density", Physics::DENSITY_OF_EARTH / 10.f),
+		 .p = {0,0}, .v = {0,0},
+		 .color = 0xffff20,
+		 .mass = appcfg.get("sim/player_globe_mass", 50 * Physics::MASS_OF_EARTH)},
+		avatars[tx_jesus],
+		controls
+	);
+	assert(players.size() == 1);
+	assert(entity_count() > player(player_id).entity_ndx);
+	assert(player_entity_ndx() == player(player_id).entity_ndx);
 
-	focused_entity_ndx = player_entity_ndx();
+	focused_entity_ndx = player(player_id).entity_ndx;
 
 	_setup_UI();
 
@@ -154,8 +176,8 @@ void OONApp::init() // override
 
 	backend.audio.play_music(cfg.background_music.c_str());
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
+	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 
-//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 } // init
 
 
@@ -494,7 +516,7 @@ void OONApp::resize_shape(size_t ndx, float factor) //virtual
 
 
 //----------------------------------------------------------------------------
-unsigned OONApp::add_player(World::Body&& obj) //override
+unsigned OONApp::add_player(World::Body&& obj, Avatar& avatar, VirtualController& ctrlr) //override
 {
 	// These are the player modelling differences:
 	obj.add_thrusters();
@@ -502,11 +524,20 @@ unsigned OONApp::add_player(World::Body&& obj) //override
 	obj.superpower.free_color = true;
 	obj/*.superpower*/.lifetime = World::Body::Unlimited; //!!?? Should this be a superpower instead?
 
-	return (unsigned) //!! Blatant narrowing conv., hoping entity_count() will never overflow `unsigned`...
+	auto p_ent = (unsigned) //!! Blatant narrowing conv., hoping entity_count() will never overflow `unsigned`...
 		add_body(std::forward<World::Body>(obj));
+
+	players.emplace_back(p_ent, avatar, ctrlr);
+	assert(players.size());
+	return (unsigned)players.size(); //! NOT size()-1!...
 }
 
 void OONApp::remove_player(unsigned)
+//!! Just deleting it would shift the array and invalidate all the subsequent indexes! :-/
+//!! A simple (not std!) player index map is needed! Or is this just the right job for sz::lockers?! :-o
+//!! However, that's a fixed number of players.
+//!! Must distinguish between a local game with *very few* local players,
+//!! and servers with a huge number of players!
 {
 }
 
@@ -519,6 +550,7 @@ void OONApp::poll_controls() //override
 		//!! current hamfisted threading is resolved; there could be
 		//!! much delay between polling and actually reacting now!
 }
+
 
 //----------------------------------------------------------------------------
 bool OONApp::perform_control_actions() //override
@@ -583,6 +615,9 @@ cerr << "- Shield depleted! Recharging for " << -shield_active << " frames...\n"
 		}
 	}
 
+	//!! No concept of multiple players whatsoever yet:
+	if (action) player_mark_active();
+
 	return action;
 }
 
@@ -605,6 +640,7 @@ bool OONApp::_ctrl_update_thrusters()
 	if (controls.ThrustRight) { drv = true; right_thruster_start(); } else right_thruster_stop();
 	return drv;
 }
+
 
 //----------------------------------------------------------------------------
 void OONApp::pan_reset()
@@ -634,7 +670,6 @@ void OONApp::center_entity(size_t id)
 
 void OONApp::center_player(unsigned player_id)
 {
-	assert(player_id == 1);
 	center_entity(player_entity_ndx(player_id));
 }
 
@@ -646,7 +681,6 @@ void OONApp::follow_entity(size_t id)
 
 void OONApp::follow_player(unsigned player_id)
 {
-	assert(player_id == 1);
 	follow_entity(player_entity_ndx(player_id));
 }
 

@@ -78,6 +78,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 
 	global_interactions = get("sim/global_interactions", true);
 
+	player_idle_threshold = DEFAULT_PLAYER_IDLE_THRESHOLD; //!! Make it adjustable!
+
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 
 	// 3. Process cmdline args to override again...
@@ -113,7 +115,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	} if (args["dbg-keys"]) {
 		DEBUG_show_keycode = true;
 	} if (args["interact"]) {
-cerr << "- NOTE: --interact overrides \"sim/global_interactions\".\n";
+cerr << "- NOTE: --interact overrides cfg/sim/global_interactions.\n";
 		global_interactions = sz::to_bool(args("interact"), sz::str::empty_is_true);
 	}
 

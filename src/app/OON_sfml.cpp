@@ -331,6 +331,12 @@ try {
 			}
 			// Else:
 			gui.unfocus(); // A bit hamfisted, but: the event is ours, let the UI know!...
+
+			//!! There's no sane way currently (for tha lack of a command/action queue)
+			//!! to distinguish between player and non-player actions yet... Also, there's
+			//!! even less about *which* player it is!... :)
+			player_mark_active(/*!!Also no support for multiple players...!!*/);
+
 			switch (event.type) //!! See above: morph into using abstracted events!
 			{
 			case sf::Event::KeyPressed:
@@ -417,7 +423,7 @@ try {
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
 			case sf::Event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Button::Left) {
-					spawn(globe_ndx, 100);
+					spawn(player_entity_ndx(), 100);
 				}
 				break;
 !!*/
@@ -442,7 +448,7 @@ try {
 
 //!!??auto vpos = oon_main_camera().screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o
 //!!?? Where did this x,y=={-520,-391} come from?! :-ooo
-cerr << "???? x = " << x << ", y = " << y << " <-- WHAT THE HELL ARE THESE??? :-ooo\n";
+//!!??cerr << "???? x = " << x << ", y = " << y << " <-- WHAT THE HELL ARE THESE??? :-ooo\n";
 
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...

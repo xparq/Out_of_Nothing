@@ -42,15 +42,15 @@ public:
 	//--------------------------------------------------------------------
 	// Player actions...
 
-	// Gameplay...
+	void  poll_controls() override;
+	bool  perform_control_actions() override; // true if there have been some actions
+
+	// OON gameplay actions...
 
 	virtual void spawn(size_t parent_ndx = 0, size_t n = 1);      //!! requires: 0 == player_entity_ndx()
 	void exhaust_burst(size_t entity_ndx = 0, /* Math::Vector2f thrust_vector, */size_t n = 20);
 	void chemtrail_burst(size_t emitter_ndx = 0, size_t n = 10);
 	void shield_energize(size_t emitter_ndx = 0, /*Math::Vector2f shoot_vector,*/ size_t n = 5);
-
-	void interact_all(bool state = true)  { world()._interact_all = state; }
-	void toggle_interact_all()  { interact_all(!const_world()._interact_all); }
 
 	//!!These should be idempotent, to tolerate keyboard repeats (which could be disabled but may be problematic)!
 	//!!Also -> #105: sanitize thrusters...
@@ -63,8 +63,9 @@ public:
 	void  left_thruster_stop();
 	void right_thruster_stop();
 
-	// View control (note: panning uses view coordinates!)...
-
+	//
+	// View control (note: panning is camera movement in world coordinates)...
+	//
 	void pan(Math::Vector2f delta);
 	void pan_x(float delta);
 	void pan_y(float delta);
@@ -95,6 +96,10 @@ public:
 
 	//--------------------------------------------------------------------
 	// "Meta" controls (not gameplay/player, but admin/user actions)...
+
+	void interact_all(bool state = true)  { world()._interact_all = state; }
+	void toggle_interact_all()  { interact_all(!const_world()._interact_all); }
+
 	void toggle_muting();
 	void toggle_music();
 	void toggle_sound_fx();
@@ -120,12 +125,12 @@ public:
 	void   remove_random_body();
 	void   remove_random_bodies(size_t n = -1); // -1 -> all
 
-	unsigned add_player(Model::World::Body&& obj) override;
+	unsigned add_player(
+		Model::World::Body&& model,
+		Szim::Avatar& avatar,
+		Szim::VirtualController& controls
+	) override;
 	void     remove_player(unsigned ndx) override;
-	size_t player_entity_ndx([[maybe_unused]] unsigned player_id = 1) const override { assert(player_id == 1); return globe_ndx; }
-
-	void poll_controls() override;
-	bool perform_control_actions() override; // true if there have been some actions
 
 protected:
 	bool _ctrl_update_thrusters(); // true if any engine is firing
@@ -176,16 +181,20 @@ public:
 	OONApp(const OONApp&) = delete;
 
 //----------------------------------------------------------------------------
-// Data / Internals...
+// Internals...
 //----------------------------------------------------------------------------
 protected:
-	OONConfig appcfg; // See also syscfg from this->SimApp
-	OONController controls;
-
 	      auto& oon_main_view()         { return (      OONMainDisplay&) main_view(); }
 	const auto& oon_main_view()   const { return (const OONMainDisplay&) main_view(); }
 	      auto& oon_main_camera()       { return (      OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 	const auto& oon_main_camera() const { return (const OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
+
+//----------------------------------------------------------------------------
+// Internals - Data...
+//----------------------------------------------------------------------------
+protected:
+	OONConfig appcfg; // See also syscfg from this->SimApp
+	OONController controls;
 
 	bool  chemtrail_releasing = false;
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;
@@ -198,7 +207,10 @@ protected:
 	float _pan_step_x = 0, _pan_step_y = 0;
 	float _zoom_step = 0;
 
-	size_t globe_ndx = 0;   // Paranoid safety init; see init()!
+	// Built-in player avatars (see init()):
+	size_t tx_jesus;
+	size_t tx_santa;
+	size_t tx_kittygod;
 
 	// See init()!
 	//!! Use sz::lockers for the storage:
@@ -210,7 +222,8 @@ protected:
 	size_t snd_jingle_loop;
 	size_t snd_shield;
 
-	size_t focused_entity_ndx = 0; // The player entity (globe_ndx) by default
+public://!! Directly accessed by main_view() for now:
+	size_t focused_entity_ndx = 0; // The player entity by default
 };
 
 } // namespace OON
