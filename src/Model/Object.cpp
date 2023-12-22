@@ -7,13 +7,13 @@
 #include <string>
 	using std::string;
 //#include <cstddef>
-//	using std::byte; //!!No use: ofstream can't write() bytes! :-o Congratulations... :-/
+//	using std::byte; //!!No use: ofstream can't write() bytes! :-o Congratulations, C++!... :-/
 #include <iostream>
 	using std::cerr, std::endl;
 
 namespace Model {
 
-//!!?? Put a EventSubscriber* pointer here to the global OON_* instance to help propagating events?!
+//!!?? Put an EventSubscriber* pointer here to the global OON_* instance to help propagating events?!
 //!!   ...That would require an EventSubscriber interface first, also then actually used by OON. ;)
 
 

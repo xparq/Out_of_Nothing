@@ -76,6 +76,8 @@ public:
 	struct Body //!! : public Serializable //! No: this would kill the C++ init list syntax!...
 	                                       //! So, just keep it a memcpy-able POD type for easy loading!
 	//! Inner class of World, because it depends on the physics (e.g. constants).
+	//!! But that could be addressed by just being in the same namespace,
+	//!! and then stuff that only need Entity could spare including the World.
 	{
 		//!!ObjConfig cfg; // basically the obj. type
 		static constexpr float Unlimited = -1; //! Not an enum to avoid the `World::Body::Enumname::Unlimited` atrocity

@@ -1010,26 +1010,31 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 
 
 //----------------------------------------------------------------------------
-//!! Move to SimApp!
-void OONApp::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t n)
+//!! - Move to SimApp!
+//!! - Decouple from the entity() query: pass it the object, not the index!
+//!!   (Only that `resize_shape(emitter_ndx, emitter.r/emitter_old_r);` uses it!
+//!!   Could be done by callers, or even be a follow-up callback, if necessary.)
+//!! - It still calls add_body() (so still can't be a free function (or class)),
+//!!   but that really could be a callback than...
+void OONApp::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t n, Math::Vector2f nozzles[])
 {
 	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
 
 //if (!ecfg.create_mass) cerr <<"DBG> emitter.mass BEFORE burst: "<< emitter.mass <<'\n';
 
-	float p_range = emitter.r * ecfg.position_divergence;
-	auto  p_offset = ecfg.eject_offset;
+	auto p_range = ecfg.position_divergence * emitter.r;
+	auto p_offset = ecfg.eject_offset;
 	p_offset += // Also add a portion proportional to the emitter's velocity:
 		(emitter.v == Math::Vector2f()) ? //! SFML-DEBUG asserts this, so must be prevented... :-/
 			  Math::Vector2f()
 			: emitter.v.normalized() * emitter.r * ecfg.offset_factor;
 		//!! Also needs a non-linearity (decoupling) factor so higher v can affect it less!
 
-	float v_range = Model::World::CFG_GLOBE_RADIUS * ecfg.velocity_divergence; //!! ...by magic, right? :-/
+	float v_range = emitter.r * ecfg.velocity_divergence; //!! Ugh... by magic, right? :-o :-/
 
 	float emitter_old_r = emitter.r;
 
-	for (int i = 0; i++ < n;) {
+	for (int i = 0; i < n; ++i) {
 		auto particle_mass = ecfg.particle_mass_min + (ecfg.particle_mass_max - ecfg.particle_mass_min) * float(rand())/RAND_MAX;
 
 		if (!ecfg.create_mass && emitter.mass < particle_mass) {
@@ -1039,16 +1044,17 @@ void OONApp::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size
 //cerr <<"DBG> density: "<< ecfg.particle_density <<'\n';
 //cerr <<"DBG>   ==?  : "<< Model::Physics::DENSITY_ROCK * 0.0000000123f <<'\n';
 
-		[[maybe_unused]] auto pndx =
-		add_body({
+		Math::Vector2f p = { (rand() * p_range.x) / RAND_MAX - p_range.x/2 + emitter.p.x + p_offset.x,
+		                     (rand() * p_range.y) / RAND_MAX - p_range.y/2 + emitter.p.y + p_offset.y };
+		                     //!!...Jesus, these "hamfixted" pseudo Δt "factors"...
+		if (nozzles) p += nozzles[i] * emitter.r; // Scale to its "bounding sphere"...
+
+		[[maybe_unused]] auto pndx = add_body({
 			.lifetime = ecfg.particle_lifetime,
 			.density = ecfg.particle_density,
-			//!!...Jesus, those "hamfixted" pseudo Δt "factors" here! :-o :)
-			.p = { (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.x + p_offset.x,
-			       (rand() * p_range) / RAND_MAX - p_range/2 + emitter.p.y + p_offset.y },
+			.p = p,
 			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.x * ecfg.v_factor + ecfg.eject_velocity.x,
 			       (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.y * ecfg.v_factor + ecfg.eject_velocity.y },
-				// Can't just do `...} + ecfg.eject_velocity` above, because C++
 			.color = ecfg.color,
 			.mass = particle_mass,
 		});
@@ -1097,7 +1103,8 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		.particle_lifetime = appcfg.exhaust_lifetime,
 		.create_mass = appcfg.get("sim/exhaust_creates_mass", true),
 		.particle_density = exhaust_density,
-		.position_divergence = appcfg.get("sim/exhaust_divergence", 1.f), // Relative to the emitter radius
+		.position_divergence = { appcfg.get("sim/exhaust_divergence", 1.f), // Scaled by the emitter radius!
+		                         appcfg.get("sim/exhaust_divergence", 1.f) },
 		.velocity_divergence = 1.f, //!! Just an exp. "randomness factor" for now!...
 		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
 		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
@@ -1129,9 +1136,67 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 	if (base.thrust_right.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {-eject_v, 0};
+#include "_testfont_7x10.h"
+		static const string banner_str = appcfg.get("player/test/tagline", "HORY SHET!!!!");
+		static const char* banner = banner_str.c_str();
+		static size_t char_index = 0;
+		static size_t glyph_index; //!! Always calculated for now, so no initial value...
+		static unsigned vline_index = 0; // vertical line of current glyph, from left (0-based)
+		static constexpr const float V_SCALE = 4;
+		static constexpr bool V_DUP = true;
+		static constexpr const unsigned NOZZLE_COUNT = font_height * (V_DUP? 2:1);
 		thrust_exhaust_emitter.eject_offset = {-base.r * airgap, 0};
-		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+		if (banner && *banner) {
+			static constexpr const float SECRET_PIXEL_CEMETERY_Y = -1e30f; // :)
+			static Math::Vector2f nozzles[NOZZLE_COUNT];
+
+			// Finished the current glyph?
+			if (vline_index == font_width) {
+				vline_index = 0;
+				// Get next char (or wrap around):
+				if (!banner[++char_index]) char_index = 0;
+			}
+
+			//!! The current char is not remembered, so this is awkwardly done for
+			//!! every scanline for now redundantly, but... TESTING...TESTING... ;)
+			char ch = banner[char_index];
+			glyph_index = font_glyph_index(ch); //!! Jesus FUCK! Like in the good old days, huh?... :) Ugh...
+assert(vline_index >= 0 && vline_index < font_width);
+
+			// Get the pixels of the current vertical line...
+			for (unsigned hline_index = 0; hline_index < font_height; ++hline_index) {
+//if (ch != ' ') cerr << "Pixel for '"<<ch<<"' at [h: "<<hline_index<<", v: "<<vline_index<<"]: "<< (font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
+//	<< " // (bit pos. from left: "<< (font_width-1 - vline_index) <<")\n";
+				nozzles[hline_index] = { -1,
+					(ch != ' ' &&
+					font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
+						? -(hline_index * V_SCALE/font_height - V_SCALE/2)
+						: SECRET_PIXEL_CEMETERY_Y
+				};
+				if (V_DUP) { // Add a set of interleaving pixels:
+					nozzles[font_height + hline_index] = { -1.2,
+						(ch != ' ' &&
+						font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
+							? -(hline_index * V_SCALE/font_height - V_SCALE/2.f + V_SCALE/font_height/2.f)
+							: SECRET_PIXEL_CEMETERY_Y
+					};
+				}
+			}
+			++vline_index;
+
+			auto save_vdiv = thrust_exhaust_emitter.velocity_divergence;
+			auto save_pdiv = thrust_exhaust_emitter.position_divergence;
+			                 thrust_exhaust_emitter.position_divergence = {0, 0};
+			                 thrust_exhaust_emitter.velocity_divergence = 0;
+				//thrust_exhaust_emitter.eject_offset = {-eject_v/10, 0}; // A gap looks shit here!
+				thrust_exhaust_emitter.eject_velocity = {-eject_v/10, 0}; // To avoid garbled clouds if not moving...
+				_emit_particles(thrust_exhaust_emitter, base_ndx, NOZZLE_COUNT, nozzles);
+			thrust_exhaust_emitter.velocity_divergence = save_vdiv;
+			thrust_exhaust_emitter.position_divergence = save_pdiv;
+		} else {
+			thrust_exhaust_emitter.eject_velocity = {-eject_v, 0};
+			_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+		}
 	}
 }
 
@@ -1153,7 +1218,8 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 		.particle_lifetime = appcfg.get("sim/shield_decay_time", 5.f),
 		.create_mass = false, // Disabled: appcfg.get("sim/shield_creates_mass", false),
 		.particle_density = particle_density,
-		.position_divergence = appcfg.get("sim/shield_initial_spread", 10.f), //!! Just an exp. "randomness factor" for now!... Relative to emitter radius.
+		.position_divergence = { appcfg.get("sim/shield_initial_spread", 10.f), // Scaled by the emitter's radius!
+		                         appcfg.get("sim/shield_initial_spread", 10.f) },
 		.velocity_divergence = appcfg.get("sim/shield_divergence", 1.f), //!! Just an exp. "randomness factor" for now!...
 		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH),
 		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH),

@@ -145,13 +145,16 @@ protected:
 		float particle_lifetime = Model::World::Body::Unlimited;
 		bool  create_mass = true;
 		float particle_density = Model::Physics::DENSITY_ROCK * 0.001f;
-		float position_divergence = 5.f; // Relative to emitter radius
+		Math::Vector2f position_divergence = {5.f, 5.f}; // Scaled by the emitter's radius
 		float velocity_divergence = 1.f; //!! Just an exp. "randomness factor" for now!...
 		float particle_mass_min{};
 		float particle_mass_max{};
 		uint32_t color = 0x706080; // 0xRRGGBB
 	};
-	void _emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx = 0, size_t n = 10);
+	void _emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx = 0, size_t n = 10,
+		Math::Vector2f nozzles[] = nullptr); // 'nozzles' must have n elements if not null,
+		                                     // each relative to the origin of the emitter,
+		                                     // and normalized to a [-1, 1] bounding box!
 
 	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
 	void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
