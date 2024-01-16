@@ -1,5 +1,8 @@
 ﻿#include "OON.hpp"
 
+//!! Should be internal to the Model stuff, but for now...:
+#include "Model/Thruster/LoremIpsumDrive.hpp"
+
 #include "Engine/Backend/HCI.hpp"
 #include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
@@ -1136,65 +1139,20 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 	}
 	if (base.thrust_right.thrust_level()) {
-#include "_testfont_7x10.h"
-		static const string banner_str = appcfg.get("player/test/tagline", "HORY SHET!!!!");
-		static const char* banner = banner_str.c_str();
-		static size_t char_index = 0;
-		static size_t glyph_index; //!! Always calculated for now, so no initial value...
-		static unsigned vline_index = 0; // vertical line of current glyph, from left (0-based)
-		static constexpr const float V_SCALE = 4;
-		static constexpr bool V_DUP = true;
-		static constexpr const unsigned NOZZLE_COUNT = font_height * (V_DUP? 2:1);
-		thrust_exhaust_emitter.eject_offset = {-base.r * airgap, 0};
-		if (banner && *banner) {
-			static constexpr const float SECRET_PIXEL_CEMETERY_Y = -1e30f; // :)
-			static Math::Vector2f nozzles[NOZZLE_COUNT];
-
-			// Finished the current glyph?
-			if (vline_index == font_width) {
-				vline_index = 0;
-				// Get next char (or wrap around):
-				if (!banner[++char_index]) char_index = 0;
-			}
-
-			//!! The current char is not remembered, so this is awkwardly done for
-			//!! every scanline for now redundantly, but... TESTING...TESTING... ;)
-			char ch = banner[char_index];
-			glyph_index = font_glyph_index(ch); //!! Jesus FUCK! Like in the good old days, huh?... :) Ugh...
-assert(vline_index >= 0 && vline_index < font_width);
-
-			// Get the pixels of the current vertical line...
-			for (unsigned hline_index = 0; hline_index < font_height; ++hline_index) {
-//if (ch != ' ') cerr << "Pixel for '"<<ch<<"' at [h: "<<hline_index<<", v: "<<vline_index<<"]: "<< (font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
-//	<< " // (bit pos. from left: "<< (font_width-1 - vline_index) <<")\n";
-				nozzles[hline_index] = { -1,
-					(ch != ' ' &&
-					font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
-						? -(hline_index * V_SCALE/font_height - V_SCALE/2)
-						: SECRET_PIXEL_CEMETERY_Y
-				};
-				if (V_DUP) { // Add a set of interleaving pixels:
-					nozzles[font_height + hline_index] = { -1.2,
-						(ch != ' ' &&
-						font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
-							? -(hline_index * V_SCALE/font_height - V_SCALE/2.f + V_SCALE/font_height/2.f)
-							: SECRET_PIXEL_CEMETERY_Y
-					};
-				}
-			}
-			++vline_index;
-
+		static LoremIpsumDrive loremipsum_thruster(appcfg.get("player/test/tagline", "HORY SHET!!!!"));
+		if (loremipsum_thruster.emit()) {
 			auto save_vdiv = thrust_exhaust_emitter.velocity_divergence;
 			auto save_pdiv = thrust_exhaust_emitter.position_divergence;
 			                 thrust_exhaust_emitter.position_divergence = {0, 0};
 			                 thrust_exhaust_emitter.velocity_divergence = 0;
-				//thrust_exhaust_emitter.eject_offset = {-eject_v/10, 0}; // A gap looks shit here!
+				thrust_exhaust_emitter.eject_offset = {-base.r * airgap, 0}; //!! = {-eject_v/10, 0}; // A gap looks shit here!
 				thrust_exhaust_emitter.eject_velocity = {-eject_v/10, 0}; // To avoid garbled clouds if not moving...
-				_emit_particles(thrust_exhaust_emitter, base_ndx, NOZZLE_COUNT, nozzles);
+				_emit_particles(thrust_exhaust_emitter, base_ndx, loremipsum_thruster.active_pixels, loremipsum_thruster.nozzles);
 			thrust_exhaust_emitter.velocity_divergence = save_vdiv;
 			thrust_exhaust_emitter.position_divergence = save_pdiv;
 		} else {
 			thrust_exhaust_emitter.eject_velocity = {-eject_v, 0};
+			thrust_exhaust_emitter.eject_offset = {-base.r * airgap, 0};
 			_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
 		}
 	}

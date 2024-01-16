@@ -1,7 +1,9 @@
-#ifndef __MODEL__THRUSTER__
-#define __MODEL__THRUSTER__
+#ifndef _3895UY9G8HJ6987VN9836457NF48567459B8GV7UUBTNBRGJLKH_
+#define _3895UY9G8HJ6987VN9836457NF48567459B8GV7UUBTNBRGJLKH_
 
-struct Thruster
+namespace Model {
+
+struct Thruster //!! : public Entity //!! Not only not ready for that, but it's even the other way around: Object (i.e. Entity) #includes Thruster currently!... :-o
 {
 	//!!Thrusters should be vectorized, relative to the body orientation,
 	//!!which is currently fixed to be identical to the world coordinate system...
@@ -15,4 +17,6 @@ struct Thruster
 	float thrust_level() const { return _thrust_level; }
 };
 
-#endif // __MODEL__THRUSTER__
+} // namespace Model
+
+#endif // _3895UY9G8HJ6987VN9836457NF48567459B8GV7UUBTNBRGJLKH_

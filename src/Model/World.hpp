@@ -197,6 +197,10 @@ public:
 }; // class World
 
 
+//------------------------------------------------------------------------
+using Entity = World::Body;
+
+
 } // namespace Model
 
 #endif // _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_

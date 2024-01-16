@@ -7,6 +7,7 @@ static constexpr const unsigned font_baseline_index = 2; // From the bottom (0-b
 
 static constexpr const uint8_t font[] = {
 			//!! Allow optional per-char sizes! -- Would prevent simple glyph * height direct indexing tho!
+
 // ' '
 			0,0,0,0,0,0,0,0,0,0,
 // !
@@ -98,16 +99,16 @@ static constexpr const uint8_t font[] = {
 			0b0000100,
 			0b0000000,
 // )
-			0b00000000,
-			0b00010000,
-			0b00001000,
-			0b00000100,
-			0b00000100,
-			0b00000100,
-			0b00000100,
-			0b00001000,
-			0b00010000,
-			0b00000000,
+			0b0000000,
+			0b0010000,
+			0b0001000,
+			0b0000100,
+			0b0000100,
+			0b0000100,
+			0b0000100,
+			0b0001000,
+			0b0010000,
+			0b0000000,
 // *
 			0b0000000,
 			0b0000000,
@@ -673,29 +674,58 @@ static constexpr const uint8_t font[] = {
 			0b0000000,
 
 // ]
-			0b00000000,
-			0b00011100,
-			0b00000100,
-			0b00000100,
-			0b00000100,
-			0b00000100,
-			0b00000100,
-			0b00000100,
-			0b00011100,
-			0b00000000,
+			0b0000000,
+			0b0011100,
+			0b0000100,
+			0b0000100,
+			0b0000100,
+			0b0000100,
+			0b0000100,
+			0b0000100,
+			0b0011100,
+			0b0000000,
 // ^
 			0,0,0,0,0,0,0,0,0,0,
 // _
-			0,0,0,0,0,0,0,0,0,0,
+			0b0000000,
+			0b0000000,
+			0b0000000,
+			0b0000000,
+			0b0000000,
+			0b0000000,
+			0b0000000,
+			0b0000000,
+			0b1111111,
+			0b0000000,
 // `
 			0,0,0,0,0,0,0,0,0,0,
+
+// INVALID CODEPOINT PLACEHOLDER GLYPH:
+			0b1111111,
+			0b1111111,
+			0b1111111,
+			0b1111111,
+			0b1111111,
+			0b1111111,
+			0b1111111,
+			0b1111111,
+			0b1111111,
+			0b1111111,
 };
 
-static constexpr const char FIRST_GLYPH = ' ';
-static constexpr const char LAST_GLYPH = FIRST_GLYPH + sizeof(font)/font_height - 1;
+static constexpr const char GLYPH_COUNT = sizeof(font)/font_height - 1;
+static constexpr const char FIRST_GLYPH_CODEPOINT = ' ';
+static constexpr const char LAST_GLYPH_CODEPOINT = FIRST_GLYPH_CODEPOINT + GLYPH_COUNT - 1; // The last one is not for any code point!
+	//!! Only for a contiguous set of code points directly mapped to the set of glyphs!
 
-static auto font_glyph_index = [&](char ch) -> unsigned {
-	return ch >= FIRST_GLYPH && ch <= LAST_GLYPH ? ch - FIRST_GLYPH : 0;
+static constexpr const char FIRST_GLYPH_INDEX = 0;
+static constexpr const char LAST_GLYPH_INDEX = FIRST_GLYPH_INDEX + GLYPH_COUNT;
+//static constexpr const char INVALID_GLYPH_INDEX = LAST_GLYPH_INDEX;
+static constexpr const char INVALID_GLYPH_INDEX = '?' - FIRST_GLYPH_CODEPOINT; //!! Only for ASCII, and a contiguous set of code points directly mapped to the set of glyphs!
+
+static auto font_glyph_index = [](char ch) -> unsigned short {                 //!! Only for ASCII, and a contiguous set of code points directly mapped to the set of glyphs!
+	return ch >= FIRST_GLYPH_CODEPOINT && ch <= LAST_GLYPH_CODEPOINT
+		? ch - FIRST_GLYPH_CODEPOINT : INVALID_GLYPH_INDEX;
 };
 
 #endif // _CNXV4IU5YTB9678DT5674BTN6893476T0576FYM4780NBU87Y_
