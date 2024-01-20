@@ -38,7 +38,7 @@ void update_keys_from_SFML(const sf::Event& sfml_event)
 	switch (sfml_event.type)
 	{
 	case sf::Event::KeyReleased:
-		if (sfml_event.key.code != -1) {
+		if (sfml_event.key.code != sf::Keyboard::Key::Unknown) {
 			_kbd_state[_keycode_from_SFML((unsigned)sfml_event.key.code % (unsigned)VKEY::__SIZE__)] = false;
 		} else {
 //cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/
@@ -50,7 +50,7 @@ void update_keys_from_SFML(const sf::Event& sfml_event)
 		break;
 
 	case sf::Event::KeyPressed:
-		if (sfml_event.key.code != -1) {
+		if (sfml_event.key.code != sf::Keyboard::Key::Unknown) {
 			_kbd_state[_keycode_from_SFML((unsigned)sfml_event.key.code % (unsigned)VKEY::__SIZE__)] = true;
 		} else {
 //cerr << "UNKNOWN-TO-SFML KEY (-1)...\n"; // Incl. all the ...Locks :-/

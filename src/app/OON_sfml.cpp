@@ -13,6 +13,7 @@
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
 #define SFML_HUD(x) (((UI::HUD_SFML&)backend).SFML_window())
+#define SFML_KEY(KeyName) sf::Keyboard::Key::KeyName
 
 
 import Storage; //!! Just a dummy (reminder, smoke test etc.) for now!
@@ -310,7 +311,7 @@ try {
 
 			// Close req.?
 			if (event.type == sf::Event::Closed ||
-			    event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+			    event.type == sf::Event::KeyPressed && event.key.code == SFML_KEY(Escape)) {
 				request_exit();
 				// [fix-setactive-fail] -> DON'T: window.close();
 				//!!?? I forgot: how exactly is the window being closed on Esc?
@@ -341,30 +342,30 @@ try {
 			{
 			case sf::Event::KeyPressed:
 #ifdef DEBUG
-	if (cfg.DEBUG_show_keycode) cerr << "key code: " << event.key.code << "\n";
+	if (cfg.DEBUG_show_keycode) cerr << "key code: " << int(event.key.code) << "\n"; //!! SFML3 has started making things harder every day... :-/
 #endif
 				switch (event.key.code) {
-				case sf::Keyboard::Pause: toggle_pause(); break;
-				case sf::Keyboard::Enter: time_step(1); break;
-				case sf::Keyboard::Backspace: time_step(-1); break;
+				case SFML_KEY(Pause): toggle_pause(); break;
+				case SFML_KEY(Enter): time_step(1); break;
+				case SFML_KEY(Backspace): time_step(-1); break;
 
-				case sf::Keyboard::Tab: toggle_interact_all(); break;
+				case SFML_KEY(Tab): toggle_interact_all(); break;
 
-				case sf::Keyboard::Insert: spawn(player_entity_ndx(),
+				case SFML_KEY(Insert): spawn(player_entity_ndx(),
 						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
-				case sf::Keyboard::Delete: remove_random_bodies(
+				case SFML_KEY(Delete): remove_random_bodies(
 						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
 
-				case sf::Keyboard::F1:  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
-				case sf::Keyboard::F2:  keystate(SHIFT) ? quick_load_snapshot(2) : quick_save_snapshot(2); break;
-				case sf::Keyboard::F3:  keystate(SHIFT) ? quick_load_snapshot(3) : quick_save_snapshot(3); break;
-				case sf::Keyboard::F4:  keystate(SHIFT) ? quick_load_snapshot(4) : quick_save_snapshot(4); break;
-				case sf::Keyboard::F5:  keystate(SHIFT) ? quick_load_snapshot(5) : quick_save_snapshot(5); break;
-				case sf::Keyboard::F6:  keystate(SHIFT) ? quick_load_snapshot(6) : quick_save_snapshot(6); break;
-				case sf::Keyboard::F7:  keystate(SHIFT) ? quick_load_snapshot(7) : quick_save_snapshot(7); break;
-				case sf::Keyboard::F8:  keystate(SHIFT) ? quick_load_snapshot(8) : quick_save_snapshot(8); break;
+				case SFML_KEY(F1):  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
+				case SFML_KEY(F2):  keystate(SHIFT) ? quick_load_snapshot(2) : quick_save_snapshot(2); break;
+				case SFML_KEY(F3):  keystate(SHIFT) ? quick_load_snapshot(3) : quick_save_snapshot(3); break;
+				case SFML_KEY(F4):  keystate(SHIFT) ? quick_load_snapshot(4) : quick_save_snapshot(4); break;
+				case SFML_KEY(F5):  keystate(SHIFT) ? quick_load_snapshot(5) : quick_save_snapshot(5); break;
+				case SFML_KEY(F6):  keystate(SHIFT) ? quick_load_snapshot(6) : quick_save_snapshot(6); break;
+				case SFML_KEY(F7):  keystate(SHIFT) ? quick_load_snapshot(7) : quick_save_snapshot(7); break;
+				case SFML_KEY(F8):  keystate(SHIFT) ? quick_load_snapshot(8) : quick_save_snapshot(8); break;
 
-				case sf::Keyboard::Home:
+				case SFML_KEY(Home):
 					if (keystate(CTRL)) {
 						//!! These should be "upgraded" to "Camera/view reset"!
 						//!! oon_main_camera().reset() already exists:
@@ -380,10 +381,10 @@ try {
 					}
 					break;
 
-				case sf::Keyboard::F12: toggle_huds();
+				case SFML_KEY(F12): toggle_huds();
 					sfw::getWidget<sfw::CheckBox>("Show HUDs")->set(huds_active());
 					break;
-				case sf::Keyboard::F11:
+				case SFML_KEY(F11):
 					toggle_fullscreen();
 					//!! Refresh all our own (app-level) dimensions, too!
 					//!! E.g. #288, and wrong .view size etc.!...

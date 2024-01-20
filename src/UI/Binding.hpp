@@ -49,8 +49,12 @@ public:
 	Binding(CHARPTR_FN_PTR f);
 
 	// Catch-all lambda matcher (needs no cast for lambdas, but we know kinda nothing here...)
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!! IOW, this actually matches EVERYTHING, not just functors!
-	template <typename ShouldBeFunctor> Binding(ShouldBeFunctor f) :
+	//!! Even things that have nothing to do with this class at all!!! :-o
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	template <typename ShouldBeFunctor>
+	explicit Binding(ShouldBeFunctor f) :
 		_data_ptr((STRING_FUNCTOR)f),
 		_type(string_functor_name)
 	{

@@ -18,7 +18,9 @@ SFML_HCI::Window::Window(unsigned width, unsigned height, const char* title, boo
 //cerr <<"--- fullscreen mode[1]: "<< modes[1].size.x <<", " << modes[1].size.y <<'\n';
 		auto& mode = modes[0];
 		_owned_sfml_window.create(mode, //!! Should be a control to select!
-			title, sf::Style::Fullscreen);
+			title,
+			sf::Style::Default,
+			sf::State::Fullscreen);
 		//!!
 		//!! ERROR CHK!... BUT HOW?
 		//!!
@@ -27,8 +29,7 @@ SFML_HCI::Window::Window(unsigned width, unsigned height, const char* title, boo
 			height = mode.size.y;
 		//!!}
 	} else {
-		_owned_sfml_window.create(sf::VideoMode({width, height}),
-			title);
+		_owned_sfml_window.create(sf::VideoMode({width, height}), title);
 	}
 //cerr << "...done.\n";
 	//!!??	For SFML + OpenGL mixed mode (https://www.sfml-dev.org/tutorials/2.5/window-opengl.php):
@@ -72,7 +73,8 @@ void SFML_HCI::switch_fullscreen(bool fullscreen) // override
 		fullscreen ? sf::VideoMode::getDesktopMode()
 		           : sf::VideoMode({cfg.WINDOW_WIDTH, cfg.WINDOW_HEIGHT}),
 		cfg.window_title,
-		fullscreen ? sf::Style::Fullscreen : sf::Style::Resize
+		fullscreen ? sf::Style::Default : sf::Style::Resize,
+		fullscreen ? sf::State::Fullscreen : sf::State::Windowed
 	);
 
 	set_frame_rate_limit(_last_fps_limit); //! Restore, as SFML has just killed it with window.create()... :-/
