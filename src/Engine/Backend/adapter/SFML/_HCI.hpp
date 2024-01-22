@@ -18,29 +18,32 @@ struct SFML_HCI : HCI
 	// Abstract API Impl...
 	//--------------------------------------------------------------------
 
-	SFML_HCI::Window& window() override { return _main_window; }
+	struct Window : HCI::Window
+	{
+		Window(const Window::Config& requested_cfg); // Polymorphic, so not by-val (albeit slicing would be kinda OK, too)
+
+		//--------------------------------------------------------------------
+		// SFML-specifics (should only be used within the adapter layer!)...
+		//--------------------------------------------------------------------
+		sf::RenderWindow _owned_sfml_window; //! <- Not just a ref!
+		operator sf::RenderWindow&() { return _owned_sfml_window; }
+	};
+
+	SFML_HCI::Window& main_window() override { return _main_window; }
 	public: void switch_fullscreen(bool fullscreen) override;
 	public: void set_frame_rate_limit(unsigned fps) override;
 		// SFML's window.create() will reset it, so it's implicitly saved/restored, too!
 
-	//--------------------------------------------------------------------
-	// SFML-dependent details (used within the adapter layer)...
-	//--------------------------------------------------------------------
-
-	struct Window : HCI::Window
-	{
-		sf::RenderWindow _owned_sfml_window; //! <- Not just a ref!
-		Window(unsigned width, unsigned height, const char* title, bool fullscreen = false);
-		operator sf::RenderWindow&() { return _owned_sfml_window; }
-	};
-
 	SFML_HCI(SimAppConfig& syscfg); // Creates the SFML main window
 
-	sf::RenderWindow& SFML_window() { return _main_window; }
+	//--------------------------------------------------------------------
+	// SFML-specifics (should only be used within the adapter layer!)...
+	//--------------------------------------------------------------------
+	sf::RenderWindow& SFML_window() { return main_window(); }
 
 	//--------------------------------------------------------------------
 private:
-	SimAppConfig& cfg;             // Keep a ref. to the global cfg.!
+	SimAppConfig& syscfg;          // Keep a ref. to the global cfg.!
 	SFML_HCI::Window _main_window; // <- Not just a ref, but the actual window!
 }; // class SFML_HCI
 

@@ -178,6 +178,13 @@ public:
 	//!!NOTE: This will change to the objects themselves being notified (not the game "superclass")!
 	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...);
 
+	//----------------------------------------------------------------------------
+	//Misc convenience helpers
+	auto&       main_window()           { return backend.hci.main_window(); }
+	const auto& main_window()     const { return backend.hci.main_window(); }
+	unsigned main_window_width()  const { return main_window().cfg.width; }
+	unsigned main_window_height() const { return main_window().cfg.height; }
+
 //------------------------------------------------------------------------
 // Internals...
 //------------------------------------------------------------------------
@@ -208,7 +215,6 @@ protected:
 public: // E.g. the renderer still needs these...
 	SimAppConfig cfg;
 	Backend& backend;
-	private: bool is_fullscreen = false; //!! Move to a backend.hci query!
 
 	//--------------------------------------------------------------------
 	// Engine-specific UI that the client app is also free to use

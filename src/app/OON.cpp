@@ -64,8 +64,8 @@ OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
 //!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
 //!!	oon_main_view().resize((float)backend.hci.window().width,
 //!!	                         (float)backend.hci.window().height);
-	oon_main_camera().resize((float)backend.hci.window().width,
-	                         (float)backend.hci.window().height);
+	oon_main_camera().resize((float)main_window_width(),
+	                         (float)main_window_height());
 }
 
 //----------------------------------------------------------------------------
@@ -499,7 +499,7 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 	ui_gebi(HelpPanel)  .onResize(width, height);
 	ui_gebi(Debug)      .onResize(width, height);
 #endif
-	gui.setPosition(4, backend.hci.window().height - gui.getSize().y - 4);
+	gui.setPosition(4, main_window_height() - gui.getSize().y - 4);
 }
 
 

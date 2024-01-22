@@ -83,7 +83,7 @@ SimApp::SimApp(int argc, char** argv, View::ScreenView& main_view)
 		}, false // Don't manage the window
 	  )
 	, _main_view(main_view)
-//!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(backend.hci.window())}
+//!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(main_window())}
 	, session(*this/*!!, args("session")!!*/)
 {
 /*!! See instead the sad "functional" approach above in the member init list:

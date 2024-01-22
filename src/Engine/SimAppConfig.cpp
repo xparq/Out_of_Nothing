@@ -36,6 +36,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	exe_dir = sz::dirname(args.argv[0]);  //!! See #368, and right below:
 	cfg_dir = base_path(); //!! But...: #368 - infer from the exe dir, in Config already!...
 
+	headless = false;
+
 	// 2. Override from the config...
 
 	//!! These assignments are kinda silly... I don't like storing them here _again_,
@@ -83,11 +85,14 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	DEBUG_show_keycode = get("debug/show_key_codes", false);
 
 	// 3. Process cmdline args to override again...
+
 //!! See also main.cpp! And if main goes to Szim [turning all this essentially into a framework, not a lib, BTW...],
 //!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's also likely gonna be an app
 //!! configuration/layout/mode, where the client retains its own main()!
 	  if (args["fullscreen"]) {
 		start_fullscreen = sz::to_bool(args("fullscreen"), sz::str::empty_is_true);
+	} if (args["headless"]) {
+		headless = true;
 	} if (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
 		try { iteration_limit = stoul(args("loop-cap")); } catch(...) { // stoul crashes on empty! :-/
 			cerr << "- WRNING: --loop-cap ignored! \""<<args("loop-cap")<<"\" must be a valid positive integer.\n"; }

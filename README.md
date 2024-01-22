@@ -1,21 +1,24 @@
+_(See also https://github.com/xparq/Out_of_Nothing/wiki For some more "nimble" notes!)_
+
 Growing from a simple SFML trial prototype created for a) learning the lib,
-b) learning how to architect around frame-based low-level graphics for games
-or visual sims.), c) hopefully distilling a simple framework/toolkit for
-developing apps that need this sort of a platform, d) even more vaguely:
+b) learning how to architect visual sims (and games) around frame-based
+low-level graphics, c) hopefully distilling a simple framework/toolkit for
+developing apps that need this sort of foundations, d) even more vaguely:
 perhaps actually developing something interesting out of it -- now it's
-gradually becoming a minimalist cosmic world-building simulation toy (maybe
-even a proper game, later).
+gradually becoming an engine + its first (test) app (a minimalist cosmic
+simulation toy, or maybe even a minimalist world-building game later).
 
-Even though its presentation is "offensively" minimalist, and its control
-set is also incredibly limited -- basically just a single moving body that
-can spawn free-floating other bodies, plus the "metaphysical" manipulation
-of some fundamental parameters of its simplified Newtonian physics -- it's
-already complex enough to produce an endless flow of rich semi-chaotic
-emergent formations, and to inspire fascinating ideas...
+Even though its presentation is still offensively crude (unsurprisingly,
+for a prototype), and its features/controls very limited -- basically just
+a single steerable body that can spawn free-floating other bodies (in various
+configurations), plus "metaphysical" manipulation of the fundamental constants
+of its simplified Newtonian physics -- it's already complex enough to produce
+an endless flow of rich semi-chaotic emergent formations, and to inspire
+fascinating ideas.
 
-Which I'm chock-full of already, and can hardly wait to get through some
-boring and/or daunting architectural design + low-level tech hurdles first,
-and start crafting the fun bits. You can't wait! ;)
+...Which I'm chock-full of already, and can hardly wait to get through (the
+mountains of) some boring/daunting architectural design + low-level tech
+hurdles first, and start crafting the fun bits. You can't wait! ;)
 
 ![screenshot](doc/image/screenshot/8k1.png)
 ------------------------------------------------------------------------------

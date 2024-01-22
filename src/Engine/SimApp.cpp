@@ -74,8 +74,13 @@ void SimApp::init()
 	// Misc. fixup that should've been in the ctors, but C++...
 
 	//
-	// Some args aren't/can't/shoudn't be handled by SimAppConfig itself...
+	// Some args aren't yet (!!?? can't/shoudn't?) be handled by SimAppConfig itself...
 	//
+	//!! Disabling sound from the cmdline may mean either disabling the sound
+	//!! engine + the control UI entirely, or just the initial state!
+	//!! -> Well, --snd=off should remain the latter, and for disabling, there
+	//!!    should be a --disable-sound option!
+	//!! ALSO: This in fact should be treated the same way as e.g. --headless! (See that one in the cfg!)
 	if (args["snd"])
 		backend.audio.enabled(sz::to_bool(args("snd"), sz::str::empty_is_true));
 
@@ -157,7 +162,17 @@ int SimApp::run()
 		//! - The thread ctor would *copy* its params (by default), which would be kinda wonky for the entire app. ;)
 #endif
 
-	event_loop();
+	if (!cfg.headless) {
+		event_loop();
+	} else {
+		// Manually loop the updates if no threading:
+#ifdef DISABLE_THREADS
+//		while (!terminated()) {
+//			update_thread_main_loop(); // <- Doesn't actually loop, when threads are disabled, so crank it from here!
+//		}
+#endif
+	}
+
 
 #ifndef DISABLE_THREADS
 //cerr << "TRACE - before threads join\n";
@@ -489,16 +504,15 @@ void SimApp::interaction_hook(Model::World* w, Model::World::Event event, Model:
 //----------------------------------------------------------------------------
 void SimApp::toggle_fullscreen()
 {
-	is_fullscreen = !is_fullscreen;
-	backend.hci.switch_fullscreen(is_fullscreen);
-	auto width  = backend.hci.window().width;
-	auto height = backend.hci.window().height;
+	backend.hci.switch_fullscreen(!main_window().cfg.fullscreen);
+	auto width  = main_window_width();
+	auto height = main_window_height();
 
-	/// Refresh engine state...
+	// Refresh engine state:
 	main_view().resize(width, height);
 
-	// OK, notify the client:
-	onResize(backend.hci.window().width, backend.hci.window().height);
+	// Notify the client:
+	onResize(width, height);
 }
 
 //----------------------------------------------------------------------------

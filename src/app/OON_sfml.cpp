@@ -144,28 +144,32 @@ cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_l
 			poll_controls(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
 			updates_for_next_frame();
 
-			//!!?? Why is this redundant?!
-			if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-				cerr << "\n- [update_thread_main_loop] sf::setActive(true) failed!\n";
-//?				request_exit(-1);
-//?				return;
-			}
-			//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(true));
+			if (!cfg.headless) {
+				//!!?? Why is this redundant?!
+				if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
+					cerr << "\n- [update_thread_main_loop] sf::setActive(true) failed!\n";
+	//?				request_exit(-1);
+	//?				return;
+				}
+				//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(true));
 
-			//!! This is problematic, as it currently relies on sf::setFrameRateLImit()
-			//!! which would make the thread sleep -- but with still holding the lock! :-/
-			//!! So... Either control the framerate ourselves (the upside of which is one
-			//!! less external API dependency), or further separate rendering from actual
-			//!! displaying (so we can release the update lock right after renedring)
-			//!! -- AND THEN ALSO IMPLEMENTING SYNCING BETWEEN THOSE TWO!...
-			draw();
+				//!! This is problematic, as it currently relies on sf::setFrameRateLImit()
+				//!! which would make the thread sleep -- but with still holding the lock! :-/
+				//!! So... Either control the framerate ourselves (the upside of which is one
+				//!! less external API dependency), or further separate rendering from actual
+				//!! displaying (so we can release the update lock right after renedring)
+				//!! -- AND THEN ALSO IMPLEMENTING SYNCING BETWEEN THOSE TWO!...
+				draw();
+				//!! Occasionally test idempotency by drawing again:
+				//!!draw();
 
-			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-				cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
-//?				request_exit(-1);
-//?				return;
+				if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
+					cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+	//?				request_exit(-1);
+	//?				return;
+				}
+				//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(false));
 			}
-			//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(false));
 
 #ifndef DISABLE_THREADS
 			try { proc_lock.unlock(); } // This can throw, too!
@@ -498,10 +502,6 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 		} // for - events in the queue
 
 		update_thread_main_loop(); // <- Doesn't actually loop, when threads are disabled, so crank it from here!
-
-//!!test idempotency:
-//!!	draw();
-
 #else
 //cerr << "- freeing the proc. lock...\n";
 			noproc_lock.unlock();

@@ -180,8 +180,8 @@ void OONMainDisplay_sfml::render_scene()
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
 		//!! -> #221, #445
-		trshape.setPosition({ vpos.x + float(app().backend.hci.window().width/2),
-			             -vpos.y + float(app().backend.hci.window().height/2)}); //!! "Standardize" on the view's centered origin instead!
+		trshape.setPosition({ vpos.x + float(app().main_window_width()/2),
+			             -vpos.y + float(app().main_window_height()/2)}); //!! "Standardize" on the view's centered origin instead!
 
 //cerr << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x) * oon_camera.scale() + oon_camera.offset.x
 //			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y) * oon_camera.scale() + oon_camera.offset.y <<'\n';
@@ -197,8 +197,8 @@ void OONMainDisplay_sfml::draw() // override
 	// Grid lines...
 	static sf::Color hair_color{0x44444488};
 	if (const auto& cam = oon_camera(); cam.cfg.gridlines) {
-		float min_x = 0, max_x = float(app().backend.hci.window().width);
-		float min_y = 0, max_y = float(app().backend.hci.window().height);
+		float min_x = 0, max_x = float(app().main_window_width());
+		float min_y = 0, max_y = float(app().main_window_height());
 		auto [vx, vy] = cam.grid_offset();//!!?? + Math::Vector2f{max_x/2, max_y/2};
 		vx += max_x/2;
 		vy = max_y/2 - vy;
