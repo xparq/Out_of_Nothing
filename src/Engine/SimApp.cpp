@@ -159,9 +159,21 @@ int SimApp::run()
 
 	ui_event_state = SimApp::UIEventState::IDLE;
 
-	// Avoid the accidental Big Bang (#500), but let it happen in a controlled way instead...
+//!!sim_init() {
+	// Avoid the accidental Big Bang (#500):
 	backend.clock.restart(); //! The clock auto-starts at construction(!), causing a huge initial delay, so reset it!
-	std::this_thread::sleep_for(300ms); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
+
+	// ...but do a controlled Big Bang instead (#504):
+	float default_BigBang_InflationInterval_s = 0.3f;
+	try { default_BigBang_InflationInterval_s = std::stof(args("initial-dynamic-dt")); } catch(...){}
+	float BigBang_InflationInterval_s =
+		cfg.get("sim/timing/initial_dynamic_dt", default_BigBang_InflationInterval_s);
+//cerr <<"DBG> BigBang Inflation interval (s): "<< BigBang_InflationInterval_s << '\n';
+	std::this_thread::sleep_for(std::chrono::duration<float>(BigBang_InflationInterval_s)); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
+		//!! This does (should do) nothing for deterministic (fixed-dt) time drive!
+		//!! More work is needed to make the Big Bang orthogonal to the timing method!
+//!! }
+
 
 #ifndef DISABLE_THREADS
 	std::thread game_state_updates(&SimApp::update_thread_main_loop, this);
