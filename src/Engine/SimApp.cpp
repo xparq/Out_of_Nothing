@@ -1,4 +1,4 @@
-﻿#define SAVE_COMPRESSED
+﻿#define SAVE_COMPRESSED //!! Should be runtime-controllable (e.g. disabled for testing etc.)!
 
 #include "SimApp.hpp"
 
@@ -30,6 +30,10 @@
 	using std::format;
 #include <iostream>
 	using std::cerr, std::cout, std::endl;
+#include <thread>
+//	using std::thread, std::sleep_for;
+#include <chrono>
+	using namespace std::chrono_literals;
 //#include <stdexcept>
 //	using std::runtime_error;
 
@@ -154,6 +158,10 @@ int SimApp::run()
 	cerr << "> Engine: Client app initialized. Starting main loop...\n";
 
 	ui_event_state = SimApp::UIEventState::IDLE;
+
+	// Avoid the accidental Big Bang (#500), but let it happen in a controlled way instead...
+	backend.clock.restart(); //! The clock auto-starts at construction(!), causing a huge initial delay, so reset it!
+	std::this_thread::sleep_for(300ms); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
 
 #ifndef DISABLE_THREADS
 	std::thread game_state_updates(&SimApp::update_thread_main_loop, this);
