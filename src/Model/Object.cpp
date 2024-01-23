@@ -1,15 +1,18 @@
 #include "Object.hpp"
 #include "sz/stringtools.hh"
 
-//#include <cassert>
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
+#include <iomanip>
+//	using std::quoted;
 #include <string>
 	using std::string;
 //#include <cstddef>
 //	using std::byte; //!!No use: ofstream can't write() bytes! :-o Congratulations, C++!... :-/
+#include <cassert>
 #include <iostream>
 	using std::cerr, std::endl;
+
 
 namespace Model {
 
@@ -61,13 +64,29 @@ bool World::Body::save(std::ostream& out)
 		return false;
 	}
 	return true;
-}
+} // save
 
-/*!! Should be a (static) factory method:
-World::Body World::Body::load(std::istream& in) // static (factory)
+// A static factory method:
+/*static*/ bool World::Body::load(std::istream& in, World::Body* result/* = nullptr*/)
 {
-	return World::Body();
-}
-!!*/
+	if (!result) {
+		return false; //!! VERIFY NOT IMPLEMENTED YET!
+	}
+
+	string objdump;
+	in >> std::quoted(objdump, '"', '\\'); //! This can properly read broken lines,
+		//! and wouldn't need fixed "record sizes", but requires escaping any
+		//! stray quotes in the object's mem dump -- which also means a string
+		//! reallocation per every few dozen objects, BTW.
+//cerr << "["<<ndx<<"]" << c <<" \""<< objdump << "\"" << endl;
+
+	assert(sizeof(Body) == objdump.size());
+
+	memcpy((void*)result, objdump.data(), sizeof(Body));
+//!!THIS IS BOGUS YET: THESE DIDN'T MATCH! :-o WTF?! :-ooo
+//!!cerr << "template_obj.T = " << template_obj.T << endl;
+
+	return true;
+} // load
 
 }; // namespace

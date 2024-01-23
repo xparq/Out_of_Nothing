@@ -133,7 +133,7 @@ public:
 
 //!!		class std::ostream; class std::istream;
 		bool        save(std::ostream&);
-		static Body load(std::istream&);
+		static bool load(std::istream&, World::Body* result = nullptr); // Verifies only (comparing to *this) if null
 	};
 
 	//------------------------------------------------------------------------

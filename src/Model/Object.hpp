@@ -12,5 +12,5 @@ namespace Model {
 // class World::Body { ... };
 //! - See it defined inside the World class!
 
-}; // namespace
+}; // namespace Model
 #endif // _DM04785YTB0872ND45076Y20745Y68CN74_
