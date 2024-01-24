@@ -1,4 +1,4 @@
-﻿#define SAVE_COMPRESSED //!! Should be runtime-controllable (e.g. disabled for testing etc.)!
+﻿#define COMPRESSED_SNAPSHOTS //!! Should be runtime-controllable (e.g. disabled for testing etc.)!
                         //!! But the #includes...
 
 #include "SimApp.hpp"
@@ -16,7 +16,7 @@
 #include <iostream>
 	using std::cerr, std::cout, std::endl;
 
-#ifdef SAVE_COMPRESSED
+#ifdef COMPRESSED_SNAPSHOTS
 #   include "extern/zstd/zstd.h"
 #   include <sstream>
     using std::ostringstream, std::stringstream;
@@ -39,27 +39,26 @@ bool SimApp::save_snapshot(const char* unsanitized_filename)
 
 	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
 
-	string OVERALL_FAIL = "ERROR: Couldn't save snapshot to file \""; OVERALL_FAIL += fname + "\"\n";
+	auto print_error = [&fname](string alt_msg = "<unset>") {
+		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!
+		else cerr << "- ERROR: Couldn't save snapshot to file \"" << fname << "\"" << '\n';
+		perror("");
+	};
 
 	Model::World snapshot = world();
 	//!! OK, now we could start a low-priority background thread to actually save the snapshot...
 
 	//!! Note: perror("") may just print "No error" even if the stream is in failure mode! :-/
 
-#ifdef SAVE_COMPRESSED
+#ifdef COMPRESSED_SNAPSHOTS
 	ofstream file(fname, ios::binary);
-	if (!file || file.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
-		return false;
-	}
+	if (!file || file.bad()) { print_error(); return false; }
 
 	ostringstream out(ios::binary); //!!??Why did it fail with plain stringstream?!?!?!
 	//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
 	//!!out << "BUILD_ID = " << ::BUILD_ID << endl;
 	if (!snapshot.save(out)) {
-		cerr << OVERALL_FAIL;
-		perror("");
+		print_error();
 		return false;
 	}
 
@@ -72,39 +71,38 @@ bool SimApp::save_snapshot(const char* unsanitized_filename)
 	auto cfile_size = ZSTD_compress(cbuf.get(), cbuf_size, out.view().data(), data_size, 9);
 
 	if (!file.write(cbuf.get(), cfile_size) || file.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
+		print_error();
 		return false;
 	}
 
-#else // !SAVE_COMPRESSED
+#else // !COMPRESSED_SNAPSHOTS
 	ofstream out(fname, ios::binary);
-	if (!out || out.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
-		return false;
-	}
+	if (!out || out.bad()) {  print_error(); return false; }
+
 	//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
 	//!!out << "BUILD_ID = " << ::BUILD_ID << endl;
 	if (!snapshot.save(out)) {
-		cerr << OVERALL_FAIL;
+		print_error();
 		return false;
 	}
-#endif // SAVE_COMPRESSED
+#endif // COMPRESSED_SNAPSHOTS
 
 	assert(out && !out.bad());
 
 	cerr << "World state saved to \"" << fname << "\".\n";
 	return true;
-}
-
+} // save
 
 //----------------------------------------------------------------------------
 bool SimApp::load_snapshot(const char* unsanitized_filename)
 {
 	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
 
-	string OVERALL_FAIL = "ERROR: Couldn't load snapshot from file \""; OVERALL_FAIL += fname + "\"\n";
+	auto print_error = [&fname](string alt_msg = "<unset>") {
+		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!
+		else cerr << "- ERROR: Couldn't load snapshot from file \"" << fname << "\"" << '\n';
+		perror("");
+	};
 
 	//!! We could start a low-priority background thread
 	//!! to load a world state into a buffer first, and then
@@ -112,68 +110,56 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 	Model::World snapshot; // The input buffer
 
-#ifdef SAVE_COMPRESSED
+#ifdef COMPRESSED_SNAPSHOTS
 	ifstream file(fname, ios::binary);
 	if (!file || file.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
-		return false;
+		print_error(); return false;
 	}
 
+	// Read the whole file into memory:
 	stringstream in(ios::in|ios::out|ios::binary);
 	in << file.rdbuf();
-	if (!in || in.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
-		return false;
+	if (!in || in.bad()) { print_error(); return false; }
+
+	// Decompress it "in-place" (i.e. replacing the original compr. data; in one go, in-memory... <- !!IMPROVE)
+	if (!in.view().starts_with("MODEL") /*!! or !...<hopefully uniform various post-0.1 versions> !!*/) {
+		try { // Mainly (or only?) for bad_alloc due to garbled data.
+			auto cbuf_size = in.view().size();
+			auto cbuf = in.view().data();
+			auto data_size = ZSTD_getFrameContentSize(cbuf, cbuf_size);
+			auto data = make_unique_for_overwrite<char[]>(data_size);
+			auto dsize = ZSTD_decompress(data.get(), data_size, cbuf, cbuf_size);
+			assert(dsize == data_size);
+
+			//!!Only in c++26: in.str(string_view((char*)data.get(), data_size)); // or: reset, then: in.write(data.get(), data_size);
+			in.seekp(0, in.beg); // out
+			in.write(data.get(), data_size);
+			in.seekg(0, in.beg); // in
+		} catch(...) {
+			print_error("- ERROR: Couldn't decompress \""s + fname + "\": unknown or damaged file"s);
+			return false;
+		}
 	}
 
-	// Decompress (the whole blob in one go... <- !!IMPROVE)
-	auto cbuf_size = in.view().size();
-	auto cbuf = in.view().data();
-	auto data_size = ZSTD_getFrameContentSize(cbuf, cbuf_size);
-	auto data = make_unique_for_overwrite<char[]>(data_size);
-	auto dsize = ZSTD_decompress(data.get(), data_size, cbuf, cbuf_size);
-	assert(dsize == data_size);
-
-	//!!Only in c++26: in.str(string_view((char*)data.get(), data_size)); // or: reset, then: in.write(data.get(), data_size);
-	in.seekp(0, in.beg); // out
-	in.write(data.get(), data_size);
-	in.seekg(0, in.beg); // in
-
-	if (!in || in.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
-		return false;
-	}
+	if (!in || in.bad()) { print_error(); return false; }
 
 	if (!Model::World::load(in, &snapshot)) {
-		cerr << OVERALL_FAIL;
-		return false;
+		print_error(); return false;
 	}
 
-	if (!in || in.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
-		return false;
-	}
+	if (!in || in.bad()) { print_error(); return false; } // Should be redundant, but I've become too paranoid to delete it...
 
-#else // !SAVE_COMPRESSED
+#else // !COMPRESSED_SNAPSHOTS
 	ifstream in(fname, ios::binary);
-	if (!in || in.bad()) {
-		cerr << OVERALL_FAIL;
-		perror("");
-		return false;
-	}
+	if (!in || in.bad()) { print_error(); return false; }
 
 	//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
 	//!!in >> BUILD_ID...
 
 	if (!Model::World::load(in, &snapshot)) {
-		cerr << OVERALL_FAIL;
-		return false;
+		print_error(); return false;
 	}
-#endif // SAVE_COMPRESSED
+#endif // COMPRESSED_SNAPSHOTS
 
 	assert(in && !in.bad());
 
@@ -181,7 +167,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 	cerr << "World state loaded from \"" << fname << "\".\n";
 	return true;
-}
+} // load
 
 
 } // namespace Szim

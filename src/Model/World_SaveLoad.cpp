@@ -72,13 +72,19 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 //!!}
 /*static*/ bool World::load(std::istream& in, World* result)
 {
-	// Read the global world properties...
 	map<string, string> props;
-	for (string name, eq, val; in && !in.bad()
-		&& (in >> name >> eq >> std::quoted(val)) && eq == "=";) {
-		props[name] = val;
+
+	try {
+		// Read the global world properties...
+		for (string name, eq, val; in && !in.bad()
+			&& (in >> name >> eq >> std::quoted(val)) && eq == "=";) {
+			props[name] = val;
+		}
+	//cerr << "DBG> LOADED:\n"; for (auto& [n, v] : props) cerr << n << ": " << v << endl;
+	} catch (...) {
+		cerr << "- ERROR: Failed to read world data!\n";
+		return false;
 	}
-//cerr << "DBG> LOADED:\n"; for (auto& [n, v] : props) cerr << n << ": " << v << endl;
 
 	const semver::version runtime_version(Model::VERSION);
 	const semver::version loaded_version(props["MODEL_VERSION"]);
