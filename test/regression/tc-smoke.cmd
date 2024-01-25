@@ -29,15 +29,17 @@ set oon_use_exe=%1
 
 %SZ_PRJDIR%/tooling/diag/wtime run-latest ^
 	--headless ^
-	--cfg=test/default.cfg --snd=off --interact ^
+	--cfg=test/default.cfg --snd=off ^
+	--interact ^
 	--friction=0.01 ^
-	--zoom=0.2 ^
+	--zoom-adjustment=0.2 ^
 	--fixed-dt=0.033 ^
 	--fps-limit=0 ^
 	--loop-cap=%loop% ^
 	--exit-on-finish ^
 	--session=%reference_startstate% ^
 	--session-save-as=%new_endstate% ^
+	--no-save-compressed ^
 
 
 ::busybox diff -b %SZ_RUN_DIR%\RESULT.save %SZ_RUN_DIR%\ea39db36-RESULT.ref && echo OK, SAME!

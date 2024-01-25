@@ -152,8 +152,8 @@ void OONApp::init() // override
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
 			world().friction = f;
-		}; if (!args("zoom").empty()) { //!! Should be done by SimApp, and then the audio init
-			float factor = stof(args("zoom"));
+		}; if (!args("zoom-adjustment").empty()) { //!! Should be done by SimApp, and then the audio init
+			float factor = stof(args("zoom-adjustment"));
 			if (factor) zoom_reset(factor);
 		}
 	} catch(...) {
@@ -345,9 +345,13 @@ void OONApp::_setup_UI()
 	ui_gebi(ViewData)
 		<< "MAIN CAMERA:"
 		<< "\n  X: " << &oon_main_camera().offset.x << ", Y: " << &oon_main_camera().offset.y
-		<< "\n  ZOOM: " << [&](){ return to_string(this->oon_main_camera().scale()); }
-		<< "\n  focus pt: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
-/*		<< "\nVIEWPORT:"
+		//!! to_string() fucked it up and returned "0.000000" for e.g. 0.00000005f! :-o (#509)
+		//!! << "\n  Scale: " << [&](){ return to_string(this->oon_main_camera().scale() * 1e6f); } << " x 1e-6"
+		<< "\n  Base scale: " << OONConfig::DEFAULT_ZOOM
+		<< "\n  Zoom adj.: "<< [&](){ return to_string(this->oon_main_camera().scale() / OONConfig::DEFAULT_ZOOM); }
+		<< "\n  Focus pt.: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
+/*
+		<< "\nVIEWPORT:"
 		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_min
 		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_max
 		<< "\n_edge_y_min: "<< &oon_main_camera()._edge_y_min

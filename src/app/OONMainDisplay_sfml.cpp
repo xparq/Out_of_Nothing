@@ -48,7 +48,7 @@ OONMainDisplay_sfml::OONMainDisplay_sfml(OONApp& app)
 //!! i.e. no Engine (SimApp) init has been done at all yet! :-o :-/
 //!!	reset(); // Calc. initial state
 
-cerr <<	"DBG> OONMainDisplay ctor: camera pointer is now: " << _camera << "\n";
+cerr <<	"DBG> OONMainDisplay_sfml ctor: camera pointer is now: " << _camera << "\n";
 }
 
 //----------------------------------------------------------------------------

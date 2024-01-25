@@ -85,17 +85,17 @@ OONApp_sfml::OONApp_sfml(int argc, char** argv)
 		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUD::DEFAULT_BACKGROUND_COLOR)})
 	, world_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 316),
+		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 314),
 		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)})
 	, view_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 424),
+		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 420),
 		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)})
 	, object_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 516),
+		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 526),
 		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
 		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)})
 	, help_hud( SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
