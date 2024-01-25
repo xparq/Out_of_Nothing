@@ -102,7 +102,8 @@ public:
 	const View::ScreenView& main_view() const { return _main_view; }
 
 	// Session save/load...
-	virtual bool save_snapshot(const char* filename);
+	enum SaveOpt { UseDefaults = -1, Raw = 0, Compress = 1 };
+	virtual bool save_snapshot(const char* filename, SaveOpt flags = UseDefaults);
 	virtual bool load_snapshot(const char* filename);
 	bool quick_save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
 	bool quick_load_snapshot(unsigned slot = 1); // See cfg.quick_snapshot_filename_pattern!

@@ -1,12 +1,8 @@
-﻿#define COMPRESSED_SNAPSHOTS //!! Should be runtime-controllable (e.g. disabled for testing etc.)!
-                        //!! But the #includes...
-
-#include "SimApp.hpp"
+﻿#include "SimApp.hpp"
 
 #include <string>
 	using std::string, std::to_string;
-//	using std::stoul, std::stof;
-//	using namespace std::string_literals;
+	using namespace std::string_literals;
 //#include <string_view>
 //	using std::string_view;
 #include "sz/fs.hh"
@@ -16,7 +12,7 @@
 #include <iostream>
 	using std::cerr, std::cout, std::endl;
 
-#ifdef COMPRESSED_SNAPSHOTS
+//#ifdef ENABLE_COMPRESSED_SNAPSHOTS
 #   include "extern/zstd/zstd.h"
 #   include <sstream>
     using std::ostringstream, std::stringstream;
@@ -24,12 +20,12 @@
     using std::make_unique_for_overwrite;
 #   include <cstddef>
     using std::byte; //!! It's fucked up in C++ tho: a byte[] buffer can't be used for file IO... Excellent.
-#endif
+//#endif // ENABLE_COMPRESSED_SNAPSHOTS
 
 namespace Szim {
 
 //----------------------------------------------------------------------------
-bool SimApp::save_snapshot(const char* unsanitized_filename)
+bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 {
 	//!!A kinda alluring abstraction would be SimApp not really having its own state
 	//!!(worth saving, beside the model world), leaving all that to descendants...
@@ -50,44 +46,43 @@ bool SimApp::save_snapshot(const char* unsanitized_filename)
 
 	//!! Note: perror("") may just print "No error" even if the stream is in failure mode! :-/
 
-#ifdef COMPRESSED_SNAPSHOTS
-	ofstream file(fname, ios::binary);
-	if (!file || file.bad()) { print_error(); return false; }
+	if (flags == UseDefaults ? cfg.save_compressed : flags & SaveOpt::Compress) { // Compressed
+		ofstream file(fname, ios::binary);
+		if (!file || file.bad()) { print_error(); return false; }
 
-	ostringstream out(ios::binary); //!!??Why did it fail with plain stringstream?!?!?!
-	//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
-	//!!out << "BUILD_ID = " << ::BUILD_ID << endl;
-	if (!snapshot.save(out)) {
-		print_error();
-		return false;
-	}
+		ostringstream out(ios::binary); //!!??Why did it fail with plain stringstream?!?!?!
+		//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
+		//!!out << "BUILD_ID = " << ::BUILD_ID << endl;
+		if (!snapshot.save(out)) {
+			print_error();
+			return false;
+		}
 
-	//file << out.view();
+		//file << out.view();
 
-	// Compress (the whole blob in one go... <- !!IMPROVE)
-	auto data_size = out.tellp(); // or out.view().size()
-	auto cbuf_size = ZSTD_compressBound(data_size);
-	auto cbuf = make_unique_for_overwrite<char[]>(cbuf_size);
-	auto cfile_size = ZSTD_compress(cbuf.get(), cbuf_size, out.view().data(), data_size, 9);
+		// Compress (the whole blob in one go... <- !!IMPROVE)
+		auto data_size = out.tellp(); // or out.view().size()
+		auto cbuf_size = ZSTD_compressBound(data_size);
+		auto cbuf = make_unique_for_overwrite<char[]>(cbuf_size);
+		auto cfile_size = ZSTD_compress(cbuf.get(), cbuf_size, out.view().data(), data_size, 9);
 
-	if (!file.write(cbuf.get(), cfile_size) || file.bad()) {
-		print_error();
-		return false;
-	}
+		if (!file.write(cbuf.get(), cfile_size) || file.bad()) {
+			print_error();
+			return false;
+		}
+		assert(out && !out.bad());
+	} else { // Not compressed
+		ofstream out(fname, ios::binary);
+		if (!out || out.bad()) {  print_error(); return false; }
 
-#else // !COMPRESSED_SNAPSHOTS
-	ofstream out(fname, ios::binary);
-	if (!out || out.bad()) {  print_error(); return false; }
-
-	//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
-	//!!out << "BUILD_ID = " << ::BUILD_ID << endl;
-	if (!snapshot.save(out)) {
-		print_error();
-		return false;
-	}
-#endif // COMPRESSED_SNAPSHOTS
-
-	assert(out && !out.bad());
+		//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
+		//!!out << "BUILD_ID = " << ::BUILD_ID << endl;
+		if (!snapshot.save(out)) {
+			print_error();
+			return false;
+		}
+		assert(out && !out.bad());
+	} // Compressed?
 
 	cerr << "World state saved to \"" << fname << "\".\n";
 	return true;
@@ -110,7 +105,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 	Model::World snapshot; // The input buffer
 
-#ifdef COMPRESSED_SNAPSHOTS
+//#ifdef COMPRESSED_SNAPSHOTS
 	ifstream file(fname, ios::binary);
 	if (!file || file.bad()) {
 		print_error(); return false;
@@ -122,7 +117,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 	if (!in || in.bad()) { print_error(); return false; }
 
 	// Decompress it "in-place" (i.e. replacing the original compr. data; in one go, in-memory... <- !!IMPROVE)
-	if (!in.view().starts_with("MODEL") /*!! or !...<hopefully uniform various post-0.1 versions> !!*/) {
+	if (!in.view().starts_with("MODEL") /*!! or !...<hopefully uniform various post-0.1 versions> !!*/) { // Compressed
 		try { // Mainly (or only?) for bad_alloc due to garbled data.
 			auto cbuf_size = in.view().size();
 			auto cbuf = in.view().data();
@@ -139,17 +134,16 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 			print_error("- ERROR: Couldn't decompress \""s + fname + "\": unknown or damaged file"s);
 			return false;
 		}
-	}
+	} // Compressed?
 
 	if (!in || in.bad()) { print_error(); return false; }
 
 	if (!Model::World::load(in, &snapshot)) {
 		print_error(); return false;
 	}
-
-	if (!in || in.bad()) { print_error(); return false; } // Should be redundant, but I've become too paranoid to delete it...
-
-#else // !COMPRESSED_SNAPSHOTS
+	assert(in && !in.bad());
+//#else // !COMPRESSED_SNAPSHOTS
+/*
 	ifstream in(fname, ios::binary);
 	if (!in || in.bad()) { print_error(); return false; }
 
@@ -159,9 +153,9 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 	if (!Model::World::load(in, &snapshot)) {
 		print_error(); return false;
 	}
-#endif // COMPRESSED_SNAPSHOTS
-
 	assert(in && !in.bad());
+*/
+//#endif // COMPRESSED_SNAPSHOTS
 
 	set_world(snapshot);
 

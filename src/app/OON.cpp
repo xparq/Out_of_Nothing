@@ -263,7 +263,11 @@ void OONApp::_setup_UI()
 				->setCallback([&]{
 					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
-						this->save_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
+						bool compress = cfg.save_compressed;
+						if (auto* compress_widget = (CheckBox*)gui.recall("Compress"); compress_widget)
+							compress = compress_widget->get();
+						this->save_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str(),
+							compress ? SaveOpt::Compress : SaveOpt::Raw);
 					}
 				});
 			saveload_buttons->add(new Button("Load"))
@@ -274,6 +278,8 @@ void OONApp::_setup_UI()
 						this->load_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
 					}
 				});
+		//!! Basically for testing only:
+		saveload_form->add("Compress", new CheckBox(cfg.save_compressed));
 
 	// Only position after built, so it has its dimensions:
 	gui.setPosition(4, cfg.WINDOW_HEIGHT - gui.getSize().y - 4);

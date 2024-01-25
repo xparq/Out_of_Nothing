@@ -45,6 +45,7 @@ struct SimAppConfig : Config
 	std::string model_dir;
 //	std::string addon_dir;
 	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with session_dir
+	bool save_compressed;
 	// UI
 	bool        headless;
 	bool        start_fullscreen;

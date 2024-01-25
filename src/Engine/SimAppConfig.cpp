@@ -32,6 +32,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	// ...Well, just default them in one step with loading; see below!
 	window_title = "Out of Nothing"; //!! USE A BUILT-IN APP_NAME RESOURCE/PROP
 	quick_snapshot_filename_pattern = DEFAULT_SNAPSHOT_FILE_PATTERN;
+	save_compressed = true;
 
 	exe_dir = sz::dirname(args.argv[0]);  //!! See #368, and right below:
 	cfg_dir = base_path(); //!! But...: #368 - infer from the exe dir, in Config already!...
@@ -62,6 +63,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	model_dir       = get("model_dir", "model");
 
 	quick_snapshot_filename_pattern = get("snapshot_file_pattern", quick_snapshot_filename_pattern);
+	save_compressed = get("save_compressed", true);
 
 	start_fullscreen  = get("appearance/start_fullscreen", false);
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
@@ -93,6 +95,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 		start_fullscreen = sz::to_bool(args("fullscreen"), sz::str::empty_is_true);
 	} if (args["headless"]) {
 		headless = true;
+	} if (args["no-save-compressed"]) {
+		save_compressed = false;
 	} if (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
 		try { iteration_limit = stoul(args("loop-cap")); } catch(...) { // stoul crashes on empty! :-/
 			cerr << "- WRNING: --loop-cap ignored! \""<<args("loop-cap")<<"\" must be a valid positive integer.\n"; }
