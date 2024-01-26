@@ -11,6 +11,8 @@
 
 #include "sz/sign.hh"
 
+#include "extern/iprof/iprof.hpp"
+
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
 #include <cmath>
@@ -71,6 +73,7 @@ OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
 //----------------------------------------------------------------------------
 void OONApp::init() // override
 {_
+IPROF_FUNC;
 	//!! Currently, the data watcher HUD setup depends directly on the player objects
 	//!! that have just been created above, so the UI init CAN'T happen before that...:
 	//_setup_UI();
@@ -181,6 +184,7 @@ void OONApp::init() // override
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
 	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 
+IPROF_SYNC_THREAD;
 } // init
 
 
@@ -1340,6 +1344,7 @@ void OONApp::updates_for_next_frame()
 		if (!iterations.maxed()) {
 
 			update_world(Δt);
+
 			++iterations;
 
 			// Clean-up decayed bodies:
@@ -1408,6 +1413,8 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 	sfw::getWidget<sfw::CheckBox>("Pan follow object")->set(_focus_locked_);
 
 	view_control(); // Manual view adjustments
+
+IPROF_SYNC_THREAD;
 }
 
 

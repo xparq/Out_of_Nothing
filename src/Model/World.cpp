@@ -38,6 +38,7 @@ World::World() :
 //----------------------------------------------------------------------------
 size_t World::add_body(Body const& obj)
 {
+IPROF("add_body-copy");
 	bodies.push_back(std::make_shared<Body>(obj));
 	auto ndx = bodies.size() - 1;
 	bodies[ndx]->recalc();
@@ -46,6 +47,7 @@ size_t World::add_body(Body const& obj)
 
 size_t World::add_body(Body&& obj)
 {
+IPROF("add_body-move");
 	obj.recalc(); // just recalc the original throw-away obj
 	bodies.emplace_back(std::make_shared<Body>(obj));
 	return bodies.size() - 1;
@@ -170,6 +172,10 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 	assert(gravity_mode == Normal || gravity_mode == Skewed || gravity_mode == Off);
 	for (size_t i = gravity_mode == Normal ? 0 : actor_obj_ndx + 1; i < bodies.size(); ++i)
 	{
+	//!!IPROF("Interact. cycle"); //! SLOWS DOWN THE MODEL HORRIBLY! (Was 0.22-0.27 μs, incl. the meas. overh.)
+
+		if (actor_obj_ndx == i) continue; // Skip itself...
+
 		auto& body = bodies[i]; //!!?? shared_ptr... worth the &?
 
 		if (body->terminated()) continue;

@@ -1,7 +1,7 @@
 #include "OON_sfml.hpp"
 
 #include "extern/iprof/iprof.hpp"
-#include "extern/iprof/iprof.cpp" //! Better than fiddling with the Makefile!... ;)
+#include "extern/iprof/iprof.cpp" //! Better than fiddling with the Makefiles...
 
 #include <iostream>
 	using std::cout, std::cerr;
@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
 	int exit_code = 0;
 	try {
 		OONApp_sfml game(argc, argv);
+cerr << "DBG> Size of the app (game) obj.: "<< sizeof(game) << '\n';
 
 		exit_code = game.run();
 
@@ -58,7 +59,12 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	cerr << "Profiling stats: " << IPROF_ALL_THREAD_STATS;
+	cerr	<< "Profiling stats:\n"
+		<< "----------------------------------------------------------\n"
+		<< IPROF_ALL_THREAD_STATS
+		<< "----------------------------------------------------------\n"
+	;
+
 	cerr << "DBG> main() returning: " << exit_code << '\n';
 
 	return exit_code;

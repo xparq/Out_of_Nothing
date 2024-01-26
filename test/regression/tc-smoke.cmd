@@ -8,7 +8,7 @@ set regdir=%~dp0
 set tc_subdir=%tc_name%
 set tc_dir=%regdir%%tc_subdir%
 
-set baseline_version=445da1f6
+set baseline_version=d5de5369
 
 set "baseline_dir=%regdir%_baseline-%baseline_version%"
 set "reference_startstate=%baseline_dir%/1000_bodies-START.state"
@@ -42,11 +42,10 @@ set oon_use_exe=%1
 	--no-save-compressed ^
 
 
-::busybox diff -b %SZ_RUN_DIR%\RESULT.save %SZ_RUN_DIR%\ea39db36-RESULT.ref && echo OK, SAME!
+::busybox diff -b %SZ_RUN_DIR%\RESULT.save %SZ_RUN_DIR%\%baseline_version%-RESULT.ref && echo OK, SAME!
 fc /b %new_endstate% %reference_endstate% > nul
 if errorlevel 1 (
 	echo !!! THE RESULTS DIFFER !!! :-(
 ) else (
 	echo OK. ^(Same as of %baseline_version%.^)
 )
-

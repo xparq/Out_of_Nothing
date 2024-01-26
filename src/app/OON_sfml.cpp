@@ -193,8 +193,7 @@ cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.o
 //cerr << "- releasing Events...\n";
 		//sync::EventsFreeToGo.release();
 
-	IPROF_SYNC;
-	IPROF_SYNC_THREAD;
+IPROF_SYNC_THREAD;
 
 /* Doing it with setFramerateLimit() now!
 	//! If there's still time left from the frame slice:
@@ -528,6 +527,9 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 		}
 
 #endif			
+
+IPROF_SYNC_THREAD;
+
 	} // while - still running
 
 } catch (runtime_error& x) {

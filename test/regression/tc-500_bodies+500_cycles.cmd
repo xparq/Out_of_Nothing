@@ -40,7 +40,7 @@ set oon_use_exe=%1
 	--session-save-as=%new_endstate% ^
 
 
-::busybox diff -b %SZ_RUN_DIR%\RESULT.save %SZ_RUN_DIR%\ea39db36-RESULT.ref && echo OK, SAME!
+::busybox diff -b %SZ_RUN_DIR%\RESULT.save %SZ_RUN_DIR%\%baseline_version%-RESULT.ref && echo OK, SAME!
 fc /b %new_endstate% %reference_endstate% > nul
 if errorlevel 2 (
 	echo - ERROR: File Compare failed. Result file was not created?
