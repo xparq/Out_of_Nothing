@@ -212,6 +212,7 @@ void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).acti
 void OONApp::_setup_UI()
 {
 	using namespace sfw;
+
 	// The SFW GUI is used as a translucent overlay, so an alpha-enabled bgColor
 	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
@@ -285,10 +286,11 @@ void OONApp::_setup_UI()
 		//!! Basically for testing only:
 		saveload_form->add("Compress", new CheckBox(cfg.save_compressed));
 
-	// Only position after built, so it has its dimensions:
-	gui.setPosition(4, cfg.WINDOW_HEIGHT - gui.getSize().y - 4);
+	// Only position after built, so it has its size:
+	//!! This is also done in onResize(), but that can't be invoked on init (#462) until #515, so...:
+	gui.setPosition(4, main_window_height() - gui.getSize().y - 4);
 		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
-		//!! Not even this would do anything, actually: ->setPosition({100, -200});
+		//!! Also, negative coords. aren't special in SFW, so this just goes off-screen: gui.setPosition({100, -200});
 
 #ifndef DISABLE_HUD
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
