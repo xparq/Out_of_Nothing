@@ -12,10 +12,10 @@ if [ ! -e "${SZ_PRJDIR}/tooling/_setenv.sh" ]; then
 	exit 1
 fi
 
-export SZ_SFML_LIBROOT=${SZ_SFML_LIBROOT:-${SZ_PRJDIR}/extern/sfml/msvc}
+export SZ_SFML_ROOT=${SZ_SFML_ROOT:-${SZ_PRJDIR}/extern/sfml/msvc}
 
 #echo SZ_PRJDIR = ${SZ_PRJDIR}
-#echo SZ_SFML_LIBROOT = ${SZ_SFML_LIBROOT}
+#echo SZ_SFML_ROOT = ${SZ_SFML_ROOT}
 #echo Press Enter to proceed...
 #read x
 
@@ -53,6 +53,6 @@ if [ ! -d "${SZ_OUT_DIR}" ]; then
 fi
 
 # Note the ; separators, which would fail with GCC on everything, but Windows (MinGW-like?)...
-export INCLUDE="${SZ_SRC_DIR};extern;extern/sfw/include;${SZ_SFML_LIBROOT}/include;${SZ_PRJDIR};${INCLUDE}"
-export LIB="${SZ_SFML_LIBROOT}/lib;${LIB}"
-export PATH="${SZ_PRJDIR}/tooling;${SZ_SFML_LIBROOT}/bin;${PATH}"
+export INCLUDE="${SZ_SRC_DIR};extern;extern/sfw/include;${SZ_SFML_ROOT}/include;${SZ_PRJDIR};${INCLUDE}"
+export LIB="${SZ_SFML_ROOT}/lib;${LIB}"
+export PATH="${SZ_PRJDIR}/tooling;${SZ_SFML_ROOT}/bin;${PATH}"

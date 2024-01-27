@@ -70,7 +70,7 @@ EXT_LIB_DIRS=
 EXT_LIB_SFW=extern/sfw/lib/msvc/sfw$(_cflags_crt_linkmode)$(_buildmode_debug_file_suffix).lib
 EXT_LIB_ZSTD=extern/zstd/msvc/zstd$(_cflags_crt_linkmode).lib
 EXT_LIBS=\
-	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
+	$(SZ_SFML_ROOT)/lib/$(sfml_and_deps_libs) \
 	$(EXT_LIB_SFW) \
 	$(EXT_LIB_ZSTD) \
 	user32.lib

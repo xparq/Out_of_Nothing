@@ -21,13 +21,14 @@
 
 
 TARGET=msvc
-SFML_LIBROOT="${SZ_SFML_LIBROOT}"
+SFML_ROOT="${SZ_SFML_ROOT}"
+
 SFML_LIBPACK_DOWNLOAD_URL_BASE="https://x1ab.github.io/download/SFML/3.0-pre/custom/"
 # There's only this one now:
 SFML_LIBPACK_FILE="vc17-64-staticCRT.zip"
 
 # Set this to 'yes' for overwriting existing target libs:
-OVERWRITE=${OVERWRITE:-no}
+OVERWRITE=${OVERWRITE:-yes}
 
 
 main(){
@@ -39,23 +40,25 @@ main(){
 	if [ "${OVERWRITE}" != "yes" ]; then
 		echo "- NOTE: Not overwriting existing files."
 		MV="mv -n"
+		CP="cp -n"
 	else
 		echo "- NOTE: Existing files *WILL BE OVERWRITTEN* silently!"
-		MV=mv
+		MV="mv -f"
+		CP="cp -f"
 	fi
 
 	# We need the abs. path as it's gonna be ref'ed from subdirs:
-	SFML_LIBROOT=`realpath ${SFML_LIBROOT}`
+	SFML_ROOT=`realpath ${SFML_ROOT}`
 
-	# If $SFML_LIBROOT doesn't exist, bail out...
-	if [ ! -d "$SFML_LIBROOT" ]; then
-		echo "- ERROR: '$SFML_LIBROOT' doesn't exist. Aborting."
+	# If $SFML_ROOT doesn't exist, bail out...
+	if [ ! -d "$SFML_ROOT" ]; then
+		echo "- ERROR: '$SFML_ROOT' doesn't exist. Aborting."
 		return 1
 	fi
 
 	# If it doesn't look healthy, also bail out...
-	if [ ! -d "$SFML_LIBROOT/include/SFML" ] || [ ! -d "$SFML_LIBROOT/lib" ] ; then
-		echo "- ERROR: '$SFML_LIBROOT' doesn't look like a valid SFML package!"
+	if [ ! -d "$SFML_ROOT/include/SFML" ] || [ ! -d "$SFML_ROOT/lib" ] ; then
+		echo "- ERROR: '$SFML_ROOT' doesn't look like a valid SFML package!"
 		echo "  Chickening out..."
 		return 2
 	fi
@@ -130,11 +133,12 @@ install(){
 	    return 5
 	fi
 
-	# Only unpack the libs!
-	unzip `basename "$_SFML_DOWNLOADED_PACK"` *.lib
+	unzip `basename "$_SFML_DOWNLOADED_PACK"`
 		# I just couldn't find out a priori whether the GHA runner has unzip or not...
-		# I've read the relevant GitHub pages, googled, asked ChatGPT, read SO posts
-		# -- all inconclusive... Sigh. We'll see from the errors then. :-/
+		# I've read the relevant GitHub pages, googled, asked ChatGPT, read SO posts,
+		# but: all inconclusive... Sigh. We'll see from the errors then. :-/
+	## Alternatively, only unpack the libs (but the prebuilt is rarely the same version!):
+	#unzip `basename "$_SFML_DOWNLOADED_PACK"` *.lib
 
 	if [ ! $? -eq 0 ]; then
 		echo "- ERROR: Failed to unpack '$_SFML_DOWNLOADED_PACK'."
@@ -142,16 +146,24 @@ install(){
 	fi
 
 	#
-	echo Move the addon libs to $SFML_LIBROOT...
+	echo "Move the addon libs & includes to $SFML_ROOT..."
 	#
-	if [ $? -eq 0 ] && [ -e "$SFML_LIBROOT/lib" ] && [ -e "$SFML_LIBROOT/include" ]; then
-		${MV} lib/*-s-s*.lib $SFML_LIBROOT/lib/
+	if [ $? -eq 0 ] && [ -e "$SFML_ROOT/lib" ] && [ -e "$SFML_ROOT/include" ]; then
+		${MV} lib/*-s-s*.lib $SFML_ROOT/lib/
 		if [ ! $? -eq 0 ]; then
-			echo "- ERROR: Failed to move content to '$SFML_LIBROOT/lib/'! Aborting."
+			echo "- ERROR: Failed to move content to '$SFML_ROOT/lib/'! Aborting."
+			return 7
+		fi
+#!!WTF, all I got is tantrum from mv:
+#!!??		${MV} -f include/* $SFML_ROOT/include/
+#!!??		${MV} -f -t $SFML_ROOT/include/ include/*
+		${CP} -r include/* $SFML_ROOT/include/
+		if [ ! $? -eq 0 ]; then
+			echo "- ERROR: Failed to move content to '$SFML_ROOT/include/'! Aborting."
 			return 7
 		fi
 	else
-		echo "- ERROR: Unexpected SFML dir layout ($SFML_LIBROOT)"
+		echo "- ERROR: Unexpected SFML dir layout ($SFML_ROOT)"
 		echo "  No 'lib' or 'include' subdirs!"
 		return 8
 	fi

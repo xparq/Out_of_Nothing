@@ -47,7 +47,7 @@ CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
 #!! So, well, sigh... (or add a manaully updated list...):
 objs_using_modules = $(objs)
 
-EXT_LIBROOT_SFML = $(SZ_SFML_LIBROOT)/lib
+EXT_LIBROOT_SFML = $(SFML_ROOT)/lib
 EXT_LIBROOT_SFW  = extern/sfw/lib/msvc
 EXT_LIBROOT_ZSTD = extern/zstd/msvc
 #! CAREFUL! These are also used as direct dependencies of the .exe, so

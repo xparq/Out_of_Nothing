@@ -8,7 +8,7 @@
 #!! Fixed to gcc for now:
 TOOLCHAIN = mingw
 #!! Override the MSVC-only setup script:
-SZ_SFML_LIBROOT := extern/sfml/$(TOOLCHAIN)
+SFML_ROOT := extern/sfml/$(TOOLCHAIN)
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #--- BUILD MODE DEFAULTS -----------------------------------------------------
@@ -56,7 +56,7 @@ objs_using_modules = $(objs)
 EXT_LIB_SFW = extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib
 EXT_LIB_ZSTD = extern/zstd/msvc/zstd$(cflags_crt_linkmode).lib
 EXT_LIBS =\
-	$(SZ_SFML_LIBROOT)/lib/$(sfml_and_deps_libs) \
+	$(SFML_ROOT)/lib/$(sfml_and_deps_libs) \
 	$(EXT_LIB_SFW) \
 	$(EXT_LIB_ZSTD) \
 	user32.lib\

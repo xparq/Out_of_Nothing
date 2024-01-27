@@ -1,7 +1,9 @@
 # Optional, if you want to precompile TOML++, instead of using it in header-only mode
 
-# Must use what the stock SFML lib also uses, i.e. -MD[d]:
-MSVC_CRT_LINKMODE = MD
+# Must use the same as what the SFML lib (and the others thereof)
+# also also use (i.e. MD[d]/MT[d] etc.):
+#MSVC_CRT_LINKMODE = MD
+MSVC_CRT_LINKMODE = MT
 
 toml-$(MSVC_CRT_LINKMODE).lib: toml.obj
 	lib /nologo $** /out:$@

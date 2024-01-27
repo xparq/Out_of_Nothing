@@ -1,6 +1,7 @@
 @echo off
 setlocal
-call %~dp0../_setenv.cmd keep_sfml_libroot
+::call %~dp0../_setenv.cmd keep_sfml_libroot
+call %~dp0../_setenv.cmd
 
 pushd %SZ_PRJDIR%
 rem !! Amazingly, this started to fail for some unknown reason: that same git cmd
@@ -44,7 +45,7 @@ pushd "%SZ_OUT_DIR%"
 zip %packfile% ./%SZ_APP_NAME%.exe
 popd
 
-pushd "%SZ_SFML_LIBROOT%/bin"
+pushd "%SZ_SFML_ROOT%/bin"
 zip %packfile% ./%sfml_dlls%"
 popd
 

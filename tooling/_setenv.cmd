@@ -10,7 +10,7 @@ rem !! Try with set "...=..."!
 rem !!
 
 if "%SZ_PRJDIR%"=="" set SZ_PRJDIR=%~dp0..
-if "%SZ_SFML_LIBROOT%"=="" set SZ_SFML_LIBROOT=%SZ_PRJDIR%/extern/sfml/msvc
+if "%SZ_SFML_ROOT%"=="" set SZ_SFML_ROOT=%SZ_PRJDIR%/extern/sfml/msvc
 
 set SZ_SRC_SUBDIR=src
 set SZ_OUT_SUBDIR=build.out
@@ -42,11 +42,11 @@ if errorlevel 1 (
 
 if not exist "%SZ_OUT_DIR%" md "%SZ_OUT_DIR%"
 
-set PATH=%SZ_PRJDIR%/tooling;%SZ_SFML_LIBROOT%/bin;%PATH%;extern/Microsoft.VC143.DebugCRT
-set LIB=%SZ_SFML_LIBROOT%/lib;%LIB%
-set            INCLUDE=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_LIBROOT%/include;%SZ_PRJDIR%;%INCLUDE%
+set PATH=%SZ_PRJDIR%/tooling;%SZ_SFML_ROOT%/bin;%PATH%;extern/Microsoft.VC143.DebugCRT
+set LIB=%SZ_SFML_ROOT%/lib;%LIB%
+set            INCLUDE=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_ROOT%/include;%SZ_PRJDIR%;%INCLUDE%
 :: Lend a hand to w64devkit, so that it can use this same env. setup script:
-set     C_INCLUDE_PATH=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_LIBROOT%/include;%SZ_PRJDIR%;%C_INCLUDE_PATH%
-set CPLUS_INCLUDE_PATH=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_LIBROOT%/include;%SZ_PRJDIR%;%CPLUS_INCLUDE_PATH%
-::set C_INCLUDE_PATH=%SZ_SRC_DIR%:extern/sfw/include:%SZ_SFML_LIBROOT%/include:%SZ_PRJDIR%:%C_INCLUDE_PATH%
-::set CPLUS_INCLUDE_PATH=%SZ_SRC_DIR%:extern/sfw/include:%SZ_SFML_LIBROOT%/include:%SZ_PRJDIR%:%CPLUS_INCLUDE_PATH%
+set     C_INCLUDE_PATH=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_ROOT%/include;%SZ_PRJDIR%;%C_INCLUDE_PATH%
+set CPLUS_INCLUDE_PATH=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_ROOT%/include;%SZ_PRJDIR%;%CPLUS_INCLUDE_PATH%
+::set C_INCLUDE_PATH=%SZ_SRC_DIR%:extern/sfw/include:%SZ_SFML_ROOT%/include:%SZ_PRJDIR%:%C_INCLUDE_PATH%
+::set CPLUS_INCLUDE_PATH=%SZ_SRC_DIR%:extern/sfw/include:%SZ_SFML_ROOT%/include:%SZ_PRJDIR%:%CPLUS_INCLUDE_PATH%
