@@ -239,6 +239,23 @@ void SimApp::set_world(Model::World const& w) { _world = w; }
 
 
 //----------------------------------------------------------------------------
+size_t SimApp::add_entity(Entity&& temp)
+{
+	return world().add_body(std::forward<decltype(temp)>(temp)); //!!?? That forward is redundant here?
+}
+
+size_t SimApp::add_entity(const Entity& src)
+{
+	return world().add_body(src);
+}
+
+void SimApp::remove_entity(size_t ndx)
+{
+	world().remove_body(ndx);
+}
+
+
+//----------------------------------------------------------------------------
 bool SimApp::quick_save_snapshot(unsigned slot_id) // starting from 1, not 0!
 {
 /*
@@ -331,14 +348,14 @@ bool SimApp::entity_at_viewpos(float x, float y, size_t* entity_id OUT) const //
 
 
 //----------------------------------------------------------------------------
-bool SimApp::collide_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2, float distance)
+bool SimApp::collide_hook(Model::World* w, Entity* obj1, Entity* obj2, float distance)
 {w, obj1, obj2, distance;
 	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 	//!!...body->p -= ds...;
 	return false;
 }
 
-bool SimApp::touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2)
+bool SimApp::touch_hook(Model::World* w, Entity* obj1, Entity* obj2)
 {w, obj1, obj2;
 	return false;
 }
@@ -349,7 +366,7 @@ bool SimApp::touch_hook(Model::World* w, Model::World::Body* obj1, Model::World:
 //!!but that might be prohibitively expensive in that tight loop, especiall if most callbacks would
 //!!just do nothing.
 //!!NOTE: This will anyway change to the objects themselves being notified (not the game "superclass")!
-void SimApp::interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...)
+void SimApp::interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...)
 {w, event, obj1, obj2;
 	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 }

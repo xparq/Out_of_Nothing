@@ -1,5 +1,6 @@
 ﻿/*
-The "Lorem Ipsum Drive" -- Skytyping with a Particle Thruster Engine
+Particle Emitter for Skytyping
+(Used e.g. as the "rasterizer" for the "Lorem Ipsum Drive")
 
 NOTES:
 
@@ -20,7 +21,7 @@ TODO:
 #ifndef _CN87BG78G3GB7878FBCY3N7B47Y358TYDJK78478B45_
 #define _CN87BG78G3GB7878FBCY3N7B47Y358TYDJK78478B45_
 
-#include "Model/Thruster.hpp" //!! JUST A REMINDER THAT IT EXISTS; UNUSED YET!
+#include "Model/Emitter.hpp"
 
 #include "sz/unilang.hh" // AUTO_CONST
 
@@ -34,7 +35,7 @@ namespace Model {
 
 #include "_testfont_7x10.h"
 
-class LoremIpsumDrive //!! : public Thruster
+class SkyPrint //!!?? : public Emitter //! The base is NOT the `emitter` object, which is actually the parent of this!
 {
 public://!!for now...
 	AUTO_CONST V_DUP = true;
@@ -67,7 +68,7 @@ public://!!for now...
 	char current_codepoint; //!! Well, yeah, it's just ASCII for now...
 
 public:
-	explicit LoremIpsumDrive(std::string text, bool loop = true)
+	explicit SkyPrint(std::string text, bool loop = true)
 	{
 		set_text(text, loop); // Also resets the "volatile" work state!
 	}
@@ -125,8 +126,6 @@ public:
 		// Collect the pixels of the current vertical scan line...
 		active_pixels = 0;
 		for (unsigned hline_index = 0; hline_index < font_height; ++hline_index) {
-//if (ch != ' ') cerr << "Pixel for '"<<ch<<"' at [h: "<<hline_index<<", v: "<<vline_index<<"]: "<< (font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
-//	<< " // (bit pos. from left: "<< (font_width-1 - vline_index) <<")\n";
 			if (current_codepoint != ' ' &&
 			    font[glyph_index * font_height + hline_index] & h_bitmask) {
 				assert(active_pixels < NOZZLE_COUNT);
@@ -139,26 +138,6 @@ public:
 					{ NOZZLE_X * 1.2f, -(hline_index * V_SCALE/font_height - V_SCALE/2 + V_SCALE/2 / font_height) };
 			  }
 			}
-/*
-			AUTO_CONST SECRET_PIXEL_CEMETERY_Y = -1e30f; // :)
-
-			assert(active_pixels < NOZZLE_COUNT);
-			nozzles[active_pixels++] = { NOZZLE_X,
-				(current_codepoint != ' ' && // Just a quick random optim.
-				font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
-					? -(hline_index * V_SCALE/font_height - V_SCALE/2)
-					: SECRET_PIXEL_CEMETERY_Y
-			};
-			if (V_DUP) { // Add a set of interleaving pixels:
-				assert(active_pixels < NOZZLE_COUNT);
-				nozzles[active_pixels++] = { NOZZLE_X * 1.2f,
-					(current_codepoint != ' ' && // Just a quick random optim.
-					font[glyph_index * font_height + hline_index] & (1<<(font_width-1 - vline_index)))
-						? -(hline_index * V_SCALE/font_height - V_SCALE/2.f + V_SCALE/font_height/2.f)
-						: SECRET_PIXEL_CEMETERY_Y
-				};
-			}
-*/
 		}
 
 		++vline_index;

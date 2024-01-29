@@ -1,6 +1,8 @@
 #ifndef _3895UY9G8HJ6987VN9836457NF48567459B8GV7UUBTNBRGJLKH_
 #define _3895UY9G8HJ6987VN9836457NF48567459B8GV7UUBTNBRGJLKH_
 
+#include "Emitter.hpp"
+
 namespace Model {
 
 struct Thruster //!! : public Entity //!! Not only not ready for that, but it's even the other way around: Object (i.e. Entity) #includes Thruster currently!... :-o

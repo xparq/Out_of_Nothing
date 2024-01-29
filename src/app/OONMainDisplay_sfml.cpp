@@ -128,6 +128,7 @@ void OONMainDisplay_sfml::delete_cached_shape(size_t entity_ndx) //override
 
 //----------------------------------------------------------------------------
 void OONMainDisplay_sfml::resize_objects(float factor) //override
+//!! Could this just call resize_object(), or that would degrade perf.?
 {
 	transform_objects([factor](sf::Transformable& shape) {
 		shape.setScale(shape.getScale() * factor);

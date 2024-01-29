@@ -1,7 +1,7 @@
 ﻿#include "OON.hpp"
 
-//!! Should be internal to the Model stuff, but for now...:
-#include "Model/Thruster/LoremIpsumDrive.hpp"
+//!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
+#include "Model/Emitter/SkyPrint.hpp"
 
 #include "Engine/Backend/HCI.hpp"
 #include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
@@ -83,10 +83,10 @@ IPROF_FUNC;
 
 	// Images...
 //!!!!
-//!!!! Currently there's no automatic guidance: this must be manually placed before the first add_body() (etc.)!
+//!!!! Currently there's no automatic guidance: this must be manually placed before the first add_entity() (etc.)!
 //!!!!
 	//!!
-	//!! THIS MUST COME BEFORE CALLING add_body() or its friends! :-o
+	//!! THIS MUST COME BEFORE CALLING add_entity() or its friends! :-o
 	//!!
 	avatars.emplace_back(Avatar{ .image_path = "image/HoryJesus.jpg", .tint_RGBA = 0xffff99ff });
 	tx_jesus = avatars.size() - 1;
@@ -136,9 +136,9 @@ IPROF_FUNC;
 		//!!   (TOML etc.), to finally replace this sad little hardcoding here:
 		//!!
 		// Add 2 "moons" with fixed parameters (mainly for testing):
-		add_body({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+		add_entity({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
 					.color = 0xff2020, .mass = 3e24f});
-		add_body({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
+		add_entity({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
 					.color = 0x3060ff, .mass = 3e24f});
 	}
 
@@ -386,7 +386,7 @@ void OONApp::_setup_UI()
 		<< "\n"
 //		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
 		<< "\n  lifetime: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return this->entity(this->focused_entity_ndx).lifetime == World::Body::Unlimited ?
+		                     else return this->entity(this->focused_entity_ndx).lifetime == Entity::Unlimited ?
 		                                 "(infinite)" : to_string(this->entity(this->focused_entity_ndx).lifetime); }
 		<< "\n  R: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
 		                     else return to_string(this->entity(this->focused_entity_ndx).r); }
@@ -521,13 +521,13 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 
 
 //----------------------------------------------------------------------------
-// Unrelated to onResize, but... where else is better to put these? :)
-void OONApp::resize_shapes(float factor) //virtual
+// (Unrelated to onResize(), but... where else would be better to put these...)
+void OONApp::resize_shapes(float factor) //override
 {
 	oon_main_view().resize_objects(factor);
 }
 
-void OONApp::resize_shape(size_t ndx, float factor) //virtual
+void OONApp::resize_shape(size_t ndx, float factor) //override
 {
 	oon_main_view().resize_object(ndx, factor);
 }
@@ -541,10 +541,10 @@ unsigned OONApp::add_player(World::Body&& obj, Avatar& avatar, VirtualController
 	obj.add_thrusters();
 	obj.superpower.gravity_immunity = appcfg.get("sim/player_antigravity", true);
 	obj.superpower.free_color = true;
-	obj/*.superpower*/.lifetime = World::Body::Unlimited; //!!?? Should this be a superpower instead?
+	obj/*.superpower*/.lifetime = Entity::Unlimited; //!!?? Should this be a superpower instead?
 
 	auto p_ent = (unsigned) //!! Blatant narrowing conv., hoping entity_count() will never overflow `unsigned`...
-		add_body(std::forward<World::Body>(obj));
+		add_entity(std::forward<World::Body>(obj));
 
 	players.emplace_back(p_ent, avatar, ctrlr);
 	assert(players.size());
@@ -882,7 +882,7 @@ void OONApp::toggle_sound_fx() { backend.audio.toggle_sounds(); }
 
 
 //----------------------------------------------------------------------------
-void OONApp::interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...)
+void OONApp::interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...)
 {w, event, obj1, obj2;
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
@@ -925,12 +925,12 @@ void OONApp::remove_random_bodies(size_t n/* = -1*/)
 
 
 //----------------------------------------------------------------------------
-size_t OONApp::add_body(World::Body&& obj) //virtual
-// Add new entity (moved) from a template (temporary) obj.
+size_t OONApp::add_entity(Entity&& temp) //override
+// Add new entity (moved) from a temporary template obj.
 {
-	auto ndx = world().add_body(std::forward<decltype(obj)>(obj));
+	auto ndx = SimApp::add_entity(temp);
 	// Pre-cache shapes for rendering... (!! May be pointless, but this is just what I started with...)
-	oon_main_view().create_cached_shape(obj, ndx);
+	oon_main_view().create_cached_shape(entity(ndx), ndx); // temp is dead now... ()
 	return ndx;
 }
 
@@ -952,7 +952,7 @@ size_t OONApp::add_random_body_near(size_t base_ndx)
 	auto M_max = base.mass * 3;
 
 //cerr << "Adding new object #" << cw.bodies.size() + 1 << "...\n";
-	return add_body({
+	return add_entity({
 		.p = { (rand() * p_range) / RAND_MAX - p_range/2 + base.p.x,
 		       (rand() * p_range) / RAND_MAX - p_range/2 + base.p.y },
 		.v = { (rand() * v_range) / RAND_MAX - v_range/2 + base.v.x * 0.05f,
@@ -963,9 +963,9 @@ size_t OONApp::add_random_body_near(size_t base_ndx)
 }
 
 //----------------------------------------------------------------------------
-void OONApp::remove_body(size_t ndx) //virtual
+void OONApp::remove_entity(size_t ndx) //override
 {
-	world().remove_body(ndx);
+	SimApp::remove_entity(ndx);
 
 	//-------------------------
 	// Adjust references...
@@ -1002,7 +1002,7 @@ void OONApp::remove_random_body()
 //cerr << "Deleting object #" << ndx << "...\n";
 	assert(ndx < entities); // Note: entity indexes are 0-based
 	assert(ndx > 0);        // Note: 0 is the player globe
-	remove_body(ndx);
+	remove_entity(ndx);
 }
 
 //----------------------------------------------------------------------------
@@ -1021,81 +1021,9 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 	for (size_t i = 0; i < n; ++i) {
 		auto ndx = add_random_body_near(player_entity_ndx());
 		auto& newborn = entity(ndx);
-		newborn.lifetime = World::Body::Unlimited;
+		newborn.lifetime = Entity::Unlimited;
 		newborn.T = parent.T; // #155: Inherit temperature
 		newborn.v = parent.v; // 1e5e8be3: Inherit speed
-	}
-}
-
-
-//----------------------------------------------------------------------------
-//!! - Move to SimApp!
-//!! - Decouple from the entity() query: pass it the object, not the index!
-//!!   (Only that `resize_shape(emitter_ndx, emitter.r/emitter_old_r);` uses it!
-//!!   Could be done by callers, or even be a follow-up callback, if necessary.)
-//!! - It still calls add_body() (so still can't be a free function (or class)),
-//!!   but that really could be a callback than...
-void OONApp::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size_t n, Math::Vector2f nozzles[])
-{
-	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
-
-//if (!ecfg.create_mass) cerr <<"DBG> emitter.mass BEFORE burst: "<< emitter.mass <<'\n';
-
-	auto p_range = ecfg.position_divergence * emitter.r;
-	auto p_offset = ecfg.eject_offset;
-	p_offset += // Also add a portion proportional to the emitter's velocity:
-		(emitter.v == Math::Vector2f()) ? //! SFML-DEBUG asserts this, so must be prevented... :-/
-			  Math::Vector2f()
-			: emitter.v.normalized() * emitter.r * ecfg.offset_factor;
-		//!! Also needs a non-linearity (decoupling) factor so higher v can affect it less!
-
-	float v_range = emitter.r * ecfg.velocity_divergence; //!! Ugh... by magic, right? :-o :-/
-
-	float emitter_old_r = emitter.r;
-
-	for (int i = 0; i < n; ++i) {
-		auto particle_mass = ecfg.particle_mass_min + (ecfg.particle_mass_max - ecfg.particle_mass_min) * float(rand())/RAND_MAX;
-
-		if (!ecfg.create_mass && emitter.mass < particle_mass) {
-//cerr << "- Not enough mass to emit particle!\n";
-			continue;
-		}
-//cerr <<"DBG> density: "<< ecfg.particle_density <<'\n';
-//cerr <<"DBG>   ==?  : "<< Model::Physics::DENSITY_ROCK * 0.0000000123f <<'\n';
-
-		Math::Vector2f p = { (rand() * p_range.x) / RAND_MAX - p_range.x/2 + emitter.p.x + p_offset.x,
-		                     (rand() * p_range.y) / RAND_MAX - p_range.y/2 + emitter.p.y + p_offset.y };
-		                     //!!...Jesus, these "hamfixted" pseudo Δt "factors"...
-		if (nozzles) p += nozzles[i] * emitter.r; // Scale to its "bounding sphere"...
-
-		[[maybe_unused]] auto pndx = add_body({
-			.lifetime = ecfg.particle_lifetime,
-			.density = ecfg.particle_density,
-			.p = p,
-			.v = { (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.x * ecfg.v_factor + ecfg.eject_velocity.x,
-			       (rand() * v_range) / RAND_MAX - v_range/2 + emitter.v.y * ecfg.v_factor + ecfg.eject_velocity.y },
-			.color = ecfg.color,
-			.mass = particle_mass,
-		});
-//cerr <<"DBG> particle.r: "<< entity(pndx).r <<'\n';
-
-//cerr <<"DBG> emitter v:  "<< emitter.v.x <<", "<< emitter.v.y <<'\n';
-//cerr <<"     - eject Δv: "<< ecfg.eject_velocity.x <<", "<< ecfg.eject_velocity.y <<'\n';
-//cerr <<"     - part. v:  "<< entity(pndx).v.x <<", "<< entity(entity_count()-1).v.y <<'\n';
-
-		if (!ecfg.create_mass) {
-			emitter.mass -= particle_mass;
-//cerr <<"DBG> Decreasing emitter.mass by: "<< particle_mass <<'\n';
-		}
-	}
-
-	if (!ecfg.create_mass) {
-		assert(emitter.mass >= 0);
-//cerr <<"DBG> emitter.r before recalc: "<< emitter.r <<'\n';
-		emitter.recalc();
-//cerr <<"DBG> emitter.r after recalc: "<< emitter.r <<'\n';
-		resize_shape(emitter_ndx, emitter.r/emitter_old_r);
-//cerr <<"DBG> emitter.mass AFTER burst: "<< emitter.mass <<'\n';
 	}
 }
 
@@ -1104,7 +1032,7 @@ void OONApp::_emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx, size
 //!! An exhaust jet should be created for each thruster!
 void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ size_t n/* = ...*/)
 {
-	static size_t   add_particles = appcfg.get("sim/exhaust_particles_add", 0);
+	static size_t   particles_to_add = appcfg.get("sim/exhaust_particles_add", 0);
 	static float    exhaust_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
 	static uint32_t exhaust_color = appcfg.get("sim/exhaust_color", 0xaaaaaa);
 	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
@@ -1114,16 +1042,15 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 //cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
 //cerr <<"DBG> -> exhaust_density: "<< exhaust_density <<'\n';
 
-	static EmitterConfig thrust_exhaust_emitter =
-	{
+	static Emitter::Config common_cfg = {
 		.eject_velocity = {0, 0},
 		.v_factor = appcfg.exhaust_v_factor, //!! Should just be calculated instead!,
 		.offset_factor = appcfg.exhaust_offset_factor, //!! Should just be calculated instead!
 		.particle_lifetime = appcfg.exhaust_lifetime,
 		.create_mass = appcfg.get("sim/exhaust_creates_mass", true),
 		.particle_density = exhaust_density,
-		.position_divergence = { appcfg.get("sim/exhaust_divergence", 1.f), // Scaled by the emitter radius!
-		                         appcfg.get("sim/exhaust_divergence", 1.f) },
+		.position_divergence = { appcfg.get("sim/exhaust_divergence", 1.f), // Scaled by the radius of the emitter!
+						appcfg.get("sim/exhaust_divergence", 1.f) },
 		.velocity_divergence = 1.f, //!! Just an exp. "randomness factor" for now!...
 		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
 		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
@@ -1132,45 +1059,59 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 
 	auto& base = entity(base_ndx); // Not const: will deplete!
 
-// This accidentally creates a lovely rainbow color pattern in the plumes!... :-o
-	constexpr const float color_spread = (float)0x111111;
-	thrust_exhaust_emitter.color = uint32_t(exhaust_color + color_spread - 2 * color_spread * float(rand())/RAND_MAX);
+	// This "accidentally" creates a nice rainbowish color pattern in the plumes...
+	auto adjust_color = [](uint32_t base_color){
+		constexpr const float color_spread = (float)0x111111;
+		return uint32_t(base_color + color_spread - 2 * color_spread * float(rand())/RAND_MAX);
+	};
 
-	//!! This should be calculated from player_thrust_force (around 3e36 N curerently)!
+	//!! This should be calculated from player_thrust_force (around 3e36 N curerently):
 	const auto eject_v = 4e9f;// * abs(appcfg.exhaust_v_factor/2); //! Since this is a property of the thrusters, don't
 	                                                               //! adjust with the full v-factor!... Just a hint! :)
+	Emitter* thruster = nullptr;
+
 	if (base.thrust_up.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {0, -eject_v};
-		thrust_exhaust_emitter.eject_offset = {0, -base.r * airgap};
-		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+		static Emitter up_thrust_emitter(common_cfg, *this);
+		thruster = &up_thrust_emitter;
+		thruster->cfg.eject_velocity = {0, -eject_v};
+		thruster->cfg.eject_offset = {0, -base.r * airgap};
 	}
 	if (base.thrust_down.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {0, eject_v};
-		thrust_exhaust_emitter.eject_offset = {0, base.r * airgap};
-		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+		static Emitter dn_thrust_emitter(common_cfg, *this);
+		thruster = &dn_thrust_emitter;
+		thruster->cfg.eject_velocity = {0, eject_v};
+		thruster->cfg.eject_offset = {0, base.r * airgap};
 	}
 	if (base.thrust_left.thrust_level()) {
-		thrust_exhaust_emitter.eject_velocity = {eject_v, 0};
-		thrust_exhaust_emitter.eject_offset = {base.r * airgap, 0};
-		_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+		static Emitter lt_thrust_emitter(common_cfg, *this);
+		thruster = &lt_thrust_emitter;
+		thruster->cfg.eject_velocity = {eject_v, 0};
+		thruster->cfg.eject_offset = {base.r * airgap, 0};
 	}
 	if (base.thrust_right.thrust_level()) {
-		static LoremIpsumDrive loremipsum_thruster(appcfg.get("player/test/tagline", "HORY SHET!!!!"));
-		if (loremipsum_thruster.emit()) {
-			auto save_vdiv = thrust_exhaust_emitter.velocity_divergence;
-			auto save_pdiv = thrust_exhaust_emitter.position_divergence;
-			                 thrust_exhaust_emitter.position_divergence = {0, 0};
-			                 thrust_exhaust_emitter.velocity_divergence = 0;
-				thrust_exhaust_emitter.eject_offset = {-base.r * airgap, 0}; //!! = {-eject_v/10, 0}; // A gap looks shit here!
-				thrust_exhaust_emitter.eject_velocity = {-eject_v/10, 0}; // To avoid garbled clouds if not moving...
-				_emit_particles(thrust_exhaust_emitter, base_ndx, loremipsum_thruster.active_pixels, loremipsum_thruster.nozzles);
-			thrust_exhaust_emitter.velocity_divergence = save_vdiv;
-			thrust_exhaust_emitter.position_divergence = save_pdiv;
-		} else {
-			thrust_exhaust_emitter.eject_velocity = {-eject_v, 0};
-			thrust_exhaust_emitter.eject_offset = {-base.r * airgap, 0};
-			_emit_particles(thrust_exhaust_emitter, base_ndx, add_particles ? add_particles : n);
+		static Emitter rt_thrust_emitter(common_cfg, *this);
+		thruster = &rt_thrust_emitter;
+		thruster->cfg.eject_velocity = {-eject_v, 0};
+		thruster->cfg.eject_offset = {-base.r * airgap, 0};
+		// But, instead, use this "alternative engine" here (but only if it "works"!...):
+		static SkyPrint loremipsum_skyprinter(appcfg.get("player/test/tagline",
+			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."));
+		if (loremipsum_skyprinter.emit()) {
+			static Emitter rt_lorem_emitter(common_cfg, *this);
+			thruster = &rt_lorem_emitter;
+	                thruster->cfg.position_divergence = {0, 0};
+			thruster->cfg.velocity_divergence = 0;
+			thruster->cfg.eject_offset = {-base.r * airgap, 0}; //!! = {-eject_v/10, 0}; // A gap looks shit here!
+			thruster->cfg.eject_velocity = {-eject_v/10, 0}; // To avoid garbled clouds if not moving...
+			thruster->cfg.color = adjust_color(exhaust_color);
+			thruster->emit_particles(base_ndx, loremipsum_skyprinter.active_pixels, loremipsum_skyprinter.nozzles);
+			thruster = nullptr; // Prevent the default action...
 		}
+	}
+
+	if (thruster) {
+		thruster->cfg.color = adjust_color(exhaust_color);
+		thruster->emit_particles(base_ndx, particles_to_add ? particles_to_add : n);
 	}
 }
 
@@ -1184,8 +1125,8 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_max_size_ratio", 0.01f);
 //cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
 //cerr <<"DBG> -> shield_density: "<< particle_density <<'\n';
-	static EmitterConfig emitter_cfg =
-	{
+	static Emitter thrust_exhaust_emitter(
+	Emitter::Config{
 		.eject_velocity = {0, 0},
 		.v_factor = appcfg.get("sim/shield_v_factor", 0.1f),
 		.offset_factor = appcfg.get("sim/shield_offset_factor", 4.f),
@@ -1198,10 +1139,10 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH),
 		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH),
 		.color = color,
-	};
+	}, *this);
 
 //	emitter_cfg.eject_velocity = entity(emitter_ndx).v;
-	_emit_particles(emitter_cfg, emitter_ndx, n ? n : appcfg.shield_burst_particles);
+	thrust_exhaust_emitter.emit_particles(emitter_ndx, n ? n : appcfg.shield_burst_particles);
 }
 
 
@@ -1210,7 +1151,7 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 {
 	static float chemtrail_v_factor      = appcfg.get("sim/chemtrail_v_factor", 0.1f);
 	static float chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
-	static float chemtrail_lifetime      = appcfg.get("sim/chemtrail_lifetime", Model::World::Body::Unlimited);
+	static float chemtrail_lifetime      = appcfg.get("sim/chemtrail_lifetime", Entity::Unlimited);
 	static bool  chemtrail_creates_mass  = appcfg.get("sim/chemtrail_creates_mass", true);
 	static float chemtrail_density       = Model::Physics::DENSITY_ROCK * appcfg.get("sim/chemtrail_density_ratio", 0.001f);
 	static float chemtrail_divergence    = appcfg.get("sim/chemtrail_divergence", 1.f);
@@ -1232,7 +1173,7 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 			continue;
 		}
 
-		add_body({
+		add_entity({
 			.lifetime = chemtrail_lifetime,
 			.density = chemtrail_density,
 			//!!...Jesus, those "hamfixted" pseudo Δts here! :-o :)
@@ -1352,8 +1293,8 @@ void OONApp::updates_for_next_frame()
 			// Clean-up decayed bodies:
 			for (size_t i = player_entity_ndx() + 1; i < entity_count(); ++i) {
 				auto& e = entity(i);
-				if (e.lifetime != World::Body::Unlimited && e.lifetime <= 0) {
-					remove_body(i); // Takes care of "known" references, too!
+				if (e.lifetime != Entity::Unlimited && e.lifetime <= 0) {
+					remove_entity(i); // Takes care of "known" references, too!
 				}
 			}
 
@@ -1437,7 +1378,7 @@ bool OONApp::load_snapshot(const char* fname) //override
 	remove_bodies();
 	//! 3. Add the bodies back...
 	for (auto& bodyptr : world_snapshots[slot]) {
-		add_body(*bodyptr);
+		add_entity(*bodyptr);
 	}
 */// Faster, more under-the-hood method:
 	//! 1. Halt everything...
@@ -1448,7 +1389,5 @@ bool OONApp::load_snapshot(const char* fname) //override
 //cerr << "Game state restored from \"" << fname << "\".\n";
 	return true;
 }
-
-
 
 } // namespace OON

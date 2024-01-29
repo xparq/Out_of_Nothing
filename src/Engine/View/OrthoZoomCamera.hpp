@@ -24,7 +24,7 @@ struct OrthoZoomCamera : Camera
 		// Why float dimensions? -> #221: Camera concept/definitions...
 		float width  = 1024;
 		float height = 768;
-		float base_scale = 1; // Depends on the physics, so pretty much always set it!
+		float base_scale = 1; // Depends on the physics, so pretty much always needs changing!
 		bool  gridlines = true; //!! -> false, as soon as it involves complexity beyond a simple direct query!
 	};
 

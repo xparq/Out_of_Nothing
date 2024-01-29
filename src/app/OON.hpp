@@ -114,19 +114,16 @@ public:
 #endif
 
 	//--------------------------------------------------------------------
-	// Internals: not even user actions (Well, some still are, basically for testing.)
-	//!!Make a proper distinction between these and the player/user actions!
+	// "Internal ops.", rather than "user actions" (well, some still are, e.g. for testing)
+	//!!Make a proper distinction between these and player/user actions!
 	//!!(One thing's that those tend/should go through the UI, whereas these shouldn't.)
-	virtual size_t add_body(Model::World::Body&& obj);
-//!!	virtual size_t add_body(Model::World::Body const& obj);
-	virtual void   remove_body(size_t ndx);
 	size_t add_random_body_near(size_t base_ndx);
 	void   add_random_bodies_near(size_t base_ndx, size_t n);
 	void   remove_random_body();
 	void   remove_random_bodies(size_t n = -1); // -1 -> all
 
 	unsigned add_player(
-		Model::World::Body&& model,
+		Entity&& model,
 		Szim::Avatar& avatar,
 		Szim::VirtualController& controls
 	) override;
@@ -135,46 +132,31 @@ public:
 protected:
 	bool _ctrl_update_thrusters(); // true if any engine is firing
 
-	//----------------------------------------------------------------------------
-	struct EmitterConfig
-	{
-		Math::Vector2f eject_velocity{}; // Relative to the emitter's v
-		Math::Vector2f eject_offset{};   // Relative to the emitter's origin
-		float v_factor = 0.1f; //!! May be redundant with eject_velocity now!
-		float offset_factor = 0.2f;
-		float particle_lifetime = Model::World::Body::Unlimited;
-		bool  create_mass = true;
-		float particle_density = Model::Physics::DENSITY_ROCK * 0.001f;
-		Math::Vector2f position_divergence = {5.f, 5.f}; // Scaled by the emitter's radius
-		float velocity_divergence = 1.f; //!! Just an exp. "randomness factor" for now!...
-		float particle_mass_min{};
-		float particle_mass_max{};
-		uint32_t color = 0x706080; // 0xRRGGBB
-	};
-	void _emit_particles(const EmitterConfig& ecfg, size_t emitter_ndx = 0, size_t n = 10,
-		Math::Vector2f nozzles[] = nullptr); // 'nozzles' must have n elements if not null,
-		                                     // each relative to the origin of the emitter,
-		                                     // and normalized to a [-1, 1] bounding box!
-
-	// Model event callback implementations... //!!Then move it to some more "modelly place" later, as things will get more complicated.
-	void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...) override;
-	bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2) override;
-
-
 	//------------------------------------------------------------------------
-	// Callback impl. (overrides)...
-	//------------------------------------------------------------------------
+	// Op. implementations/overrides...
 	void updates_for_next_frame() override;
+	size_t add_entity(Entity&& temp) override;
+	void remove_entity(size_t ndx) override;
+//	void transform_entity(EntityTransform f) override;
+//	void transform_entity(EntityTransform_ByIndex f) override;
+	//--------------------------------------------------------------------
+	void resize_shape(size_t /*ndx*/, float /*factor*/) override;
+	void resize_shapes(float /*factor*/) override;
+
 	void time_step(int steps) override;
+	bool load_snapshot(const char* fname) override; // Needs to reset the rendering cache!
+	//bool save_snapshot(const char* fname) override; // Nothing special to do for this one.
+
+	//------------------------------------------------------------------------
+	// Model event callback implementations...
+		//!!Then move it to some more "modelly place" later, as things get more complicated
+	void interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...) override;
+	bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2) override;
+
+	//------------------------------------------------------------------------
+	// Other callback impl. (overrides)...
 	void pause_hook(bool newstate) override;
 	void onResize(unsigned width, unsigned height) override;
-	bool load_snapshot(const char* fname) override; // Needs to reset the rendering cache!
-	//bool save_snapshot(const char* fname) override; // Nothing special to do for this.
-
-	//--------------------------------------------------------------------
-	// New overridables introduced:
-	virtual void resize_shapes(float /*factor*/);
-	virtual void resize_shape(size_t /*ndx*/, float /*factor*/);
 
 //----------------------------------------------------------------------------
 // C++ mechanics...

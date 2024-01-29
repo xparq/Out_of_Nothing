@@ -3,15 +3,16 @@
 
 #include "Engine/Config.hpp"
 
-#include "Physics.hpp" // #includes Math.hpp
+#include "Engine/Model.hpp" //!! Just a placeholder, plus for the kludge symbol Model::Unlimited
+
+#include "Physics.hpp"
+#include "Math.hpp"   // Included by "Physics.hpp", though...
 #include "Math/Vector2.hpp"
-//	using namespace Math;
-	using Math::MyNaN;
 
 #include "Object.hpp" //!!This just includes World.hpp back, intentionally! :)
                       //!!(Wouldn't be that way if World::Body{} could just be defined there, separetely.)
 
-#include <memory> // shared_ptr
+#include <memory>     // shared_ptr
 #include <vector>
 //!!No, not yet. It's just too cumbersome, for too little gain:
 //!!#include <optional> // for load()
@@ -80,7 +81,8 @@ public:
 	//!! and then stuff that only need Entity could spare including the World.
 	{
 		//!!ObjConfig cfg; // basically the obj. type
-		static constexpr float Unlimited = -1; //! Not an enum to avoid the `World::Body::Enumname::Unlimited` atrocity
+		constexpr const static auto Unlimited = Model::Unlimited;
+
 		struct {
 			bool gravity_immunity = false;
 			bool free_color = false; // T doesn't affect color
@@ -108,10 +110,12 @@ public:
 		//!! (which would basically be a flexible type system).
 		//!!
 		//!!BTW, thrust should be axial anyway, so these 4 should be just 2:
-		Thruster thrust_up{ MyNaN }; //! will be changed to "real" numbers for objects with actually functioning thrusters
-		Thruster thrust_down{ MyNaN };
-		Thruster thrust_left{ MyNaN };
-		Thruster thrust_right {MyNaN };
+		//!!ALSO: REPLACE WITH A GENERIC (dynamically built) Structure COMPONENT + ("OPTONAL") TYPE INFO!
+		//!!      ("OPTIONAL" 'coz the structure itself *IS* the type info, it's just cumbersome to work with!)
+		Thruster thrust_up    { Math::MyNaN }; // Gets repalced by "real" numbers for objects with actually functioning thrusters.
+		Thruster thrust_down  { Math::MyNaN };
+		Thruster thrust_left  { Math::MyNaN };
+		Thruster thrust_right { Math::MyNaN };
 
 		//! Alas, can't do this with designated inits: Body() : mass(powf(r, 3) * density) {} :-(
 		//! So... (see e.g. add_body()):
@@ -122,7 +126,7 @@ public:
 		void on_event(Event e, ...); //! Alas, can't be virtual: that would kill the C++ init. list syntax! :-o :-/
 
 		// Ops.:
-		bool has_thruster() { return thrust_up.thrust_level() != MyNaN; } //!! Ugh!... :-o :)
+		bool has_thruster() { return thrust_up.thrust_level() != Math::MyNaN; } //!! Ugh!... :-o :)
 		void add_thrusters() { // Umm...: ;)
 			thrust_up.thrust_level(0);
 			thrust_down.thrust_level(0);

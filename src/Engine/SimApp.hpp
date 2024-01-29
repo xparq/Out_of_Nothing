@@ -16,6 +16,7 @@
                       //!! (mostly?) client .cpps that use should include it individually!)
 //!!#include "UI/HUD.hpp"
 #include "UI/Input.hpp"
+#include "Model.hpp" //!! Just a reminder/placeholder, not used yet!
 #include "Model/World.hpp"
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
@@ -117,6 +118,7 @@ public:
 
 	// Entities...
 	using Entity = Model::World::Body;
+
 	size_t entity_count() const { return world().bodies.size(); }
 //!! ADD DEBUG-MODE BOUNDS-CHECKING FOR THESE!
 	// Thread-safe, slower access:
@@ -135,9 +137,20 @@ public:
 	virtual bool entity_at_viewpos(float x, float y, size_t* entity_id OUT) const;
 	virtual bool is_entity_at_viewpos(size_t entity_id, float x, float y) const;
 
+	virtual size_t add_entity(Entity&& temp);     // Move from temporary/template obj.
+	virtual size_t add_entity(const Entity& src); // Copy from obj.
+	virtual void remove_entity(size_t ndx);
+
+/*!!
+	using EntityTransform = void(*)(Entity&);
+	using EntityTransform_ByIndex = void(*)(size_t ndx);
+	virtual void transform_entity(EntityTransform f) {}
+	virtual void transform_entity(EntityTransform_ByIndex f) {}
+!!*/
+
 //!!	unsigned add_player(Player&& tempp); // Calls a virtual hook to let the app finish it...
 	virtual unsigned add_player(
-		Model::World::Body&& model,
+		Entity&& model,
 		Avatar& avatar,
 		VirtualController& controls
 	) = 0; //!! Ugh... Refine! (Can't really be done nicely in C++, though.)
@@ -166,18 +179,18 @@ public:
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)
 	/*
-	virtual bool collide_hook(World* w, World::Body* obj1, World::Body* obj2)
+	virtual bool collide_hook(World* w, Entity* obj1, Entity* obj2)
 	{w, obj1, obj2;
 		return false;
 	}
 	*/
-	virtual bool collide_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2, float distance);
-	virtual bool touch_hook(Model::World* w, Model::World::Body* obj1, Model::World::Body* obj2);
+	virtual bool collide_hook(Model::World* w, Entity* obj1, Entity* obj2, float distance);
+	virtual bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2);
 
 	// High-level, abstract (not as in "generic", but "app-level") hook for n-body interactions:
 	// `event` represents the physical property/condition that made it think these might interact.
 	//!!NOTE: This will change to the objects themselves being notified (not the game "superclass")!
-	virtual void interaction_hook(Model::World* w, Model::World::Event event, Model::World::Body* obj1, Model::World::Body* obj2, ...);
+	virtual void interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...);
 
 	//----------------------------------------------------------------------------
 	//Misc convenience helpers
@@ -195,8 +208,12 @@ protected:
 	virtual void update_thread_main_loop() = 0;
 	virtual void updates_for_next_frame() = 0;
 	virtual void onResize(unsigned /*width*/, unsigned /*height*/) {}
+	//--------------------
 	// Rendering... (See also main_view()!)
 	virtual void draw() = 0;
+	//!! Render sync. kludge -> #516...:
+		public: virtual void resize_shape(size_t /*ndx*/, float /*factor*/) {}
+		public: virtual void resize_shapes(float /*factor*/) {}
 
 //----------------------------------------------------------------------------
 // C++ mechanics...
