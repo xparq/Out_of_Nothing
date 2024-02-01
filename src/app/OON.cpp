@@ -1,4 +1,4 @@
-﻿#include "OON.hpp"
+#include "OON.hpp"
 
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "Model/Emitter/SkyPrint.hpp"
@@ -155,8 +155,8 @@ IPROF_FUNC;
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
 			world().friction = f;
-		}; if (!args("zoom-adjustment").empty()) { //!! Should be done by SimApp, and then the audio init
-			float factor = stof(args("zoom-adjustment"));
+		}; if (!args("zoom-adjust").empty()) { //!! Should be done by SimApp, and then the audio init
+			float factor = stof(args("zoom-adjust"));
 			if (factor) zoom_reset(factor);
 		}
 	} catch(...) {

@@ -32,7 +32,7 @@ set oon_use_exe=%1
 	--cfg=test/default.cfg --snd=off ^
 	--interact ^
 	--friction=0.01 ^
-	--zoom-adjustment=0.2 ^
+	--zoom-adjust=0.2 ^
 	--fixed-dt=0.033 ^
 	--fps-limit=0 ^
 	--loop-cap=%loop% ^

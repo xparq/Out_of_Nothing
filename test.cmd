@@ -15,6 +15,6 @@ for /f %%f in ('dir /b /o-d /t:w "%SZ_RUN_DIR%\*oon*exe"') do (
 :break
 
 echo Launching: %latest_exe%...
-echo 	--cfg=test/default.cfg --snd=off --interact --bodies=500 --friction=0.01 --zoom-adjustment=0.1 %*
+echo 	--cfg=test/default.cfg --snd=off --interact --bodies=500 --friction=0.01 --zoom-adjust=0.1 %*
 "%SZ_RUN_DIR%\%latest_exe%" ^
-	--cfg=test/default.cfg --snd=off --interact --bodies=500 --friction=0.01 --zoom-adjustment=0.1 %*
+	--cfg=test/default.cfg --snd=off --interact --bodies=500 --friction=0.01 --zoom-adjust=0.1 %*
