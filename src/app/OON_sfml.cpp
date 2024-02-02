@@ -1,4 +1,4 @@
-﻿#include "OON_sfml.hpp"
+#include "OON_sfml.hpp"
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
@@ -368,20 +368,34 @@ try {
 				case SFML_KEY(F7):  keystate(SHIFT) ? quick_load_snapshot(7) : quick_save_snapshot(7); break;
 				case SFML_KEY(F8):  keystate(SHIFT) ? quick_load_snapshot(8) : quick_save_snapshot(8); break;
 
-				case SFML_KEY(Home):
+				case SFML_KEY(Home): // See also Numpad5!
 					if (keystate(CTRL)) {
 						//!! These should be "upgraded" to "Camera/view reset"!
-						//!! oon_main_camera().reset() already exists:
-						oon_main_camera().reset(); //!! ...but is not enough. :-/
-						pan_reset();         //!! And these also overlap the camera reset...
-						zoom_reset();        //!! SO, RECONCILE THEM!
-					} else if (keystate(SHIFT)) {
-						if (focused_entity_ndx != ~0u)
-							center_entity(focused_entity_ndx);
+						//!! oon_main_camera().reset() already exists, but that's
+						//!! not enough; see notes in zoom_reset() why!
+
+						//!! Alas, pan_reset below also clears the focused entity.
+						//!! It would be better to preserve it...
+						//!!auto save_focused = focused_entity_ndx;
+
+						pan_reset();
+						//zoom_reset();
+
+						//!!focused_entity_ndx = save_focused;
+						//!! ...but a bad side-effect of that currently is implicit
+						//!! automatic view-confinement -- immediately messing up
+						//!! the view position if the focus object is bolting away! :)
+						//!! Would be better to keep the focus obj. and just turn
+						//!! off view confinement, but it can't be done yet. :-/
 					} else {
 						center_player();
 						focused_entity_ndx = player_entity_ndx();
 					}
+					break;
+
+				case SFML_KEY(Numpad5): // See also Ctrl+Home!
+					pan_reset();
+					zoom_reset();
 					break;
 
 				case SFML_KEY(F12): toggle_huds();

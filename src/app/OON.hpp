@@ -75,7 +75,7 @@ public:
 	// - Change the zoom ratio by 'amount' (e.g. 5%):
 	void zoom_in(float amount);
 	void zoom_out(float amount);
-	void zoom_reset(float factor = 0); // If !0, also change the original level by 'factor'!
+	void zoom_reset();
 
 	// - Poll view controls & adjust:
 	bool view_control(float mousewheel_delta = 0); //!! override;

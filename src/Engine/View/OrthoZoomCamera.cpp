@@ -26,7 +26,7 @@ void OrthoZoomCamera::reset(const Config* recfg/* = nullptr*/)
 //std::cerr << "DBG> "<<__FUNCTION__<<": width="<<cfg.width<<", height="<<cfg.height<<"\n";
 
 	// Reset all the derived state, too...
-	_scale = cfg.base_scale;
+	reset_zoom();
 	offset = {0, 0};
 	focus_offset = {0, 0};
 
@@ -54,6 +54,11 @@ void OrthoZoomCamera::resize(float width, float height)
 
 
 void OrthoZoomCamera::reset(Config&& recfg) { reset(&recfg); } // ...it should live long enough for this, right? ;)
+
+void OrthoZoomCamera::reset_zoom(float trim/* = 1*/)
+{
+	_scale = cfg.base_scale * trim;
+}
 
 
 bool OrthoZoomCamera::confine(Math::Vector2f world_pos, float margin, float throwback)

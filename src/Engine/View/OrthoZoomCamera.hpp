@@ -37,6 +37,7 @@ struct OrthoZoomCamera : Camera
 	void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
 	void reset(Config&& recfg);
 	void resize(float width, float height);
+	void reset_zoom(float trim = 1); // Relative to base_scale! (scale = base_scale * level)
 
 	// -------------------------------------------------------------------
 	// Queries...
@@ -93,7 +94,7 @@ struct OrthoZoomCamera : Camera
 	void focus_to(Math::Vector2f view_pos) { focus_offset = view_pos; }
 
 	// Zoom
-	void zoom(float change_factor); // Zoom change ratio (zoom in if > 1)
+	void zoom(float change_factor); // Zoom in if > 1. Relative to the current scale! (scale *= chg)
 	void zoom_in  (float step) { zoom(1.f + step); }
 	void zoom_out (float step) { zoom(1.f / (1.f + step)); }
 

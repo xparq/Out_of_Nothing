@@ -155,9 +155,12 @@ IPROF_FUNC;
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
 			world().friction = f;
-		}; if (!args("zoom-adjust").empty()) { //!! Should be done by SimApp, and then the audio init
-			float factor = stof(args("zoom-adjust"));
-			if (factor) zoom_reset(factor);
+		}; if (!args("zoom-adjust").empty()) {
+			// Trim the original base scale level:
+			if (float trim = stof(args("zoom-adjust")); trim) {
+				oon_main_camera().cfg.base_scale *= trim;
+				zoom_reset();
+			}
 		}
 	} catch(...) {
 		cerr << __FUNCTION__ ": ERROR processing/applying some cmdline args!\n";
@@ -352,9 +355,9 @@ void OONApp::_setup_UI()
 		<< "MAIN CAMERA:"
 		<< "\n  X: " << &oon_main_camera().offset.x << ", Y: " << &oon_main_camera().offset.y
 		//!! to_string() fucked it up and returned "0.000000" for e.g. 0.00000005f! :-o (#509)
-		//!! << "\n  Scale: " << [&](){ return to_string(this->oon_main_camera().scale() * 1e6f); } << " x 1e-6"
-		<< "\n  Base scale: " << OONConfig::DEFAULT_ZOOM
-		<< "\n  Zoom adj.: "<< [&](){ return to_string(this->oon_main_camera().scale() / OONConfig::DEFAULT_ZOOM); }
+		//!! << "\n  Scale: " << [this](){ return to_string(oon_main_camera().scale() * 1e6f); } << " x 1e-6"
+		<< "\n  Base scale: " << &oon_main_camera().cfg.base_scale
+		<< "\n  Zoom adj.: "<< [this](){ return to_string(oon_main_camera().scale() / oon_main_camera().cfg.base_scale); }
 		<< "\n  Focus pt.: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
 /*
 		<< "\nVIEWPORT:"
@@ -481,8 +484,9 @@ void OONApp::_setup_UI()
 		<< "              +SHIFT: bring player to mouse and/or follow obj.\n"
 		<< "HOME          Home in on (center) the player\n"
 		<< "SHIFT+HOME    Center (also non-player) followed object\n"
-		<< "CTRL+HOME     Reset view (to Home position & default zoom)\n"
-		<< "CTRL+ALT      Leave temp. trails (to trace trajectories)\n"
+		<< "CTRL+HOME     Reset view to Home position (keep the zoom)\n"
+		<< "NUMPAD+5      Reset view to Home position & default zoom\n"
+		<< "L.CTRL+R.CTRL Leave trails (by not clearing the screen)\n"
 		<< "F11           Toggle fullscreen\n"
 		<< "F12           Toggle HUD overlays\n"
 		<< "------------- Admin:\n"
@@ -704,18 +708,25 @@ void OONApp::follow_player(unsigned player_id)
 }
 
 
-void OONApp::zoom_reset(float factor/* = 0*/)
+void OONApp::zoom_reset()
 {
-	// Can't just call oon_main_camera().zoom(...), because we need to trigger our zoom_hook!
-	if (factor) oon_main_camera().cfg.base_scale *= factor;
-	zoom(oon_main_camera().cfg.base_scale / oon_main_camera().scale());
+	//! Can't just call oon_main_camera().reset_zoom(): we need to adjust the cached shapes, too!
+
+	auto old_scale = oon_main_camera().scale(); // See below why this is needed...
+
+	oon_main_camera().reset_zoom();
+
+	//!! Alas, no direct (abs.) (re)set_scale method for this:
+	resize_shapes(oon_main_camera().scale()/old_scale); // Adjust scaling (relative to current level)
+	//!! (Also can't just trivially call zoom(...) here either, as the two zoom levels would go out of sync.)
 }
 
 void OONApp::zoom(float factor)
 {
-	//!!pre_zoom_hook(factor);
+	//!!?? if (!factor) factor = 1.0f; //! 0 makes 0 sense, so...
 	oon_main_camera().zoom(factor);
-	resize_shapes(factor);
+	resize_shapes(factor); // Adjust scaling (relative to current level)
+	//!!scale_shapes(level); // Set scaling (abs. level)
 }
 // These can't call oon_main_camera().zoom_in/out directly either, because we need to trigger our zoom_hook!...
 void OONApp::zoom_in (float amount) { zoom(1.f + amount); }
