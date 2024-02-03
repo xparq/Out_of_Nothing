@@ -25,7 +25,8 @@ namespace Szim::View { class ScreenView; }
 #include "sz/counter.hh"
 #include "sz/rolling_average.hh"
 
-import Storage;
+//!!GCC still doesn't like modules:
+//!!import Storage;
 
 #include <atomic>
 #include <format> // vformat

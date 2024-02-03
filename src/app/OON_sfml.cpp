@@ -16,7 +16,8 @@
 #define SFML_KEY(KeyName) sf::Keyboard::Key::KeyName
 
 
-import Storage; //!! Just a dummy (reminder, smoke test etc.) for now!
+//!!GCC still doesn't like modules:
+//!!import Storage; //!! Just a dummy (reminder, smoke test etc.) for now!
 
 #include "UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 
@@ -414,8 +415,9 @@ try {
 					//!! E.g. #288, and wrong .view size etc.!...
 					break;
 
-//				default:
+				default:
 //cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
+					; // Keep GCC happy about unhandled enum values...
 				}
 				break;
 
@@ -588,13 +590,13 @@ IPROF_SYNC_THREAD;
 	} // while - still running
 
 } catch (runtime_error& x) {
-	cerr << __FUNCTION__ " - ERROR: " << x.what() << '\n';
+	cerr <<__FUNCTION__<< " - ERROR: " << x.what() << '\n';
 	return;
 } catch (exception& x) {
-	cerr << __FUNCTION__ " - EXCEPTION: " << x.what() << '\n';
+	cerr <<__FUNCTION__<< " - EXCEPTION: " << x.what() << '\n';
 	return;
 } catch (...) {
-	cerr << __FUNCTION__ " - UNKNOWN EXCEPTION!\n";
+	cerr <<__FUNCTION__<< " - UNKNOWN EXCEPTION!\n";
 	return;
 }
 }

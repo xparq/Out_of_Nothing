@@ -96,7 +96,7 @@ template <typename NumType> NumType Physics<NumType>::T_to_RGB_and_BV(NumType T,
 		bv = NumType(-0.4) + NumType(2.4) * // normal BV range is 2.4
 			            T / T_BV_MAX;
 		NumType t;
-		if (bv < -0.4f) bv = -0.4f; if ( bv > 2.0f) bv = 2.0f;
+		if (bv < -0.4f) { bv = -0.4f; } if ( bv > 2.0f) { bv = 2.0f; }
 		else if ((bv>= 0.00f)&&(bv<0.40f)) { t=(bv-0.00f)/(0.40f-0.00f); r=0.83f+(0.17f*t)           ; }
 			 if ((bv>=-0.40f)&&(bv<0.00f)) { t=(bv+0.40f)/(0.00f+0.40f); r=0.61f+(0.11f*t)+(0.1f*t*t); }
 		else if ((bv>= 0.40f)&&(bv<2.10f)) { t=(bv-0.40f)/(2.10f-0.40f); r=1.00f                     ; }

@@ -35,8 +35,8 @@ public:
 	const Config cfg;
 ??!!*/
 	public: virtual Window& main_window() { static Window dummy({}); return dummy; }
-	public: virtual void switch_fullscreen(bool fullscreen) { fullscreen; }
-	public: virtual void set_frame_rate_limit(unsigned fps) { fps; }
+	public: virtual void switch_fullscreen(bool fullscreen [[maybe_unused]]) { }
+	public: virtual void set_frame_rate_limit(unsigned fps [[maybe_unused]]) { }
 	public: unsigned get_frame_rate_limit() { return _last_fps_limit; }
 
 	virtual ~HCI() = default;

@@ -2,7 +2,7 @@
 
 module;
 
-#include "Model/World.hpp"
+//#include "Model/World.hpp"
 #include <cstdint>
 
 export module Storage;
@@ -16,8 +16,11 @@ namespace MEMDB {
 };
 */
 
+/*!! GCC says: "sorry, unimplemented: private module fragment"
 module: private;
 
 //...private stuff not exported
 
 //!!?? So how does it differ from stuff above this private fragment that are simply not `export`ed?!
+
+!!*/

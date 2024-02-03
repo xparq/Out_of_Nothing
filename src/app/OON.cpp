@@ -137,7 +137,7 @@ IPROF_FUNC;
 			}
 		}
 	} catch(...) {
-		cerr << __FUNCTION__ ": ERROR processing/applying some cmdline args!\n";
+		cerr << __FUNCTION__ << ": ERROR processing/applying some cmdline args!\n";
 		request_exit(-1);
 		return;
 	}

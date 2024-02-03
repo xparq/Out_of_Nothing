@@ -34,7 +34,7 @@ template <typename T> constexpr T PI = T(3.1415926535897932385L);
 template <typename T> constexpr T FOUR_THIRD_PI = T(PI<T> * T(4)/T(3)); //!!4.1887902f;
 	template <> constexpr auto FOUR_THIRD_PI<float> = float(PI<float> * 4.f/3.f);
 	template <> constexpr auto FOUR_THIRD_PI<double> = double(PI<double> * 4.0/3.0);
-	template <> constexpr auto FOUR_THIRD_PI<long double> = long double(PI<long double> * 4.0L/3.0L);
+	template <> constexpr auto FOUR_THIRD_PI<long double> = (long double)(PI<long double> * 4.0L/3.0L); //! GCC can't handle `long double(...)`
 
 //!! cmath is not constepxr (in general)! :-o :-/
 template <typename T> inline T power(T base, T exp) {}

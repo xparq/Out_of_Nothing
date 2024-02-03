@@ -2,7 +2,7 @@
 #define _DMN78405B0T873YBV24C467I_
 
 #include <typeinfo>
-#include <type_traits>
+#include <type_traits> // remove_const
 #include <any>
 #include <functional>
 #include <utility> // inplace_type_t
@@ -35,11 +35,12 @@ public:
 
 	// Add any other pointer-type binding...
 		// Helpers to avoid including the monstrosity of <type_traits> just for std::remove_const:
-		private: template <class T> struct _nonstd_remove_const          { typedef T type; };
-		private: template <class T> struct _nonstd_remove_const<const T> { typedef T type; };
+//!!		private: template <class T> struct _nonstd_remove_const          { typedef T type; };
+//!!		private: template <class T> struct _nonstd_remove_const<const T> { typedef T type; };
 	public:
 	template <typename T> Binding(T* var, const char* type_name = nullptr) :
-		_data_ptr(const_cast<typename _nonstd_remove_const<T>::type*>(var)),
+//!!		_data_ptr(const_cast<typename _nonstd_remove_const<T>::type*>(var)),
+		_data_ptr((std::remove_const<T>*)(var)),
 		_type(type_name ? type_name : typeid(std::remove_const_t<T>).name())
 	{}
 
@@ -62,11 +63,6 @@ public:
 //!!		static_assert(!std::is_rvalue_reference_v<decltype(f)>, "Only lvalues are allowed for binding!");
 //std::cerr << "- unknown type -- hopefully a lambda! :) -- catched...\n";
 	}
-
-	template <> Binding(std::string value) : _data_ptr(std::in_place_type<std::string>, value), _type(string_literal_name) {}
-	template <> Binding(int value)         : _data_ptr(std::in_place_type<int>, value), _type(int_literal_name) {}
-	template <> Binding(float value)       : _data_ptr(std::in_place_type<float>, value), _type(float_literal_name) {}
-	template <> Binding(double value)      : _data_ptr(std::in_place_type<double>, value), _type(double_literal_name) {}
 
 	// "promptless watcher" call form (a bit too vague tho, but would "mostly work"...):
 //	template <typename T> auto add(T* var) { return add("", var); }
@@ -107,10 +103,10 @@ public:
 			}
 		} catch(std::bad_any_cast&) {
 
-	cerr << "- ERROR: " __FUNCTION__ ": Couldn't convert "<< actual_type <<" to "<< requested_type <<'\n';
+	cerr << "- ERROR: " <<__FUNCTION__<< ": Couldn't convert "<< actual_type <<" to "<< requested_type <<'\n';
 			throw; // I'd prefer a safe ptr-to-empty return, but can't have a "universal" return type! :-/
 		} catch(...) {
-	cerr << "- ERROR: " __FUNCTION__ ": Wow, unknown exception!\n";
+	cerr << "- ERROR: " <<__FUNCTION__<< ": Wow, unknown exception!\n";
 			throw; // I'd prefer a safe ptr-to-empty return, but can't have a "universal" return type! :-/
 		}
 
@@ -152,6 +148,14 @@ Please choose the Technical Support command on the Visual C++ Help menu, or open
 	/*constexpr*/ static const _typename_t string_name;//  = typeid(std::string).name();
 
 }; // class Binding
+
+
+//! (GCC didn't compile this inside the class, where it would be more in-context.)
+template <> inline Binding::Binding(std::string value) : _data_ptr(std::in_place_type<std::string>, value), _type(string_literal_name) {}
+template <> inline Binding::Binding(int value)         : _data_ptr(std::in_place_type<int>, value), _type(int_literal_name) {}
+template <> inline Binding::Binding(float value)       : _data_ptr(std::in_place_type<float>, value), _type(float_literal_name) {}
+template <> inline Binding::Binding(double value)      : _data_ptr(std::in_place_type<double>, value), _type(double_literal_name) {}
+
 
 }; // namespace UI
 

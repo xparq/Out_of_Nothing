@@ -16,14 +16,17 @@ public://!! <- protected
 public:
 	struct PlayReq // Playing options -- (kinda) used to find the optimal free channel
 	{
-		short priority = 0; // Higher-priority sounds can cut lower ones in case of congestion.
-		bool loop = false;  // If true, priority will also be incremented by 1. (Set that to one less to compensate!)
-		short effective_priority() const { return priority + short(loop); }
+		const short priority = 0; // Higher-priority sounds can cut lower ones in case of congestion.
+		const bool loop = false;  // If true, priority will also be incremented by 1. (Set that to one less to compensate!)
+		const unsigned short sample_rate = 0; // Use whatever the sound object (buffer) itself defined!
 
-		unsigned short sample_rate = 0; // Use whatever the sound object (buffer) itself defined!
+		short effective_priority() const { return priority + short(loop); }
+//!!??		constexpr PlayReq() = default; //!! See comments below...
 	};
 
-	static constexpr PlayReq DefaultPlayMode = {.loop = false, .sample_rate = 0};
+//!!?? I just couldn't get this compiled in GCC in any variation... :-/ (MSVC did it just fine.)
+//!!??	static inline constinit PlayReq DefaultPlayMode{}; //!! Not even with the ctor above.
+	static inline constinit PlayReq DefaultPlayMode = {.priority = 0, .loop = false, .sample_rate = 0};
 
 public:
 	virtual bool   toggle_audio()  { return sz::toggle(&enabled); }

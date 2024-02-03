@@ -155,7 +155,7 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 cerr << "- Binding ERROR: Type mismatch for a binding with saved type \"" <<type_name<< "\" ["<<Binding::string_fn_ptr_name<<"]!\n";
 		// Nothing added to 'out', continuing...
 	} catch(...) {
-cerr << "- ERROR: Wow, unknown exception in " __FUNCTION__ "!\n";
+cerr << "- ERROR: Wow, unknown exception in " <<__FUNCTION__<< "!\n";
 	}
 	
 #undef _CAST

@@ -6,7 +6,6 @@
 //#include <ostream> //!! The conv. op. may not be enough: templates exact-match, AFAIK!
 #include <cassert>
 
-#include <iostream>
 namespace sz {
 
 struct Toggle

@@ -8,6 +8,8 @@
 
 namespace Szim {
 
+class Config_impl; // friend-ing it inside the class isn't enough for GCC! :-o
+
 class Config
 {
 public:
@@ -79,4 +81,5 @@ private:
 };
 
 } // namespace Szim
+
 #endif // _298745SLKWERKJUEIUYCUIUIE12346_

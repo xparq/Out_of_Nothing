@@ -6,6 +6,7 @@
 #include <string>
 	using namespace std::string_literals;
 #include <string_view>
+#include <cstdint>
 #include <any>
 #include <utility> // std::exchange
 #include <ostream>
@@ -105,7 +106,7 @@ public:
 
 protected:
 	std::vector<std::any> _elements; //!! std::vector<Element>... <- Couldn't sensibly wrap the raw `any` yet.
-	bool _volatile = true; // Assume yes, until known to not be
+	bool _volatile = true; // Always needs refreshing before rendering? Assume yes, until known to not be.
 	bool _active = true;
 
 public:

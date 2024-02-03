@@ -6,8 +6,10 @@ call %~dp0tooling/_setenv.cmd
 :! Can't use _setenv.sh from a CMD script, even if the rest is basically
 :! all SH: those vars can't propagate to Windows, let alone back to SH again. :)
 
-::!! wtime GETS CONFUST BY THE QUOTED PARAM! :-o : %~dp0tooling/diag/wtime.exe 
-busybox sh -c "export SZ_PRJDIR=. && . tooling/_setenv.sh && busybox make -f bbMakefile.msvc %*"
+::!!%~dp0tooling/diag/wtime.exe ... <- wtime GETS CONFUSED BY THE QUOTED PARAM BELOW! :-o 
+
+::busybox sh -c "export SZ_PRJDIR=. && . tooling/_setenv.sh && busybox make -f bbMakefile.msvc %*"
+busybox sh -c "export SZ_PRJDIR=. && busybox make -f bbMakefile.msvc %*"
 
 :: The original (BB/sh-scripted) build process with auto-rebuild:
 ::busybox sh %~dp0tooling/build/_auto-rebuild.sh %*
