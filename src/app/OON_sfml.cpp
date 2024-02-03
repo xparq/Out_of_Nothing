@@ -1,4 +1,4 @@
-#include "OON_sfml.hpp"
+﻿#include "OON_sfml.hpp"
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
@@ -237,6 +237,9 @@ void OONApp_sfml::draw() // override
 		if (help_hud.active())
 			help_hud.draw(SFML_WINDOW()); //!! This active-chk is redundant: HUD::draw() does the same. TBD: who's boss?
 		                                      //!! "Activity" means more than just drawing, so... (Or actually both should control it?)
+	} else {
+		// Still show the FPS, at least:
+		timing_hud.draw(SFML_WINDOW());
 	}
 #endif
 
@@ -388,8 +391,12 @@ try {
 						//!! Would be better to keep the focus obj. and just turn
 						//!! off view confinement, but it can't be done yet. :-/
 					} else {
-						center_player();
-						focused_entity_ndx = player_entity_ndx();
+ 						// Select the player obj. by default (or with a dedicated modifier); same as with MouseButton!
+ 						if (/*keystate(ALT) || */focused_entity_ndx == ~0u)
+							focused_entity_ndx = player_entity_ndx();
+
+						assert(focused_entity_ndx != ~0u);
+						pan_to_center(focused_entity_ndx);
 					}
 					break;
 
@@ -479,11 +486,27 @@ try {
 				if (entity_at_viewpos(vpos.x, vpos.y, &clicked_entity_id)) {
 cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
 				} else {
-cerr << "- Nothing there, focusing on the deep void...\n";
+cerr << "DBG> Click: no obj.\n";
+					assert(clicked_entity_id == ~0u);
 				}
-				focused_entity_ndx = scroll_locked()
-					? (clicked_entity_id == ~0u ? player_entity_ndx() : clicked_entity_id)
-					: clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
+
+				// Select the clicked object, if any (unless holding CTRL!)
+				/*if (!keystate(CTRL))*/ //!! Really should be ALT, but... that's the stupid shield. :)
+					focused_entity_ndx = clicked_entity_id == ~0u
+					                     ? (/*keystate(ALT) ? player_entity_ndx() // Select the player with a dedicated modifier; same as with Home!
+				                                                : */(keystate(SHIFT) ? focused_entity_ndx : ~0u))
+				                             : clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
+
+				// Pan the selected object to focus, if holding SHIFT
+				if (keystate(SHIFT)) {
+ 					// Select the player by default; same as with Home!
+ 					// (Unless, as above, holding CTRL!)
+					if (/*!keystate(CTRL) && */focused_entity_ndx == ~0u)
+						focused_entity_ndx = player_entity_ndx();
+					pan_to_focus(focused_entity_ndx); //! Tolerates ~0u!
+				}
+				if (focused_entity_ndx == ~0u)
+					cerr << "- Nothing there. Focusing on the deep void...\n"; //!! Do something better than this... :)
 				break;
 			}
 

@@ -14,9 +14,9 @@ namespace Model {
 void World::Body::recalc()
 {
 //	mass = powf(r, 3) * density;
-	r = Physics::radius_from_mass_and_density(mass, density);
-//	Physics::BV_to_T_and_RGB(Physics::T_to_BV(T), superpower.free_color ? nullptr : &color);
-	Physics::T_to_RGB_and_BV(T, superpower.free_color ? nullptr : &color);
+	r = Phys::radius_from_mass_and_density(mass, density);
+//	Phys::BV_to_T_and_RGB(Phys::T_to_BV(T), superpower.free_color ? nullptr : &color);
+	Phys::T_to_RGB_and_BV(T, superpower.free_color ? nullptr : &color);
 }
 
 //----------------------------------------------------------------------------

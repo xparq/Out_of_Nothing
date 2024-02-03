@@ -20,6 +20,8 @@ class OONMainDisplay;
 //----------------------------------------------------------------------------
 class OONApp : public Szim::SimApp
 {
+friend class Model::World; //!! Later: Not the generic, but the app-specific part only!
+
 //----------------------------------------------------------------------------
 // Config/Setup...
 //----------------------------------------------------------------------------
@@ -86,10 +88,10 @@ public:
 	bool pan_control(ViewControlMode mode = UserKeys);                              //!!?? should be an override already?
 	bool zoom_control(ViewControlMode mode = UserKeys, float mousewheel_delta = 0); //!!?? should be an override already?
 
-	void center_entity(size_t id);
+	void pan_to_center(size_t entity_id);
+	void pan_to_focus(size_t entity_id);
 	void center_player(unsigned player_id = 1);
-	void follow_entity(size_t id);
-	void follow_player(unsigned player_id = 1);
+//!!	void pan_to_focus(unsigned player_id = 1);
 
 	//!! A more generic _adjust_pan() (or even _adjust_view()) should also exist, e.g.
 	//!! to bring back things on-screen, if drifted off!
@@ -150,7 +152,8 @@ protected:
 	//------------------------------------------------------------------------
 	// Model event callback implementations...
 		//!!Then move it to some more "modelly place" later, as things get more complicated
-	void interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...) override;
+	void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...) override;
+	void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...) override;
 	bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2) override;
 
 	//------------------------------------------------------------------------

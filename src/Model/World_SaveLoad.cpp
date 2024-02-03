@@ -48,8 +48,12 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	if (saved_version >= semver::version("0.1.2"))
 		{ out << "gravity_strength = " << gravity << '\n'; }
 
+//!!This should go to session files, along with other app-level data (like view scale etc.)!
+//!!	if (saved_version >= semver::version("0.1.3"))
+//!!		{ out << "time_scale = " << time.scale << '\n'; }
+
 	out << "objects = " << bodies.size() << '\n'; // Saving for verification + preallocation on load!
-	out << "- - -" << '\n'; //!! mandatory separator to not break the idiotic loader! :)
+	out << "- - -" << '\n'; //!! Mandatory 3-token separator to not break the idiotic loader! :)
 	for (size_t ndx = 0; ndx < bodies.size(); ++ndx) {
 		//!!Doesn't work, in>> struggles with the binary data, can't deal with it basically...
 		out << ndx << " : " // not "=" in order to assist load() a bit...
@@ -122,7 +126,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 		++_prop_ndx_; w_new._interact_all = stof(props["interactions"]);
 		if (loaded_version >= semver::version("0.1.0"))
 			{ ++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]);
-//cerr << "DBG> gravity mode after load: " << w_new.gravity_mode << '\n';
+cerr << "DBG> World::load: gravity_mode = " << (unsigned)w_new.gravity_mode << '\n';
 			}
 		if (loaded_version >= semver::version("0.1.2")) // G was saved incorrectly (cast to unsigned) in 0.1.1; ignore that
 			{ ++_prop_ndx_; w_new.gravity = stof(props["gravity_strength"]);

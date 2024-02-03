@@ -348,6 +348,14 @@ bool SimApp::entity_at_viewpos(float x, float y, size_t* entity_id OUT) const //
 
 
 //----------------------------------------------------------------------------
+void SimApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...)
+{w, obj1, obj2, dt, distance;
+}
+
+void SimApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...)
+{w, source, target, dt, distance;
+}
+
 bool SimApp::collide_hook(Model::World* w, Entity* obj1, Entity* obj2, float distance)
 {w, obj1, obj2, distance;
 	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
@@ -360,6 +368,7 @@ bool SimApp::touch_hook(Model::World* w, Entity* obj1, Entity* obj2)
 	return false;
 }
 
+/*!!UPDATE/DELETE/MOVE NOTE:
 // High-level, abstract (not as in "generic", but "app-level") hook for n-body interactions:
 //!!The model should also pass the physical property/condition ("event type") that made it think these may interact!
 //!!A self-documenting alternative would be calling a matching function for each known such event,
@@ -370,7 +379,7 @@ void SimApp::interaction_hook(Model::World* w, Model::World::Event event, Entity
 {w, event, obj1, obj2;
 	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 }
-
+!!*/
 
 //----------------------------------------------------------------------------
 void SimApp::toggle_fullscreen()
@@ -389,7 +398,9 @@ void SimApp::toggle_fullscreen()
 //----------------------------------------------------------------------------
 unsigned SimApp::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 {
-	if (new_fps_limit != (unsigned)-1) {
+	//!! -> #521
+
+	if (new_fps_limit != unsigned(-1)) { // -1 means get!
 	// Set...
 cerr << "DBG> "<<__FUNCTION__<<": Setting FPS limit to "<<new_fps_limit<<"\n";
 		backend.hci.set_frame_rate_limit(new_fps_limit); // 0: no limit
@@ -402,6 +413,8 @@ cerr << "DBG> "<<__FUNCTION__<<": Setting FPS limit to "<<new_fps_limit<<"\n";
 void SimApp::fps_throttling(bool onoff)
 {
 	fps_throttling(unsigned(onoff ? cfg.fps_limit : 0));
+//!!...This would just get stuck with the last value: fps_throttling(unsigned(onoff ? backend.hci.get_frame_rate_limit() : 0));
+//!! -> #521
 }
 
 } // namespace Szim

@@ -25,12 +25,23 @@
 	//!! Those could be made implicit though, at least in some cases, right?!
 
 
-#include <cmath> // sqrt
+#include <cmath> // pow, sqrt
 
 namespace Math {
 
-constexpr const float MyNaN = 2e31f; // cringy way to avoid the pain of using the std NAN ;)
-constexpr const float FOUR_THIRD_PI = 4.1887902f;
+template <typename T> constexpr T MyNaN = T(2e31f); //!! cringy way to avoid the pain of using the std NAN ;) -> #527
+template <typename T> constexpr T PI = T(3.1415926535897932385L);
+template <typename T> constexpr T FOUR_THIRD_PI = T(PI<T> * T(4)/T(3)); //!!4.1887902f;
+	template <> constexpr auto FOUR_THIRD_PI<float> = float(PI<float> * 4.f/3.f);
+	template <> constexpr auto FOUR_THIRD_PI<double> = double(PI<double> * 4.0/3.0);
+	template <> constexpr auto FOUR_THIRD_PI<long double> = long double(PI<long double> * 4.0L/3.0L);
+
+//!! cmath is not constepxr (in general)! :-o :-/
+template <typename T> inline T power(T base, T exp) {}
+	template <> inline float       power<float>(float base, float exp) { return powf(base, exp); }
+	template <> inline double      power<double>(double base, double exp) { return pow(base, exp); }
+	template <> inline long double power<long double>(long double base, long double exp) { return powl(base, exp); }
+
 
 //!! There might also be a need for a "fast" version (like mag2_sq) that's only used
 //!! to sort/select/differentiate objects by distance, so the sqrt can be skipped!

@@ -30,11 +30,7 @@ AND CRASHED TOO!!! :)) (Albeit in Audio.cpp, probably unrelated; 1/2 hour before
 //!!OK, fuck it...:
 #include <iostream>
 
-namespace Szim {
-class SimApp; //! Sigh, must predeclare it here, outside the namespace...
-              //! Curiously, it's not in the "global" :: namespece, so ::SimApp;
-              //! wouldn't work from within the Model! :-o
-}
+namespace Szim { class SimApp; } //! Sigh, must predeclare it here, outside the namespace...
 
 namespace Model {
 
@@ -52,7 +48,7 @@ namespace Model {
 // Origin: center of the screen (window, view pane...)
 
 
-static constexpr char const* VERSION = "0.1.2";
+static constexpr char const* VERSION = "0.1.3";
 
 //============================================================================
 class World // The model world
@@ -70,9 +66,29 @@ public:
 // API Types...
 //----------------------------------------------------------------------------
 public:
-	enum Event { None, Collided, Terminated };
+	enum Event { None, Interacting, Collided, Terminated };
 
-	enum GravityMode : unsigned { Off, Normal, Skewed }; //!! #405
+	enum class GravityMode : unsigned {
+		Off = 0,
+		Hyperbolic,
+		Realistic,
+		Experimental,
+
+		Default = Hyperbolic,
+		UseDefault = unsigned(-1), //!! Not actually part of the value set (but an add-on type!), but C++...
+	}; //!! #405, #65, #361
+
+	enum class LoopMode : unsigned {
+		Half, // Better for Directionless/Undirected/Unordered interactions
+		Full, // Better for Directed//Ordered interactions
+
+//!! Not even a "loop mode" any more:
+//!!		PlayerOnly, //!!?? Should this be an orthogonal bit-flag instead?
+//!!		            //!!?? What EXACTLY should this even mean? (Should just do what _interact_all = false does?!)
+
+		Default = Half,
+		UseDefault = unsigned(-1), //!! Not actually part of the value set (but an add-on type!), but C++...
+	};
 
 	struct Body //!! : public Serializable //! No: this would kill the C++ init list syntax!...
 	                                       //! So, just keep it a memcpy-able POD type for easy loading!
@@ -81,7 +97,7 @@ public:
 	//!! and then stuff that only need Entity could spare including the World.
 	{
 		//!!ObjConfig cfg; // basically the obj. type
-		constexpr const static auto Unlimited = Model::Unlimited;
+		constexpr static auto Unlimited = Model::Unlimited;
 
 		struct {
 			bool gravity_immunity = false;
@@ -91,7 +107,7 @@ public:
 		// Presets:
 		float lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
 		float r = 0; // Calculated from mass and density
-		float density = Physics::DENSITY_ROCK / 2; //!!low-density objects should look like Swiss cheese! ;)
+		float density = Phys::DENSITY_ROCK / 2; //!!low-density objects should look like Swiss cheese! ;)
 		Math::Vector2f p{0, 0};
 		Math::Vector2f v{0, 0};
 		float T = 0; // affected by various events; represented by color
@@ -112,10 +128,10 @@ public:
 		//!!BTW, thrust should be axial anyway, so these 4 should be just 2:
 		//!!ALSO: REPLACE WITH A GENERIC (dynamically built) Structure COMPONENT + ("OPTONAL") TYPE INFO!
 		//!!      ("OPTIONAL" 'coz the structure itself *IS* the type info, it's just cumbersome to work with!)
-		Thruster thrust_up    { Math::MyNaN }; // Gets repalced by "real" numbers for objects with actually functioning thrusters.
-		Thruster thrust_down  { Math::MyNaN };
-		Thruster thrust_left  { Math::MyNaN };
-		Thruster thrust_right { Math::MyNaN };
+		Thruster thrust_up    { Math::MyNaN<float> }; // Gets repalced by "real" numbers for objects with actually functioning thrusters.
+		Thruster thrust_down  { Math::MyNaN<float> };
+		Thruster thrust_left  { Math::MyNaN<float> };
+		Thruster thrust_right { Math::MyNaN<float> };
 
 		//! Alas, can't do this with designated inits: Body() : mass(powf(r, 3) * density) {} :-(
 		//! So... (see e.g. add_body()):
@@ -126,7 +142,7 @@ public:
 		void on_event(Event e, ...); //! Alas, can't be virtual: that would kill the C++ init. list syntax! :-o :-/
 
 		// Ops.:
-		bool has_thruster() { return thrust_up.thrust_level() != Math::MyNaN; } //!! Ugh!... :-o :)
+		bool has_thruster() { return thrust_up.thrust_level() != Math::MyNaN<float>; } //!! Ugh!... :-o :)
 		void add_thrusters() { // Umm...: ;)
 			thrust_up.thrust_level(0);
 			thrust_down.thrust_level(0);
@@ -163,7 +179,7 @@ public:
 	bool is_colliding(const Body* obj1, const Body* obj2, float distance)
 	// Only for circles yet!
 	{
-		return distance <= obj1->r + obj2->r;
+		return distance <= obj1->r + obj2->r; // false; // -> #526!
 	}
 
 //----------------------------------------------------------------------------
@@ -176,20 +192,18 @@ public:
 //!!So just allow public access for now:
 public:
 	//!! REVISE _copy(), and save/load, WHENEVER CHANGING THE DATA HERE!
-	float friction = 0.03f; //!!Take its default from the cfg!
-	bool  _interact_all = false; // Bodies react to each other too, or only the player(s)?
+	float friction = 0.03f; //!!Take its default from the cfg instead!
 	GravityMode gravity_mode;   //! v0.1.0
-	float gravity = Physics::G; //! v0.1.1
+	float gravity = Phys::G; //! v0.1.1 //!!Take its default from the cfg instead!
+	bool  _interact_all = false; // Bodies react to each other too, or only the player(s)?
+	                             //!! Reconcile with interaction_mode!
 
-	std::vector< std::shared_ptr<Body> > bodies; //! alas, can't just be made "atomic" by magic... (won't even compile)
+	std::vector< std::shared_ptr<Body> > bodies; //!! Can't just be made `atomic` by magic... (wouldn't even compile)
 
-//!!	class std::ostream; class std::istream;
-	bool        save(std::ostream& out, const char* version = nullptr);
-	static bool load(std::istream& in, World* result = nullptr); // Verifies only (comparing to *this) if null
-//!! std::optional<World> load(std::istream& in);
+	LoopMode loop_mode; // Not to be saved! (Not world state, but a processing option.)
 
-//------------------------------------------------------------------------
-// C++ mechanics...
+//----------------------------------------------------------------------------
+// Service functions (C++ mechanics, persistence etc.)...
 //----------------------------------------------------------------------------
 public:
 	World();
@@ -198,6 +212,11 @@ public:
 	//!!Say sg. about move, too! I guess they are inhibited by the above now.
 
 	void _copy(World const& other);
+
+	bool        save(std::ostream& out, const char* version = nullptr);
+	static bool load(std::istream& in, World* result = nullptr); //!!NOT YET: null means "Verify only" (comparing to *this)
+	//!!??static std::optional<World> load(std::istream& in);
+
 }; // class World
 
 

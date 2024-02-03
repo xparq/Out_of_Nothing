@@ -32,7 +32,8 @@ void OONController::update() //!! Check the cost of keystate(), calling the Win3
 	ZoomIn   = keystate(NUMPAD_PLUS);
 	ZoomOut  = keystate(NUMPAD_MINUS);
 
-	ShowOrbits = keystate(ALT) && keystate(CTRL);
+	ShowOrbits = keystate(LCTRL) && keystate(RCTRL);
+	ShowDebug = keystate(RALT);
 
 //	ThrustUp    = keystate(UP);
 //	ThrustDown  = keystate(DOWN);

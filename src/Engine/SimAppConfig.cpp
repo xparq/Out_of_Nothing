@@ -115,7 +115,8 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 		} catch(...) {
 			cerr << "- WRNING: --fixed-dt ignored! \""<<args("fixed-dt")<<"\" must be a valid floating-pont number.\n";
 		}
-	} if (args["fps-limit"]) { // Use =0 for no limit (just --fps-limit[=] is ignored!)
+	} if (args["fps-limit"]) { // Use =0 for no limit (just --fps-limit[=] is ignored!); but -> #521!
+
 		try { fps_limit = stoul(args("fps-limit")); } catch(...) {
 			cerr << "- WRNING: --fps-limit ignored! \""<<args("fps-limit")<<"\" must be a valid positive integer.\n"; }
 	} if (args["fps_limit"]) { //!! Sigh, the dup...

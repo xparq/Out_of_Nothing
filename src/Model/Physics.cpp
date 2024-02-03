@@ -2,30 +2,11 @@
 
 namespace Model {
 
+#if 0
 using namespace Math;
 
 static constexpr float T_BV_MIN = 15000;
 static constexpr float T_BV_MAX = 200000;
-
-float Physics::T_to_BV(float T) //!! just faking something simple
-{
-	// "Hot stars have temperatures around 60,000 K while cold stars have temperatures around 3,000 K"
-	// But the hottest is around 200000 K, so...
-	// Let's just calibrate for a 3000 - 200000 K range.
-	// Mmm, even tho we aren't even dealing with stars, BTW!... :)
-	// OK, so here's the deal:
-	// - out-of-range T would result in a fake BV that
-	// - the BV->RGB converter would notice, and not touch the input color!
-	// This would allow nice random-color balloons to float around, until getting hot...
-	// The fake value will be MyNaN.
-//	constexpr float T_BV_MIN = 3000;
-//	constexpr float T_BV_MAX = 200000;
-//cerr << "T->BV: T = " << T << ", BV = " << -0.4f + 2.4f * T / T_MAX << "\n";
-	return T < T_BV_MIN || T > T_BV_MAX
-			? MyNaN
-			: -0.4f + 2.4f * // normal BV range is 2.4
-				T / T_BV_MAX;
-}
 
 // Temp. -> color conversion
 float Physics::T_to_RGB_and_BV(float T, uint32_t* p_color/* = nullptr*/) // BV: [-0.4,+2.0]
@@ -61,7 +42,7 @@ float Physics::T_to_RGB_and_BV(float T, uint32_t* p_color/* = nullptr*/) // BV: 
 	}
 	return bv;
 }
-
+#endif
 
 #if 0
 // Color temp. conversion from B-V val.:

@@ -16,7 +16,7 @@
 //!! Shim for missing #warning...
 //!! ...
 
-#define AUTO_CONST constexpr static const auto
+#define AUTO_CONST constexpr static auto
 //#define auto_const AUTO_CONST // #daredef
 
 #define OUT   // ⍄ // Can't do lower-case, for collisions without context-aware parsing! :-/

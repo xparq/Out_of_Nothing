@@ -79,8 +79,8 @@ public:
 /*!! WIP !!
 	template <typename T> auto get()
 	{
-		constexpr const std::string_view actual_type = type_name();
-		constexpr const std::string_view requested_type = typeid(T).name();
+		constexpr std::string_view actual_type = type_name();
+		constexpr std::string_view requested_type = typeid(T).name();
 
 	#define _PTR(type) ( any_cast<type>(ref()) ) // Throws bad_any_cast in case of a mismatch!
 

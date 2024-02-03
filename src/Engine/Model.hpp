@@ -11,7 +11,7 @@ struct World
 !!*/
 
 
-const constexpr static float Unlimited = -1; //! Not enum to avoid the atrocity of `World::Body::Enumname::Unlimited`
+constexpr static float Unlimited = -1; //! Not enum to avoid the atrocity of `World::Body::Enumname::Unlimited`
 
 }
 

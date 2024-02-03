@@ -1,4 +1,4 @@
-#include "OON.hpp"
+﻿#include "OON.hpp"
 
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "Model/Emitter/SkyPrint.hpp"
@@ -105,10 +105,10 @@ IPROF_FUNC;
 	//!!
 	auto player_id = add_player(
 		{.r = w.CFG_GLOBE_RADIUS, // Will be recalculated anyway...
-		 .density = appcfg.get("sim/player_globe_density", Physics::DENSITY_OF_EARTH / 10.f),
+		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
 		 .p = {0,0}, .v = {0,0},
 		 .color = 0xffff20,
-		 .mass = appcfg.get("sim/player_globe_mass", 50 * Physics::MASS_OF_EARTH)},
+		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
 		avatars[tx_jesus],
 		controls
 	);
@@ -222,11 +222,18 @@ void OONApp::_setup_UI()
 	Theme::click.textColor = sfw::Color("#ee9"); //!!("input".textColor!) YUCK!! Also "click" for LABELS?!?!
 	auto gui_main_hbox = gui.add(new HBox);
 
-	// Misc UI controls...
+	// UI/View controls...
+	auto	view_form = gui_main_hbox->add(new Form);
+		view_form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
+		    gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
+		view_form->add("Grid lines", new CheckBox([&](auto* w){oon_main_camera().cfg.gridlines = w->get();}, oon_main_camera().cfg.gridlines));
+		view_form->add("Pan follow object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
+		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
+
+	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
+
+	// Audio...
 	auto left_vbox = gui_main_hbox->add(new VBox);
-		auto	gui_form = left_vbox->add(new Form, "Params");
-			gui_form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
-			gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
 		auto	volrect = left_vbox->add(new Form, "VolForm");
 			volrect->add("Volume", new Slider({/*.orientation = Vertical*/}, 70), "volume slider")
 			->setCallback([&](auto* w){backend.audio.volume(w->get());})
@@ -235,34 +242,34 @@ void OONApp::_setup_UI()
 			audio_onoff->add("Audio: ", new CheckBox([&](auto*){backend.audio.toggle_audio();}, backend.audio.enabled));
 			audio_onoff->add(" - FX: ", new CheckBox([&](auto*){backend.audio.toggle_sounds();}, backend.audio.fx_enabled));
 
-	// View...
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
-	auto	view_form = gui_main_hbox->add(new Form);
-		view_form->add("Pan follow object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
-		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
-		view_form->add("Grid lines", new CheckBox([&](auto* w){oon_main_camera().cfg.gridlines = w->get();}, oon_main_camera().cfg.gridlines));
 
-	// Physics tweaking...
-	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
+	// Physics - exp. tweaks...
 	auto	phys_form = gui_main_hbox->add(new Form);
 		auto g_select = new OptionsBox<World::GravityMode>();
-			g_select->add("Normal", World::GravityMode::Normal);
-			g_select->add("Skewed", World::GravityMode::Skewed);
-			g_select->add("Off",    World::GravityMode::Off);
-			//g_select->set(World::GravityMode::Off);
+			g_select->add("Off",          World::GravityMode::Off);
+			g_select->add("Hyperbolic",   World::GravityMode::Hyperbolic);
+			g_select->add("Realistic",    World::GravityMode::Realistic);
+			g_select->add("Experimental", World::GravityMode::Experimental);
+			g_select->set(World::GravityMode::Default);
 			g_select->setCallback([&](auto* w){ this->world().gravity_mode = w->get(); });
-		phys_form->add("Gravity mode", g_select);
+		phys_form->add("Gravity mode", g_select)
+			->set(world().gravity_mode);
 		phys_form->add(" - bias", new sfw::Slider({.range={-3.0, 3.0}, .step=0, .orientation=sfw::Horizontal}, 80))
-			->setCallback([&](auto* w){ this->world().gravity = Model::Physics::G * pow(10.f, w->get()); })
+			->setCallback([&](auto* w){ this->world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
+				* Math::power(10.f, w->get()); })
 			->set(0);
+		phys_form->add(" - full loop", new sfw::CheckBox([&](auto* w){ this->world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
+				world().loop_mode == World::LoopMode::Full));
 		phys_form->add("Friction", new sfw::Slider({.range={-1.0, 1.0}, .step=0, .orientation=sfw::Horizontal}, 80))
 			->setCallback([&](auto* w){ this->world().friction = w->get(); })
 			->set(world().friction);
 		phys_form->add("Fixed model Δt", new CheckBox(
 			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
 
-	// Save/load...
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
+
+	// Save/load...
 	auto	saveload_form = gui_main_hbox->add(new Form);
 		saveload_form->add("File", new TextBox);
 		auto	saveload_buttons = saveload_form->add("", new HBox);
@@ -288,6 +295,8 @@ void OONApp::_setup_UI()
 				});
 		//!! Basically for testing only:
 		saveload_form->add("Compress", new CheckBox(cfg.save_compressed));
+
+	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
 	// Only position after built, so it has its size:
 	//!! This is also done in onResize(), but that can't be invoked on init (#462) until #515, so...:
@@ -315,11 +324,12 @@ void OONApp::_setup_UI()
 	//------------------------------------------------------------------------
 	// Timing
 	ui_gebi(TimingStats)
-		<< "FPS: " << [&](){ return to_string(1 / (float)this->avg_frame_delay); }
-		<< "\nlast frame Δt: " << [&](){ return to_string(this->time.last_frame_delay * 1000.0f) + " ms"; }
-		<< "\nmodel Δt: " << [&](){ return to_string(this->time.last_model_Δt * 1000.0f) + " ms"; }
-		<<            " " << [&](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
-		<< "\ncycle: " << [&](){ return to_string(iterations); }
+		<< "FPS: " << [this](){ return to_string(1 / (float)avg_frame_delay); }
+			<< [this](){ return fps_throttling() ? " (fixed)" : ""; }
+		<< "\nlast frame Δt: " << [this](){ return to_string(time.last_frame_delay * 1000.0f) + " ms"; }
+		<< "\nmodel Δt: " << [this](){ return to_string(time.last_model_Δt * 1000.0f) + " ms"; }
+		<<            " " << [this](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
+		<< "\ncycle: " << [this](){ return to_string(iterations); }
 		<< "\nReal elapsed time: " << &time.real_session_time
 	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
 	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
@@ -334,17 +344,17 @@ void OONApp::_setup_UI()
 		<< "\n    max abs: " << &time.model_Δt_stats.umax
 		<< "\n    min: " << &time.model_Δt_stats.min
 		<< "\n    max: " << &time.model_Δt_stats.max
-		<< "\n    avg.: " << [&]{ return to_string(this->time.model_Δt_stats.average());}
+		<< "\n    avg.: " << [this]{ return to_string(time.model_Δt_stats.average());}
 	;
 //cerr << timing_hud;
 
 	//------------------------------------------------------------------------
 	// World
 	ui_gebi(WorldData)
-		<< "# of objs.: " << [&](){ return to_string(this->entity_count()); }
-		<< "\nBody interactions: " << &this->const_world()._interact_all
-		<< "\nGravity mode: " << [&](){ return to_string((unsigned)this->const_world().gravity_mode); }
-		<< "\n  - strength: " << &this->const_world().gravity
+		<< "# of objs.: " << [this](){ return to_string(entity_count()); }
+		<< "\nBody interactions: " << &const_world()._interact_all
+		<< "\nGravity mode: " << [this](){ return to_string((unsigned)const_world().gravity_mode); }
+		<< "\n  - strength: " << &const_world().gravity
 		<< "\nDrag: " << ftos(&this->const_world().friction)
 		<< "\n"
 	;
@@ -382,35 +392,36 @@ void OONApp::_setup_UI()
   } else {
 
 	ui_gebi(ObjectData)
-		<< [&]{	if (this->focused_entity_ndx == ~0u) return "<NOTHING>"s;
-			if (this->focused_entity_ndx >= this->entity_count()) return "INVALID ENTITY #"s + to_string(this->focused_entity_ndx);
-			if (this->focused_entity_ndx == player_entity_ndx()) return "Player #"s + to_string(player_entity_ndx());
-			else return "Object #"s + to_string(this->focused_entity_ndx); }
+		<< [this]{
+			if (focused_entity_ndx == ~0u) return "<NOTHING>"s;
+			if (focused_entity_ndx >= entity_count()) return "INVALID ENTITY #"s + to_string(focused_entity_ndx);
+			if (focused_entity_ndx == player_entity_ndx()) return "Player #"s + to_string(player_entity_ndx());
+			else return "Object #"s + to_string(focused_entity_ndx); }
 		<< "\n"
 //		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
-		<< "\n  lifetime: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return this->entity(this->focused_entity_ndx).lifetime == Entity::Unlimited ?
-		                                 "(infinite)" : to_string(this->entity(this->focused_entity_ndx).lifetime); }
-		<< "\n  R: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return to_string(this->entity(this->focused_entity_ndx).r); }
-		<< "\n  T: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return to_string(this->entity(this->focused_entity_ndx).T); }
+		<< "\n  lifetime: " << [this]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                               else return entity(focused_entity_ndx).lifetime == Entity::Unlimited ?
+		                                           "(infinite)" : to_string(entity(focused_entity_ndx).lifetime); }
+		<< "\n  R: " << [this]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                        else return to_string(entity(focused_entity_ndx).r); }
+		<< "\n  T: " << [this]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                        else return to_string(entity(focused_entity_ndx).T); }
 //		<< "\n  M: " << ftos(&this->player_entity().mass)
-		<< "\n  M: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else { auto M = this->entity(this->focused_entity_ndx).mass / 6e24f;
-		                            return ftos(&M)(); } } << " x Earth"
+		<< "\n  M: " << [this, &ftos]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                        else { auto M = entity(focused_entity_ndx).mass / 6e24f;
+		                        return ftos(&M)(); } } << " x Earth"
 //		<< "\n  x: " << ftos(&this->player_entity().p.x)
 //		<<   ", y: " << ftos(&this->player_entity().p.y)
 //		<< "\n  vx: " << ftos(&this->player_entity().v.x)
 //		<<   ", vy: " << ftos(&this->player_entity().v.y)
-		<< "\n  x: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return (ftos(&this->entity(this->focused_entity_ndx).p.x))(); }
-		<<   ", y: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return (ftos(&this->entity(this->focused_entity_ndx).p.y))(); }
-		<< "\n  vx: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return (ftos(&this->entity(this->focused_entity_ndx).v.x))(); }
-		<<   ", vy: " << [&]{ if (this->focused_entity_ndx >= this->entity_count()) return ""s;
-		                     else return (ftos(&this->entity(this->focused_entity_ndx).v.y))(); }
+		<< "\n  x: "  << [this, &ftos]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                                else return (ftos(&entity(focused_entity_ndx).p.x))(); }
+		<<   ", y: "  << [this, &ftos]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                                else return (ftos(&entity(focused_entity_ndx).p.y))(); }
+		<< "\n  vx: " << [this, &ftos]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                                else return (ftos(&entity(focused_entity_ndx).v.x))(); }
+		<<   ", vy: " << [this, &ftos]{ if (focused_entity_ndx >= entity_count()) return ""s;
+		                                else return (ftos(&entity(focused_entity_ndx).v.y))(); }
 	;
   }
 
@@ -460,6 +471,7 @@ void OONApp::_setup_UI()
 		<< "------------- Actions:\n"
 		<< "← → ↑ ↓       Thrust\n"
 		<< "SPACE         \"Chemtrail\" sprinkle\n"
+		<< "LEFT ALT      Shield particles (doing nothing yet...)\n"
 		<< "INS           Spawn object(s), +CTRL: 10, +SHIFT: 100\n"
 		<< "DEL           Remove object(s), +CTRL: 10, +SHIFT: 100\n"
 		<< "------------- God Mode - Metaphysics:\n"
@@ -472,28 +484,29 @@ void OONApp::_setup_UI()
 		<< "ENTER         Step 1 time slice forward\n"
 		<< "BACKSPACE     Step 1 time slice backward\n"
 		<< "R             Reverse time (not 100% exact even with fix Δt!)\n" // #376...
-		<< "T             Time speedup (half resol.), +SHIFT: slowdn.\n"
+		<< "T             Time speedup (half resol.), +SHIFT: slowdown\n"
 		<< "X             Toggle fixed Δt for model updates\n"
 		<< "------------- View:\n"
 		<< "A W S D       Pan\n"
 		<< "MOUSE WHEEL,\n"
 		<< "NUMPAD +/-    Zoom\n"
 		<< "SHIFT         Auto-scroll to follow player (or other obj.)\n"
-		<< "SCROLL LOCK   Toggle locked auto-scroll\n"
-		<< "LEFT MOUSE B. Set POI: obj. to follow, or just zoom center\n"
-		<< "              +SHIFT: bring player to mouse and/or follow obj.\n"
+		<< "SCROLL LOCK   Toggle locked auto-scroll (to follow obj.)\n"
+		<< "MOUSE CLICK   Set focus point (zoom center) and/or select obj.\n"
+		<< "SHIFT+CLICK   - also reposition the view & lock scrolling\n"
 		<< "HOME          Home in on (center) the player\n"
-		<< "SHIFT+HOME    Center (also non-player) followed object\n"
+		<< "SHIFT+HOME    - also lock scrolling\n"
 		<< "CTRL+HOME     Reset view to Home position (keep the zoom)\n"
-		<< "NUMPAD+5      Reset view to Home position & default zoom\n"
+		<< "NUMPAD 5      Reset view to Home position & default zoom\n"
 		<< "L.CTRL+R.CTRL Leave trails (by not clearing the screen)\n"
 		<< "F11           Toggle fullscreen\n"
-		<< "F12           Toggle HUD overlays\n"
+		<< "F12           Toggle (most) HUD overlays\n"
 		<< "------------- Admin:\n"
 		<< "F1-F8         Quicksave (overwrites!), +SHIFT: qickload\n"
 		<< "M             Mute/unmute music, N: sound fx\n"
 		<< "SHIFT+M       Mute/unmute all audio\n"
 		<< "SHIFT+P       Performance (FPS) throttling on/off\n"
+		<< "RIGHT ALT     Stream debug info to the terminal\n"
 		<< "\n"
 		<< "ESC           Quit\n"
 		<< "\n"
@@ -684,28 +697,30 @@ void OONApp::pan(Vector2f delta) { oon_main_camera().pan_x(delta.x); oon_main_ca
 void OONApp::pan_x(float delta)  { oon_main_camera().pan_x(delta); }
 void OONApp::pan_y(float delta)  { oon_main_camera().pan_y(delta); }
 
-void OONApp::center_entity(size_t id)
+void OONApp::pan_to_center(size_t entity_id)
 {
-	oon_main_camera().center_to(entity(id).p);
+	oon_main_camera().center_to(entity(entity_id).p);
 	oon_main_camera().focus_to({0, 0});
 //!!??	oon_main_camera().focus_to(entity(id).p);
 }
 
 void OONApp::center_player(unsigned player_id)
 {
-	center_entity(player_entity_ndx(player_id));
+	pan_to_center(player_entity_ndx(player_id));
 }
 
-void OONApp::follow_entity(size_t id)
+void OONApp::pan_to_focus(size_t id)
 {
 	auto vpos = oon_main_camera().world_to_view_coord(entity(id).p);
 	oon_main_camera().pan(vpos - oon_main_camera().focus_offset);
 }
 
+/*!! OBSOLETE:
 void OONApp::follow_player(unsigned player_id)
 {
-	follow_entity(player_entity_ndx(player_id));
+	pan_to_focus(player_entity_ndx(player_id));
 }
+!!*/
 
 
 void OONApp::zoom_reset()
@@ -893,10 +908,30 @@ void OONApp::toggle_sound_fx() { backend.audio.toggle_sounds(); }
 
 
 //----------------------------------------------------------------------------
-void OONApp::interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...)
-{w, event, obj1, obj2;
+void OONApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...) //override
+{w, obj1, obj2, dt, distance;
+}
+
+void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...) //override;
+{
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
+
+	auto dx = source->p.x - target->p.x,
+	     dy = source->p.y - target->p.y;
+//	auto distance = Math::mag2(dx, dy);
+	float G_per_DD = w->gravity / (distance * distance);
+
+	float a_target = G_per_DD * source->mass;
+	Vector2f dv_target = Vector2f{dx * a_target, dy * a_target} * dt; //!! Fake "vectorization"!...
+	//!! Or perhaps: Vector2f dv_target(dx / distance * g, dy / distance * g) * dt;
+	target->v += dv_target;
+
+//!!/*!! Alternatively, this would normally be done in its own separate loop cycle, but that's 10-12% SLOWER! :-o
+	float a_source = -G_per_DD * target->mass;
+	Vector2f dv_source = Vector2f{dx * a_source, dy * a_source} * dt; //!! Fake "vectorization"!...
+	//!! Or perhaps: Vector2f dv_source(dx / distance * g, dy / distance * g) * dt;
+	source->v += dv_source;
 }
 
 //----------------------------------------------------------------------------
@@ -1044,7 +1079,7 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ size_t n/* = ...*/)
 {
 	static size_t   particles_to_add = appcfg.get("sim/exhaust_particles_add", 0);
-	static float    exhaust_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
+	static float    exhaust_density = Phys::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
 	static uint32_t exhaust_color = appcfg.get("sim/exhaust_color", 0xaaaaaa);
 	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
 	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_max_size_ratio", 0.01f);
@@ -1063,8 +1098,8 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		.position_divergence = { appcfg.get("sim/exhaust_divergence", 1.f), // Scaled by the radius of the emitter!
 						appcfg.get("sim/exhaust_divergence", 1.f) },
 		.velocity_divergence = 1.f, //!! Just an exp. "randomness factor" for now!...
-		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
-		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH), //!! WAS: exhaust_density
+		.particle_mass_min = Phys::mass_from_radius_and_density(r_min, Phys::DENSITY_OF_EARTH), //!! WAS: exhaust_density
+		.particle_mass_max = Phys::mass_from_radius_and_density(r_max, Phys::DENSITY_OF_EARTH), //!! WAS: exhaust_density
 		.color = exhaust_color,
 	};
 
@@ -1072,7 +1107,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 
 	// This "accidentally" creates a nice rainbowish color pattern in the plumes...
 	auto adjust_color = [](uint32_t base_color){
-		constexpr const float color_spread = (float)0x111111;
+		constexpr auto color_spread = (float)0x111111;
 		return uint32_t(base_color + color_spread - 2 * color_spread * float(rand())/RAND_MAX);
 	};
 
@@ -1130,7 +1165,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 //----------------------------------------------------------------------------
 void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ size_t n/* = ...*/)
 {
-	static float    particle_density = Model::Physics::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
+	static float    particle_density = Phys::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
 	static uint32_t color = appcfg.get("sim/shield_color", 0xffff99);
 	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_min_size_ratio", 0.02f);
 	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_max_size_ratio", 0.01f);
@@ -1147,8 +1182,8 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 		.position_divergence = { appcfg.get("sim/shield_initial_spread", 10.f), // Scaled by the emitter's radius!
 		                         appcfg.get("sim/shield_initial_spread", 10.f) },
 		.velocity_divergence = appcfg.get("sim/shield_divergence", 1.f), //!! Just an exp. "randomness factor" for now!...
-		.particle_mass_min = Model::Physics::mass_from_radius_and_density(r_min, Model::Physics::DENSITY_OF_EARTH),
-		.particle_mass_max = Model::Physics::mass_from_radius_and_density(r_max, Model::Physics::DENSITY_OF_EARTH),
+		.particle_mass_min = Phys::mass_from_radius_and_density(r_min, Phys::DENSITY_OF_EARTH),
+		.particle_mass_max = Phys::mass_from_radius_and_density(r_max, Phys::DENSITY_OF_EARTH),
 		.color = color,
 	}, *this);
 
@@ -1164,12 +1199,12 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 	static float chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
 	static float chemtrail_lifetime      = appcfg.get("sim/chemtrail_lifetime", Entity::Unlimited);
 	static bool  chemtrail_creates_mass  = appcfg.get("sim/chemtrail_creates_mass", true);
-	static float chemtrail_density       = Model::Physics::DENSITY_ROCK * appcfg.get("sim/chemtrail_density_ratio", 0.001f);
+	static float chemtrail_density       = Phys::DENSITY_ROCK * appcfg.get("sim/chemtrail_density_ratio", 0.001f);
 	static float chemtrail_divergence    = appcfg.get("sim/chemtrail_divergence", 1.f);
 	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_min_size_ratio", 0.02f);
 	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_max_size_ratio", 0.1f);
-	static float M_min = Model::Physics::mass_from_radius_and_density(r_min, chemtrail_density);
-	static float M_max = Model::Physics::mass_from_radius_and_density(r_max, chemtrail_density);
+	static float M_min = Phys::mass_from_radius_and_density(r_min, chemtrail_density);
+	static float M_max = Phys::mass_from_radius_and_density(r_max, chemtrail_density);
 
 	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
 	float p_range = emitter.r * 5;
@@ -1347,9 +1382,10 @@ void OONApp::updates_for_next_frame()
 		// Panning follows focused obj. with locked focus point:
 		_focus_locked_ = true;
 		if (focused_entity_ndx != ~0u)
-			follow_entity(focused_entity_ndx);
+			pan_to_focus(focused_entity_ndx);
 	} else {
 		// Focus point follows focused obj., with panning only if drifting off-screen:
+		//!! Should be possible to switch this off!
 		if (focused_entity_ndx != ~0u) {
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);

@@ -46,7 +46,7 @@ void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2f nozzle
 			continue;
 		}
 //cerr <<"DBG> density: "<< cfg.particle_density <<'\n';
-//cerr <<"DBG>   ==?  : "<< Model::Physics::DENSITY_ROCK * 0.0000000123f <<'\n';
+//cerr <<"DBG>   ==?  : "<< Phys::DENSITY_ROCK * 0.0000000123f <<'\n';
 
 		Math::Vector2f p = { (rand() * p_range.x) / RAND_MAX - p_range.x/2 + emitter.p.x + p_offset.x,
 		                     (rand() * p_range.y) / RAND_MAX - p_range.y/2 + emitter.p.y + p_offset.y };
@@ -82,7 +82,6 @@ void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2f nozzle
 		app.resize_shape(emitter_ndx, emitter.r/emitter_old_r);
 //cerr <<"DBG> emitter.mass AFTER burst: "<< emitter.mass <<'\n';
 	}
-}
-
+} // emit_particles
 
 } // namespace Model

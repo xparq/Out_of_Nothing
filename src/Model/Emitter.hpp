@@ -22,7 +22,7 @@ public:
 		float offset_factor = 0.2f;
 		float particle_lifetime = Model::Unlimited; //!! Rename to sg. less vague!
 		bool  create_mass = true;
-		float particle_density = Model::Physics::DENSITY_ROCK * 0.001f;
+		float particle_density = Phys::DENSITY_ROCK * 0.001f;
 		Math::Vector2f position_divergence = {5.f, 5.f}; // Scaled by the emitter's radius
 		float velocity_divergence = 1.f; //!! Just an exp. "randomness factor" for now!...
 		float particle_mass_min{};

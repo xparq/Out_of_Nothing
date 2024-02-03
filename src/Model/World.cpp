@@ -1,8 +1,15 @@
+#define ALLOW_FULL_INTERACTION_LOOP // Disabling only helps ~0.5% with 500 bodies.
+
 #include "Model/World.hpp"
 
 //!! Shrink even this dependency: don't include the entire fucking SimApp,
 //!! only its modelling-related services that are actually used:
 #include "Engine/SimApp.hpp"
+
+//!!OTOH, when the World will get finally split into an abstract base and the implem.,
+//!! the implem. part would be free to know the app! So, for now, right here:
+#include "app/OON.hpp"
+	using namespace OON;
 
 #include "extern/iprof/iprof.hpp"
 
@@ -31,7 +38,8 @@ using namespace Math;
 
 //============================================================================
 World::World() :
-	gravity_mode(Normal)
+	gravity_mode(GravityMode::Default),
+	loop_mode(LoopMode::Default)
 {
 }
 
@@ -67,8 +75,6 @@ void World::update(float dt, SimApp& game)
 //!! Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 //----------------------------------------------------------------------------
-#define _LEGACY_GRAVITY_CALC_ // -> #65
-
 #define _SKIP_SOME_STATE_UPDATES_ 10
 	// Slow changes (like cooling bodies) don't need updates in every frame
 	//!! Normalize for frame rate! (Needs the avg. frame-time as input then!)
@@ -158,37 +164,45 @@ if (_SKIP_SOME_STATE_UPDATES_ && --skipping_n_interactions) {
 #endif
 
 // Now do the interaction matrix:
-//!!This line below is hard-coded to globe-ndx == 0, and also ignores any other (potential) players!...
-for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 1); ++actor_obj_ndx)
+//!!
+//!! PROTECT AGAINST OTHER THREADS POTENTIALLY ADDING/DELETING OBJECTS!
+//!!
+auto obj_cnt = bodies.size();
+for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); ++source_obj_ndx)
+	//!! That 1 is incompatible with `interact_all` actually! Should be 0, and 1 only with `interact_playeronly`!
+	//!! Hard-coded to player-entity-index == 0, and ignores any other (potential) players!...
 {
-	if (bodies[actor_obj_ndx]->terminated())
+	using enum GravityMode;
+
+	if (bodies[source_obj_ndx]->terminated())
 		continue;
 
-//#ifdef _LEGACY_GRAVITY_CALC_
-//	for (size_t i = 0; i < bodies.size(); ++i)
-//#else
-//	for (size_t i = actor_obj_ndx + 1; i < bodies.size(); ++i)
-//#endif
-	assert(gravity_mode == Normal || gravity_mode == Skewed || gravity_mode == Off);
-	for (size_t i = gravity_mode == Normal ? 0 : actor_obj_ndx + 1; i < bodies.size(); ++i)
+#ifdef ALLOW_FULL_INTERACTION_LOOP
+	// Iterate over the pairs both ways in Full mode...
+	for (size_t target_obj_ndx = loop_mode == LoopMode::Full ? 0 : source_obj_ndx + 1;
+		target_obj_ndx < obj_cnt; ++target_obj_ndx)
+#else
+	// Iterate over the pairs once only, doubling any bidirect. interactions inside the inner cycle!
+	for (size_t target_obj_ndx = source_obj_ndx + 1;
+		target_obj_ndx < obj_cnt; ++target_obj_ndx)
+#endif
 	{
 	//!!IPROF("Interact. cycle"); //! SLOWS DOWN THE MODEL HORRIBLY! (Was 0.22-0.27 μs, incl. the meas. overh.)
 
-		if (actor_obj_ndx == i) continue; // Skip itself...
+		if (source_obj_ndx == target_obj_ndx) continue; // Skip itself...
 
-		auto& body = bodies[i]; //!!?? shared_ptr... worth the &?
+		Body* target = bodies[target_obj_ndx].get(); //! shared_ptr
+		if (target->terminated()) continue;
 
-		if (body->terminated()) continue;
+		Body* source = bodies[source_obj_ndx].get();
 
 		// Collisions & gravity...
-		//!! see the relative looping now! if (i != actor_obj_ndx)
+		//!! see the relative looping now! if (i != source_obj_ndx)
 		{
-			auto& other = bodies[actor_obj_ndx];
+			auto dx = source->p.x - target->p.x,
+			     dy = source->p.y - target->p.y;
 
-			auto dx = other->p.x - body->p.x,
-			     dy = other->p.y - body->p.y;
-
-//			auto distance = Math::distance2(body->p.x, body->p.y, other->p.x, other->p.y);
+//			auto distance = Math::distance2(target->p.x, target->p.y, source->p.x, source->p.y);
 			auto distance = Math::mag2(dx, dy);
 
 			//! Collision det. is crucial also for preventing 0 distance to divide by!
@@ -204,7 +218,10 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 			//!!the real solution would be smarter modeling of the high-speed case
 			//!!to do what nature does... Dunno, create a black hole, if you must! :)
 
-			if (/*physics.*/is_colliding(body.get(), other.get(), distance)) {
+			//!! Avoid repeating the check in ordered-interactions mode, with double iterations:
+			if (
+				gravity_mode != Realistic && //!!TEMP HACK for #252: allow accel. while overlapping
+				/*physics.*/is_colliding(target, source, distance)) {
 			//! Done before actually reaching the body (so we can avoid the occasional frame showing the penetration :) )!
 			//  (Opting for the perhaps even less natural "but didn't even touch!" issue...)
 
@@ -212,28 +229,28 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				// they may need special treatment, because at this point the checked body may not
 				// yet have reached (or crossed the boundary of) the other, so it needs to be adjusted
 				// to the expected collision end-state!
-				//!!/*physics.*/collide_hook(body.get(), other.get(), distance);
+				//!!/*physics.*/collide_hook(target, source, distance);
 				//! Call God, too:
 
 				// Call this before processing the collision-induced speed changes,
 				// so that the calc. can take into consideration the relative speed!
-//!!			auto rel_dv = distance2(body->v.x, body->v.y, other->v.x, other->v.y);
+//!!			auto rel_dv = distance2(target->v.x, target->v.y, source->v.x, source->v.y);
 				static constexpr float EPS_COLLISION = CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
-				if (abs(distance - (body->r + other->r)) < EPS_COLLISION ) {
+				if (abs(distance - (target->r + source->r)) < EPS_COLLISION ) {
 //cerr << "Touch!\n";
-					if (!game.touch_hook(this, body.get(), other.get())) {
+					if (!game.touch_hook(this, target, source)) {
 						;
 					}
 				} else {
-//cerr << " - Collided, but NO TOUCH. d = " << distance << ", delta = "<<abs(distance - (body->r + other->r)) << " (epsilon = "<<EPS_COLLISION<<")\n";
+//cerr << " - Collided, but NO TOUCH. d = " << distance << ", delta = "<<abs(distance - (target->r + source->r)) << " (epsilon = "<<EPS_COLLISION<<")\n";
 				}
 
 				// Note: calling the hook before processing the collision!
 				// If the listener returns false, it didn't process it, so we should.
-				if (!game.collide_hook(this, body.get(), other.get(), distance)) {
+				if (!game.collide_hook(this, target, source, distance)) {
 
 					//!! Handle this in a hook:
-					//body->v = {0, 0}; // - or bounce, or stick to the other body and take its v, or any other sort of interaction...
+					//target->v = {0, 0}; // - or bounce, or stick to the other body and take its v, or any other sort of interaction...
 
 					// Interestingly, if no speed reset/change is applied at all,
 					// an orbiting moon that hits the surface of its attractor with
@@ -251,51 +268,104 @@ for (size_t actor_obj_ndx = 0; actor_obj_ndx < (_interact_all ? bodies.size() : 
 				}
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
-				game.interaction_hook(this, Event::Collided, body.get(), other.get());
+//!!...				game.undirected_interaction_hook(this, Event::Collided, source, target, dt, distance);
 
-			} else if (!body->superpower.gravity_immunity) { // process gravity if not colliding
-//#ifdef _LEGACY_GRAVITY_CALC_
-if (gravity_mode == Normal) {
-//!!				float g = Physics::G * other->mass / (distance * distance);
-				float g = gravity * other->mass / (distance * distance);
-				Vector2f gvect(dx * g, dy * g);
-				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
-				Vector2f dv = gvect * dt;
-				body->v += dv;
-//#else //!! #65...:
-} else if (gravity_mode == Skewed) {
-//!!				float G_per_DD = Physics::G / (distance * distance);
-				float G_per_DD = gravity / (distance * distance);
-				// New accel. of the "inner" body:
-				float a1 = G_per_DD * other->mass;
-				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
-				Vector2f dv1 = Vector2f{dx * a1, dy * a1} * dt;
-				body->v += dv1;
-/*
-				// New accel. of the "outer" body:
-				float a2 = -G_per_DD * body->mass;
-				//!!should rather be: Vector2f gvect(dx / distance * g, dy / distance * g);
-				Vector2f dv2 = Vector2f{dx * a2, dy * a2} * dt;
-				other->v += dv2;
-*/
-//#endif
-} else {
-	assert(gravity_mode == Off);
+			} else { // process gravity if not colliding
+				//!!game.directed_interaction_hook(this, source, target, dt, distance);
+					//!! Wow, this fn. call costs an FPS drop from ~175 to ~165 with 500 objs.! :-/
+#ifdef ALLOW_FULL_INTERACTION_LOOP
+if (loop_mode == LoopMode::Full) { // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
+	switch (gravity_mode) {
+	case Hyperbolic: // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
+
+				if (!target->superpower.gravity_immunity) {
+				  //! Note: doing it branchless, i.e. multiplying with the bool flag (as 0 or 1)
+				  //! made it significantly _slower_! :-o
+					float a = gravity * source->mass / (distance * distance);
+					auto dv = Vector2f{dx * a, dy * a} * dt; // #525: dx/distance, dy/distance...
+					//! Optimizing ...*dt into a dv scaling factor (a*dt) resulted in
+					//! rounding errors & failed regression testing... But should be fine:
+//					float _dvscale = gravity * source->mass / (distance*distance) * dt;
+//					auto _dv = Vector2f(dx * _dvscale, dy * _dvscale);
+/*!
+{static bool done=false;if(!done){done=true; // These look the same, but the calculations differ! :-o
+cerr << "dv : "<<  dv.x <<", "<<  dv.y <<"\n";
+cerr << "_dv: "<< _dv.x <<", "<< _dv.y <<"\n"; }}
+!*/
+					target->v += dv; //! += _dv;
+				}
+		break;
+	case Realistic:
+	case Experimental:
+				if (!target->superpower.gravity_immunity) {
+					float a = gravity * source->mass / (distance * distance); //!!?? distance^3 too big for the divider?
+					auto dv = Vector2f{dx * a, dy * a} * (dt/distance); // #525: dx/distance, dy/distance...
+					target->v += dv;
+/*!!
+if(((OONApp&)game).controls.ShowDebug) {
+	//!!This is useless, while the event loop is stalled, as the update loop here
+	//!!would just blast through this a million times with the old input state! :-/
+	cerr << "a: "<< a_target <<", distance: "<< distance <<"\n"; // It was like 0.x with 3 bodies in close proximity, and barely moving.
 }
+!!*/
+				}
+		break;
+//!!	case Experimental:
+//!!		assert(gravity_mode == Experimental);
+//!!		break;
+	default:
+		assert(gravity_mode == Off);
+		break;
+	} // switch (gravity_mode)
 
-//cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<body->v.x<<","<<body->v.y<<") " << endl;
+} else { // loop_mode == Half (-> #65)
+#endif // ALLOW_FULL_INTERACTION_LOOP
+
+	//!! Do the same switch here, too!
+
+		if (gravity_mode == Hyperbolic) {
+				const float G_dt_div_d2 = gravity / (distance * distance) * dt;
+				if (!target->superpower.gravity_immunity) {
+					float a = G_dt_div_d2 * source->mass;
+					Vector2f dv = Vector2f{dx * a, dy * a};
+					target->v += dv;
+				}
+				if (!source->superpower.gravity_immunity) {
+					float a = -G_dt_div_d2 * target->mass;
+					Vector2f dv = Vector2f{dx * a, dy * a};
+					source->v += dv;
+				}
+		} else if (gravity_mode == Realistic) {
+				const float G_dt_div_d2 = gravity / (distance * distance) * dt; //!!?? distance^3 too big for the divider?
+				if (!target->superpower.gravity_immunity) {
+					float a = G_dt_div_d2 * source->mass;
+					auto dv = Vector2f{dx * a, dy * a} * (dt/distance); // #525: dx/distance, dy/distance...
+					target->v += dv;
+				}
+				if (!source->superpower.gravity_immunity) {
+					float a = G_dt_div_d2 * target->mass;
+					auto dv = Vector2f{dx * a, dy * a} * (dt/distance); // #525: dx/distance, dy/distance...
+					source->v += dv;
+				}
+		}
+
+#ifdef ALLOW_FULL_INTERACTION_LOOP
+}
+#endif // ALLOW_FULL_INTERACTION_LOOP
+
+//cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<target->v.x<<","<<target->v.y<<") " << endl;
 			}
 		} // if interacting with itself
 
 /*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
 		// Friction:
 		Vector2f dv = friction_decel * (dt);
-		Vector2f friction_decel(-body->v.x * friction, -body->v.y * friction);
-		body->v += dv;
+		Vector2f friction_decel(-target->v.x * friction, -target->v.y * friction);
+		target->v += dv;
 !!*/		
-//cerr << "v["<<i<<"] = ("<<body->v.x<<","<<body->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
-	} // inner for
-} // outer for
+//cerr << "v["<<i<<"] = ("<<target->v.x<<","<<target->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;
+	} // inner loop (of targets)
+} // outer loop (of soucres)
 
 #ifdef _SKIP_SOME_INTERACTIONS_
 end_interact_loop:
@@ -304,39 +374,43 @@ dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 
 	// All-inclusive postprocessing loop for friction [but why here? test what diff it makes if done in the pre-interact. loop],
 	// and actually updating the positions finally
-	for (size_t i = 0; i < bodies.size(); ++i)
+	for (size_t i = 0; i < obj_cnt; ++i)
 	{
 		auto& body = bodies[i];
 
-		// Friction:
-		Vector2f friction_decel(-body->v.x * friction, -body->v.y * friction);
-		Vector2f dv = friction_decel * dt;
-		body->v += dv;
+		// Friction - adjust velocities:
+		auto friction_decel = body->v * friction;
+		body->v -= friction_decel * dt;
 		
-		// And finally the positions:
-		Vector2f ds(body->v.x * dt, body->v.y * dt);
-		body->p += ds;
+		// And finally, the positions:
+///*!!
+if(((OONApp&)game).controls.ShowDebug) {
+	cerr << "#"<<i<<": moving this much: "<< body->v.x * dt <<", "<< body->v.x <<"\n";
+}
+//!!*/
+		body->p += body->v * dt;
 	}
 }
 
 
 //----------------------------------------------------------------------------
-void World::_copy(World const& other)
+void World::_copy(World const& source)
 {
 //cerr << "World copy requested!\n";
-	if (&other != this)
+	if (&source != this)
 	{
 		//!! Move these into some props container to prevent forgetting
 		//!! some, when manip. them one by one! :-/
 		//!! There might anyway be a distinction between these and
 		//!! throw-away volatile state (like caches) in the future.
-		friction = other.friction;
-		_interact_all = other._interact_all;
-		gravity_mode = other.gravity_mode;
-		gravity = other.gravity;
+		gravity = source.gravity;
+		friction = source.friction;
+		gravity_mode = source.gravity_mode;
+		loop_mode = source.loop_mode;
+		_interact_all = source._interact_all;
 
 		bodies.clear();
-		for (const auto& b : other.bodies) {
+		for (const auto& b : source.bodies) {
 			add_body(*b);
 		}
 	}

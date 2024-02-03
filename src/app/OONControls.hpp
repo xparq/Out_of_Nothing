@@ -24,6 +24,7 @@ struct OONController : public Szim::VirtualController
 	HardToggle PanLock{};
 
 	PushButton ShowOrbits{};
+	PushButton ShowDebug{};
 
 	// Player movement
 	//!! Could/should be a joystick levels instead!

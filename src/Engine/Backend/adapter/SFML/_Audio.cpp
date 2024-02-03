@@ -168,8 +168,8 @@ cerr << "DBG> NOTE: Removing empty sound after load failure.\n";
 	}
 
 //	play_sound(buffer_ndx);
-cerr << "DBG> "<<__FUNCTION__<<": Loaded buffer "<<buffer_ndx<<" from file: "<<filename<<"\n"
-     << "DBG> - length: "<<_sound_buffer_autoptrs.back()->length<<"s"
+cerr << "DBG> "<<__FUNCTION__<<": Loaded buffer "<<buffer_ndx<<" from file: "<<filename<<"\n";
+if(0)cerr << "DBG> - length: "<<_sound_buffer_autoptrs.back()->length<<"s"
      <<         ", sample rate: "<<_sound_buffer_autoptrs.back()->sample_rate
      <<         ", channels: "<<_sound_buffer_autoptrs.back()->getChannelCount()<<'\n';
 	return buffer_ndx;

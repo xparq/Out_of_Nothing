@@ -65,7 +65,7 @@ public:
 	virtual bool perform_control_actions() { return false; } // false: no changes to the model
 	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
 
-	unsigned fps_throttling(unsigned fps = (unsigned)-1);
+	unsigned fps_throttling(unsigned fps = unsigned(-1));
 		// Set or query the FPS limit (the default -1 means query)
 		//!! std::optional couldn't help eliminate it altogether
 
@@ -190,7 +190,9 @@ public:
 	// High-level, abstract (not as in "generic", but "app-level") hook for n-body interactions:
 	// `event` represents the physical property/condition that made it think these might interact.
 	//!!NOTE: This will change to the objects themselves being notified (not the game "superclass")!
-	virtual void interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...);
+	virtual void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...);
+	virtual void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...);
+
 
 	//----------------------------------------------------------------------------
 	//Misc convenience helpers
@@ -211,7 +213,7 @@ protected:
 	//--------------------
 	// Rendering... (See also main_view()!)
 	virtual void draw() = 0;
-	//!! Render sync. kludge -> #516...:
+	//!! Render sync. kludge (used e.g. by the general-purpose particle emitter) -> #516...):
 		public: virtual void resize_shape(size_t /*ndx*/, float /*factor*/) {}
 		public: virtual void resize_shapes(float /*factor*/) {}
 
