@@ -32,11 +32,6 @@ protected:
 	void init() override;
 	void done() override;
 
-	enum HUD_ID { HelpPanel, TimingStats, WorldData, ViewData, ObjectData, Debug };
-	virtual UI::HUD& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
-	bool _show_huds = true;
-	void _setup_UI();
-
 //----------------------------------------------------------------------------
 // Operations...
 //----------------------------------------------------------------------------
@@ -177,6 +172,14 @@ protected:
 	      auto& oon_main_camera()       { return (      OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 	const auto& oon_main_camera() const { return (const OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 
+	// UI setup helpers...
+	enum HUD_ID { HelpPanel, TimingStats, WorldData, ViewData, ObjMonitor, Debug };
+	virtual UI::HUD& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
+	bool _show_huds = true;
+	void _setup_UI();
+	void _setup_HUDs();
+	void _setup_HUD_ObjMonitor();
+
 //----------------------------------------------------------------------------
 // Internals - Data...
 //----------------------------------------------------------------------------
@@ -210,8 +213,9 @@ protected:
 	size_t snd_jingle_loop;
 	size_t snd_shield;
 
-public://!! Directly accessed by main_view() for now:
-	size_t focused_entity_ndx = 0; // The player entity by default
+public://!! Directly accessed by e.g. main_view() and the ObjMonitor HUD:
+	size_t focused_entity_ndx = 0; // The player object by default
+	size_t hovered_entity_ndx = ~0u; // None
 };
 
 } // namespace OON

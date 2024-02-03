@@ -60,7 +60,7 @@ protected:
 		case TimingStats: return timing_hud;
 		case WorldData:   return world_hud;
 		case ViewData:    return view_hud;
-		case ObjectData:  return object_hud;
+		case ObjMonitor:  return object_hud;
 		case HelpPanel:   return help_hud;
 		case Debug:       return debug_hud;
 		default: std::unreachable(); // c++23 only; and this will be c++999: [[unreachable]]
