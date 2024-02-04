@@ -440,7 +440,7 @@ try {
 				case 'n': toggle_sound_fx();
 					sfw::getWidget<sfw::CheckBox>(" - FX: ")->set(backend.audio.fx_enabled);
 					break;
-				case 'P': fps_throttling(!fps_throttling()); break;
+				case 'P': fps_throttling(!fps_throttling()); break; //!! Disable for #543!
 				case 'x': toggle_fixed_model_dt();
 					sfw::getWidget<sfw::CheckBox>("Fixed model Δt")->set(cfg.fixed_model_dt_enabled);
 					break;
@@ -515,10 +515,15 @@ cerr << "DBG> Click: no obj.\n";
 			case sf::Event::MouseMoved:
 			{
 				if (gui.focused()) goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
-				if (!keystate(CTRL) && !paused()) break;
 
 				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(event.mouseMove.x, event.mouseMove.y);
-				oon_main_camera().focus_offset = vpos;
+
+				if (keystate(SHIFT) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+					// pan_to_focus(anythihg), essentially:
+					oon_main_camera().pan(oon_main_camera().focus_offset - vpos);
+					oon_main_camera().focus_offset = vpos;
+				}
+
 				size_t entity_id = ~0u;
 				if (entity_at_viewpos(vpos.x, vpos.y, &entity_id)) {
 //cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
