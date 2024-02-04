@@ -440,7 +440,7 @@ try {
 				case 'n': toggle_sound_fx();
 					sfw::getWidget<sfw::CheckBox>(" - FX: ")->set(backend.audio.fx_enabled);
 					break;
-				case 'P': fps_throttling(!fps_throttling()); break; //!! Disable for #543!
+//!! #543			case 'P': fps_throttling(!fps_throttling()); break;
 				case 'x': toggle_fixed_model_dt();
 					sfw::getWidget<sfw::CheckBox>("Fixed model Δt")->set(cfg.fixed_model_dt_enabled);
 					break;

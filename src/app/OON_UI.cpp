@@ -72,10 +72,13 @@ void OONApp::_setup_UI()
 
 	// UI/View controls...
 	auto	view_form = gui_main_hbox->add(new Form);
+		view_form->add("FPS limit", new Slider({.range={0, 120}, .step=30, .orientation=sfw::Horizontal}, 60))
+			->set(fps_throttling())
+			->setCallback([this](auto* w){fps_throttling((unsigned)w->get());});
 		view_form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
 		    gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
 		view_form->add("Grid lines", new CheckBox([&](auto* w){oon_main_camera().cfg.gridlines = w->get();}, oon_main_camera().cfg.gridlines));
-		view_form->add("Pan follow object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
+		view_form->add("Pan follows object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
@@ -309,14 +312,15 @@ void OONApp::_setup_HUDs()
 		<< "NUMPAD 5      Reset view to Home position & default zoom\n"
 		<< "L.CTRL+R.CTRL Leave trails (by not clearing the screen)\n"
 		<< "MOUSE MOVE    Show data of hovered object in the obj. HUD\n"
-		<< "SHIFT+MOVE    Pan with the focus point locked to the mouse\n"
+		<< "MOUSE DRAG    Pan freely (untracking any prev. focus obj.)\n"
+		<< "SHIFT+MOVE    Pan with the focus pt./obj locked to the mouse\n"
 		<< "F11           Toggle fullscreen\n"
 		<< "F12           Toggle (most) HUD overlays\n"
 		<< "------------- Admin:\n"
 		<< "F1-F8         Quicksave (overwrites!), +SHIFT: qickload\n"
 		<< "M             Mute/unmute music, N: sound fx\n"
 		<< "SHIFT+M       Mute/unmute all audio\n"
-		<< "SHIFT+P       Performance (FPS) throttling on/off\n"
+//!! #543	<< "SHIFT+P       Performance (FPS) throttling on/off\n"
 		<< "RIGHT ALT     Stream debug info to the terminal\n"
 		<< "\n"
 		<< "ESC           Quit\n"

@@ -1041,7 +1041,7 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 		}
 	}
 	// Update the focus lock indicator:
-	sfw::getWidget<sfw::CheckBox>("Pan follow object")->set(_focus_locked_);
+	sfw::getWidget<sfw::CheckBox>("Pan follows object")->set(_focus_locked_);
 
 	view_control(); // Manual view adjustments
 
