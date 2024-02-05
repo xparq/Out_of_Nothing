@@ -8,6 +8,6 @@ call %~dp0tooling/_setenv.cmd
 ::busybox sh %~dp0tooling/build/_auto-rebuild.sh %*
 
 :: The new (NMAKE-driven, CMD-scripted) process (without auto-rebuild yet!):
-%~dp0tooling/diag/wtime.exe nmake /nologo /f nMakefile.msvc %*
+%~dp0tooling/diag/wtime.exe nmake /nologo /f tooling\build\nMakefile.msvc %*
 
 if not errorlevel 1 if not defined GITHUB_ACTION %SZ_TEST_DIR%\regression\tc-smoke

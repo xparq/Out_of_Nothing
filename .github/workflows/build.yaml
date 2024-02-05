@@ -56,7 +56,7 @@ jobs:
 
     - name: Setup SFML...
       shell: cmd
-      run: tooling/sfml_dl+unzip.cmd
+      run: tooling/sfml_dl+unzip
 
     #  From sources (on GitHub):
     #- uses: actions/checkout@master
@@ -79,7 +79,7 @@ jobs:
       #working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
       # No static-CRT version in stock SFML downloadable prebuilts, so:
-      run: nbuild.cmd
+      run: nbuild
 # CRT=dll
       #!! This would mask any make error exit codes! :-/
       #run: tooling\diag\wtime nbuild.cmd
@@ -89,5 +89,5 @@ jobs:
       shell: cmd
       #!! This would mask any make error exit codes! :-/
       #run: tooling\diag\wtime bbuild.cmd
-      run: bbuild.cmd
+      run: bbuild-msvc
 # CRT=dll

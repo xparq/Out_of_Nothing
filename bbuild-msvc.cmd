@@ -9,7 +9,7 @@ call %~dp0tooling/_setenv.cmd
 ::!!%~dp0tooling/diag/wtime.exe ... <- wtime GETS CONFUSED BY THE QUOTED PARAM BELOW! :-o 
 
 ::busybox sh -c "export SZ_PRJDIR=. && . tooling/_setenv.sh && busybox make -f bbMakefile.msvc %*"
-busybox sh -c "export SZ_PRJDIR=. && busybox make -f bbMakefile.msvc %*"
+busybox sh -c "export SZ_PRJDIR=. && busybox make -f tooling/build/bbMakefile.msvc %*"
 
 :: The original (BB/sh-scripted) build process with auto-rebuild:
 ::busybox sh %~dp0tooling/build/_auto-rebuild.sh %*

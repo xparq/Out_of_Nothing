@@ -3,7 +3,7 @@
 ####
 #### BEWARE! Uses recursive NMAKE invocations, so update the macro below if
 #### you rename this file:
-THIS_MAKEFILE=nMakefile.msvc
+THIS_MAKEFILE=tooling\build\nMakefile.msvc
 #
 # NOTE: Custom macros can't be set on the NMAKE command line, only here, because
 #       the recursion won't pass them along, unless added to $custom_build_options!
