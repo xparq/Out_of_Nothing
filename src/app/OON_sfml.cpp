@@ -238,9 +238,6 @@ void OONApp_sfml::draw() // override
 		if (help_hud.active())
 			help_hud.draw(SFML_WINDOW()); //!! This active-chk is redundant: HUD::draw() does the same. TBD: who's boss?
 		                                      //!! "Activity" means more than just drawing, so... (Or actually both should control it?)
-	} else {
-		// Still show the FPS, at least:
-		timing_hud.draw(SFML_WINDOW());
 	}
 #endif
 

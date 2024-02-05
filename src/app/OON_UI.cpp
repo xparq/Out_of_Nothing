@@ -70,11 +70,19 @@ void OONApp::_setup_UI()
 	Theme::click.textColor = sfw::Color("#ee9"); //!!("input".textColor!) YUCK!! Also "click" for LABELS?!?!
 	auto gui_main_hbox = gui.add(new HBox);
 
-	// UI/View controls...
-	auto	view_form = gui_main_hbox->add(new Form);
-		view_form->add("FPS limit", new Slider({.range={0, 120}, .step=30, .orientation=sfw::Horizontal}, 60))
+	// General/performance controls...
+	auto	perf_form = gui_main_hbox->add(new Form);
+		perf_form->add("FPS", new ProgressBar({.length=60, .range={0, 120}, .clamp=false}));
+		perf_form->add("- limit", new Slider({.length=60, .range={0, 120}, .step=30}))
 			->set(fps_throttling())
 			->setCallback([this](auto* w){fps_throttling((unsigned)w->get());});
+		perf_form->add("Fixed model Δt", new CheckBox(
+			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
+
+	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
+
+	// UI/View controls...
+	auto	view_form = gui_main_hbox->add(new Form);
 		view_form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
 		    gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
 		view_form->add("Grid lines", new CheckBox([&](auto* w){oon_main_camera().cfg.gridlines = w->get();}, oon_main_camera().cfg.gridlines));
@@ -86,7 +94,7 @@ void OONApp::_setup_UI()
 	// Audio...
 	auto left_vbox = gui_main_hbox->add(new VBox);
 		auto	volrect = left_vbox->add(new Form, "VolForm");
-			volrect->add("Volume", new Slider({/*.orientation = Vertical*/}, 70), "volume slider")
+			volrect->add("Volume", new Slider({.length=70, /*.orientation=Vertical*/})) //!! not needed: , "volume slider")
 			->setCallback([&](auto* w){backend.audio.volume(w->get());})
 			->update(75); // %
 		auto	audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
@@ -106,17 +114,15 @@ void OONApp::_setup_UI()
 			g_select->setCallback([&](auto* w){ this->world().gravity_mode = w->get(); });
 		phys_form->add("Gravity mode", g_select)
 			->set(world().gravity_mode);
-		phys_form->add(" - bias", new sfw::Slider({.range={-3.0, 3.0}, .step=0, .orientation=sfw::Horizontal}, 80))
+		phys_form->add(" - bias", new sfw::Slider({.length=80, .range={-3.0, 3.0}, .step=0}))
 			->setCallback([&](auto* w){ this->world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
 				* Math::power(10.f, w->get()); })
 			->set(0);
 		phys_form->add(" - full loop", new sfw::CheckBox([&](auto* w){ this->world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
 				world().loop_mode == World::LoopMode::Full));
-		phys_form->add("Friction", new sfw::Slider({.range={-1.0, 1.0}, .step=0, .orientation=sfw::Horizontal}, 80))
+		phys_form->add("Friction", new sfw::Slider({.length=80, .range={-1.0, 1.0}, .step=0}))
 			->setCallback([&](auto* w){ this->world().friction = w->get(); })
 			->set(world().friction);
-		phys_form->add("Fixed model Δt", new CheckBox(
-			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
