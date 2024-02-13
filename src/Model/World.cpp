@@ -1,4 +1,4 @@
-#define ALLOW_FULL_INTERACTION_LOOP // Disabling only helps ~0.5% with 500 bodies.
+#define DISABLE_FULL_INTERACTION_LOOP // Only helps ~0.5% with 500 bodies...
 
 #include "Model/World.hpp"
 
@@ -177,7 +177,7 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 	if (bodies[source_obj_ndx]->terminated())
 		continue;
 
-#ifdef ALLOW_FULL_INTERACTION_LOOP
+#ifndef DISABLE_FULL_INTERACTION_LOOP
 	// Iterate over the pairs both ways in Full mode...
 	for (size_t target_obj_ndx = loop_mode == LoopMode::Full ? 0 : source_obj_ndx + 1;
 		target_obj_ndx < obj_cnt; ++target_obj_ndx)
@@ -273,7 +273,7 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 			} else { // process gravity if not colliding
 				//!!game.directed_interaction_hook(this, source, target, dt, distance);
 					//!! Wow, this fn. call costs an FPS drop from ~175 to ~165 with 500 objs.! :-/
-#ifdef ALLOW_FULL_INTERACTION_LOOP
+#ifndef DISABLE_FULL_INTERACTION_LOOP
 if (loop_mode == LoopMode::Full) { // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
 	switch (gravity_mode) {
 	case Hyperbolic: // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
@@ -319,7 +319,7 @@ if(((OONApp&)game).controls.ShowDebug) {
 	} // switch (gravity_mode)
 
 } else { // loop_mode == Half (-> #65)
-#endif // ALLOW_FULL_INTERACTION_LOOP
+#endif // DISABLE_FULL_INTERACTION_LOOP
 
 	//!! Do the same switch here, too!
 
@@ -349,9 +349,9 @@ if(((OONApp&)game).controls.ShowDebug) {
 				}
 		}
 
-#ifdef ALLOW_FULL_INTERACTION_LOOP
+#ifndef DISABLE_FULL_INTERACTION_LOOP
 }
-#endif // ALLOW_FULL_INTERACTION_LOOP
+#endif
 
 //cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<target->v.x<<","<<target->v.y<<") " << endl;
 			}

@@ -118,8 +118,10 @@ void OONApp::_setup_UI()
 			->setCallback([&](auto* w){ this->world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
 				* Math::power(10.f, w->get()); })
 			->set(0);
-		phys_form->add(" - full loop", new sfw::CheckBox([&](auto* w){ this->world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
+#ifndef DISABLE_FULL_INTERACTION_LOOP
+		phys_form->add("Full int. loop", new sfw::CheckBox([&](auto* w){ this->world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
 				world().loop_mode == World::LoopMode::Full));
+#endif
 		phys_form->add("Friction", new sfw::Slider({.length=80, .range={-1.0, 1.0}, .step=0}))
 			->setCallback([&](auto* w){ this->world().friction = w->get(); })
 			->set(world().friction);
