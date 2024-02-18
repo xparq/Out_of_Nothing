@@ -1,3 +1,6 @@
+// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+//!!#include "extern/Tracy/public/tracy/Tracy.hpp"
+
 #include "Model/World.hpp"
 
 //!! Shrink even this dependency: don't include the entire fucking SimApp,

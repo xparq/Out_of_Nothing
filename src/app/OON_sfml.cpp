@@ -1,4 +1,7 @@
-﻿#include "OON_sfml.hpp"
+﻿// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+#include "extern/Tracy/public/tracy/Tracy.hpp"
+
+#include "OON_sfml.hpp"
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
@@ -37,8 +40,6 @@
 #include <iostream>
 	using std::cerr, std::endl;
 #include <cassert>
-
-#include "extern/iprof/iprof.hpp"
 
 using namespace Szim;
 using namespace Model;
@@ -194,7 +195,7 @@ cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.o
 //cerr << "- releasing Events...\n";
 		//sync::EventsFreeToGo.release();
 
-IPROF_SYNC_THREAD;
+//!!IPROF_SYNC_THREAD;
 
 /* Doing it with setFramerateLimit() now!
 	//! If there's still time left from the frame slice:
@@ -587,7 +588,7 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 
 #endif			
 
-IPROF_SYNC_THREAD;
+//!!IPROF_SYNC_THREAD;
 
 	} // while - still running
 

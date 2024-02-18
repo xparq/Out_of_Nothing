@@ -9,7 +9,7 @@
 namespace Szim {
 
 //----------------------------------------------------------------------------
-Config::Config(std::string_view cfg_path, Config* base, std::string defaults, const CALLBACK& post_load)
+Config::Config(std::string_view cfg_path, Config* base, std::string defaults, const Callback& post_load)
 	: _base(base)
 	, defaults(defaults)
 {
@@ -24,7 +24,7 @@ Config::~Config()
 }
 
 //----------------------------------------------------------------------------
-bool Config::select(std::string_view cfg_path, bool can_throw, const CALLBACK& post_load)
+bool Config::select(std::string_view cfg_path, bool can_throw, const Callback& post_load)
 {
 	return _impl->select(cfg_path, can_throw, post_load);
 }

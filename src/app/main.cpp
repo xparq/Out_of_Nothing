@@ -1,7 +1,8 @@
-#include "OON_sfml.hpp"
+// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+#include "extern/Tracy/public/tracy/Tracy.hpp"
+#include "extern/Tracy/public/TracyClient.cpp"
 
-#include "extern/iprof/iprof.hpp"
-#include "extern/iprof/iprof.cpp" //! Better than fiddling with the Makefiles...
+#include "OON_sfml.hpp"
 
 #include <iostream>
 	using std::cout, std::cerr;
@@ -61,7 +62,7 @@ cerr << "DBG> Size of the app (game) obj.: "<< sizeof(game) << '\n';
 
 	cerr	<< "Profiling stats:\n"
 		<< "----------------------------------------------------------\n"
-		<< IPROF_ALL_THREAD_STATS
+		<< "- Use the Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n" //!!WAS: IPROF_ALL_THREAD_STATS
 		<< "----------------------------------------------------------\n"
 	;
 

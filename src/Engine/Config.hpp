@@ -14,7 +14,7 @@ class Config
 {
 public:
 	//--------------------------------------------------------------------
-	using CALLBACK = std::function<void(Config&)>;
+	using Callback = std::function<void(Config&)>;
 
 	//--------------------------------------------------------------------
 	// Load/parse...
@@ -25,13 +25,13 @@ public:
 	Config(std::string_view cfg_path,  //!!?? = "" to allow default empty init with a later select()?
 	       Config* base = nullptr,     // Chained "base" cfg. instance for defaults
 	       std::string defaults = "",  // Final internal fallback defaults (as raw cfg. text)
-	       const CALLBACK& post_load = [](auto&&...) {});
+	       const Callback& post_load = [](auto&&...) {});
 
 	~Config();
 
 	// Selects .defaults if cfg_path is empty:
 	bool select(std::string_view cfg_path, bool can_throw = false,
-		const CALLBACK& post_load = [](auto&&...) {});
+		const Callback& post_load = [](auto&&...) {});
 
 	//--------------------------------------------------------------------
 	// Typed getters...

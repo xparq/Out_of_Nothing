@@ -36,7 +36,7 @@ friend class Config;
 	toml::table _config;
 
 	Config_impl(Config& ifc) : _cfgi(ifc) {}
-	bool select(std::string_view cfg_path, bool can_throw, const Config::CALLBACK& post_load);
+	bool select(std::string_view cfg_path, bool can_throw, const Config::Callback& post_load);
 
 	// Typed getters
 	template <typename T>
@@ -47,7 +47,7 @@ friend class Config;
 	}
 };
 
-bool Config_impl::select(std::string_view cfg_path, bool can_throw, const Config::CALLBACK& post_load)
+bool Config_impl::select(std::string_view cfg_path, bool can_throw, const Config::Callback& post_load)
 {
 	//!! Wishful attempt below to try and unify both the exc. and noexc.
 	//!! modes in one control flow...

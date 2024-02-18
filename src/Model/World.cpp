@@ -1,4 +1,7 @@
-#define DISABLE_FULL_INTERACTION_LOOP // Only helps ~0.5% with 500 bodies...
+//#define DISABLE_FULL_INTERACTION_LOOP // Only helps ~0.5% with 500 bodies...
+
+// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+#include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "Model/World.hpp"
 
@@ -10,8 +13,6 @@
 //!! the implem. part would be free to know the app! So, for now, right here:
 #include "app/OON.hpp"
 	using namespace OON;
-
-#include "extern/iprof/iprof.hpp"
 
 #include <cassert>
 #include <cmath> // sqrt, pow?
@@ -46,7 +47,7 @@ World::World() :
 //----------------------------------------------------------------------------
 size_t World::add_body(Body const& obj)
 {
-IPROF("add_body-copy");
+ZoneScoped; //!!IPROF("add_body-copy");
 	bodies.push_back(std::make_shared<Body>(obj));
 	auto ndx = bodies.size() - 1;
 	bodies[ndx]->recalc();
@@ -55,7 +56,7 @@ IPROF("add_body-copy");
 
 size_t World::add_body(Body&& obj)
 {
-IPROF("add_body-move");
+ZoneScoped; //!!IPROF("add_body-move");
 	obj.recalc(); // just recalc the original throw-away obj
 	bodies.emplace_back(std::make_shared<Body>(obj));
 	return bodies.size() - 1;
@@ -63,7 +64,7 @@ IPROF("add_body-move");
 
 void World::remove_body(size_t ndx)
 {
-IPROF_FUNC;
+ZoneScoped;
 	assert(bodies.size() > 0);
 	assert(ndx != (size_t)-1);
 	bodies.erase(bodies.begin() + ndx);
@@ -83,7 +84,7 @@ void World::update(float dt, SimApp& game)
 	//!! Should spread the "skippage" across varied blocks of entities
         //!! not just entirely skipping some frames for all (-> very jittery!)
 //----------------------------------------------------------------------------
-IPROF_FUNC;
+ZoneScoped;
 
 	if (dt == 0.f) { // (Whatever the accuracy of this, good enough.)
 		return;  // <- This may change later (perhaps selectively,

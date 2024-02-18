@@ -1,3 +1,7 @@
+//!! DON'T LEAVE THIS HERE FOREVER:
+// Must do this first for Tracy's winsock2 has to precede windows.h! :-/
+#include "extern/Tracy/public/tracy/Tracy.hpp"
+
 #include "keycodes.hpp"
 
 #ifdef _WIN32
@@ -7,8 +11,6 @@
 #else
 #  error Only Windows is supported yet!
 #endif
-
-#include "extern/iprof/iprof.hpp" //!! Don't leave this here forever!...
 
 namespace UI {
 
@@ -23,7 +25,7 @@ void update_keys_from_SFML(const sf::Event& sfml_event)
 //!! be horrendously expensive, and shouldn't be called en masse like no tomorrow! :-o
 //!!
 {
-//!!??IPROF_FUNC; -> #335
+ZoneScoped; // -> #335
 
 //!! Should be locked to prevent any interleaving state changes via a parallel
 //!! call to reset_keys()!

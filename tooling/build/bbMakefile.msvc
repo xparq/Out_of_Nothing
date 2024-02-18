@@ -67,6 +67,7 @@ EXT_LIBS =\
 	$(EXT_LIB_DEPS) \
 	$(sfml_and_deps_libs) \
 	user32.lib\
+	ws2_32.lib dbghelp.lib
 # (Comments must be last...)
 #	user32.lib <- only needed with SFML=dll, strangely! -o
 
@@ -179,6 +180,7 @@ CFLAGS  += -Iextern
 CFLAGS  += /W4
 CFLAGS  += $(CFLAGS_)
 CPPFLAGS   = $(CFLAGS) /std:c++latest /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/
+CPPFLAGS  += /Zc:preprocessor
 CPPFLAGS  += $(cflags_sfml_linkmode)
 CPPFLAGS  += $(CPPFLAGS_)
 LINKFLAGS   = $(linkflags_debug)

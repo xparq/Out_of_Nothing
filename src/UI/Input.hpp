@@ -1,6 +1,17 @@
 ﻿#ifndef _04857BVNC2V4687N89MX4567N9845667B89CX6MV4778M78_
 #define _04857BVNC2V4687N89MX4567N9845667B89CX6MV4778M78_
 
+/*!! If insisting on calling the Delete key DELETE (now called DEL), then:
+#ifdef _WIN32 // Sigh... Hope nobody really needs this/these, as things might just silently burn down then... ;-o
+# ifdef DELETE
+//!!FFS, MSVC!... :-/ #warning Undefining Win32 macro "DELETE"! :-o
+#  pragma message("- WARNING: Undefining Win32 macro `DELETE`! :-o")
+#  undef DELETE
+# endif
+#endif
+!!*/
+
+
 namespace UI {
 
 //------------------------------------------------------------------------
@@ -74,7 +85,7 @@ enum VKEY : unsigned {
 	BRACKET_LEFT, BACKSLASH, BRACKET_RIGHT, CARET, UNDERSCORE, BACKQUOTE,
 	a = 97, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
 	BRACE_LEFT, PIPE, BRACE_RIGHT, TILDE,
-	DELETE = 127, 
+	DEL = 127, //! DELETE clashes with WinSock2...
 	F1 = 128, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, // F16 = 143
 
 	// Keypad:

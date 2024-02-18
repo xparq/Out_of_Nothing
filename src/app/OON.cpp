@@ -1,4 +1,7 @@
-﻿#include "OON.hpp"
+﻿// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+#include "extern/Tracy/public/tracy/Tracy.hpp"
+
+#include "OON.hpp"
 
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "Model/Emitter/SkyPrint.hpp"
@@ -10,7 +13,6 @@
                        //!! And we're already using keystate() here, too, shamelessly! ;) )
 
 #include "sz/sign.hh"
-#include "extern/iprof/iprof.hpp"
 
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
@@ -47,7 +49,7 @@ OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
 //----------------------------------------------------------------------------
 void OONApp::init() // override
 {_
-IPROF_FUNC;
+ZoneScoped;
 	//!! Currently, the data watcher HUD setup depends directly on the player objects
 	//!! that have just been created above, so the UI init CAN'T happen before that...:
 	//_setup_UI();
@@ -109,23 +111,23 @@ IPROF_FUNC;
 		//!! - But preferably also being able to load from some text format
 		//!!   (TOML etc.), to finally replace this sad little hardcoding here:
 		//!!
-		// Add 2 "moons" with fixed parameters (mainly for testing):
-		add_entity({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-					.color = 0xff2020, .mass = 3e24f});
-		add_entity({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
-					.color = 0x3060ff, .mass = 3e24f});
 	}
 
 	// App-level cmdline options (overrides)...
 	// Note: the (!!actually: "some"...!!) system-/engine-level options have been processed/applied already!
 	try { // <- Absolutely required, as sto...() are very throw-happy.
 		// Doing the ones that can't fail first, so an excpt. won't skip them:
-		if (appcfg.get("sim/global_interactions",
-		                                          cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
+		if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
 			interact_all();
 		}; if (args["bodies"]) {
-			auto n = stoi(args("bodies")) - 2; // 2 have already been created above
+			auto n = stoi(args("bodies"));
 			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
+		 } else {
+			// Add 2 "moons" with fixed parameters (mainly for testing):
+			add_entity({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+						.color = 0xff2020, .mass = 3e24f});
+			add_entity({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
+						.color = 0x3060ff, .mass = 3e24f});
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
 			world().friction = f;
@@ -161,7 +163,7 @@ IPROF_FUNC;
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
 	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 
-IPROF_SYNC_THREAD;
+//!!IPROF_SYNC_THREAD;
 } // init
 
 
@@ -557,6 +559,7 @@ void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* 
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
 
+/*!!
 	auto dx = source->p.x - target->p.x,
 	     dy = source->p.y - target->p.y;
 //	auto distance = Math::mag2(dx, dy);
@@ -572,6 +575,7 @@ void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* 
 	Vector2f dv_source = Vector2f{dx * a_source, dy * a_source} * dt; //!! Fake "vectorization"!...
 	//!! Or perhaps: Vector2f dv_source(dx / distance * g, dy / distance * g) * dt;
 	source->v += dv_source;
+!!*/
 }
 
 //----------------------------------------------------------------------------
@@ -1049,7 +1053,7 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 
 	view_control(); // Manual view adjustments
 
-IPROF_SYNC_THREAD;
+//!!IPROF_SYNC_THREAD;
 }
 
 
