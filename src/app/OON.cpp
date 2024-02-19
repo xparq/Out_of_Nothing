@@ -122,7 +122,9 @@ ZoneScoped;
 		}; if (args["bodies"]) {
 			auto n = stoi(args("bodies"));
 			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
-		 } else {
+		 } else if (!args["session"]) { //! Only if no session being loaded...
+		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
+cerr << "DBG> Creating two small moons by default...\n";
 			// Add 2 "moons" with fixed parameters (mainly for testing):
 			add_entity({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
 						.color = 0xff2020, .mass = 3e24f});
