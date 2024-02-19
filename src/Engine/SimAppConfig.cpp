@@ -147,9 +147,12 @@ cerr << "- NOTE: --interact overrides cfg/sim/global_interactions.\n";
 	if (args["exit-on-finish"]) exit_on_finish = (args("exit-on-finish") != "off");
 	if (args["exit_on_finish"]) exit_on_finish = (args("exit_on_finish") != "off"); //!! Sigh, the dup...
 	background_music = sz::prefix_if_rel(asset_dir, background_music);
-#ifdef DEBUG	
-	window_title += " (DEBUG build)";
+
+	window_title += " ("; window_title += args.exename();
+#ifdef DEBUG
+	window_title += ", DEBUG build";
 #endif
+	window_title += ")";
 
 cerr << "DBG> current dir: " << sz::getcwd() << '\n';
 cerr << "DBG> exe dir: " << exe_dir << '\n';

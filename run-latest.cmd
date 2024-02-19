@@ -25,8 +25,8 @@ if not defined oon_use_exe (
 ) else (
 	set exe=...NONE...
 
-	if exist "%SZ_RUN_DIR%/%oon_use_exe.exe%" set exe=%oon_use_exe%.exe
-	if exist "%SZ_RUN_DIR%/%oon_use_exe.cmd%" set exe=%oon_use_exe%.cmd
+	if exist "%SZ_RUN_DIR%/%oon_use_exe%.exe" set exe=%oon_use_exe%.exe
+	if exist "%SZ_RUN_DIR%/%oon_use_exe%.cmd" set exe=%oon_use_exe%.cmd
 	if exist "%SZ_RUN_DIR%/%oon_use_exe%"     set exe=%oon_use_exe%
 
 	if exist "%SZ_RUN_DIR%/!exe!" goto :run

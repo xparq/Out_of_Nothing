@@ -45,8 +45,8 @@ void HUD::add(int literal)
 void HUD::add(Binding::STRING_FN_PTR f)
 {
 //cerr <<"---> HUD: ADDING "<< Binding::fptr_name <<": "<< (void*)f <<" -> "<< f() <<'\n';
-	_elements.emplace_back(std::in_place_type<Binding>, f, Binding::string_fn_ptr_name);
-/*
+	_elements.emplace_back(f);
+/*!! OLD:
 	//-------------------------------------------------------------
 		// Helpers to avoid including the monstrosity of <type_traits> just for std::remove_const:
 		private: template <class T> struct _nonstd_remove_const          { typedef T type; };
@@ -60,7 +60,7 @@ void HUD::add(Binding::STRING_FN_PTR f)
 //!!??		std::cerr << type_name << " -> " << (void*)any_cast<void*>(ptr) << " added." << endl;
 //		std::cerr << type_name << " added." << endl;
 	}
-*/
+!!*/
 }
 
 

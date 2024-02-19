@@ -1,8 +1,8 @@
-#ifndef _DMN78405B0T873YBV24C467I_
+﻿#ifndef _DMN78405B0T873YBV24C467I_
 #define _DMN78405B0T873YBV24C467I_
 
 #include <typeinfo>
-#include <type_traits> // remove_const
+#include <type_traits>
 #include <any>
 #include <functional>
 #include <utility> // inplace_type_t
@@ -30,24 +30,25 @@ public:
 	using STRING_FUNCTOR = std::function<std::string()>; //! not a raw fn pointer (not a ptr at all), but a (stateful?) function object, so not convertible to/from void*!
 		//!NOTE: "stateless" lambdas will (or just could?) also get auto-converted to plain old functions!
 
+	//--------------------------------------------------------------------
 	// Convenience ctors for string literals...
-	Binding(const char* literal);
+	//--------------------------------------
 
-	// Add any other pointer-type binding...
-		// Helpers to avoid including the monstrosity of <type_traits> just for std::remove_const:
-//!!		private: template <class T> struct _nonstd_remove_const          { typedef T type; };
-//!!		private: template <class T> struct _nonstd_remove_const<const T> { typedef T type; };
-	public:
-	template <typename T> Binding(T* var, const char* type_name = nullptr) :
-//!!		_data_ptr(const_cast<typename _nonstd_remove_const<T>::type*>(var)),
-		_data_ptr((std::remove_const<T>*)(var)),
-		_type(type_name ? type_name : typeid(std::remove_const_t<T>).name())
-	{}
+	Binding(const char* literal);
 
 	// These can't be part of the template, as stateless ("captureless") lambdas wouldn't match without casting!
 	//!!?? [What did I mean? Lambdas with empty [] do match? :-o Is the standard?]
 	Binding(STRING_FN_PTR f);
 	Binding(CHARPTR_FN_PTR f);
+
+	// Add any other pointer-type binding...
+	template <typename T>
+		requires (!std::convertible_to<T, std::function<std::string()>>)
+	Binding(T* var, const char* type_name = nullptr) :
+		_data_ptr(const_cast<typename std::remove_const_t<T>*>(var)), //!! Does this really need to be this f* ridiculous in C++?
+		_type(type_name ? type_name : typeid(std::remove_const_t<T>).name())
+	{}
+
 
 	// Catch-all lambda matcher (needs no cast for lambdas, but we know kinda nothing here...)
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -63,6 +64,14 @@ public:
 //!!		static_assert(!std::is_rvalue_reference_v<decltype(f)>, "Only lvalues are allowed for binding!");
 //std::cerr << "- unknown type -- hopefully a lambda! :) -- catched...\n";
 	}
+
+/*!! GCC bug 85282 prevents these from being declared right here:
+	template <> Binding(std::string value) : _data_ptr(std::in_place_type<std::string>, value), _type(string_literal_name) {}
+	template <> Binding(int value)         : _data_ptr(std::in_place_type<int>, value), _type(int_literal_name) {}
+	template <> Binding(float value)       : _data_ptr(std::in_place_type<float>, value), _type(float_literal_name) {}
+	template <> Binding(double value)      : _data_ptr(std::in_place_type<double>, value), _type(double_literal_name) {}
+!!*/
+	//--------------------------------------------------------------------
 
 	// "promptless watcher" call form (a bit too vague tho, but would "mostly work"...):
 //	template <typename T> auto add(T* var) { return add("", var); }
@@ -149,13 +158,11 @@ Please choose the Technical Support command on the Visual C++ Help menu, or open
 
 }; // class Binding
 
-
-//! (GCC didn't compile this inside the class, where it would be more in-context.)
+//! GCC won't compile these inside the class due to https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85282:
 template <> inline Binding::Binding(std::string value) : _data_ptr(std::in_place_type<std::string>, value), _type(string_literal_name) {}
 template <> inline Binding::Binding(int value)         : _data_ptr(std::in_place_type<int>, value), _type(int_literal_name) {}
 template <> inline Binding::Binding(float value)       : _data_ptr(std::in_place_type<float>, value), _type(float_literal_name) {}
 template <> inline Binding::Binding(double value)      : _data_ptr(std::in_place_type<double>, value), _type(double_literal_name) {}
-
 
 }; // namespace UI
 
