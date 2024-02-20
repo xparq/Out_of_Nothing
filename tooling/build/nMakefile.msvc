@@ -123,7 +123,7 @@ CFLAGS=$(CFLAGS) -DBACKEND=SFML
 !if "$(SFML)" == "static"
 CFLAGS=$(CFLAGS) -DSFML_STATIC
 !endif
-CXXFLAGS=-std:c++latest
+CXXFLAGS=-std:c++latest -utf-8 -Zc:preprocessor
 # Add a -I also for including the commit hash file:
 CFLAGS=$(CFLAGS) -I$(out_dir)
 # Add a -I also for 'extern' (perhaps redundantly, as the env should have it, but it's so generic):
