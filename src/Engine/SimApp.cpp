@@ -83,8 +83,9 @@ void SimApp::init()
 		time.last_model_Δt = cfg.fixed_model_dt; // Otherwise no one might ever init this...
 
 	// Session pre-init...
-	if (!sz::to_bool(args("session-autosave"), sz::str::empty_is_true) // explicitly set to false?
-	    || args["session-no-autosave"])
+	if (!sz::to_bool(args("session-autosave"), sz::str::empty_is_true) // Explicitly set to false?
+	    || args["no-session-autosave"] || args["session-no-autosave"]
+	    || args["session-no-save"] || args["no-session-save"]) // Also support these "DEPRECATED" options (#556)!
 		session.set_autosave(false);
 	if (!args("session-save-as").empty()) // Even if autosave disabled. (Could be reenabled later, or manual save...)
 		session.set_save_as_filename(args("session-save-as"));

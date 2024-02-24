@@ -129,6 +129,16 @@ cerr << "- NOTE: --interact overrides cfg/sim/global_interactions.\n";
 		global_interactions = sz::to_bool(args("interact"), sz::str::empty_is_true);
 	}
 
+	// Warn about deprecated options (!!should have a proper declarative mechanism for this!!):
+	auto _warn_deprecated = [](const char* argname, const char* alt = nullptr) {
+		cerr << "- WARNING: " << argname << " is DEPRECATED!\n";
+		if (alt) cerr << "  Use " << alt << " instead.\n";
+	};
+	const char* argname;
+	argname = "--session-no-save"; if (args[argname+2]) _warn_deprecated(argname, "--no-session-autosave");
+	argname = "--no-session-save"; if (args[argname+2]) _warn_deprecated(argname, "--no-session-autosave");
+
+
 	//!! 4. Fixup...
 
 	//!! Decide & consolidate whether to go with normalized abs. paths, or keep them as-is,
