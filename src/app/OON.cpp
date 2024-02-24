@@ -47,22 +47,17 @@ OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
 }
 
 //----------------------------------------------------------------------------
-void OONApp::init() // override
+void OONApp::init() //override
+/*!
+    The data watcher HUD setup is tied directly to the model world state (incl. e.g. the
+    player objects), so model init (init_world) MUST happen before UI init (_setup_UI)!
+!*/
 {_
 ZoneScoped;
-	//!! Currently, the data watcher HUD setup depends directly on the player objects
-	//!! that have just been created above, so the UI init CAN'T happen before that...:
-	//_setup_UI();
-
-	const auto& w = const_world();
-		//!! "Some" model world has been implicitly created by SimApp for now... :-o
 
 	// Images...
-//!!!!
-//!!!! Currently there's no automatic guidance: this must be manually placed before the first add_entity() (etc.)!
-//!!!!
 	//!!
-	//!! THIS MUST COME BEFORE CALLING add_entity() or its friends! :-o
+	//!! MUST COME BEFORE CALLING add_entity() or its friends! :-o
 	//!!
 	avatars.emplace_back(Avatar{ .image_path = "image/HoryJesus.jpg", .tint_RGBA = 0xffff99ff });
 	tx_jesus = avatars.size() - 1;
@@ -70,33 +65,34 @@ ZoneScoped;
 	tx_santa = avatars.size() - 1;
 	avatars.emplace_back(Avatar{ .image_path = "image/KittyGod.jpg"});
 	tx_kittygod = avatars.size() - 1;
-	//!! Also this, called manually... Sigh... A temp. workaround for #472:
-	//!! (And this is a pretty arbitrary position for that, too! :-o :-/ )
-	oon_main_view().reset();
 
+	//!! OMG, also the cringefest!... The view.reset() below is needed to sync the view._avatars list with the "real" avatars,
+	//!! which is -- alas, counterintuitively! -- expected by (something in) add_entity(), I guess! :-o :-/
+	//!! -> WHICH SHOULD BE FIXED, MOST LIKELY!
+cerr << "DBG> Right after loading the avatar images (in "<<__FUNCTION__<<"):\n";
+	oon_main_view().reset(); //!!REPLACE THIS WITH A SANER WAY TO SYNC THE VIEW TO THE APP STATE (i.e. the avatars)!
 
-	// Add the "Player Superglobe" first
 	//!!
-	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
+	//!! MOVE THIS TO SimApp! But can't yet be, as the stupid avatar loading must happen first! :-o
+	//!! (Which should be either fully decoupled from the model (so the order shouldn't matter),
+	//!! of integrated right into it (so it could stop being a mere gimmick)!)
 	//!!
-	auto player_id = add_player(
-		{.r = w.CFG_GLOBE_RADIUS, // Will be recalculated anyway...
-		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
-		 .p = {0,0}, .v = {0,0},
-		 .color = 0xffff20,
-		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
-		avatars[tx_jesus],
-		controls
-	);
-	assert(players.size() == 1);
-	assert(entity_count() > player(player_id).entity_ndx);
-	assert(player_entity_ndx() == player(player_id).entity_ndx);
+	//!! SHOULD BE CALLED BY the default impl. of SimApp::init(), AT THE APPROPRIATE TIME
+	//!! (E.G. IN ACCORDANCE WITH SESSION LOADING!), BUT FOR NOW, AS THAT POINT DOESN'T EXIST YET...:
+	//!!
+	init_world(); //!! Also, it can only be done after getting rid of the RAII app init (#483) to regain virtual dispatch...
 
-	focused_entity_ndx = player(player_id).entity_ndx;
+	// Note also that init_world() is eventually wasted if we're also loading a session,
+	// but that's a price paid for *some* level of simplicity in the init sequence.
+	//!!
+	//!! BTW: Even the player entity(/-ies) get(s) deleted/recreated by a load, which should change in the future!
+	//!! (Unless it would be made reasonable to reload a "multiplayer session" -- whatever that (and saving it) should even mean...)
+	//!!
 
-	_setup_UI();
-
-	//!! MOVE THE SESSION LOGIC TO SimApp:
+	//!!
+	//!! MOVE THE SESSION LOGIC TO SimApp!
+	//!! (NOTE: Can't move it to init_world_hook() either, and that may not even exist!...)
+	//!!
 	// Restore or start session (currently just loading a snapshot...) if requested (i.e. --session=name)...
 	if (args["session"]) { // If empty, a new unnamed session will be started; see also at done()!
 		session.open(args("session")); // So, a previously autosaved unnamed session state will NOT be loaded implicitly!
@@ -115,25 +111,9 @@ ZoneScoped;
 
 	// App-level cmdline options (overrides)...
 	// Note: the (!!actually: "some"...!!) system-/engine-level options have been processed/applied already!
+	//!! RECONCILE THIS WITH THE WORLD STATE ATTRIBUTES IN world_init_hook()!
 	try { // <- Absolutely required, as sto...() are very throw-happy.
-		// Doing the ones that can't fail first, so an excpt. won't skip them:
-		if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
-			interact_all();
-		}; if (args["bodies"]) {
-			auto n = stoi(args("bodies"));
-			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
-		 } else if (!args["session"]) { //! Only if no session being loaded...
-		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
-cerr << "DBG> Creating two small moons by default...\n";
-			// Add 2 "moons" with fixed parameters (mainly for testing):
-			add_entity({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-						.color = 0xff2020, .mass = 3e24f});
-			add_entity({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
-						.color = 0x3060ff, .mass = 3e24f});
-		}; if (args["friction"]) {
-			float f = stof(args("friction"));
-			world().friction = f;
-		}; if (!args("zoom-adjust").empty()) {
+		if (!args("zoom-adjust").empty()) {
 			// Trim the original base scale level:
 			if (float trim = stof(args("zoom-adjust")); trim) {
 				oon_main_camera().cfg.base_scale *= trim;
@@ -145,6 +125,21 @@ cerr << "DBG> Creating two small moons by default...\n";
 		request_exit(-1);
 		return;
 	}
+
+	// Focus on Player #1:
+	focused_entity_ndx = player_entity_ndx(1); //!!... See init_world_hook()!
+
+	//!! Absolutlely MUST come after the world init (i.e. session loading!)
+	//!! Also: the widgets are only (or mostly) initialized from prior app state, and not updated by (most)
+	//!! app-level ops, so with an early UI setup some widgets may get out of sync by later app changes!
+	_setup_UI(); //!!?? Should this come even after the main_view init? (Or will the main view eventually need to depend on the UI??)
+
+	//!! Also this, called manually... Sigh... A temp. workaround for #472:
+	//!! (And this is a pretty arbitrary place for that, too! :-o :-/ )
+	//!! ALSO: if there was a session load, it has already called it, so there
+	//!! are double debug outputs for it...
+cerr << "DBG> After UI setup (in "<<__FUNCTION__<<"):\n";
+	oon_main_view().reset();
 
 	// Audio...
 	//!
@@ -170,7 +165,7 @@ cerr << "DBG> Creating two small moons by default...\n";
 
 
 //----------------------------------------------------------------------------
-void OONApp::done() // override
+void OONApp::done() //override
 {
 //	cerr << __FUNCTION__ << ": Put any 'onExit' tasks (like saving the last state) here!...\n";
 
@@ -178,6 +173,56 @@ void OONApp::done() // override
 	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
 	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
 		session.close();
+	}
+}
+
+void OONApp::init_world_hook() //override
+{_
+	auto& w = world(); //!! Using the default-constr'd (so basically undefined!)
+	                   //!! model world implicitly created by SimApp!... :-o
+
+	// Add the "Player Superglobe" first
+	//!!
+	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
+	//!!
+cerr << "DBG> Adding player #1...\n";
+	auto player_id = add_player(
+		{.r = w.CFG_GLOBE_RADIUS, // Will be recalculated anyway...
+		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
+		 .p = {0,0}, .v = {0,0},
+		 .color = 0xffff20,
+		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
+		avatars[tx_jesus],
+		controls
+	);
+	assert(players.size() == 1);
+	assert(entity_count() > player(player_id).entity_ndx);
+	assert(player_entity_ndx() == player(player_id).entity_ndx);
+
+
+	try { // <- Absolutely required, as sto...() are very throw-happy.
+		// Doing the ones that can't fail first, so an excpt. won't skip them:
+		if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
+			interact_all();
+		}; if (args["bodies"]) {
+			auto n = stoi(args("bodies"));
+			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
+		   } else if (!args["session"]) { //! Only if no session being loaded...
+		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
+cerr << "DBG> Creating two small moons by default...\n";
+			// Add 2 "moons" with fixed parameters (mainly for testing):
+			add_entity({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+						.color = 0xff2020, .mass = 3e24f});
+			add_entity({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
+						.color = 0x3060ff, .mass = 3e24f});
+		}; if (args["friction"]) {
+			float f = stof(args("friction"));
+			world().friction = f;
+		};
+	} catch(...) {
+		cerr << __FUNCTION__ << ": ERROR processing/applying some cmdline args!\n";
+		request_exit(-1);
+		return;
 	}
 }
 
@@ -556,7 +601,7 @@ void OONApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* 
 {w, obj1, obj2, dt, distance;
 }
 
-void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...) //override;
+void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...) //override
 {
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;

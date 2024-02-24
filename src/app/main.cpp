@@ -61,9 +61,9 @@ cerr << "DBG> Size of the app (game) obj.: "<< sizeof(game) << '\n';
 	}
 
 	cerr	<< "Profiling stats:\n"
-		<< "----------------------------------------------------------\n"
-		<< "- Use the Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n" //!!WAS: IPROF_ALL_THREAD_STATS
-		<< "----------------------------------------------------------\n"
+		<< "------------------------------------------------------\n"
+		<< "- Use Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n"
+		<< "------------------------------------------------------\n"
 	;
 
 	cerr << "DBG> main() returning: " << exit_code << '\n';

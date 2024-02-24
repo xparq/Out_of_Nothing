@@ -72,18 +72,32 @@ ZoneScoped;
 
 
 //============================================================================
-void World::update(float dt, SimApp& game)
-//!! Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
+void World::init(Szim::SimApp& app)
 {
+	app.init_world_hook();
+}
+
+void World::update(float dt, SimApp& app)
+//!! Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
+{
+	update_before_interactions(dt, app);
+	update_pairwise_interactions(dt, app);
+	update_after_interactions(dt, app);
+}
+
 //----------------------------------------------------------------------------
-#define _SKIP_SOME_STATE_UPDATES_ 10
-	// Slow changes (like cooling bodies) don't need updates in every frame
+#define _AUTOGENIC_UPDATE_SKIP_COUNT_ 10
+	// Slow changes (like cooling) don't need updates in every frame
 	//!! Normalize for frame rate! (Needs the avg. frame-time as input then!)
 
-//#define _SKIP_SOME_INTERACTIONS_ 3
+//#define _PAIRWISE_UPDATE_SKIP_COUNT_ 3
 	//!! Should spread the "skippage" across varied blocks of entities
-        //!! not just entirely skipping some frames for all (-> very jittery!)
+        //!! not just entirely skipping some frames for all (-> jitter!)
+
+
 //----------------------------------------------------------------------------
+void World::update_before_interactions(float dt, Szim::SimApp& app [[maybe_unused]])
+{
 ZoneScoped;
 
 	if (dt == 0.f) { // (Whatever the accuracy of this, good enough.)
@@ -91,15 +105,15 @@ ZoneScoped;
 		         // for any "timeless features"), but for now: fix #298!
 	}
 
-#ifdef _SKIP_SOME_STATE_UPDATES_
+#ifdef _AUTOGENIC_UPDATE_SKIP_COUNT_
 //!!testin' testin'...
-static int skipping_T_recalc = _SKIP_SOME_STATE_UPDATES_ * 10;
+static int skipping_T_recalc = _AUTOGENIC_UPDATE_SKIP_COUNT_ * 10;
 static float accumulated_skip_dt = 0; // s
 auto last_dt = dt;
 #endif
 
-#ifdef _SKIP_SOME_INTERACTIONS_
-static int skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
+#ifdef _PAIRWISE_UPDATE_SKIP_COUNT_
+static int skipping_n_interactions = _PAIRWISE_UPDATE_SKIP_COUNT_;
 #endif
 
 	// Go through autogenic effects first:
@@ -133,9 +147,9 @@ static int skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
 			//!! should always unconditionally map T to real color...
 			//!!
 			//!! Well, OK, doing a "skiprate" refresh here, so that's gonna be the condition then...
-#ifdef _SKIP_SOME_STATE_UPDATES_
+#ifdef _AUTOGENIC_UPDATE_SKIP_COUNT_
 			if (!--skipping_T_recalc) {
-				skipping_T_recalc = _SKIP_SOME_STATE_UPDATES_ * 10;
+				skipping_T_recalc = _AUTOGENIC_UPDATE_SKIP_COUNT_ * 10;
 				body->recalc();
 //cerr << "#"<<i <<" Recalculated (T = " << body->T << ").\n";
 			}
@@ -151,19 +165,23 @@ static int skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
 		}
 	}
 
-#if defined(_SKIP_SOME_STATE_UPDATES_) && defined(_SKIP_SOME_INTERACTIONS_)
+#if defined(_AUTOGENIC_UPDATE_SKIP_COUNT_) && defined(_PAIRWISE_UPDATE_SKIP_COUNT_)
 //!!testin' testin'...
-if (_SKIP_SOME_STATE_UPDATES_ && --skipping_n_interactions) {
+if (_AUTOGENIC_UPDATE_SKIP_COUNT_ && --skipping_n_interactions) {
 	accumulated_skip_dt += dt; goto end_interact_loop;
 } else {
 //	cerr << ".";
 	// Consume the time we've "collected" while skipping:
 	if (accumulated_skip_dt > 0) { dt = accumulated_skip_dt; accumulated_skip_dt = 0; }
 	// Start skipping again:
-	skipping_n_interactions = _SKIP_SOME_INTERACTIONS_;
+	skipping_n_interactions = _PAIRWISE_UPDATE_SKIP_COUNT_;
 }
 #endif
+}
 
+//----------------------------------------------------------------------------
+void World::update_pairwise_interactions(float dt, Szim::SimApp& app)
+{
 // Now do the interaction matrix:
 //!!
 //!! PROTECT AGAINST OTHER THREADS POTENTIALLY ADDING/DELETING OBJECTS!
@@ -239,7 +257,7 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 				static constexpr float EPS_COLLISION = CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
 				if (abs(distance - (target->r + source->r)) < EPS_COLLISION ) {
 //cerr << "Touch!\n";
-					if (!game.touch_hook(this, target, source)) {
+					if (!app.touch_hook(this, target, source)) {
 						;
 					}
 				} else {
@@ -248,7 +266,7 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 
 				// Note: calling the hook before processing the collision!
 				// If the listener returns false, it didn't process it, so we should.
-				if (!game.collide_hook(this, target, source, distance)) {
+				if (!app.collide_hook(this, target, source, distance)) {
 
 					//!! Handle this in a hook:
 					//target->v = {0, 0}; // - or bounce, or stick to the other body and take its v, or any other sort of interaction...
@@ -269,10 +287,10 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 				}
 
 				//! Also call a high-level, "predefined emergent interaction" hook:
-//!!...				game.undirected_interaction_hook(this, Event::Collided, source, target, dt, distance);
+//!!...				app.undirected_interaction_hook(this, Event::Collided, source, target, dt, distance);
 
 			} else { // process gravity if not colliding
-				//!!game.directed_interaction_hook(this, source, target, dt, distance);
+				//!!app.directed_interaction_hook(this, source, target, dt, distance);
 					//!! Wow, this fn. call costs an FPS drop from ~175 to ~165 with 500 objs.! :-/
 #ifndef DISABLE_FULL_INTERACTION_LOOP
 if (loop_mode == LoopMode::Full) { // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
@@ -368,14 +386,18 @@ if(((OONApp&)game).controls.ShowDebug) {
 	} // inner loop (of targets)
 } // outer loop (of soucres)
 
-#ifdef _SKIP_SOME_INTERACTIONS_
+#ifdef _PAIRWISE_UPDATE_SKIP_COUNT_
 end_interact_loop:
 dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 #endif
+}
 
+//----------------------------------------------------------------------------
+void World::update_after_interactions(float dt, Szim::SimApp& app)
+{
 	// All-inclusive postprocessing loop for friction [but why here? test what diff it makes if done in the pre-interact. loop],
 	// and actually updating the positions finally
-	for (size_t i = 0; i < obj_cnt; ++i)
+	for (size_t obj_cnt = bodies.size(), i = 0; i < obj_cnt; ++i)
 	{
 		auto& body = bodies[i];
 
@@ -385,7 +407,7 @@ dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 		
 		// And finally, the positions:
 ///*!!
-if(((OONApp&)game).controls.ShowDebug) {
+if(((OONApp&)app).controls.ShowDebug) {
 	cerr << "#"<<i<<": moving this much: "<< body->v.x * dt <<", "<< body->v.x <<"\n";
 }
 //!!*/

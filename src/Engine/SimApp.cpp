@@ -54,7 +54,7 @@ Options:
 //----------------------------------------------------------------------------
 void SimApp::init()
 //
-// Internal init, called from the ctor...
+// Internal engine init, called from the ctor...
 //
 // >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE YET!  <<<
 //
@@ -67,7 +67,7 @@ void SimApp::init()
 	// Misc. fixup that should've been in the ctors, but C++...
 
 	//
-	// Some args aren't yet (!!?? can't/shoudn't?) be handled by SimAppConfig itself...
+	// Some args aren't yet (!!?? can't/shouldn't be?) handled by SimAppConfig itself...
 	//
 	//!! Disabling sound from the cmdline may mean either disabling the sound
 	//!! engine + the control UI entirely, or just the initial state!
@@ -82,11 +82,10 @@ void SimApp::init()
 	if (cfg.fixed_model_dt_enabled)
 		time.last_model_Δt = cfg.fixed_model_dt; // Otherwise no one might ever init this...
 
-	// Sessions...
+	// Session pre-init...
 	if (!sz::to_bool(args("session-autosave"), sz::str::empty_is_true) // explicitly set to false?
 	    || args["session-no-autosave"])
 		session.set_autosave(false);
-
 	if (!args("session-save-as").empty()) // Even if autosave disabled. (Could be reenabled later, or manual save...)
 		session.set_save_as_filename(args("session-save-as"));
 
@@ -96,7 +95,7 @@ cerr << "<<< SimApp Engine/API initialized. >>>\n\n";
 //----------------------------------------------------------------------------
 void SimApp::done()
 //
-// Internal cleanup, called from the dtor...
+// Internal engine cleanup, called from the dtor...
 //
 // >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE ANY MORE!  <<<
 //

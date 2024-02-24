@@ -76,6 +76,8 @@ protected:
 		}
 	}
 
+	const Avatar_sfml& avatar(size_t ndx = 0) const;
+
 	// -------------------------------------------------------------------
 	// Data...
 	// -------------------------------------------------------------------
@@ -90,7 +92,6 @@ private:
 	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change;
 
 	std::vector< std::unique_ptr<Avatar_sfml> > _avatars;
-	const Avatar_sfml& avatar(size_t ndx = 0) const;
 
 }; // class OONMainDisplay_sfml
 

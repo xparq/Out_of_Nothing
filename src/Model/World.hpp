@@ -90,8 +90,9 @@ public:
 		UseDefault = unsigned(-1), //!! Not actually part of the value set (but an add-on type!), but C++...
 	};
 
-	struct Body //!! : public Serializable //! No: this would kill the C++ init list syntax!...
-	                                       //! So, just keep it a memcpy-able POD type for easy loading!
+	struct Body //!! : public Serializable //! No: this would kill the C++ designated init syntax! :-/
+	                                       //! Also old-school; template-/concept-based approaches are superior.
+	                                       //! Keep it trivially_copyable (not POD: they can't have ctors!) for easy loading!
 	//! Inner class of World, because it depends on the physics (e.g. constants).
 	//!! But that could be addressed by just being in the same namespace,
 	//!! and then stuff that only need Entity could spare including the World.
@@ -157,7 +158,14 @@ public:
 	};
 
 	//------------------------------------------------------------------------
-	void update(float dt, Szim::SimApp& app); // ++world
+	// world init, ++world...
+	//--------
+	void init(Szim::SimApp& app);
+
+	void update(float dt, Szim::SimApp& app);
+	void update_before_interactions(float dt, Szim::SimApp& app);
+	void update_pairwise_interactions(float dt, Szim::SimApp& app);
+	void update_after_interactions(float dt, Szim::SimApp& app);
 
 //----------------------------------------------------------------------------
 // API Ops...

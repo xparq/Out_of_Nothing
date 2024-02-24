@@ -145,8 +145,11 @@ protected:
 	//bool save_snapshot(const char* fname) override; // Nothing special to do for this one.
 
 	//------------------------------------------------------------------------
-	// Model event callback implementations...
-		//!!Then move it to some more "modelly place" later, as things get more complicated
+	// Model callback implementations...
+	//!! Move these out of the direct app code to an app-level custom model class set!
+	//!! And then the model callback mechanism could be simplified to not doing it in
+	//!! the core abstract Model at all, but in the custom layer, only when needed.
+	void init_world_hook() override;
 	void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...) override;
 	void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...) override;
 	bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2) override;

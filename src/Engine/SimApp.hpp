@@ -63,7 +63,9 @@ public:
 	virtual void done(); // Optional cleanup; will not be called if init() was aborted.
 	                     // No need to call the "upstream" done() from an override.
 	virtual void poll_controls() {}
-	virtual bool perform_control_actions() { return false; } // false: no changes to the model
+	virtual bool perform_control_actions() { return false; } // false: no model changes
+
+	virtual void init_world() { world().init(*this); } //!!TODO: Called by the default init(), before the 1st update_world().
 	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
 
 	unsigned fps_throttling(unsigned fps = unsigned(-1));
@@ -179,6 +181,8 @@ public:
 
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)
+
+	virtual void init_world_hook() {} // Called by world.init().
 	/*
 	virtual bool collide_hook(World* w, Entity* obj1, Entity* obj2)
 	{w, obj1, obj2;
