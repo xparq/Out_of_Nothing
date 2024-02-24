@@ -490,21 +490,29 @@ cerr << "DBG> Click: no obj.\n";
 					assert(clicked_entity_id == ~0u);
 				}
 
+			//!! PROCESSING SHIFT MAKES NO SENSE WHILE ALSO HAVING SHIFT+MOVE, AS THAT WOULD ALWAYS JUST KEEP
+			//!! THE CURRENT OBJECT AT THE M. POINTER, MAKING IT IMPOSSIBLE TO CLICK ON ANYTHING ELSE! :)
+			//!! -- EVEN IF NOTHING IS SELECTED, AS SHIFT+MOVE IS FREE PANNING!...
+
 				// Select the clicked object, if any (unless holding CTRL!)
 				/*if (!keystate(CTRL))*/ //!! Really should be ALT, but... that's the stupid shield. :)
 					focused_entity_ndx = clicked_entity_id == ~0u
 					                     ? (/*keystate(ALT) ? player_entity_ndx() // Select the player with a dedicated modifier; same as with Home!
 				                                                : */(keystate(SHIFT) ? focused_entity_ndx : ~0u))
 				                             : clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
-
+/*!!
 				// Pan the selected object to focus, if holding SHIFT
+				//!!?? -- WHAT? There should be no panning whatsoever on a simple click!
 				if (keystate(SHIFT)) {
  					// Select the player by default; same as with Home!
  					// (Unless, as above, holding CTRL!)
-					if (/*!keystate(CTRL) && */focused_entity_ndx == ~0u)
+					if (//!keystate(CTRL) &&
+					    focused_entity_ndx == ~0u)
 						focused_entity_ndx = player_entity_ndx();
+//!!?? -- SHIFT should just have the usual effect of locking the scroll!
 					pan_to_focus(focused_entity_ndx); //! Tolerates ~0u!
 				}
+!!*/
 				if (focused_entity_ndx == ~0u)
 					cerr << "- Nothing there. Focusing on the deep void...\n"; //!! Do something better than this... :)
 				break;
