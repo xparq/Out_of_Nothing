@@ -26,6 +26,13 @@ namespace _internal {
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 class OONApp_sfml : private _internal::FUCpp_ViewHack, public OONApp
+//!
+//! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
+//!	and "pure" code! :-/
+//!
+//!	template< class AppSysImpl > // CRTP for backend-specifics
+//!	class OONApp_sfml : private _internal::FUCpp_ViewHack, public OONApp
+//!
 {
 //--------------------------------------------------------------------
 // SFML-specific overrides...

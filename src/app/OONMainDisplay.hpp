@@ -16,6 +16,13 @@ namespace OON {
 class OONApp;
 
 class OONMainDisplay : public Szim::View::ScreenView
+//!
+//! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
+//!	and "pure" code! :-/
+//!
+//!	template< class AppSysImpl > // CRTP for backend-specifics
+//!	class OONMainDisplay : public Szim::View::ScreenView
+//!
 {
 public:
 	//!!Migrating from the legacy renderer (move to the config!!):

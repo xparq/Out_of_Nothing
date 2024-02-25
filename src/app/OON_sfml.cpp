@@ -230,14 +230,15 @@ void OONApp_sfml::draw() // override
         gui.render(); // Draw last, as a translucent overlay!
 //!! These are (will be...) also part of the GUI:
 #ifndef DISABLE_HUD
-	if (_show_huds) {
-		timing_hud.draw(SFML_WINDOW());
-		world_hud.draw(SFML_WINDOW());
-		view_hud.draw(SFML_WINDOW());
-		object_hud.draw(SFML_WINDOW());
-		debug_hud.draw(SFML_WINDOW());
+	if (_ui_show_huds) {
+		auto& target = SFML_WINDOW();
+		timing_hud.draw(target);
+		world_hud.draw(target);
+		view_hud.draw(target);
+		object_hud.draw(target);
+		debug_hud.draw(target);
 		if (help_hud.active())
-			help_hud.draw(SFML_WINDOW()); //!! This active-chk is redundant: HUD::draw() does the same. TBD: who's boss?
+			help_hud.draw(target); //!! This active-chk is redundant: HUD::draw() does the same. TBD: who's boss?
 		                                      //!! "Activity" means more than just drawing, so... (Or actually both should control it?)
 	}
 #endif
@@ -423,7 +424,7 @@ try {
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
 				case 'g':
-					sfw::getWidget<sfw::OptionsBox<Model::World::GravityMode>>("Gravity mode")->selectNext();
+					sfw::getWidget<GravityModeSelector>("Gravity mode")->selectNext();
 					break;
 //				case 'f': world().friction -= 0.01f; break;
 //				case 'F': world().friction += 0.01f; break;

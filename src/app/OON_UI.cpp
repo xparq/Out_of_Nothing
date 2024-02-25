@@ -54,14 +54,15 @@ void OONApp::show_cmdline_help(const Args& args, const char* banner)
 
 //----------------------------------------------------------------------------
 #ifndef DISABLE_HUD
-void OONApp::toggle_huds()  { _show_huds = !_show_huds; }
-bool OONApp::huds_active()  { return _show_huds; }
+void OONApp::toggle_huds()  { _ui_show_huds = !_ui_show_huds; }
+bool OONApp::huds_active()  { return _ui_show_huds; }
 void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }
 #endif
 
 //----------------------------------------------------------------------------
-void OONApp::_setup_UI()
+void OONApp::ui_setup()
 {
+	auto& app = *this; //!! Remnant from an aborted attempt to make this _UI_::setup(SimApp& app)...
 	using namespace sfw;
 
 	// The SFW GUI is used as a translucent overlay, so an alpha-enabled bgColor
@@ -74,18 +75,19 @@ void OONApp::_setup_UI()
 	auto	perf_form = gui_main_hbox->add(new Form);
 		perf_form->add("FPS", new ProgressBar({.length=60, .range={0, 120}, .clamp=false}));
 		perf_form->add("- limit", new Slider({.length=60, .range={0, 120}, .step=30}))
-			->set(fps_throttling())
-			->setCallback([this](auto* w){fps_throttling((unsigned)w->get());});
+			->set(app.fps_throttling())
+			->setCallback([&](auto* w){ app.fps_throttling((unsigned)w->get()); });
 		perf_form->add("Fixed model Δt", new CheckBox(
-			[&](auto*){ this->toggle_fixed_model_dt(); }, cfg.fixed_model_dt_enabled));
+			[&](auto*){ app.toggle_fixed_model_dt(); }, app.cfg.fixed_model_dt_enabled));
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
 	// UI/View controls...
 	auto	view_form = gui_main_hbox->add(new Form);
-		view_form->add("Show HUDs", new CheckBox([&](auto*){ this->toggle_huds(); }, huds_active()));
+		view_form->add("Show HUDs", new CheckBox([&](auto*){ app.toggle_huds(); }, app.huds_active()));
 		    gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
-		view_form->add("Grid lines", new CheckBox([&](auto* w){oon_main_camera().cfg.gridlines = w->get();}, oon_main_camera().cfg.gridlines));
+		view_form->add("Grid lines", new CheckBox([&](auto* w){ app.oon_main_camera().cfg.gridlines = w->get(); },
+		                                          app.oon_main_camera().cfg.gridlines));
 		view_form->add("Pan follows object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
 
@@ -95,36 +97,36 @@ void OONApp::_setup_UI()
 	auto left_vbox = gui_main_hbox->add(new VBox);
 		auto	volrect = left_vbox->add(new Form, "VolForm");
 			volrect->add("Volume", new Slider({.length=70, /*.orientation=Vertical*/})) //!! not needed: , "volume slider")
-			->setCallback([&](auto* w){backend.audio.volume(w->get());})
+			->setCallback([&](auto* w){ app.backend.audio.volume(w->get()); })
 			->update(75); // %
 		auto	audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
-			audio_onoff->add("Audio: ", new CheckBox([&](auto*){backend.audio.toggle_audio();}, backend.audio.enabled));
-			audio_onoff->add(" - FX: ", new CheckBox([&](auto*){backend.audio.toggle_sounds();}, backend.audio.fx_enabled));
+			audio_onoff->add("Audio: ", new CheckBox([&](auto*){ app.backend.audio.toggle_audio(); },  app.backend.audio.enabled));
+			audio_onoff->add(" - FX: ", new CheckBox([&](auto*){ app.backend.audio.toggle_sounds(); }, app.backend.audio.fx_enabled));
 
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
 
 	// Physics - exp. tweaks...
 	auto	phys_form = gui_main_hbox->add(new Form);
-		auto g_select = new OptionsBox<World::GravityMode>();
+		auto g_select = new GravityModeSelector();
 			g_select->add("Off",          World::GravityMode::Off);
 			g_select->add("Hyperbolic",   World::GravityMode::Hyperbolic);
 			g_select->add("Realistic",    World::GravityMode::Realistic);
 			g_select->add("Experimental", World::GravityMode::Experimental);
 			g_select->set(World::GravityMode::Default);
-			g_select->setCallback([&](auto* w){ this->world().gravity_mode = w->get(); });
+			g_select->setCallback([&](auto* w){ app.world().gravity_mode = w->get(); });
 		phys_form->add("Gravity mode", g_select)
-			->set(world().gravity_mode);
+			->set(app.world().gravity_mode);
 		phys_form->add(" - bias", new sfw::Slider({.length=80, .range={-3.0, 3.0}, .step=0}))
-			->setCallback([&](auto* w){ this->world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
+			->setCallback([&](auto* w){ app.world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
 				* Math::power(10.f, w->get()); })
 			->set(0);
 #ifndef DISABLE_FULL_INTERACTION_LOOP
-		phys_form->add("Full int. loop", new sfw::CheckBox([&](auto* w){ this->world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
-				world().loop_mode == World::LoopMode::Full));
+		phys_form->add("Full int. loop", new sfw::CheckBox([&](auto* w){ app.world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
+				app.world().loop_mode == World::LoopMode::Full));
 #endif
 		phys_form->add("Friction", new sfw::Slider({.length=80, .range={-1.0, 1.0}, .step=0}))
-			->setCallback([&](auto* w){ this->world().friction = w->get(); })
-			->set(world().friction);
+			->setCallback([&](auto* w){ app.world().friction = w->get(); })
+			->set(app.world().friction);
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
@@ -137,10 +139,10 @@ void OONApp::_setup_UI()
 				->setCallback([&]{
 					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
-						bool compress = cfg.save_compressed;
+						bool compress = app.cfg.save_compressed;
 						if (auto* compress_widget = (CheckBox*)gui.recall("Compress"); compress_widget)
 							compress = compress_widget->get();
-						this->save_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str(),
+						app.save_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str(),
 							compress ? SaveOpt::Compress : SaveOpt::Raw);
 					}
 				});
@@ -149,27 +151,27 @@ void OONApp::_setup_UI()
 				->setCallback([&]{
 					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
-						this->load_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
+						app.load_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
 					}
 				});
 		//!! Basically for testing only:
-		saveload_form->add("Compress", new CheckBox(cfg.save_compressed));
+		saveload_form->add("Compress", new CheckBox(app.cfg.save_compressed));
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
 	// Only position after built, so it has its size:
 	//!! This is also done in onResize(), but that can't be invoked on init (#462) until #515, so...:
-	gui.setPosition(4, main_window_height() - gui.getSize().y - 4);
+	gui.setPosition(4, app.main_window_height() - gui.getSize().y - 4);
 		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
 		//!! Also, negative coords. aren't special in SFW, so this just goes off-screen: gui.setPosition({100, -200});
 
 #ifndef DISABLE_HUD
-	_setup_HUDs();
+	ui_setup_HUDs();
 #endif
 }
 
 #ifndef DISABLE_HUD
-void OONApp::_setup_HUDs()
+void OONApp::ui_setup_HUDs()
 {
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
 	//!!?? in this generic pointer passing context?!
@@ -183,7 +185,7 @@ void OONApp::_setup_HUDs()
 	// Timing
 	ui_gebi(TimingStats)
 		<< "FPS: " << [this](){ return to_string(1 / (float)avg_frame_delay); }
-			<< [this](){ return fps_throttling() ? " (fixed)" : ""; }
+		           << [this](){ return fps_throttling() ? " (fixed)" : ""; }
 		<< "\nlast frame Δt: " << [this](){ return to_string(time.last_frame_delay * 1000.0f) + " ms"; }
 		<< "\nmodel Δt: " << [this](){ return to_string(time.last_model_Δt * 1000.0f) + " ms"; }
 		<<            " " << [this](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
@@ -242,7 +244,7 @@ void OONApp::_setup_HUDs()
 	if (!(player_entity_ndx() < entity_count())) {
 		cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
 	} else {
-		_setup_HUD_ObjMonitor();
+		ui_setup_HUD_ObjMonitor();
 	}
 
 	//------------------------------------------------------------------------
@@ -344,7 +346,7 @@ void OONApp::_setup_HUDs()
 
 
 //----------------------------------------------------------------------------
-void OONApp::_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
+void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
 //! REMEMBER:
 //!	This is just a one-time setup function!
 //!	All the HUD can do later, as the bound data changes, is to display

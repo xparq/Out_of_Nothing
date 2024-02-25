@@ -50,7 +50,7 @@ OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
 void OONApp::init() //override
 /*!
     The data watcher HUD setup is tied directly to the model world state (incl. e.g. the
-    player objects), so model init (init_world) MUST happen before UI init (_setup_UI)!
+    player objects), so model init (init_world) MUST happen before UI init (ui_setup)!
 !*/
 {_
 ZoneScoped;
@@ -132,7 +132,7 @@ cerr << "DBG> Right after loading the avatar images (in "<<__FUNCTION__<<"):\n";
 	//!! Absolutlely MUST come after the world init (i.e. session loading!)
 	//!! Also: the widgets are only (or mostly) initialized from prior app state, and not updated by (most)
 	//!! app-level ops, so with an early UI setup some widgets may get out of sync by later app changes!
-	_setup_UI(); //!!?? Should this come even after the main_view init? (Or will the main view eventually need to depend on the UI??)
+	ui_setup(); //!!?? Should this come even after the main_view init? (Or will the main view eventually need to depend on the UI??)
 
 	//!! Also this, called manually... Sigh... A temp. workaround for #472:
 	//!! (And this is a pretty arbitrary place for that, too! :-o :-/ )
@@ -186,8 +186,9 @@ void OONApp::init_world_hook() //override
 	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
 	//!!
 cerr << "DBG> Adding player #1...\n";
-	auto player_id = add_player(
-		{.r = w.CFG_GLOBE_RADIUS, // Will be recalculated anyway...
+	auto player_id [[maybe_unused]] = //! Only for assertions in a DEBUG build!
+	add_player(
+		{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
 		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
 		 .p = {0,0}, .v = {0,0},
 		 .color = 0xffff20,
@@ -211,10 +212,12 @@ cerr << "DBG> Adding player #1...\n";
 		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
 cerr << "DBG> Creating two small moons by default...\n";
 			// Add 2 "moons" with fixed parameters (mainly for testing):
-			add_entity({.r = w.CFG_GLOBE_RADIUS/10, .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-						.color = 0xff2020, .mass = 3e24f});
-			add_entity({.r = w.CFG_GLOBE_RADIUS/7,  .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
-						.color = 0x3060ff, .mass = 3e24f});
+			add_entity({//.r = w.CFG_GLOBE_RADIUS/10, // Redundant: will be calculated!
+			            .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+			            .color = 0xff2020, .mass = 3e24f});
+			add_entity({//.r = w.CFG_GLOBE_RADIUS/7, // Redundant: will be calculated!
+			            .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
+			            .color = 0x3060ff, .mass = 3e24f});
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
 			world().friction = f;
@@ -1127,10 +1130,49 @@ bool OONApp::load_snapshot(const char* fname) //override
 	//! 1. Halt everything...
 	//     DONE, for now, by the event handler!
 	//! 2. Purge the renderer only...
-	oon_main_view().reset();
 // The engine has already written that:
 //cerr << "Game state restored from \"" << fname << "\".\n";
+
+	_on_snapshot_loaded();
+		//!! (SimApp::load_snapshot could just have a callback directly, instead of
+		//!! this current polymorphic setup -- but I expect loading the app state
+		//!! to become more than just a pure model loading, and then a virtual
+		//!! load_snapshot would become a better match for the task anyway...)
+
 	return true;
+}
+
+//----------------------------------------------------------------------------
+void OONApp::_on_snapshot_loaded()
+//
+// Follow-up changes to make sure the app is consistent with what has just been loaded...
+//
+// NOTE: The loaders are only supposed to validate (consistency-check) the loaded data
+//       itself, not anything between that data and the (rest of the) app state!
+//
+{
+	//
+	// Sync the UI to reflect the new model state...
+	//
+	using namespace sfw;
+
+	// Grav. mode:
+	if (auto* w = (GravityModeSelector*)gui.recall("Gravity mode"); w)
+		w->set(world().gravity_mode);
+
+	//!! The grav. bias widget can only do +/-1000x, so no clean mapping from gravity_strength to that! :-/
+
+	// Drag:
+	if (auto* w = (Slider*)gui.recall("Friction"); w)
+		w->set(world().friction); //!! The stepping may be inconsistent with the loaded value though! :-o
+		                          //!! I think the sfw::Slider will just round it...
+	//!!
+	//!! ...
+	//!!
+
+	oon_main_view().reset(); //!! Technically this doesn't belong to the UI currently.
+	                         //!! Kinda considered part of the model, but with some
+	                         //!! diegetic UI features (like the grid lines)!
 }
 
 } // namespace OON

@@ -18,6 +18,13 @@ namespace OON {
 //!!class Avatar_sfml; // Alas, not enough to fw-decl for unique_ptr (unlike shared_ptr)! :-/
 
 class OONMainDisplay_sfml : public OONMainDisplay
+//!
+//! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
+//!	and "pure" code! :-/
+//!
+//!	template< class AppSysImpl > // CRTP for backend-specifics
+//!	class OONMainDisplay_sfml : public OONMainDisplay<OONApp_sfml>
+//!
 {
 public:
 	struct OONViewConfig_sfml : OONViewConfig

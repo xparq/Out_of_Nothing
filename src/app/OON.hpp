@@ -19,6 +19,12 @@ class OONMainDisplay;
 
 //----------------------------------------------------------------------------
 class OONApp : public Szim::SimApp
+//!
+//! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
+//!	and "pure" code! :-/
+//!
+//!	template< class AppSysImpl > // CRTP for backend-specifics
+//!	class OONApp : public Szim::SimApp
 {
 friend class Model::World; //!! Later: Not the generic, but the app-specific part only!
 
@@ -175,19 +181,33 @@ protected:
 	      auto& oon_main_camera()       { return (      OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 	const auto& oon_main_camera() const { return (const OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 
-	// UI setup helpers...
-	enum HUD_ID { HelpPanel, TimingStats, WorldData, ViewData, ObjMonitor, Debug };
+	// UI helpers...
+	//!! RECONCILE WITH THE UI namespace!... Somehow...
+	//!!struct _UI_ {
+		enum HUD_ID { HelpPanel, TimingStats, WorldData, ViewData, ObjMonitor, Debug };
+		bool _ui_show_huds = true;
+
+		void ui_setup(/*!! ??const?? OONApp& app!!*/); //!! See also _sync_to_model_state!
+		// Update the UI after bulk model changes:
+		//!!void _sync_to_model_state(const SimApp& app/*!!, ...what (optionally, for optimization)...!!*/);
+
+		void ui_setup_HUDs();
+		void ui_setup_HUD_ObjMonitor();
+	//!!} ui;
+	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
 	virtual UI::HUD& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
-	bool _show_huds = true;
-	void _setup_UI();
-	void _setup_HUDs();
-	void _setup_HUD_ObjMonitor();
+	using GravityModeSelector = sfw::OptionsBox<Model::World::GravityMode>;
+
+
+	// Chores after loading a new model world:
+	void _on_snapshot_loaded(); // Updates the UI etc.
 
 //----------------------------------------------------------------------------
 // Internals - Data...
 //----------------------------------------------------------------------------
 protected:
 	OONConfig appcfg; // See also syscfg from this->SimApp
+
 	OONController controls;
 
 	bool  chemtrail_releasing = false;
