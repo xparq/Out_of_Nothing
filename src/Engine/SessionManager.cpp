@@ -41,10 +41,15 @@ void SessionManager::set_autosave(bool state)
 
 void SessionManager::set_save_as_filename(const string& fn)
 {
+/*!! DISABLED FOR #555 (Double-prefixed session paths...)
+     save_snapshot() will do the prefixing! (Which likely needs to change later!)
+
 	active_session.save_as_filename =
 		sz::prefix_if_rel(app.cfg.session_dir, fn);
 		//!! This manual dir prefixing will need to be normalized...
 		//!! See notes in open()!
+!!*/
+	active_session.save_as_filename = fn;
 }
 
 
@@ -71,7 +76,8 @@ cerr << __FUNCTION__; // To be continued...
 cerr << " starting new session\n";
 		return;
 	}
-
+/*!! DISABLED FOR #555 (Double-prefixed session paths...)
+     load_snapshot() will do the prefixing! (Which likely needs to change later!)
 	//!! Use the same prefixing logic as the Config etc.
 	//!! -- JUST NOT THIS WAY, BUT VIA A SYSTEM-LEVEL RES. MGR.!
 	active_session.filename =
@@ -80,6 +86,8 @@ cerr << " starting new session\n";
 		//!! i.e. synced with snapshot_filename(), by both that and
 		//!! this calling the same unified asset/resource filename
 		//!! resolver function... -> #257
+!!*/
+	active_session.filename = active_session_name; //!! #555 load_snapshot *will* prefix it!
 
 cerr << " " << active_session.filename << '\n';
 
