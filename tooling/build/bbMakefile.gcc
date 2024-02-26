@@ -42,6 +42,7 @@ objdir = $(vroot)/$(SZ_SRC_SUBDIR)
 #!!Alas...:
 ifcdir = $(vroot)/$(SZ_SRC_SUBDIR)
 exedir = $(SZ_RUN_SUBDIR)
+testdir = $(SZ_TEST_SUBDIR)
 
 #!! Kludge until I find out the correct way to support C++ modules...
 #!!Use != ls -b or something *.ifc!
@@ -232,9 +233,9 @@ objs_of_modules = $(CPP_MODULE_IFCS:%.ifc=%.o)
 
 #-----------------------------------------------------------------------------
 # List the phonies so `make -t` won't create empty files for them:
-.PHONY: build info mk_outdirs collect_sources cpp_modules
+.PHONY: build info mk_outdirs collect_sources cpp_modules smoke_test
 
-build: info .WAIT mk_outdirs .WAIT collect_sources .WAIT cpp_modules .WAIT $(exe);
+build: info .WAIT mk_outdirs .WAIT collect_sources .WAIT cpp_modules .WAIT $(exe) .WAIT smoke_test
 	@echo "Main target ready: $(exe)"
 info:
 	@echo "Build mode: DEBUG=$(DEBUG), CRT=$(CRT), SFML=$(SFML)"
@@ -290,6 +291,11 @@ $(objs_using_modules): $(CPP_MODULE_IFCS)
 #!!	$(LINK) $(LINKFLAGS) /libpath:$(objdir) $(objs) $(EXT_LIBS) /out:$@
 $(exe): $(objs) $(EXT_LIB_SFW) $(EXT_LIB_ZSTD)
 	$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) -o $@
+
+
+smoke_test:
+	if [ -z "${GITHUB_ACTION}" ]; then $(testdir)/regression/tc-smoke `basename $(exe)`; fi
+
 
 #-----------------------------------------------------------------------------
 # Inference rules...
