@@ -271,6 +271,10 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 					//!! Handle this in a hook:
 					//target->v = {0, 0}; // - or bounce, or stick to the other body and take its v, or any other sort of interaction...
 
+					// Swallow the target -- for testing free-fall & accretion:
+					//target->v = source->v;
+					//target->p = source->p + Vector2<NumType>{1, 1};
+
 					// Interestingly, if no speed reset/change is applied at all,
 					// an orbiting moon that hits the surface of its attractor with
 					// a flat-enough angle, STILL DOES APPEAR TO BOUNCE OFF OF IT! :-O
@@ -362,7 +366,7 @@ if(((OONApp&)game).controls.ShowDebug) {
 					target->v += dv;
 				}
 				if (!source->superpower.gravity_immunity) {
-					float a = G_dt_div_d2 * target->mass;
+					auto a = -G_dt_div_d2 * target->mass;
 					auto dv = Vector2f{dx * a, dy * a} * (dt/distance); // #525: dx/distance, dy/distance...
 					source->v += dv;
 				}
