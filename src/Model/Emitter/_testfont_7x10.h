@@ -1,11 +1,13 @@
 #ifndef _CNXV4IU5YTB9678DT5674BTN6893476T0576FYM4780NBU87Y_
 #define _CNXV4IU5YTB9678DT5674BTN6893476T0576FYM4780NBU87Y_
 
-static constexpr unsigned font_height = 10;
-static constexpr unsigned font_width = 7;
-static constexpr unsigned font_baseline_index = 2; // From the bottom (0-based)!
+// NOTE: constexpr vars have internal linkage, and constexpr functions are `inline`, so ODR should be fine.
 
-static constexpr uint8_t font[] = {
+constexpr unsigned font_width = 7;
+constexpr unsigned font_height = 10;
+constexpr unsigned font_baseline_index = 2; // From the bottom (0-based)!
+
+constexpr uint8_t font[] = {
 			//!! Allow optional per-char sizes! -- Would prevent simple glyph * height direct indexing tho!
 
 // ' '
@@ -713,20 +715,21 @@ static constexpr uint8_t font[] = {
 			0b1111111,
 };
 
-static constexpr char GLYPH_COUNT = sizeof(font)/font_height - 1;
-static constexpr char FIRST_GLYPH_CODEPOINT = ' ';
-static constexpr char LAST_GLYPH_CODEPOINT = FIRST_GLYPH_CODEPOINT + GLYPH_COUNT - 1; // The last one is not for any code point!
+constexpr char GLYPH_COUNT = sizeof(font)/font_height - 1;
+constexpr char FIRST_GLYPH_CODEPOINT = ' ';
+constexpr char LAST_GLYPH_CODEPOINT = FIRST_GLYPH_CODEPOINT + GLYPH_COUNT - 1; // The last one is not for any code point!
 	//!! Only for a contiguous set of code points directly mapped to the set of glyphs!
 
-static constexpr char FIRST_GLYPH_INDEX = 0;
-static constexpr char LAST_GLYPH_INDEX = FIRST_GLYPH_INDEX + GLYPH_COUNT;
+constexpr char FIRST_GLYPH_INDEX = 0;
+constexpr char LAST_GLYPH_INDEX = FIRST_GLYPH_INDEX + GLYPH_COUNT;
 //static constexpr char INVALID_GLYPH_INDEX = LAST_GLYPH_INDEX;
-static constexpr char INVALID_GLYPH_INDEX = '?' - FIRST_GLYPH_CODEPOINT; //!! Only for ASCII, and a contiguous set of code points directly mapped to the set of glyphs!
+constexpr char INVALID_GLYPH_INDEX = '?' - FIRST_GLYPH_CODEPOINT; //!! Only for ASCII, and a contiguous set of code points directly mapped to the set of glyphs!
 
-static inline constexpr unsigned short font_glyph_index(char ch)
+constexpr unsigned short font_glyph_index(char ch)
 {//!! Only for ASCII & a contiguous set of code points directly mapped to the set of glyphs!
 	return ch >= FIRST_GLYPH_CODEPOINT && ch <= LAST_GLYPH_CODEPOINT
 		? ch - FIRST_GLYPH_CODEPOINT : INVALID_GLYPH_INDEX;
 }
+
 
 #endif // _CNXV4IU5YTB9678DT5674BTN6893476T0576FYM4780NBU87Y_
