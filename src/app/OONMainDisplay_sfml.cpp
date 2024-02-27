@@ -96,7 +96,7 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::World::Body& body, si
 
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
-	auto shape = make_shared<sf::CircleShape>(body.r * oon_camera().scale());
+	auto shape = make_shared<sf::CircleShape>(float(body.r) * oon_camera().scale()); //!! float hardcoded!
 	shape->setOrigin({shape->getRadius(), shape->getRadius()});
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
@@ -172,8 +172,9 @@ void OONMainDisplay_sfml::render_scene()
 
 	// a)
 		auto vpos = app().main_view().camera()
-			.world_to_view_coord(body->p); //!! - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset!
-			                               //!! Mind the inverted camera & model y, too!
+			.world_to_view_coord(Math::Vector2f(body->p));
+				//!! - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset!
+			        //!! Mind the inverted camera & model y, too!
 	// b)
 	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
 	//	auto vpos = oon_camera.world_to_view_coord(body->p); //!! - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
@@ -233,8 +234,8 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	//!! May not remain a circle forever:
 	auto& player_shape = (sf::CircleShape&) *(shapes_to_change[player_ndx]);
 
-	float rb = player_body.r * oon_camera().scale();
-//	float rb = ((sf::CircleShape&)player_shape).getRadius();
+	auto rb = player_body.r * oon_camera().scale();
+//	auto rb = ((sf::CircleShape&)player_shape).getRadius();
 	static float A = 1.f; // pixel
 	static float f = 2.0f; // Hz
 	float phase = app().session_time() * f * 2*3.141f;

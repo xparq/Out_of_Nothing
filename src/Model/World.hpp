@@ -2,13 +2,8 @@
 #define _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_
 
 #include "Engine/Config.hpp"
-
-#include "Engine/Model.hpp" //!! Just a placeholder, plus for the kludge symbol Model::Unlimited
-
-#include "Physics.hpp"
-#include "Math.hpp"   // Included by "Physics.hpp", though...
+#include "Engine/Model.hpp" // Includes Physics.hpp, which includes Math.hpp
 #include "Math/Vector2.hpp"
-
 #include "Object.hpp" //!!This just includes World.hpp back, intentionally! :)
                       //!!(Wouldn't be that way if World::Body{} could just be defined there, separetely.)
 
@@ -66,6 +61,8 @@ public:
 // API Types...
 //----------------------------------------------------------------------------
 public:
+	using NumType = Phys::NumType;
+
 	enum Event { None, Interacting, Collided, Terminated };
 
 	enum class GravityMode : unsigned {
@@ -106,11 +103,11 @@ public:
 		} superpower;
 
 		// Presets:
-		float lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
-		float r = 0; // Calculated from mass and density
-		float density = Phys::DENSITY_ROCK / 2; //!!low-density objects should look like Swiss cheese! ;)
-		Math::Vector2f p{0, 0};
-		Math::Vector2f v{0, 0};
+		NumType lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
+		NumType r = 0; // Calculated from mass and density
+		NumType density = Phys::DENSITY_ROCK / 2; //!!low-density objects should look like Swiss cheese! ;)
+		Math::Vector2<NumType> p{0, 0};
+		Math::Vector2<NumType> v{0, 0};
 		float T = 0; // affected by various events; represented by color
 
 		// Preset/recomputed:
@@ -118,7 +115,7 @@ public:
 			// RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
 			// The reason is easier add_body() calls here.)
 
-		float mass;
+		NumType mass;
 
 		//!! Ugly hack to start generalizing object compositions & to allow the world
 		//!! to calc. propulsion without consulting the controller. (I mean this is still
@@ -129,10 +126,10 @@ public:
 		//!!BTW, thrust should be axial anyway, so these 4 should be just 2:
 		//!!ALSO: REPLACE WITH A GENERIC (dynamically built) Structure COMPONENT + ("OPTONAL") TYPE INFO!
 		//!!      ("OPTIONAL" 'coz the structure itself *IS* the type info, it's just cumbersome to work with!)
-		Thruster thrust_up    { Math::MyNaN<float> }; // Gets repalced by "real" numbers for objects with actually functioning thrusters.
-		Thruster thrust_down  { Math::MyNaN<float> };
-		Thruster thrust_left  { Math::MyNaN<float> };
-		Thruster thrust_right { Math::MyNaN<float> };
+		Thruster thrust_up    { Math::MyNaN<NumType> }; // Gets repalced by "real" numbers for objects with actually functioning thrusters.
+		Thruster thrust_down  { Math::MyNaN<NumType> };
+		Thruster thrust_left  { Math::MyNaN<NumType> };
+		Thruster thrust_right { Math::MyNaN<NumType> };
 
 		//! Alas, can't do this with designated inits: Body() : mass(powf(r, 3) * density) {} :-(
 		//! So... (see e.g. add_body()):
@@ -162,6 +159,7 @@ public:
 	//--------
 	void init(Szim::SimApp& app);
 
+	//!!?? Should time still be just float?...
 	void update(float dt, Szim::SimApp& app);
 	void update_before_interactions(float dt, Szim::SimApp& app);
 	void update_pairwise_interactions(float dt, Szim::SimApp& app);
@@ -184,7 +182,7 @@ public:
 		return false;
 	}
 
-	bool is_colliding(const Body* obj1, const Body* obj2, float distance)
+	bool is_colliding(const Body* obj1, const Body* obj2, NumType distance)
 	// Only for circles yet!
 	{
 		return distance <= obj1->r + obj2->r; // false; // -> #526!
@@ -202,7 +200,7 @@ public:
 	//!! REVISE _copy(), and save/load, WHENEVER CHANGING THE DATA HERE!
 	float friction = 0.03f; //!!Take its default from the cfg instead!
 	GravityMode gravity_mode;   //! v0.1.0
-	float gravity = Phys::G; //! v0.1.1 //!!Take its default from the cfg instead!
+	NumType gravity = Phys::G; //! v0.1.1 //!!Take its default from the cfg instead!
 	bool  _interact_all = false; // Bodies react to each other too, or only the player(s)?
 	                             //!! Reconcile with interaction_mode!
 

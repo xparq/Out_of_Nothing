@@ -189,14 +189,14 @@ public:
 		return false;
 	}
 	*/
-	virtual bool collide_hook(Model::World* w, Entity* obj1, Entity* obj2, float distance);
+	virtual bool collide_hook(Model::World* w, Entity* obj1, Entity* obj2, double distance);
 	virtual bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2);
 
 	// High-level, abstract (not as in "generic", but "app-level") hook for n-body interactions:
 	// `event` represents the physical property/condition that made it think these might interact.
 	//!!NOTE: This will change to the objects themselves being notified (not the game "superclass")!
-	virtual void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...);
-	virtual void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...);
+	virtual void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...);
+	virtual void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...);
 
 
 	//----------------------------------------------------------------------------

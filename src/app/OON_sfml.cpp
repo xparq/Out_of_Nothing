@@ -133,7 +133,7 @@ void OONApp_sfml::update_thread_main_loop()
 /*!! THIS HELPED NOTHING HERE:
 			if (paused())
 				sf::sleep(sf::milliseconds(100)); // Sleep even more, if *really* idle! :)
-			// fallthrough
+			[[fallthrough]]
 !!*/
 		case UIEventState::EVENT_READY:
 #ifndef DISABLE_THREADS

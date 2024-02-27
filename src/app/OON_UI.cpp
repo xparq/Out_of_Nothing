@@ -25,11 +25,11 @@ static const char* hud_test_callback_ccptr()  { return "this is a const char*"; 
 namespace OON {
 
 
-//! This still needs to be a double nested lambda: the outer wrapper "converts" the
-//! signature to match the string-returning nullary functions the HUD stuff supports.
-static auto ftos = [](auto* ptr_x) { return [ptr_x]() { static constexpr size_t LEN = 15;
+//! This still needs to be a double nested lambda: the outer wrapper "converts the
+//! signature" to match the string-returning nullary functions the HUD stuff supports.
+static auto ftos = [](auto* ptr_x) { return [ptr_x]() { static constexpr size_t LEN = 25; // max length of double
 		char buf[LEN + 1]; auto [ptr, ec] = std::to_chars(buf, buf+LEN, *ptr_x);
-		return string(ec != std::errc() ? "???" : (*ptr = 0, buf));
+		return string(ec != std::errc() ? "<ERR>" : (*ptr = 0, buf));
 	};
 };
 

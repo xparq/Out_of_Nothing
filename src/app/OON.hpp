@@ -156,8 +156,8 @@ protected:
 	//!! And then the model callback mechanism could be simplified to not doing it in
 	//!! the core abstract Model at all, but in the custom layer, only when needed.
 	void init_world_hook() override;
-	void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...) override;
-	void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...) override;
+	void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...) override;
+	void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...) override;
 	bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2) override;
 
 	//------------------------------------------------------------------------

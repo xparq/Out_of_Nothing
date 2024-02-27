@@ -322,7 +322,7 @@ bool SimApp::is_entity_at_viewpos(size_t entity_id, float x, float y) const // v
 	//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
 	//!! Actully, in OONApp_sfml it is -- make this "tunnelable"!...
 	const auto& camera = main_view().camera();
-	auto ep = camera.world_to_view_coord(e.p);
+	auto ep = camera.world_to_view_coord(Math::Vector2f(e.p));
 	//!! ... = e.bounding_box();
 	auto box_R = e.r * camera.scale(); //!! Not a terribly robust method to get that size...
 	auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327
@@ -348,15 +348,15 @@ bool SimApp::entity_at_viewpos(float x, float y, size_t* entity_id OUT) const //
 
 
 //----------------------------------------------------------------------------
-void SimApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...)
+void SimApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...)
 {w, obj1, obj2, dt, distance;
 }
 
-void SimApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...)
+void SimApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...)
 {w, source, target, dt, distance;
 }
 
-bool SimApp::collide_hook(Model::World* w, Entity* obj1, Entity* obj2, float distance)
+bool SimApp::collide_hook(Model::World* w, Entity* obj1, Entity* obj2, double distance)
 {w, obj1, obj2, distance;
 	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 	//!!...body->p -= ds...;

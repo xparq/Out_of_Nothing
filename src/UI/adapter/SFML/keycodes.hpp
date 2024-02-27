@@ -51,7 +51,7 @@ static inline/*!!??*/ constinit enum VKEY _SFMLKEY_TO_VKEY_MAP[] = {
 };
 
 // SFML -> SimApp virt. keycode translation
-inline constexpr auto _keycode_from_SFML(auto sfml_keycode) { return _SFMLKEY_TO_VKEY_MAP[sfml_keycode]; }
+constexpr auto _keycode_from_SFML(auto sfml_keycode) { return _SFMLKEY_TO_VKEY_MAP[sfml_keycode]; }
 
 // Call this once, somewhere in the (beginning of the) app's SFML event loop!
 void update_keys_from_SFML(const sf::Event& sfml_event);

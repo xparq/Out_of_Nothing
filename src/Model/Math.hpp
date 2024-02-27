@@ -1,5 +1,5 @@
-#ifndef _MODEL__MATH_
-#define _MODEL__MATH_
+#ifndef _C4875687UTYVCM056V89YN0T7NHPB8OIEIUCYM4M40576_
+#define _C4875687UTYVCM056V89YN0T7NHPB8OIEIUCYM4M40576_
 
 /*
 	Math features here that are only used by the Model.
@@ -12,7 +12,7 @@
 	if that's the only part actually using this!!)
 */
 
-//! Client code should include Math/* on its own, as needed!
+//! Client code should #include Math/* on its own, as needed!
 //#include "Math/Vector2.hpp"
 //#include "Math/Vector3.hpp"
 	//! NOTE: these have been ripped out from SFML, so I can keep using them,
@@ -21,16 +21,21 @@
 	//! `sf` namespace to `Math`.
 	//! Alas, that also means the actual types, albeit isomorphic, are now
 	//! syntactically incompatible, requiring awkward explicit conversions
-	//! (with copies!), via e.g. "adapter/SFML/vector.hpp"! :-/
-	//!! Those could be made implicit though, at least in some cases, right?!
+	//! (with copies, for now! :-/ ), via e.g. "adapter/SFML/vector.hpp"!
+	//!! SHOULD BE MADE IMPLICIT & COMPILE-TIME-ONLY!
 
 
 #include <cmath> // pow, sqrt
 
 namespace Math {
 
-template <typename T> constexpr T MyNaN = T(2e31f); //!! cringy way to avoid the pain of using the std NAN ;) -> #527
-template <typename T> constexpr T PI = T(3.1415926535897932385L);
+//!! Perhaps put the alternatives into a `detail` ns, and then "canonicalize"
+//!! only the one selected (by a templ. arg.)?
+//!! (Or would there be a use case where multiple different num. types would
+//!! need to be available at the same time?!)
+
+template <typename T> constexpr T MyNaN = T(2e31f); //!! Cringy way to avoid the pain of using the std NAN ;) -> #527
+template <typename T> constexpr T PI = T(3.1415926535897932385); //!! Should be templated, too!
 template <typename T> constexpr T FOUR_THIRD_PI = T(PI<T> * T(4)/T(3)); //!!4.1887902f;
 	template <> constexpr auto FOUR_THIRD_PI<float> = float(PI<float> * 4.f/3.f);
 	template <> constexpr auto FOUR_THIRD_PI<double> = double(PI<double> * 4.0/3.0);
@@ -56,4 +61,4 @@ template <typename T> T distance3(T x1, T y1, T z1, T x2, T y2, T z2) { return m
 
 } // namespace Math
 
-#endif // _MODEL__MATH_
+#endif // _C4875687UTYVCM056V89YN0T7NHPB8OIEIUCYM4M40576_

@@ -44,6 +44,7 @@ public:
 	int         get(std::string_view name, int def) noexcept;
 	unsigned    get(std::string_view name, unsigned def) noexcept;
 	float       get(std::string_view name, float def) noexcept;
+	double      get(std::string_view name, double def) noexcept;
 	//! Alas, only one of these can meaningfully omit the 2nd arg to not be ambiguous!
 
 	//--------------------------------------------------------------------

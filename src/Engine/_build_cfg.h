@@ -11,9 +11,11 @@
 //! controlling them via the build.)
 
 //----------------------------------------------------------------------------
-// These still must be defined somewhere, so we can as well just do it here...
-// (If this file is not being included, and no other defs., there would be
-// comp. errors anyway, so no worries...)
+// System (Backend) Interface...
+//
+// (These still must be defined somewhere, so we can as well just do it here...
+// If this file is not being included (and no other defs.), there would be
+// compilation errors anyway, so no worries.)
 
 #ifndef  BACKEND
 # define BACKEND SFML
@@ -37,7 +39,7 @@
 
 
 //----------------------------------------------------------------------------
-// Options...
+// Features On/Off...
 //
 #ifndef DISABLE_THREADS
 //# define DISABLE_THREADS
@@ -54,5 +56,12 @@
 #ifndef DISABLE_FULL_INTERACTION_LOOP
 //# define DISABLE_FULL_INTERACTION_LOOP
 #endif
+
+
+//----------------------------------------------------------------------------
+// Misc...
+//
+#define DEFAULT_MODEL_NUMBER_TYPE double
+
 
 #endif // _4059786V2MB67B5VB7I3C5_

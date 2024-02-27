@@ -13,20 +13,21 @@ namespace Model {
 class Emitter //!!?? : public Entity
 {
 public:
+	using NumT = Phys::NumType;
 	//----------------------------------------------------------------------------
 	struct Config
 	{
-		Math::Vector2f eject_velocity{}; // Relative to the emitter's v
-		Math::Vector2f eject_offset{};   // Relative to the emitter's origin
-		float v_factor = 0.1f; //!! May be redundant with eject_velocity now!
-		float offset_factor = 0.2f;
+		Math::Vector2<NumT> eject_velocity{}; // Relative to the emitter's v
+		Math::Vector2<NumT> eject_offset{};   // Relative to the emitter's origin
+		NumT v_factor = 0.1f; //!! May be redundant with eject_velocity now!
+		NumT offset_factor = 0.2f;
 		float particle_lifetime = Model::Unlimited; //!! Rename to sg. less vague!
 		bool  create_mass = true;
-		float particle_density = Phys::DENSITY_ROCK * 0.001f;
-		Math::Vector2f position_divergence = {5.f, 5.f}; // Scaled by the emitter's radius
-		float velocity_divergence = 1.f; //!! Just an exp. "randomness factor" for now!...
-		float particle_mass_min{};
-		float particle_mass_max{};
+		NumT particle_density = Phys::DENSITY_ROCK * 0.001f;
+		Math::Vector2<NumT> position_divergence = {5.f, 5.f}; // Scaled by the emitter's radius
+		NumT velocity_divergence = 1.f; //!! Just an exp. "randomness factor" for now!...
+		NumT particle_mass_min{};
+		NumT particle_mass_max{};
 		uint32_t color = 0x706080; // 0xRRGGBB
 	};
 
@@ -34,7 +35,7 @@ public:
 	Emitter(const Config& cfg, Szim::SimApp& app);
 	virtual ~Emitter() = default;
 
-	void emit_particles(size_t emitter_ndx, size_t n = 10, Math::Vector2f nozzles[] = nullptr);
+	void emit_particles(size_t emitter_ndx, size_t n = 10, Math::Vector2<NumT> nozzles[] = nullptr);
 		// 'nozzles' must have n elements if not null, each relative to the
 		// origin of the emitter, and normalized to a [-1, 1] bounding range!
 

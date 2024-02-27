@@ -43,5 +43,6 @@ bool     Config::get(string_view prop, bool def)        noexcept { return _impl-
 int      Config::get(string_view prop, int def)         noexcept { return _impl->_get(prop, def); }
 unsigned Config::get(string_view prop, unsigned def)    noexcept { return _impl->_get(prop, def); }
 float    Config::get(string_view prop, float def)       noexcept { return _impl->_get(prop, def); }
+double   Config::get(string_view prop, double def)      noexcept { return _impl->_get(prop, def); }
 
 } // namespace Szim

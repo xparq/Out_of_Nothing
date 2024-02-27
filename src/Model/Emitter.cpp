@@ -19,7 +19,7 @@ Emitter::Emitter(const Config& emitter_cfg, Szim::SimApp& app)
 //!!   Could be done by callers, or even be a follow-up callback, if necessary.)
 //!! - It still calls add_entity() (so still can't be a free function (or class)),
 //!!   but that really could be a callback than...
-void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2f nozzles[])
+void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2<NumT> nozzles[])
 {
 	auto& emitter = app.entity(emitter_ndx); // Not const: will deplete!
 		//!! Also take care of other threads possibly deleting the emitter later on! :-o
@@ -29,14 +29,14 @@ void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2f nozzle
 	auto p_range = cfg.position_divergence * emitter.r;
 	auto p_offset = cfg.eject_offset;
 	p_offset += // Also add a portion proportional to the emitter's velocity:
-		(emitter.v == Math::Vector2f()) ? //! SFML-DEBUG asserts this, so must be prevented... :-/
-			  Math::Vector2f()
+		(emitter.v == Math::Vector2<NumT>()) ? //! SFML-DEBUG asserts this, so must be prevented... :-/
+			  Math::Vector2<NumT>()
 			: emitter.v.normalized() * emitter.r * cfg.offset_factor;
 		//!! Also needs a non-linearity (decoupling) factor so higher v can affect it less!
 
-	float v_range = emitter.r * cfg.velocity_divergence; //!! Ugh... by magic, right? :-o :-/
+	auto v_range = emitter.r * cfg.velocity_divergence; //!! Ugh... by magic, right? :-o :-/
 
-	float emitter_old_r = emitter.r;
+	auto emitter_old_r = emitter.r;
 
 	for (int i = 0; i < n; ++i) {
 		auto particle_mass = cfg.particle_mass_min + (cfg.particle_mass_max - cfg.particle_mass_min) * float(rand())/RAND_MAX;
@@ -48,9 +48,9 @@ void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2f nozzle
 //cerr <<"DBG> density: "<< cfg.particle_density <<'\n';
 //cerr <<"DBG>   ==?  : "<< Phys::DENSITY_ROCK * 0.0000000123f <<'\n';
 
-		Math::Vector2f p = { (rand() * p_range.x) / RAND_MAX - p_range.x/2 + emitter.p.x + p_offset.x,
-		                     (rand() * p_range.y) / RAND_MAX - p_range.y/2 + emitter.p.y + p_offset.y };
-		                     //!!...Jesus, these "hamfixted" pseudo Δt "factors"...
+		Math::Vector2<NumT> p = { (rand() * p_range.x) / RAND_MAX - p_range.x/2 + emitter.p.x + p_offset.x,
+		                          (rand() * p_range.y) / RAND_MAX - p_range.y/2 + emitter.p.y + p_offset.y };
+		                          //!!...Jesus, these "hamfixted" pseudo Δt "factors"...
 		if (nozzles) p += nozzles[i] * emitter.r; // Scale to its "bounding sphere"...
 
 		[[maybe_unused]] auto pndx = app.add_entity({ //!! Refact. to only use World::add_body directly!
@@ -79,7 +79,7 @@ void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2f nozzle
 //cerr <<"DBG> emitter.r before recalc: "<< emitter.r <<'\n';
 		emitter.recalc();
 //cerr <<"DBG> emitter.r after recalc: "<< emitter.r <<'\n';
-		app.resize_shape(emitter_ndx, emitter.r/emitter_old_r);
+		app.resize_shape(emitter_ndx, float(emitter.r/emitter_old_r));
 //cerr <<"DBG> emitter.mass AFTER burst: "<< emitter.mass <<'\n';
 	}
 } // emit_particles

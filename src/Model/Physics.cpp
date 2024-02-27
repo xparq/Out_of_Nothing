@@ -1,4 +1,19 @@
 #include "Physics.hpp"
+/*!!??
+	In case this file gets some real use again:
+
+	How to make sure the templatized Phys. stuff always consistently gets the same
+	configured type arg. for each unit that uses it? Others can e.g. just include
+	Model.hpp as a pivotal config. point (i.e. aliasing the Phys template for all
+	its clients), but not this one!...
+
+	But maybe it shouldn't! After all, templates should live in headers anyway,
+	so here only non-generic (non-templated) interanl code should exist!
+
+	Or, just fix the configured number type right in Physics.hpp!
+
+??!!*/
+
 
 namespace Model {
 

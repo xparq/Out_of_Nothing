@@ -391,7 +391,7 @@ void OONApp::pan_y(float delta)  { oon_main_camera().pan_y(delta); }
 
 void OONApp::pan_to_center(size_t entity_id)
 {
-	oon_main_camera().center_to(entity(entity_id).p);
+	oon_main_camera().center_to(Vector2f(entity(entity_id).p));
 	oon_main_camera().focus_to({0, 0});
 //!!??	oon_main_camera().focus_to(entity(id).p);
 }
@@ -403,7 +403,7 @@ void OONApp::center_player(unsigned player_id)
 
 void OONApp::pan_to_focus(size_t id)
 {
-	auto vpos = oon_main_camera().world_to_view_coord(entity(id).p);
+	auto vpos = oon_main_camera().world_to_view_coord(Vector2f(entity(id).p));
 	oon_main_camera().pan(vpos - oon_main_camera().focus_offset);
 }
 
@@ -600,11 +600,11 @@ void OONApp::toggle_sound_fx() { backend.audio.toggle_sounds(); }
 
 
 //----------------------------------------------------------------------------
-void OONApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, float distance, ...) //override
+void OONApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...) //override
 {w, obj1, obj2, dt, distance;
 }
 
-void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, float distance, ...) //override
+void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...) //override
 {
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
@@ -773,11 +773,11 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ size_t n/* = ...*/)
 {
 	static size_t   particles_to_add = appcfg.get("sim/exhaust_particles_add", 0);
-	static float    exhaust_density = Phys::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
+	static auto     exhaust_density = Phys::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
 	static uint32_t exhaust_color = appcfg.get("sim/exhaust_color", 0xaaaaaa);
-	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
-	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_max_size_ratio", 0.01f);
-	static float airgap = appcfg.get("sim/exhaust_gap", 2.f);
+	static auto     r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
+	static auto     r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_max_size_ratio", 0.01f);
+	static auto     airgap = appcfg.get("sim/exhaust_gap", 2.f);
 
 //cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
 //cerr <<"DBG> -> exhaust_density: "<< exhaust_density <<'\n';
@@ -859,10 +859,10 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 //----------------------------------------------------------------------------
 void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ size_t n/* = ...*/)
 {
-	static float    particle_density = Phys::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
+	static auto     particle_density = Phys::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
 	static uint32_t color = appcfg.get("sim/shield_color", 0xffff99);
-	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_min_size_ratio", 0.02f);
-	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_max_size_ratio", 0.01f);
+	static auto     r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_min_size_ratio", 0.02f);
+	static auto     r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/shield_particle_max_size_ratio", 0.01f);
 //cerr <<"DBG> cfg.exhaust_density_ratio: "<< appcfg.get("sim/exhaust_density_ratio", 0.001f) <<'\n';
 //cerr <<"DBG> -> shield_density: "<< particle_density <<'\n';
 	static Emitter thrust_exhaust_emitter(
@@ -889,22 +889,22 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 //----------------------------------------------------------------------------
 void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 {
-	static float chemtrail_v_factor      = appcfg.get("sim/chemtrail_v_factor", 0.1f);
-	static float chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
+	static auto  chemtrail_v_factor      = appcfg.get("sim/chemtrail_v_factor", 0.1f);
+	static auto  chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
 	static float chemtrail_lifetime      = appcfg.get("sim/chemtrail_lifetime", Entity::Unlimited);
 	static bool  chemtrail_creates_mass  = appcfg.get("sim/chemtrail_creates_mass", true);
-	static float chemtrail_density       = Phys::DENSITY_ROCK * appcfg.get("sim/chemtrail_density_ratio", 0.001f);
-	static float chemtrail_divergence    = appcfg.get("sim/chemtrail_divergence", 1.f);
-	static float r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_min_size_ratio", 0.02f);
-	static float r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_max_size_ratio", 0.1f);
-	static float M_min = Phys::mass_from_radius_and_density(r_min, chemtrail_density);
-	static float M_max = Phys::mass_from_radius_and_density(r_max, chemtrail_density);
+	static auto  chemtrail_density       = Phys::DENSITY_ROCK * appcfg.get("sim/chemtrail_density_ratio", 0.001f);
+	static auto  chemtrail_divergence    = appcfg.get("sim/chemtrail_divergence", 1.f);
+	static auto  r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_min_size_ratio", 0.02f);
+	static auto  r_max = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/chemtrail_particle_max_size_ratio", 0.1f);
+	static auto  M_min = Phys::mass_from_radius_and_density(r_min, chemtrail_density);
+	static auto  M_max = Phys::mass_from_radius_and_density(r_max, chemtrail_density);
 
 	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
-	float p_range = emitter.r * 5;
-	float v_range = Model::World::CFG_GLOBE_RADIUS * chemtrail_divergence; //!! ...by magic, right? :-/
+	auto p_range = emitter.r * 5;
+	auto v_range = Model::World::CFG_GLOBE_RADIUS * chemtrail_divergence; //!! ...by magic, right? :-/
 
-	float emitter_old_r = emitter.r;
+	auto emitter_old_r = emitter.r;
 
 	for (int i = 0; i++ < n;) {
 		auto particle_mass = M_min + (M_max - M_min) * float(rand())/RAND_MAX;
@@ -931,7 +931,7 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 
 	assert(emitter.mass >= 0);
 	emitter.recalc();
-	resize_shape(emitter_ndx, emitter.r / emitter_old_r);
+	resize_shape(emitter_ndx, float(emitter.r / emitter_old_r));
 }
 
 
@@ -1042,7 +1042,6 @@ void OONApp::updates_for_next_frame()
 			if (cfg.exit_on_finish) {
 				cerr << "Exiting (as requested): iterations finished.\n";
 				request_exit();
-				// fallthrough
 			}
 		}
 
@@ -1085,8 +1084,9 @@ void OONApp::updates_for_next_frame()
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
-			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(entity(focused_entity_ndx).p);
-			if (oon_main_camera().confine(entity(focused_entity_ndx).p,
+			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(
+				Vector2f(entity(focused_entity_ndx).p));
+			if (oon_main_camera().confine(Vector2f(entity(focused_entity_ndx).p),
 			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/OONConfig::DEFAULT_ZOOM,
 			    autofollow_throwback)) { // true = drifted off
 				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...

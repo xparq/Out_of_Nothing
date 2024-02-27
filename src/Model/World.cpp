@@ -159,8 +159,10 @@ static int skipping_n_interactions = _PAIRWISE_UPDATE_SKIP_COUNT_;
 
 		// Thrust -- for objects with (working) thrusters...:
 		if (body->has_thruster()) {
-			Vector2f F_thr( (-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
-			                ( body->thrust_up.thrust_level()   - body->thrust_down.thrust_level() ) * dt);
+			Vector2<NumType> F_thr(
+				(-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
+				( body->thrust_up.thrust_level()   - body->thrust_down.thrust_level() ) * dt
+			);
 			body->v += (F_thr / body->mass);
 		}
 	}
@@ -238,8 +240,7 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 			//!!to do what nature does... Dunno, create a black hole, if you must! :)
 
 			//!! Avoid repeating the check in ordered-interactions mode, with double iterations:
-			if (
-				gravity_mode != Realistic && //!!TEMP HACK for #252: allow accel. while overlapping
+			if (//!!gravity_mode != Realistic && //!!TEMP HACK for #252: allow accel. while overlapping
 				/*physics.*/is_colliding(target, source, distance)) {
 			//! Done before actually reaching the body (so we can avoid the occasional frame showing the penetration :) )!
 			//  (Opting for the perhaps even less natural "but didn't even touch!" issue...)
@@ -304,12 +305,12 @@ if (loop_mode == LoopMode::Full) { // #65... Separate cycles for the two halves 
 				if (!target->superpower.gravity_immunity) {
 				  //! Note: doing it branchless, i.e. multiplying with the bool flag (as 0 or 1)
 				  //! made it significantly _slower_! :-o
-					float a = gravity * source->mass / (distance * distance);
-					auto dv = Vector2f{dx * a, dy * a} * dt; // #525: dx/distance, dy/distance...
+					NumType a = gravity * source->mass / (distance * distance);
+					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt); // #525: dx/distance, dy/distance...
 					//! Optimizing ...*dt into a dv scaling factor (a*dt) resulted in
 					//! rounding errors & failed regression testing... But should be fine:
 //					float _dvscale = gravity * source->mass / (distance*distance) * dt;
-//					auto _dv = Vector2f(dx * _dvscale, dy * _dvscale);
+//					auto _dv = Vector2<NumType>(dx * _dvscale, dy * _dvscale);
 /*!
 {static bool done=false;if(!done){done=true; // These look the same, but the calculations differ! :-o
 cerr << "dv : "<<  dv.x <<", "<<  dv.y <<"\n";
@@ -321,8 +322,8 @@ cerr << "_dv: "<< _dv.x <<", "<< _dv.y <<"\n"; }}
 	case Realistic:
 	case Experimental:
 				if (!target->superpower.gravity_immunity) {
-					float a = gravity * source->mass / (distance * distance); //!!?? distance^3 too big for the divider?
-					auto dv = Vector2f{dx * a, dy * a} * (dt/distance); // #525: dx/distance, dy/distance...
+					NumType a = gravity * source->mass / (distance * distance); //!!?? distance^3 too big for the divider?
+					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
 					target->v += dv;
 /*!!
 if(((OONApp&)game).controls.ShowDebug) {
@@ -347,30 +348,31 @@ if(((OONApp&)game).controls.ShowDebug) {
 	//!! Do the same switch here, too!
 
 		if (gravity_mode == Hyperbolic) {
-				const float G_dt_div_d2 = gravity / (distance * distance) * dt;
+				const NumType G_dt_div_d2 = gravity / (distance * distance) * dt;
 				if (!target->superpower.gravity_immunity) {
-					float a = G_dt_div_d2 * source->mass;
-					Vector2f dv = Vector2f{dx * a, dy * a};
-					target->v += dv;
-				}
-				if (!source->superpower.gravity_immunity) {
-					float a = -G_dt_div_d2 * target->mass;
-					Vector2f dv = Vector2f{dx * a, dy * a};
-					source->v += dv;
-				}
-		} else if (gravity_mode == Realistic) {
-				const float G_dt_div_d2 = gravity / (distance * distance) * dt; //!!?? distance^3 too big for the divider?
-				if (!target->superpower.gravity_immunity) {
-					float a = G_dt_div_d2 * source->mass;
-					auto dv = Vector2f{dx * a, dy * a} * (dt/distance); // #525: dx/distance, dy/distance...
+					auto a = G_dt_div_d2 * source->mass;
+					auto dv = Vector2<NumType>{dx * a, dy * a};
 					target->v += dv;
 				}
 				if (!source->superpower.gravity_immunity) {
 					auto a = -G_dt_div_d2 * target->mass;
-					auto dv = Vector2f{dx * a, dy * a} * (dt/distance); // #525: dx/distance, dy/distance...
+					auto dv = Vector2<NumType>{dx * a, dy * a};
+					source->v += dv;
+				}
+		} else if (gravity_mode == Realistic) {
+				const NumType G_dt_div_d2 = gravity / (distance * distance) * dt; //!!?? distance^3 too big for the divider?
+				if (!target->superpower.gravity_immunity) {
+					auto a = G_dt_div_d2 * source->mass;
+					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
+					target->v += dv;
+				}
+				if (!source->superpower.gravity_immunity) {
+					auto a = -G_dt_div_d2 * target->mass;
+					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
 					source->v += dv;
 				}
 		}
+
 
 #ifndef DISABLE_FULL_INTERACTION_LOOP
 }
@@ -406,8 +408,8 @@ void World::update_after_interactions(float dt, Szim::SimApp& app)
 		auto& body = bodies[i];
 
 		// Friction - adjust velocities:
-		auto friction_decel = body->v * friction;
-		body->v -= friction_decel * dt;
+		auto friction_decel = body->v * NumType(friction);
+		body->v -= friction_decel * NumType(dt);
 		
 		// And finally, the positions:
 ///*!!
@@ -415,7 +417,7 @@ if(((OONApp&)app).controls.ShowDebug) {
 	cerr << "#"<<i<<": moving this much: "<< body->v.x * dt <<", "<< body->v.x <<"\n";
 }
 //!!*/
-		body->p += body->v * dt;
+		body->p += body->v * NumType(dt);
 	}
 }
 
