@@ -58,15 +58,17 @@ void OONApp::_on_snapshot_loaded()
 	using namespace sfw;
 
 	// Grav. mode:
-	if (auto* w = (GravityModeSelector*)gui.recall("Gravity mode"); w)
-		w->set(world().gravity_mode);
-
 	//!! The grav. bias widget can only do +/-1000x, so no clean mapping from gravity_strength to that! :-/
+	gui.set<GravityModeSelector>("Gravity mode", world().gravity_mode);
 
 	// Drag:
-	if (auto* w = (Slider*)gui.recall("Friction"); w)
-		w->set(world().friction); //!! The stepping may be inconsistent with the loaded value though! :-o
-		                          //!! I think the sfw::Slider will just round it...
+
+	//!!?? What did I mean by this?... :)
+	//!!??auto mS = &sfw::Slider::range;
+
+	gui.set<Slider>("Friction", world().friction);
+		//!! The stepping may be inconsistent with the loaded value though! :-o
+		//!! I think sfw::Slider will just round it...
 	//!!
 	//!! ...
 	//!!

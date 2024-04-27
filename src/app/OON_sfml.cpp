@@ -1,4 +1,4 @@
-﻿// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON_sfml.hpp"
@@ -406,7 +406,7 @@ try {
 					break;
 
 				case SFML_KEY(F12): toggle_huds();
-					sfw::getWidget<sfw::CheckBox>("Show HUDs")->set(huds_active());
+					sfw::set<sfw::CheckBox>("Show HUDs", huds_active());
 					break;
 				case SFML_KEY(F11):
 					toggle_fullscreen();
@@ -424,7 +424,8 @@ try {
 				if (event.text.unicode > 128) break; // non-ASCII!
 				switch (static_cast<char>(event.text.unicode)) {
 				case 'g':
-					sfw::getWidget<GravityModeSelector>("Gravity mode")->selectNext();
+					sfw::call<GravityModeSelector>("Gravity mode",
+						[](auto* gs) { gs->selectNext(); });
 					break;
 //				case 'f': world().friction -= 0.01f; break;
 //				case 'F': world().friction += 0.01f; break;
@@ -433,15 +434,15 @@ try {
 				case 'T': time.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
 				case 'M': toggle_muting();
-					sfw::getWidget<sfw::CheckBox>("Audio: ")->set(backend.audio.enabled);
+					sfw::set<sfw::CheckBox>("Audio: ", backend.audio.enabled);
 					break;
 				case 'm': toggle_music(); break;
 				case 'n': toggle_sound_fx();
-					sfw::getWidget<sfw::CheckBox>(" - FX: ")->set(backend.audio.fx_enabled);
+					sfw::set<sfw::CheckBox>(" - FX: ", backend.audio.fx_enabled);
 					break;
 //!! #543			case 'P': fps_throttling(!fps_throttling()); break;
 				case 'x': toggle_fixed_model_dt();
-					sfw::getWidget<sfw::CheckBox>("Fixed model Δt")->set(cfg.fixed_model_dt_enabled);
+					sfw::set<sfw::CheckBox>("Fixed model Δt", cfg.fixed_model_dt_enabled);
 					break;
 				case '?': toggle_help(); break;
 				}

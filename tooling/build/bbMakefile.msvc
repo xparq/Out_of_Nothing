@@ -25,7 +25,7 @@ SZ_OUT_SUBDIR ?= build.out
 #!! Can't be empty, for error-prone $(...DIR)/... concats (yet)!
 SZ_RUN_SUBDIR ?= .
 
-exe = $(exedir)/$(SZ_APP_NAME)$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).exe
+exe = $(exedir)/$(SZ_APP_NAME)$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_file_tag).exe
 
 outdir = $(SZ_OUT_SUBDIR)
 #!!objdir = $(vroot)/obj
@@ -55,7 +55,7 @@ EXT_LIBROOT_ZSTD = extern/zstd/msvc
 #!          do not add those that can't be located by the make tool itself!
 #!          (Otherwise it would try to build them too... E.g. user32.lib)
 EXT_LIB_DEPS =\
-	$(EXT_LIBROOT_SFW)/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib \
+	$(EXT_LIBROOT_SFW)/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_lib_tag).lib \
 	$(EXT_LIBROOT_ZSTD)/zstd$(cflags_crt_linkmode).lib \
 # (Comments must be last...)
 #	$(EXT_LIBS_SFML) <- Each individual lib abspathed to calm down `make`!...
@@ -79,17 +79,29 @@ EXT_LIBS =\
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
 SFML_linkmode=$(SFML)
 
-# Add an extra -s if also the CRT is static (i.e. with my custom-built "SFML/MT"):
-_sfml_homebrew_suffix_static = -s
-_sfml_homebrew_suffix_dll =
-_s_MT = $(_sfml_homebrew_suffix_$(CRT))
 
-_sfml_libs__static = sfml-graphics-s$(_s_MT).lib sfml-window-s$(_s_MT).lib sfml-system-s$(_s_MT).lib sfml-audio-s$(_s_MT).lib
-_sfml_libs__dll    = sfml-graphics.lib   sfml-window.lib   sfml-system.lib   sfml-audio.lib
-sfml_libs = $(_sfml_libs__$(SFML_linkmode))
+# Add an -s for the static SFML libs:
+_sfml_suffix__static = -s
+_sfml_suffix__dll =
+_sfml_s = $(_sfml_suffix__$(CRT))
+# Add an extra -s if also the CRT is static (i.e. with my custom-built "SFML/MT"):
+_sfml_homebrew_CRTmode_suffix__static = -s
+_sfml_homebrew_CRTmode___dll =
+_sfmlCRT_s = $(_sfml_homebrew_CRTmode_suffix__$(CRT))
+
+sfml_libs = \
+ sfml-graphics$(_sfml_s)$(_sfmlCRT_s).lib\
+ sfml-window$(_sfml_s)$(_sfmlCRT_s).lib\
+ sfml-system$(_sfml_s)$(_sfmlCRT_s).lib\
+ sfml-audio$(_sfml_s)$(_sfmlCRT_s).lib
+
+# OLD:
+#_sfml_libs__static = sfml-graphics-s$(_s_MT).lib sfml-window-s$(_s_MT).lib sfml-system-s$(_s_MT).lib sfml-audio-s$(_s_MT).lib
+#_sfml_libs__dll    = sfml-graphics.lib   sfml-window.lib   sfml-system.lib   sfml-audio.lib
+#sfml_libs = $(_sfml_libs__$(SFML_linkmode))
 
 _sfml_and_deps_libs__static = $(sfml_libs) opengl32.lib freetype.lib\
-	ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
+	ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib \
 	user32.lib kernel32.lib gdi32.lib winmm.lib advapi32.lib
 _sfml_and_deps_libs__dll = $(sfml_libs) opengl32.lib
 sfml_and_deps_libs = $(_sfml_and_deps_libs__$(SFML_linkmode))
@@ -111,7 +123,7 @@ cflags_crt_linkmode_with_debug = $(_cflags_crt_linkmode_with_debug__$(DEBUG))
 #----------------------
 # DEBUG/RELEASE mode
 #------
-_cflags_debug__0 = -DNDEBUG /O2 /Ob3
+_cflags_debug__0 = -DNDEBUG /O2 /Ob3 /fp:fast #!! Adding /openmp made it SLOWER! :-o (or /openmp:experimental)
 _cflags_debug__1 = /DDEBUG /ZI /Od /Oy- /Ob0 /RTCsu /Fd$(objdir)/
 #	The -O...s above are borrowed from Dr. Memory's README/Quick start.
 #	-ZI enables edit-and-continue (but it only exists for Intel CPUs!).
@@ -142,14 +154,19 @@ _buildmode_crt_linkmode_file_tag__static = -MT
 _buildmode_crt_linkmode_file_tag__dll    = -MD
 _buildmode_sfml_linkmode_dir_tag__static =
 _buildmode_sfml_linkmode_dir_tag__dll    = .SFMLdll
-_buildmode_sfml_linkmode_file_tag__static =
-_buildmode_sfml_linkmode_file_tag__dll    = .SFMLdll
+_buildmode_sfml_linkmode_dir_file__static =
+_buildmode_sfml_linkmode_dir_file__dll    = -SFMLdll
 
 # All combined:
 buildmode_dir_tag  = $(_buildmode_sfml_linkmode_dir_tag__$(SFML))$(_buildmode_crt_linkmode_dir_tag__$(CRT))$(_buildmode_debug_dir_tag__$(DEBUG))
 buildmode_file_tag = $(_buildmode_sfml_linkmode_file_tag__$(SFML))$(_buildmode_crt_linkmode_file_tag__$(CRT))$(_buildmode_debug_file_tag__$(DEBUG))
 #debug:; @echo buildmode_dir_tag: $(buildmode_dir_tag)
 #debug:; @echo buildmode_file_tag: $(buildmode_file_tag)
+
+# Lib suffix tag for SFML link mode:
+_buildmode_sfml_linkmode_lib_tag__static = -s
+_buildmode_sfml_linkmode_lib_tag__dll    =
+buildmode_sfml_linkmode_lib_tag = $(_buildmode_sfml_linkmode_lib_tag__$(SFML))
 
 # Add -d to the debug SFML libs:
 _sfml_lib_debug_suffix__0 =

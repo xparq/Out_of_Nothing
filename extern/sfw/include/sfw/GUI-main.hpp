@@ -1,8 +1,10 @@
-#ifndef GUI_MAIN_HPP
-#define GUI_MAIN_HPP
+#ifndef _KUNYWET5GX94358T645N345TF678RWE5TG67F4B57_
+#define _KUNYWET5GX94358T645N345TF678RWE5TG67F4B57_
 
 #include "sfw/Theme.hpp"
 #include "sfw/Gfx/Render.hpp"
+#include "sfw/Widget.hpp"
+#include "sfw/WidgetPtr.hpp"
 #include "sfw/Layouts/VBox.hpp"
 #include "sfw/Gfx/Elements/Wallpaper.hpp"
 
@@ -12,6 +14,7 @@
 #include <SFML/Window/Cursor.hpp>
 #include <SFML/System/Clock.hpp>
 
+#include <string_view>
 #include <string>
 #include <unordered_map>
 #include <system_error>
@@ -65,24 +68,23 @@ public:
 
 
 	/*************************************************************************
-	 Name->widget registry
+	 Name->widget map (registry)
 
 	 If name == "", the widget will be registered with a default name, which
 	 is also a unique internal ID (for disagnostic purposes).
 
 	 If `override_existing` is true, a previously registered widget with the
-	 same name will lose its name, and will revert to having a default instead.
+	 same name will lose its name, and will revert to having an interanl ID
+	 instead.
 
 	 Notes:
 	 - Since default names uniquely identify widgets, the override flag is
 	   redudndant with empty names.
-	 - The registry doesn't store const pointers, to allow any widget operations
-	   to be applied directly on a retrieved pointer.
-	 - If you're wondering why remember() doesn't have a const string& input
-	   type, see its implementation.
+	 - The registry stores non-const widget pointers (to allow any widget
+	   operations to be applied directly on a retrieved pointer).
 	 *************************************************************************/
 	bool remember(Widget* widget, std::string name, bool override_existing = true);
-	Widget* recall(const std::string& name) const;
+	Widget* recall(std::string_view name) const;
 	std::string recall(const Widget*) const;
 
 	/**
@@ -179,6 +181,6 @@ private:
 	friend class Widget;
 };
 
-} // namespace
+} // namespace sfw
 
-#endif // GUI_MAIN_HPP
+#endif // _KUNYWET5GX94358T645N345TF678RWE5TG67F4B57_

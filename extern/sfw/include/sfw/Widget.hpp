@@ -1,5 +1,5 @@
-#ifndef _SFW_WIDGET_HPP_
-#define _SFW_WIDGET_HPP_
+#ifndef _SODRTYUN3045679MY450786NY3079Y78RYCHKLVJ_
+#define _SODRTYUN3045679MY450786NY3079Y78RYCHKLVJ_
 
 #include "sfw/Event.hpp"
 #include "sfw/ActivationState.hpp"
@@ -15,7 +15,11 @@
 #include <SFML/Graphics/Transform.hpp>
 #include <SFML/Window/Event.hpp>
 
-#include <string> // (Other widget headers are exempt from reincluding this.)
+#include <string>
+#include <string_view>
+#include <concepts>
+#include <functional>
+#include <expected>
 
 #ifdef DEBUG
 #
@@ -30,14 +34,19 @@ class WidgetContainer;
 class Layout;
 class Tooltip;
 class GUI;
+// Required for defining widget(...):
+class Widget; template <std::derived_from<Widget> W = Widget> class WidgetPtr;
 
 /*****************************************************************************
 
-    Abstract base for widgets
+    Abstract (not in the formal C++ sense!) base class for widgets
 
-    See InputWidget as the base for "actually useful" widgets, though. ;)
+    (See InputWidget as the base for interactive widgets.)
 
  *****************************************************************************/
+//!!C++: No, can't just make this a template like this (for *optional* CRTP support):
+//!!struct WidgetProxy{};
+//!!template <class W = WidgetProxy>
 class Widget : public gfx::Drawable, public Event::Handler
 {
 public:
@@ -97,11 +106,13 @@ friend class GUI;
 friend class Tooltip; // just to access getMain() via Tooltip::m_owner->!
 //----------------------
 
+public: //!! WidgetRef needs these:
 	Widget();
 	virtual ~Widget();
+protected:
 	//!! These two horrible, depressing monstrosities only temporarily, until default-friendly
-	//!! smart pointers are introduced (which will need to follow thorough valgrind etc. tests
-	//!! with raw pointers); see #320!
+	//!! smart pointers are introduced (which will need valgrind etc. tests with raw pointers);
+	//!! see #320!
 		Widget(Widget&&);
 		Widget(const Widget&);
 
@@ -196,57 +207,179 @@ public:
 	// Internal helper to shield this header from some extra dependencies
 	// See the freestanding functions that need this, below the class!
 	//
-	// Note: the only reason this is a (public static) member, not a free
-	// fn. itself is because it needs access to protected/private stuff
-	// in both the Widget and the GUI classes, and this way the (brittle)
+	// Note: the only reason this is a member, not a free function, is
+	// because it needs access to protected/private stuff (in both the
+	// Widget and the GUI manager classes), and this way the (brittle)
 	// friend declarations can be minimized.
-	// Alas, it needs to be public in exchange, so those free template functions
-	// can use it... (Well, at least it's hidden at the bottom of a class;
-	// kinda considered private enough then, right?...)
+	// Alas, it still needs to be public, so any free template functions
+	// can also call it. (Well, at least it's hidden at the bottom of a
+	// class; kinda private enough then, right?...)
 	//
-	public:
-	static Widget* getWidget_proxy(const std::string& name, const Widget* w = nullptr);
+
+
+// ---- Proxied widget lookup/access helper API... ---------------------------
+public:
+
+	//!! Should be protected, but also used by WidgetPtr<W>, which can't be
+	//!! declared friend in this non-template Widget class:
+	[[nodiscard]] static Widget* find_proxied(std::string_view name, const Widget* w = nullptr);
 	// If w == null, try the global default (singleton) GUI manager.
 	// If w is set, use that to look up its actual manager object.
 
+#ifdef _MSC_VER
+	//!! Preparing (+ reminder) for Widget becoming a CRTP base...:
+	template <std::derived_from<Widget> W = Widget, class Self>
+	[[nodiscard]] auto find_widget(this Self&& self, std::string_view name) { return WidgetPtr<W>(name, (const W*) &self); }
+#else //!! "Deducing this" of C++23 is not in my GCC (13.x) yet! :-/
+	template <std::derived_from<Widget> W = Widget>
+	[[nodiscard]] auto find_widget(std::string_view name) const { return WidgetPtr<W>(name, this); }
+#endif
+
+	// Like find_widget(...), but static, proxied via the default GUI mgr.
+	// (and called `find` because Widget::find_widget would be lame...):
+	template <std::derived_from<Widget> W = Widget>
+	[[nodiscard]] static WidgetPtr<W> find(std::string_view name) { return WidgetPtr<W>( (W*)Widget::find_proxied(name) ); }
+
+	// Null-safe (indirect) widget op. via named lookup
+	template <std::derived_from<Widget> OtherWidget, typename F>
+	auto call(const char* name, F&& f) const
+		-> std::expected<typename std::invoke_result_t<std::decay_t<F>, OtherWidget*>,
+		                 std::nullptr_t>
+	{
+		if (OtherWidget* w = this->template find_widget<OtherWidget>(name); w) {
+		  if constexpr (std::is_void_v<std::invoke_result_t<std::decay_t<F>, OtherWidget*>>) {
+			f(w);
+			return {}; //! Not just `return;`: std::expected needs an init. list.
+		  } else {
+			return f(w);
+		  }
+		}
+
+		return std::unexpected(nullptr);
+	}
+
+	/*!!C++: This won't help with auto-deducing the widget type of the callback's param.,
+	//!! as lambdas (like [](SomeWidget*) { ... }) are never derived(!) from std::function<>... :-/
+	template <std::derived_from<Widget> OtherWidget, typename F>
+	auto call(const char* name, std::function<void(OtherWidget*)>&& f) const
+		-> std::expected<typename std::invoke_result_t<std::decay_t<F>, OtherWidget*>,
+		                 std::nullptr_t>
+	{
+		...
+	}
+	!!*/
+
+	// Also a static version for proxying through the last default GUI manager:
+	/*!!C++: Alas, overloading just by `static` is not possible. Must put it into sfw:: instead! :-/
+	template <class W, typename F>
+	static auto call(const char* name, F&& f) //!!?? Or const F&? Or even just F?...
+		-> std::expected<typename std::invoke_result_t<std::decay_t<F>, W*>,
+				std::nullptr_t>
+	{
+		if (auto w = (W*)Widget::find_proxied(name); w) {
+			//!!C++: This sad conditional is to avoid a compiler error if f is void:
+			if constexpr (std::is_void_v<std::invoke_result_t<std::decay_t<F>, W*>>) {
+				f(w);
+				return {}; //! Not just `return;`: std::expected needs an init. list.
+			} else {
+				return f(w);
+			}
+		}
+
+		return std::unexpected(nullptr);
+	}
+	!!*/
+
+	//!!--------------------------------------------------------------------------
+	//!! These proxy getters/setters below would be more natural at InputWidget,
+	//!! but this API should also be available via the main GUI manager, which
+	//!! itself isn't an InputWidget, unfortunately. (And it can't just become
+	//!! one either, as it's already a Layout (VBox).)
+	//!!--------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------
+	// Returns std::expected, to be checked explicitly by the caller
+	//
+	//! NOTE: The arg. list is like this to ensure > 1 arguments, to avoid
+	//!       colliding with the normal set(...), which only has 1.
+	template <std::derived_from<Widget> OtherWidget, typename Arg>
+	decltype(auto) set(const char* name, Arg&& arg)
+	{
+		return this->template call<OtherWidget>(name, [&](OtherWidget* w) {
+			return w->set(std::forward<Arg>(arg));
+		});
+	}
+	/*!! Example (just for the syntax) for a multi-arg case, nonentheless:
+	template <std::derived_from<Widget> W, typename A, typename... Args>
+	decltype(auto) set(const char* name, A&& arg1, Args&&... more_args)
+	{
+		return this->template call<W>(name, [&](auto* w) {
+			return w->set(std::forward<A>(arg1), std::forward<Args>(more_args)...);
+		});
+	}
+	!!*/
+
+	template <std::derived_from<Widget> OtherWidget, typename Arg>
+	decltype(auto) update(const char* name, Arg&& arg)
+	{
+		return this->template call<OtherWidget>(name, [&](OtherWidget* w) {
+			return w->update(std::forward<Arg>(arg));
+		});
+	}
+
+	//----------------------------------------------------------------------------
+	// Returns std::expected, to be checked explicitly by the caller
+	//
+	//! NOTE: The normal get(...) has no args, so this should not collide with that.
+	template <std::derived_from<Widget> OtherWidget>
+	[[nodiscard]] auto get(const char* name)
+	{
+		return this->template call<OtherWidget>(name, [](OtherWidget* w) { return w->get(); });
+	}
+
+	//----------------------------------------------------------------------------
+	// Returns the named widget's content if found, or a default (fallback) value
+	//
+	// Note: Should be deprecated if/when the C++23 monadic `.or_else(...)` form
+	// becomes the dominant style!
+	template <std::derived_from<Widget> OtherWidget, typename TRet>
+	[[nodiscard]] auto get_or(const char* name, TRet defval) //!! std::expected's or_else is still too new (e.g. it's not there in my MSVC either)
+	{
+		auto result = this->template call<OtherWidget>(name, [](OtherWidget* w) { return w->get(); });
+		return result ? result.value() : defval;
+	}
+	//----------------------------------------------------------------------------
+	// Plus a convenience synonym of get_or (as yet another `get` overload)
+	//
+	//!!C++: Sometimes failed to compile inside widget calbbacks, as w->get<Other>("name", ...)
+	//!! -- even though w->set<Other>("name", ...) still worked, and so did gui.get<Other>("name", ...)! :-o
+	template <std::derived_from<Widget> OtherWidget, typename TRet>
+	[[nodiscard]] auto get(const char* name, TRet defval)
+	{ return this->template get_or<OtherWidget, TRet>(name, std::forward<decltype(defval)>(defval)); }
+
+	//----------------------------------------------------------------------------
+	//! Only use this flavor if you're ABSOLUTELY sure that `name` does exist,
+	//! otherwise that .value() would throw bad_expected_access! (Well you may just
+	//! catch that one, too -- but that kinda defeats the purpose of using this in
+	//! the first place.)
+	//!
+	//!!??C++:
+	//!! std::expected can't handle references returned by get(), so no point in using
+	//!! `decltype(auto)` here, right? Also, call() itself already decays it anyway...
+	//!! Also:
+	//!! Since .value() returns a reference, MSVC warns about "returning address of
+	//!! local variable or temporary"... Is this a matter of copy elision? It's way
+	//!! too shaky, nonetheless, so better not trying to be reference-friendly here!
+	//!! No decltype(auto), just auto then...
+	//!!
+	template <std::derived_from<Widget> OtherWidget>
+	[[nodiscard]] auto get_v(const char* name) // Called ..._v to rhyme with the (cringy) std value-returning templates.
+	{
+		return this->template get<OtherWidget>(name).value();
+	}
+
 }; // class Widget
 
+} // namespace sfw
 
-//----------------------------------------------------------------------------
-// Misc...
-//----------------------------------------------------------------------------
-// Find widget by name
-// Returns nullptr if the name was not found.
-template <class W = Widget> W* getWidget(const std::string& name, const Widget* w) { return (W*)Widget::getWidget_proxy(name, w); }
-template <class W = Widget> W* getWidget(const std::string& name, const Widget& w) { return (W*)Widget::getWidget_proxy(name, &w); }
-// Plus this one for convenience: the last created GUI instance will register itself as the default
-// (singleton) widget manager, so we can talk to it, provided we know for sure there can't be
-// another one in our app.
-template <class W = Widget> W* getWidget(const std::string& name) { return (W*)Widget::getWidget_proxy(name); }
-/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!
-  !! Why aren't these above just Widget:: (or GUI::) members?
-  !! Well, this remnant, removed from the class (as (part) of #322) may help
-  !! illuminate it:
-  !!
-	Widget* getWidget(const std::string& name) const;
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!
-	//!! JESUS CHRIST, C++, WTF?! :-ooo Get your shit together! ;) See #322...
-	//!! Not even this sad workaround can work (except in MSVC, amen to that...)!
-	//!! See the freestanding getWidget() functions after this class for the current
-	//!! alternative solution.
-	//!!
-	//!!	template <class W = Widget>
-	//!!	W* getWidget(const std::string& name) const { return (W*)getWidget_internal(name); }
-	//!!		//! Would be nice to have it templated directly, but that would introduce
-	//!!		//! a nasty cross-dependency on the top-level GUI stuff.
-	//!!		Widget* getWidget_internal(const std::string& name) const;
-	//!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-
-} // namespace
-
-#endif // _SFW_WIDGET_HPP_
+#endif // _SODRTYUN3045679MY450786NY3079Y78RYCHKLVJ_

@@ -43,10 +43,11 @@ if errorlevel 1 (
 if not exist "%SZ_OUT_DIR%" md "%SZ_OUT_DIR%"
 
 set PATH=%SZ_PRJDIR%/tooling;%SZ_SFML_ROOT%/bin;%PATH%;extern/Microsoft.VC143.DebugCRT
-set LIB=%SZ_SFML_ROOT%/lib;%LIB%
-set            INCLUDE=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_ROOT%/include;%SZ_PRJDIR%;%INCLUDE%
+set _include_path=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_ROOT%/include;%SZ_PRJDIR%;%INCLUDE%
+:: Fortunately, no need for a backslashed version! However, the implicitly expanded
+:: full path in %SZ_PRJDIR% (with backslasges!) could annoy the hell out of POSIX-like envs.!
+set            INCLUDE=%_include_path%;%INCLUDE%
 :: Lend a hand to w64devkit, so that it can use this same env. setup script:
-set     C_INCLUDE_PATH=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_ROOT%/include;%SZ_PRJDIR%;%C_INCLUDE_PATH%
-set CPLUS_INCLUDE_PATH=%SZ_SRC_DIR%;extern;extern/sfw/include;%SZ_SFML_ROOT%/include;%SZ_PRJDIR%;%CPLUS_INCLUDE_PATH%
-::set C_INCLUDE_PATH=%SZ_SRC_DIR%:extern/sfw/include:%SZ_SFML_ROOT%/include:%SZ_PRJDIR%:%C_INCLUDE_PATH%
-::set CPLUS_INCLUDE_PATH=%SZ_SRC_DIR%:extern/sfw/include:%SZ_SFML_ROOT%/include:%SZ_PRJDIR%:%CPLUS_INCLUDE_PATH%
+set     C_INCLUDE_PATH=%_include_path%;%C_INCLUDE_PATH%
+set CPLUS_INCLUDE_PATH=%_include_path%;%CPLUS_INCLUDE_PATH%
+set LIB=%SZ_SFML_ROOT%/lib;%LIB%

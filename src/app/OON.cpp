@@ -1,4 +1,4 @@
-﻿// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON.hpp"
@@ -486,7 +486,7 @@ cerr << "R-viewsize: " << oon_main_camera().zoom * plm->r
 bool OONApp::scroll_locked()
 {
 	return controls.PanLock || controls.PanFollow
-		|| sfw::getWidget<sfw::CheckBox>("  - forced follow")->get();
+		|| sfw::get<sfw::CheckBox>("  - forced follow", false);
 		//!!?? Should this GUI poll actually be in controller.update()?!...
 		//!!?? Kinda depends on the intent of that UI element: input emu., or
 		//!!?? "high-level control" <-- but then this should make some actual sense! :)
@@ -1095,10 +1095,10 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 		}
 	}
 	// Update the focus lock indicator:
-	if (auto w = sfw::getWidget<sfw::CheckBox>("Pan follows object"); w) w->set(_focus_locked_);
+	sfw::set<sfw::CheckBox>("Pan follows object", _focus_locked_);
 
 	// Update the FPS indicator bar:
-	if (auto w = sfw::getWidget<sfw::ProgressBar>("FPS"); w) w->set(1/(float)avg_frame_delay);
+	sfw::set<sfw::ProgressBar>("FPS", 1/(float)avg_frame_delay);
 
 
 	view_control(); // Manual view adjustments

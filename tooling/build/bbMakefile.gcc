@@ -58,8 +58,8 @@ testdir = $(SZ_TEST_SUBDIR)
 #!! So, well, sigh... (or add a manaully updated list...):
 objs_using_modules = $(objs)
 
-#!!EXT_LIB_SFW = extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_tag).lib
-EXT_LIB_SFW = extern/sfw/lib/mingw/libsfw.a 
+#!!EXT_LIB_SFW = extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_lib_tag).lib
+EXT_LIB_SFW = extern/sfw/lib/mingw/libsfw$(buildmode_sfml_linkmode_lib_tag).a 
 EXT_LIB_ZSTD = extern/zstd/mingw/libzstd.a
 #!!! ALERT !!! For gcc, order matters! And it must be this counterintuitive one: SFW *before* SFML! :-o
 EXT_LIBS =\
@@ -88,7 +88,7 @@ _sfml_libs__static = -static -lsfml-main-s -lsfml-graphics-s -lsfml-window-s -ls
 _sfml_libs__dll    =                       -lsfml-graphics   -lsfml-window   -lsfml-system   -lsfml-audio
 sfml_libs = $(_sfml_libs__$(SFML_linkmode))
 
-_sfml_and_deps_libs__static = $(sfml_libs) -static -lfreetype -logg -lvorbis -lvorbisenc -lvorbisfile -lflac -lopenal32 \
+_sfml_and_deps_libs__static = $(sfml_libs) -static -lfreetype -logg -lvorbis -lvorbisenc -lvorbisfile -lflac \
 	extern/sfml/mingw/lib/libfreetype.a \
 	extern/sfml/mingw/lib/libogg.a \
 	extern/sfml/mingw/lib/libvorbis.a \
@@ -158,6 +158,11 @@ buildmode_dir_tag  = $(buildmode_crtdll_tag)$(buildmode_sfml_linkmode_tag)$(buil
 buildmode_file_tag = $(buildmode_crtdll_tag)$(buildmode_sfml_linkmode_tag)$(buildmode_debug_tag)
 #debug:; @echo buildmode_dir_tag: $(buildmode_dir_tag)
 #debug:; @echo buildmode_file_tag: $(buildmode_file_tag)
+
+# Lib suffix tag for SFML link mode:
+_buildmode_sfml_linkmode_lib_tag__static = -s
+_buildmode_sfml_linkmode_lib_tag__dll    =
+buildmode_sfml_linkmode_lib_tag = $(_buildmode_sfml_linkmode_lib_tag__$(SFML))
 
 _sfml_lib_debug_suffix__0 =
 _sfml_lib_debug_suffix__1 = -d

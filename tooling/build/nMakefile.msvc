@@ -67,7 +67,7 @@ OBJ_DEPS_manually=$(SRC_DIR)/*.hpp $(SRC_DIR)/_build_cfg.h \
 EXT_INCLUDE_DIRS=
 EXT_LIB_DIRS=
 
-EXT_LIB_SFW=extern/sfw/lib/msvc/sfw$(_cflags_crt_linkmode)$(_buildmode_debug_file_suffix).lib
+EXT_LIB_SFW=extern/sfw/lib/msvc/sfw$(_cflags_crt_linkmode)$(_sfml_static_suffix)$(_buildmode_debug_file_suffix).lib
 EXT_LIB_ZSTD=extern/zstd/msvc/zstd$(_cflags_crt_linkmode).lib
 EXT_LIBS=\
 	$(SZ_SFML_ROOT)/lib/$(sfml_and_deps_libs) \
@@ -132,6 +132,9 @@ CFLAGS=$(CFLAGS) -Iextern
 # Note: C++ comp. commands would use $(CFLAGS), too! (!!Which may be stupid, and change later...!!)
 
 # Adapt the various flavors of the SFML libs (as per the debug/link modes)...
+!if "$(SFML)" == "static"
+_sfml_static_suffix = -s
+!endif
 !if "$(CRT)" == "static"
 _sfMT = -s
 sfml_libs_static = sfml-graphics-s$(_sfMT).lib sfml-window-s$(_sfMT).lib sfml-system-s$(_sfMT).lib sfml-audio-s$(_sfMT).lib
@@ -144,7 +147,7 @@ sfml_libs_dll = sfml-graphics.lib sfml-window.lib sfml-system.lib sfml-audio.lib
 !if "$(SFML)" == "static"
 sfml_libs=$(sfml_libs_static)
 sfml_and_deps_libs=$(sfml_libs) opengl32.lib freetype.lib\
-	ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib openal32.lib \
+	ogg.lib vorbis.lib vorbisenc.lib vorbisfile.lib flac.lib \
 	user32.lib kernel32.lib gdi32.lib winmm.lib advapi32.lib
 !else if "$(SFML)" == "dll"
 sfml_libs=$(sfml_libs_dll)
