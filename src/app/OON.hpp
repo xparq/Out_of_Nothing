@@ -106,7 +106,7 @@ public:
 	void toggle_muting();
 	void toggle_music();
 	void toggle_sound_fx();
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 	void toggle_huds();
 	bool huds_active();
 	void toggle_help();

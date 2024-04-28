@@ -54,7 +54,7 @@ public:
 //------------------------------------------------------------------------
 protected:
 
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 //!!	UI::HUD& ...;
 	UI::HUD_SFML timing_hud;
 	UI::HUD_SFML world_hud;

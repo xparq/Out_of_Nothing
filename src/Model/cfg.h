@@ -1,0 +1,10 @@
+﻿#ifndef _CVBD70MM479T6ND39F567MTNNH587D45F8_
+#define _CVBD70MM479T6ND39F567MTNNH587D45F8_
+
+namespace Model {
+
+	using BasicNumberType = double;
+
+}
+
+#endif // _CVBD70MM479T6ND39F567MTNNH587D45F8_

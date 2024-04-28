@@ -1,4 +1,4 @@
-﻿#include "OON.hpp"
+#include "OON.hpp"
 
 #include "Engine/Backend/HCI.hpp"
 #include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
@@ -53,7 +53,7 @@ void OONApp::show_cmdline_help(const Args& args, const char* banner)
 
 
 //----------------------------------------------------------------------------
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 void OONApp::toggle_huds()  { _ui_show_huds = !_ui_show_huds; }
 bool OONApp::huds_active()  { return _ui_show_huds; }
 void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }
@@ -165,12 +165,12 @@ void OONApp::ui_setup()
 		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
 		//!! Also, negative coords. aren't special in SFW, so this just goes off-screen: gui.setPosition({100, -200});
 
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 	ui_setup_HUDs();
 #endif
 }
 
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 void OONApp::ui_setup_HUDs()
 {
 	//!!?? Why do all these member pointers just work, also without so much as a warning,
@@ -228,7 +228,7 @@ void OONApp::ui_setup_HUDs()
 		//!! << "\n  Scale: " << [this](){ return to_string(oon_main_camera().scale() * 1e6f); } << " x 1e-6"
 		<< "\n  Base scale: " << &oon_main_camera().cfg.base_scale
 		<< "\n  Zoom adj.: "<< [this](){ return to_string(oon_main_camera().scale() / oon_main_camera().cfg.base_scale); }
-		<< "\n  Focus pt.: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
+		<< "\n  Focus: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
 /*
 		<< "\nVIEWPORT:"
 		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_min
@@ -412,7 +412,7 @@ void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
 	;
 }
 
-#endif // DISABLE_HUD
+#endif // DISABLE_HUDS
 
 
 //----------------------------------------------------------------------------
@@ -420,7 +420,7 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 //!!Sink this into the UI!
 {
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 	ui_gebi(TimingStats).onResize(width, height);
 	ui_gebi(WorldData)  .onResize(width, height);
 	ui_gebi(ViewData)   .onResize(width, height);

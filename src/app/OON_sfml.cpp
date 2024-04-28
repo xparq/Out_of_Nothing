@@ -1,4 +1,4 @@
-// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+﻿// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON_sfml.hpp"
@@ -77,7 +77,7 @@ namespace _internal {
 OONApp_sfml::OONApp_sfml(int argc, char** argv)
 	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
 	, OONApp(argc, argv, _oon_view._oon_main_view) //!! Ugh...
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(sfw::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
 	, timing_hud(SFML_WINDOW(),{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
@@ -229,7 +229,7 @@ void OONApp_sfml::draw() // override
 */
         gui.render(); // Draw last, as a translucent overlay!
 //!! These are (will be...) also part of the GUI:
-#ifndef DISABLE_HUD
+#ifndef DISABLE_HUDS
 	if (_ui_show_huds) {
 		auto& target = SFML_WINDOW();
 		timing_hud.draw(target);

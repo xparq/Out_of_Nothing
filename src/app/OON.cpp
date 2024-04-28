@@ -1,4 +1,4 @@
-// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
+﻿// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON.hpp"

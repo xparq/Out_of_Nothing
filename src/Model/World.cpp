@@ -188,7 +188,31 @@ void World::update_pairwise_interactions(float dt, Szim::SimApp& app)
 //!!
 //!! PROTECT AGAINST OTHER THREADS POTENTIALLY ADDING/DELETING OBJECTS!
 //!!
+
+//!!--------------------------------------------------------------------------
+//!! JUST FOR A REMINDER, NOTHING SERIOUS (OR EVEN MEANINGFUL) YET!
+//!! (E.g. the loops may well be just unsuitable for such optim. as-is.)
+//!!
+// Compiler boost:
+// - MSVC:
+//   Overall vectorization & floating-point loop optim.
+//   https://learn.microsoft.com/en-us/cpp/parallel/openmp/openmp-simd?view=msvc-170
+//   FTR: No significant diff.; /fp:fast was a lot more immediately noticable.
+//        In fact, adding /openmp on top of /fp:fast *DEGRADED* the performance! :-o
+//
+#ifdef _MSC_VER
+//# pragma vector // CPP2022+ (mine can't do it)
+//# pragma ivdep  // CPP2022+ (mine can't do it)
+//# pragma omp simd // Must be put directly before a `for`!
+//!! ... simdlen(8): which version? mine can't do it
+#endif
+//!!
+//!!--------------------------------------------------------------------------
+
 auto obj_cnt = bodies.size();
+#ifdef _MSC_VER
+//# pragma omp simd //!!Well, hilariously, this (or the inner?) makes it slightly SLOWER! :) :-o
+#endif
 for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); ++source_obj_ndx)
 	//!! That 1 is incompatible with `interact_all` actually! Should be 0, and 1 only with `interact_playeronly`!
 	//!! Hard-coded to player-entity-index == 0, and ignores any other (potential) players!...
@@ -198,6 +222,9 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 	if (bodies[source_obj_ndx]->terminated())
 		continue;
 
+#ifdef _MSC_VER
+//# pragma omp simd //!!Well, hilariously, this (or the outer?) makes it slightly SLOWER! :) :-o
+#endif
 #ifndef DISABLE_FULL_INTERACTION_LOOP
 	// Iterate over the pairs both ways in Full mode...
 	for (size_t target_obj_ndx = loop_mode == LoopMode::Full ? 0 : source_obj_ndx + 1;

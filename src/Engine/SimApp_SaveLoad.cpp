@@ -12,7 +12,7 @@
 #include <iostream>
 	using std::cerr, std::cout, std::endl;
 
-//#ifdef ENABLE_COMPRESSED_SNAPSHOTS
+#ifndef DISABLE_SNAPSHOT_COMPRESSION
 #   include "extern/zstd/zstd.h"
 #   include <sstream>
     using std::ostringstream, std::stringstream;
@@ -20,7 +20,7 @@
     using std::make_unique_for_overwrite;
 #   include <cstddef>
     using std::byte; //!! It's fucked up in C++ tho: a byte[] buffer can't be used for file IO... Excellent.
-//#endif // ENABLE_COMPRESSED_SNAPSHOTS
+#endif // DISABLE_SNAPSHOT_COMPRESSION
 
 namespace Szim {
 
@@ -105,7 +105,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 	Model::World snapshot; // The input buffer
 
-//#ifdef COMPRESSED_SNAPSHOTS
+#ifndef DISABLE_SNAPSHOT_COMPRESSION
 	ifstream file(fname, ios::binary);
 	if (!file || file.bad()) {
 		print_error(); return false;
@@ -142,7 +142,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 		print_error(); return false;
 	}
 	assert(in && !in.bad());
-//#else // !COMPRESSED_SNAPSHOTS
+#else //DISABLE_SNAPSHOT_COMPRESSION
 /*
 	ifstream in(fname, ios::binary);
 	if (!in || in.bad()) { print_error(); return false; }
@@ -155,7 +155,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 	}
 	assert(in && !in.bad());
 */
-//#endif // COMPRESSED_SNAPSHOTS
+#endif //DISABLE_SNAPSHOT_COMPRESSION
 
 	set_world(snapshot);
 

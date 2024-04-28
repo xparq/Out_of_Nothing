@@ -94,11 +94,10 @@ _sfml_and_deps_libs__static = $(sfml_libs) -static -lfreetype -logg -lvorbis -lv
 	extern/sfml/mingw/lib/libvorbis.a \
 	extern/sfml/mingw/lib/libvorbisenc.a \
 	extern/sfml/mingw/lib/libvorbisfile.a \
-	extern/sfml/mingw/lib/libflac.a \
-	extern/sfml/mingw/lib/libopenal32.a
+	extern/sfml/mingw/lib/libflac.a
 #!!??	user32.lib kernel32.lib gdi32.lib winmm.lib advapi32.lib
 
-_sfml_and_deps_libs__dll = $(sfml_libs) #!!?? -gl -lfreetype -logg -lvorbis -lvorbisenc -lvorbisfile -lflac -lopenal32
+_sfml_and_deps_libs__dll = $(sfml_libs) #!!?? -gl -lfreetype -logg -lvorbis -lvorbisenc -lvorbisfile -lflac
 sfml_and_deps_libs = $(_sfml_and_deps_libs__$(SFML_linkmode))
 #debug:; @echo sfml_and_deps_libs: $(sfml_and_deps_libs)
 

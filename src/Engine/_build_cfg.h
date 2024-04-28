@@ -41,6 +41,7 @@
 //----------------------------------------------------------------------------
 // Features On/Off...
 //
+
 #ifndef DISABLE_THREADS
 //# define DISABLE_THREADS
 #endif
@@ -49,19 +50,22 @@
 //# define DISABLE_AUDIO
 #endif
 
-#ifndef DISABLE_HUD
-//# define DISABLE_HUD
+#ifndef DISABLE_HUDS
+//# define DISABLE_HUDS
 #endif
 
 #ifndef DISABLE_FULL_INTERACTION_LOOP
 //# define DISABLE_FULL_INTERACTION_LOOP
 #endif
 
+#ifndef DISABLE_SNAPSHOT_COMPRESSION
+//# define DISABLE_SNAPSHOT_COMPRESSION
+#endif
+
 
 //----------------------------------------------------------------------------
-// Misc...
+// Tuning...
 //
-#define DEFAULT_MODEL_NUMBER_TYPE double
 
 
 #endif // _4059786V2MB67B5VB7I3C5_

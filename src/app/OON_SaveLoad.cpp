@@ -62,10 +62,6 @@ void OONApp::_on_snapshot_loaded()
 	gui.set<GravityModeSelector>("Gravity mode", world().gravity_mode);
 
 	// Drag:
-
-	//!!?? What did I mean by this?... :)
-	//!!??auto mS = &sfw::Slider::range;
-
 	gui.set<Slider>("Friction", world().friction);
 		//!! The stepping may be inconsistent with the loaded value though! :-o
 		//!! I think sfw::Slider will just round it...

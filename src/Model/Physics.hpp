@@ -1,7 +1,8 @@
 #ifndef _Y8GVVY7TC880X820KS272475BTBT7V_
 #define _Y8GVVY7TC880X820KS272475BTBT7V_
 
-#include "Engine/_build_cfg.h"
+#include "cfg.h" // Model::BasicNumberType
+
 
 #include "Math.hpp"
 
@@ -9,18 +10,16 @@
 
 namespace Model {
 
-using DefaultNumberType = DEFAULT_MODEL_NUMBER_TYPE;
-
 // Make sure the configured basic number type is used by each client of the model physics:
 template <typename NumT> class Physics;
-using Phys = Physics<Model::DefaultNumberType>; //!! The same should be done for Math, too!
+using Phys = Physics<Model::BasicNumberType>; //!! The same should be done for Math, too!
 
 template <typename NumT> class Physics
 {
 public:
 	using NumType = NumT;
 	//!! Multiple number types should also be supported:
-	//!!using DynamicsNumberType = DefaultNumberType;
+	//!!using DynamicsNumberType = BasicNumberType;
 	//!!...
 
 	//--------------------------------------------------------------------
