@@ -19,7 +19,7 @@ Emitter::Emitter(const Config& emitter_cfg, Szim::SimApp& app)
 //!!   Could be done by callers, or even be a follow-up callback, if necessary.)
 //!! - It still calls add_entity() (so still can't be a free function (or class)),
 //!!   but that really could be a callback than...
-void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2<NumT> nozzles[])
+void Emitter::emit_particles(size_t emitter_ndx, unsigned n, Math::Vector2<NumT> nozzles[])
 {
 	auto& emitter = app.entity(emitter_ndx); // Not const: will deplete!
 		//!! Also take care of other threads possibly deleting the emitter later on! :-o
@@ -38,7 +38,7 @@ void Emitter::emit_particles(size_t emitter_ndx, size_t n, Math::Vector2<NumT> n
 
 	auto emitter_old_r = emitter.r;
 
-	for (int i = 0; i < n; ++i) {
+	for (unsigned i = 0; i < n; ++i) {
 		auto particle_mass = cfg.particle_mass_min + (cfg.particle_mass_max - cfg.particle_mass_min) * float(rand())/RAND_MAX;
 
 		if (!cfg.create_mass && emitter.mass < particle_mass) {

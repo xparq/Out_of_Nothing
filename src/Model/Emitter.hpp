@@ -35,7 +35,7 @@ public:
 	Emitter(const Config& cfg, Szim::SimApp& app);
 	virtual ~Emitter() = default;
 
-	void emit_particles(size_t emitter_ndx, size_t n = 10, Math::Vector2<NumT> nozzles[] = nullptr);
+	void emit_particles(size_t emitter_ndx, unsigned n = 10, Math::Vector2<NumT> nozzles[] = nullptr);
 		// 'nozzles' must have n elements if not null, each relative to the
 		// origin of the emitter, and normalized to a [-1, 1] bounding range!
 

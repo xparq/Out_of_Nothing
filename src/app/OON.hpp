@@ -50,10 +50,10 @@ public:
 
 	// OON gameplay actions...
 
-	virtual void spawn(size_t parent_ndx = 0, size_t n = 1);      //!! requires: 0 == player_entity_ndx()
-	void exhaust_burst(size_t entity_ndx = 0, /* Math::Vector2f thrust_vector, */size_t n = 20);
-	void chemtrail_burst(size_t emitter_ndx = 0, size_t n = 10);
-	void shield_energize(size_t emitter_ndx = 0, /*Math::Vector2f shoot_vector,*/ size_t n = 5);
+	virtual void spawn(size_t parent_ndx = 0, unsigned n = 1);      //!! requires: 0 == player_entity_ndx()
+	void exhaust_burst(size_t entity_ndx = 0, /* Math::Vector2f thrust_vector, */unsigned n = 20);
+	void chemtrail_burst(size_t emitter_ndx = 0, unsigned n = 10);
+	void shield_energize(size_t emitter_ndx = 0, /*Math::Vector2f shoot_vector,*/ unsigned n = 5);
 
 	//!!These should be idempotent, to tolerate keyboard repeats (which could be disabled but may be problematic)!
 	//!!Also -> #105: sanitize thrusters...

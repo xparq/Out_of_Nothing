@@ -605,7 +605,7 @@ void OONApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* 
 }
 
 void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...) //override
-{
+{w, source, target, dt, distance;
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
 
@@ -746,7 +746,7 @@ void OONApp::remove_random_body()
 }
 
 //----------------------------------------------------------------------------
-void OONApp::spawn(size_t parent_ndx, size_t n)
+void OONApp::spawn(size_t parent_ndx, unsigned n)
 //!! Should not ignore mass!...
 //!!??Should gradually become a method of the object itself?
 {
@@ -770,9 +770,9 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 
 //----------------------------------------------------------------------------
 //!! An exhaust jet should be created for each thruster!
-void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ size_t n/* = ...*/)
+void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ unsigned n/* = ...*/)
 {
-	static size_t   particles_to_add = appcfg.get("sim/exhaust_particles_add", 0);
+	static unsigned particles_to_add = appcfg.get("sim/exhaust_particles_add", n);
 	static auto     exhaust_density = Phys::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
 	static uint32_t exhaust_color = appcfg.get("sim/exhaust_color", 0xaaaaaa);
 	static auto     r_min = Model::World::CFG_GLOBE_RADIUS * appcfg.get("sim/exhaust_particle_min_size_ratio", 0.02f);
@@ -808,25 +808,31 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 	//!! This should be calculated from player_thrust_force (around 3e36 N curerently):
 	const auto eject_v = 4e9f;// * abs(appcfg.exhaust_v_factor/2); //! Since this is a property of the thrusters, don't
 	                                                               //! adjust with the full v-factor!... Just a hint! :)
-	Emitter* thruster = nullptr;
+	Emitter* thruster = nullptr; // Just for uniformity (see below!)...
 
 	if (base.thrust_up.thrust_level()) {
 		static Emitter up_thrust_emitter(common_cfg, *this);
 		thruster = &up_thrust_emitter;
 		thruster->cfg.eject_velocity = {0, -eject_v};
 		thruster->cfg.eject_offset = {0, -base.r * airgap};
+		thruster->cfg.color = adjust_color(exhaust_color);
+		thruster->emit_particles(base_ndx, particles_to_add);
 	}
 	if (base.thrust_down.thrust_level()) {
 		static Emitter dn_thrust_emitter(common_cfg, *this);
 		thruster = &dn_thrust_emitter;
 		thruster->cfg.eject_velocity = {0, eject_v};
 		thruster->cfg.eject_offset = {0, base.r * airgap};
+		thruster->cfg.color = adjust_color(exhaust_color);
+		thruster->emit_particles(base_ndx, particles_to_add);
 	}
 	if (base.thrust_left.thrust_level()) {
 		static Emitter lt_thrust_emitter(common_cfg, *this);
 		thruster = &lt_thrust_emitter;
 		thruster->cfg.eject_velocity = {eject_v, 0};
 		thruster->cfg.eject_offset = {base.r * airgap, 0};
+		thruster->cfg.color = adjust_color(exhaust_color);
+		thruster->emit_particles(base_ndx, particles_to_add);
 	}
 	if (base.thrust_right.thrust_level()) {
 		static Emitter rt_thrust_emitter(common_cfg, *this);
@@ -848,16 +854,11 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 			thruster = nullptr; // Prevent the default action...
 		}
 	}
-
-	if (thruster) {
-		thruster->cfg.color = adjust_color(exhaust_color);
-		thruster->emit_particles(base_ndx, particles_to_add ? particles_to_add : n);
-	}
 }
 
 
 //----------------------------------------------------------------------------
-void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ size_t n/* = ...*/)
+void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ unsigned n/* = ...*/)
 {
 	static auto     particle_density = Phys::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
 	static uint32_t color = appcfg.get("sim/shield_color", 0xffff99);
@@ -887,7 +888,7 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 
 
 //----------------------------------------------------------------------------
-void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
+void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, unsigned n/* = ...*/)
 {
 	static auto  chemtrail_v_factor      = appcfg.get("sim/chemtrail_v_factor", 0.1f);
 	static auto  chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
@@ -906,7 +907,7 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, size_t n/* = ...*/)
 
 	auto emitter_old_r = emitter.r;
 
-	for (int i = 0; i++ < n;) {
+	for (unsigned i = 0; i++ < n;) {
 		auto particle_mass = M_min + (M_max - M_min) * float(rand())/RAND_MAX;
 		if (!chemtrail_creates_mass && emitter.mass < particle_mass) {
 //cerr << "- Not enough mass to emit particle...\n";
