@@ -358,27 +358,27 @@ _CL_dephack_procdep = @busybox awk -e 'BEGIN{print"$@:\\"}\
 
 .c.obj:
 	$(_cc_info)
-	-$(CC) $(CFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-@$(CC) $(CFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
 	@mv $(objdir)/`basename $@` -t `dirname $@`
 
 .cpp.obj:
 	$(_cc_info)
-	-$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-@$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
 	@mv $(objdir)/`basename $@` -t `dirname $@`
 
 .ixx.ifc:
 	$(_cc_info)
-	-$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-@$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
 
 .ixx.obj:
 	$(_cc_info)
-	-$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-@$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
 	@mv $(objdir)/`basename $@` -t `dirname $@`
