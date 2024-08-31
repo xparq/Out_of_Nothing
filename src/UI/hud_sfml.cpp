@@ -1,8 +1,11 @@
 #include "hud_sfml.hpp"
 
-#include "sfw/util/shim/sfml.hpp" // UTF8 conv.
+#include "sfw/geometry/Rectangle.hpp"
+#include "sfw/math/Vector.hpp"
+#include "sfw/gfx/element/FilledRect.hpp"
+#include "sfw/gfx/Color.hpp"
 
-#include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 
 //!!Struggling with doing a cliprect... (-> draw())
 //!!#include <SFML/Graphics/View.hpp>
@@ -38,7 +41,7 @@ HUD_SFML::HUD_SFML(sf::RenderWindow& window, const Config& cfg) :
 //----------------------------------------------------------------------------
 void HUD_SFML::_setup(unsigned width, unsigned height)
 {
-	if (!font.loadFromFile(cfg.font_file)) {
+	if (!font.load(cfg.font_file)) {
 		//! SFML has already written the error to the console.
 		active(false);
 	}
@@ -52,19 +55,19 @@ void HUD_SFML::_setup(unsigned width, unsigned height)
 //----------------------------------------------------------------------------
 void HUD_SFML::renderstate_append_line(const string& str)
 {
-	lines.emplace_back(font, stdstring_to_SFMLString(str), cfg.line_height - cfg.line_spacing);
+	lines.emplace_back(font, str, cfg.line_height - cfg.line_spacing);
 	auto& line = lines[renderstate_line_count()-1];
-	line.setPosition({
+	line.position({
 			(float)_panel_left + DEFAULT_PADDING,
 			(float)_panel_top  + DEFAULT_PADDING + (renderstate_line_count()-1) * cfg.line_height});
 
-	sf::FloatRect linerect = line.getLocalBounds();
-	sf::Vector2f size(linerect.left * 2 + linerect.width, linerect.top + linerect.height);
-	if (linerect.width + 2 * DEFAULT_PADDING > _panel_width)
-		_panel_width = (unsigned) linerect.width + 2 * DEFAULT_PADDING;
+	sfw::geometry::fRect linerect = line.size();
+	sfw::fVec2 size(linerect.left() * 2 + linerect.width(), linerect.top() + linerect.height());
+	if (linerect.width() + 2 * DEFAULT_PADDING > _panel_width)
+		_panel_width = (unsigned) linerect.width() + 2 * DEFAULT_PADDING;
 
 //	line.setStyle(sf::Text::Bold | sf::Text::Underlined);
-	line.setFillColor(sf::Color(cfg.fgcolor));
+	line.color(cfg.fgcolor);
 }
 
 //----------------------------------------------------------------------------
@@ -96,23 +99,23 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 	}
 
 	// OK, finally draw something...
-	sf::RectangleShape rect({(float)_panel_width,
-		(float)renderstate_line_count() * cfg.line_height + 2*DEFAULT_PADDING});//!! 0 for now: {(float)_panel_width, (float)_panel_height)};
-	rect.setPosition({(float)_panel_left, (float)_panel_top});
-	rect.setFillColor(sf::Color(cfg.bgcolor));
+	sfw::gfx::FilledRect rect;
+	rect.size = sfw::fVec2{_panel_width, renderstate_line_count() * cfg.line_height + 2 * DEFAULT_PADDING}; //!! 0 padding for now
+	rect.position = sfw::fVec2{_panel_left, _panel_top};
+	rect.colorFill = cfg.bgcolor;
 
 	// Add a fine border...
 	// - This is still not bullet-proof, but the best way I could conjure up that automatically looks nice:
-	float amp = 255.f / std::max(sf::Color(cfg.bgcolor).r, std::max(sf::Color(cfg.bgcolor).g, sf::Color(cfg.bgcolor).b));
-	rect.setOutlineColor(sf::Color(
-		(uint8_t) (sf::Color(cfg.bgcolor).r * amp),
-		(uint8_t) (sf::Color(cfg.bgcolor).g * amp),
-		(uint8_t) (sf::Color(cfg.bgcolor).b * amp),
-		(sf::Color(cfg.bgcolor).a) // + sf::Color(cfg.fgcolor).a) / 2
-	));
-	rect.setOutlineThickness(1);
+	float amp = 255.f / std::max(sfw::gfx::Color(cfg.bgcolor).r(), std::max(sfw::gfx::Color(cfg.bgcolor).g(), sfw::gfx::Color(cfg.bgcolor).b()));
+	rect.colorBorder = sfw::gfx::Color(
+		uint8_t(sfw::gfx::Color(cfg.bgcolor).r() * amp),
+		uint8_t(sfw::gfx::Color(cfg.bgcolor).g() * amp),
+		uint8_t(sfw::gfx::Color(cfg.bgcolor).b() * amp),
+		uint8_t(sfw::gfx::Color(cfg.bgcolor).a())
+	); // + sf::Color(cfg.fgcolor).a) / 2
 
-	window.draw(rect);
+	rect.draw(sfw::gfx::RenderContext(window));
+
 	for (auto& text : lines) {
 		window.draw(text);
 	}

@@ -36,7 +36,7 @@ struct SoundPlayer : _cpp_cringe_base_from_other_base, sf::Sound {
 //!!
 //!! Oh, but then it should also derive from an API-level abstraction, via TRIPLE inheritance! :-o :)
 public:
-	bool playing() const { return getStatus() == sf::Sound::Playing; } //!!?? or != sf::Sound::Stopped?!
+	bool playing() const { return getStatus() == sf::Sound::Status::Playing; } //!!?? or != sf::Sound::Stopped?!
 
 	short priority = 0;
 };

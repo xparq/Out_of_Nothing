@@ -161,7 +161,7 @@ void OONApp::ui_setup()
 
 	// Only position after built, so it has its size:
 	//!! This is also done in onResize(), but that can't be invoked on init (#462) until #515, so...:
-	gui.setPosition(4, app.main_window_height() - gui.getSize().y - 4);
+	gui.setPosition(4, app.main_window_height() - gui.getSize().y() - 4);
 		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
 		//!! Also, negative coords. aren't special in SFW, so this just goes off-screen: gui.setPosition({100, -200});
 
@@ -428,7 +428,7 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 	ui_gebi(HelpPanel)  .onResize(width, height);
 	ui_gebi(Debug)      .onResize(width, height);
 #endif
-	gui.setPosition(4, main_window_height() - gui.getSize().y - 4);
+	gui.setPosition(4, main_window_height() - gui.getSize().y() - 4);
 }
 
 } // namespace OON

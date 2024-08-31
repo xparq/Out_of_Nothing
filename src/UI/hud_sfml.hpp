@@ -4,9 +4,11 @@
 #include "hud.hpp"
 #include "Engine/Config.hpp" //!! Move to szlib (#398)
 
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/Graphics/Font.hpp>
-#include <SFML/Graphics/Text.hpp>
+#include "sfw/gfx/element/Font.hpp"
+#include "sfw/gfx/element/Text.hpp"
+
+//!!#include "sfw/gfx/Render.hpp"
+namespace sf { class RenderWindow; }
 
 #include <vector>
 #include <string>
@@ -22,6 +24,7 @@ public:
 	void renderstate_clear() { lines.clear(); }
 	void renderstate_append_line(const std::string& str);
 	auto renderstate_line_count() const { return lines.size(); }
+//!!	void draw(sfw::gfx::RenderContext& ctx);
 	void draw(sf::RenderWindow& window);
 
 	virtual void onResize(unsigned width, unsigned height) override;
@@ -33,8 +36,8 @@ protected:
 	Config cfg;
 
 	std::string _font_file;
-	std::vector<sf::Text> lines;
-	sf::Font font;
+	std::vector<sfw::gfx::Text> lines;
+	sfw::gfx::Font font;
 
 	int      _panel_left; // calc. by _setup()
 	int      _panel_top;  // calc. by _setup()

@@ -16,7 +16,7 @@
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
 #define SFML_HUD(x) (((UI::HUD_SFML&)backend).SFML_window())
-#define SFML_KEY(KeyName) sf::Keyboard::Key::KeyName
+#define SFML_KEY(KeyName) unsigned(sf::Keyboard::Key::KeyName) //!!XLAT
 
 
 //!!GCC still doesn't like modules:
@@ -181,7 +181,7 @@ cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.o
 #endif
 			break;
 		default:
-			assert(("[[[...!!UNKNOWN EVENT STATE!!...]]]", false));
+			assert(("[[[...!!UNKNOWN EVENT STATE!!...]]]" ?0:0));
 		}
 
 		// Drop the frame rate and/or sleep more if paused
@@ -257,7 +257,7 @@ void OONApp_sfml::event_loop()
 try {
 	while (!terminated() && SFML_WINDOW().isOpen()) {
 
-		for (sf::Event event; !terminated() && SFML_WINDOW().pollEvent(event);) {
+		for (sfw::event::Input event; !terminated() && (event = gui.poll());) {
 		// This inner loop is here to prevent event "jamming" (delays in
 		// event processing -- or even loss?) due to accumulating events
 		// coming faster than 1/frame for a long enough period to cause
@@ -308,7 +308,7 @@ try {
 			//!! game.inputs.push(event);
 			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
 
-			UI::update_keys_from_SFML(event); // Using the SFML adapter (via #include UI/adapter/SFML/...)
+			UI::update_keys_from_SFW(event); // Using the SFML adapter (via #include UI/adapter/SFML/...)
 				//!! This should be generalized beyond keys, and should also make it possible
 				//!! to use abstracted event types/codes for dispatching (below)!
 
@@ -316,8 +316,8 @@ try {
 //!!			poll_controls(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
 
 			// Close req.?
-			if (event.type == sf::Event::Closed ||
-			    event.type == sf::Event::KeyPressed && event.key.code == SFML_KEY(Escape)) {
+			if (event.type == sfw::event::WindowClosed ||
+			    event.type == sfw::event::KeyDown && event.get_if<sfw::event::KeyDown>()->code == SFML_KEY(Escape)) { //!!XLAT
 				request_exit();
 				// [fix-setactive-fail] -> DON'T: window.close();
 				//!!?? I forgot: how exactly is the window being closed on Esc?
@@ -329,10 +329,10 @@ try {
 			// If the GUI has the input focus, let it process the event
 			// -- except for some that really don't belong there:
 			if (gui.focused() &&
-				event.type != sf::Event::LostFocus && // Yeah, so this is an entirely different "focus"! :-o
-				event.type != sf::Event::GainedFocus &&
-				(event.type != sf::Event::MouseButtonPressed ||
-				 event.type == sf::Event::MouseButtonPressed && gui.contains(gui.getMousePosition()))) //!!{event.mouseButton.x, event.mouseButton.y})))
+				event.type != sfw::event::WindowFocused && // Yeah, so this is an entirely different "focus"! :-o
+				event.type != sfw::event::WindowUnfocused &&
+				(event.type != sfw::event::MouseButtonDown ||
+				 event.type == sfw::event::MouseButtonDown && gui.contains(gui.getMousePosition()))) //!!{event.mouseButton.x, event.mouseButton.y})))
 			{
 				goto process_ui_event;
 			}
@@ -346,11 +346,13 @@ try {
 
 			switch (event.type) //!! See above: morph into using abstracted events!
 			{
-			case sf::Event::KeyPressed:
+			case sfw::event::KeyDown:
+			{
+				auto keycode = event.get_if<sfw::event::KeyDown>()->code;
 #ifdef DEBUG
-	if (cfg.DEBUG_show_keycode) cerr << "key code: " << int(event.key.code) << "\n"; //!! SFML3 has started making things harder every day... :-/
+	if (cfg.DEBUG_show_keycode) cerr << "key code: " << keycode << "\n"; //!! SFML3 has started making things harder every day... :-/
 #endif
-				switch (event.key.code) {
+				switch (keycode) {
 				case SFML_KEY(Pause): toggle_pause(); break;
 				case SFML_KEY(Enter): time_step(1); break;
 				case SFML_KEY(Backspace): time_step(-1); break;
@@ -419,10 +421,12 @@ try {
 					; // Keep GCC happy about unhandled enum values...
 				}
 				break;
-
-			case sf::Event::TextEntered:
-				if (event.text.unicode > 128) break; // non-ASCII!
-				switch (static_cast<char>(event.text.unicode)) {
+			}
+			case sfw::event::TextInput:
+			{
+				const auto* textinput = event.get_if<sfw::event::TextInput>();
+				if (textinput->codepoint > 127) break; // non-ASCII!
+				switch (static_cast<char>(textinput->codepoint)) {
 				case 'g':
 					sfw::call<GravityModeSelector>("Gravity mode",
 						[](auto* gs) { gs->selectNext(); });
@@ -448,13 +452,14 @@ try {
 				}
 				break;
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
-			case sf::Event::MouseButtonPressed:
+			case sfw::event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Button::Left) {
 					spawn(player_entity_ndx(), 100);
 				}
 				break;
 !!*/
-			case sf::Event::MouseWheelScrolled:
+			}
+			case sfw::event::MouseWheel:
 			{
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...
@@ -463,13 +468,15 @@ try {
 				if (gui.focused() || gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				view_control(event.mouseWheelScroll.delta); //! Apparently always 1 or -1...
+				auto mousewheel = event.get_if<sfw::event::MouseWheel>();
+				view_control(mousewheel->delta); //! Apparently always 1 or -1...
 //oon_main_view().p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4;
 				break;
 			}
 
-			case sf::Event::MouseButtonPressed:
+			case sfw::event::MouseButtonDown:
 			{
+				const auto* mousepress = event.get_if<sfw::event::MouseButtonDown>();
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
 //cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
 
@@ -482,7 +489,7 @@ try {
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(event.mouseButton.x, event.mouseButton.y);
+				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(mousepress->position.x, mousepress->position.y);
 				oon_main_camera().focus_offset = vpos;
 				size_t clicked_entity_id = ~0u;
 				if (entity_at_viewpos(vpos.x, vpos.y, &clicked_entity_id)) {
@@ -520,14 +527,16 @@ cerr << "DBG> Click: no obj.\n";
 				break;
 			}
 
-			case sf::Event::MouseMoved:
+			case sfw::event::MouseMoved:
 			{
+				const auto* mousemove = event.get_if<sfw::event::MouseMoved>();
+
 				if (gui.focused()) goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(event.mouseMove.x, event.mouseMove.y);
+				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(mousemove->position.x, mousemove->position.y);
 
 				if (keystate(SHIFT) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-					// pan_to_focus(anythihg), essentially:
+					// pan_to_focus(anything), essentially:
 					oon_main_camera().pan(oon_main_camera().focus_offset - vpos);
 					oon_main_camera().focus_offset = vpos;
 				}
@@ -543,12 +552,12 @@ cerr << "DBG> Click: no obj.\n";
 				break;
 			}
 
-			case sf::Event::LostFocus:
+			case sfw::event::WindowUnfocused:
 				oon_main_view().dim();
 				reset_keys(); //!! Should be an engine-internal chore...
 				break;
 
-			case sf::Event::GainedFocus:
+			case sfw::event::WindowFocused:
 				oon_main_view().undim();
 				reset_keys(); //!! Should be an engine-internal chore...
 				break;

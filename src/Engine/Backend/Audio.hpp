@@ -9,6 +9,7 @@ namespace Szim {
 class Audio
 {
 public://!! <- protected
+	//!!RENAME THESE TO `muted`, as they can be turned back and forth freely!
 	sz::Toggle enabled = true; // all-audio override
 	sz::Toggle music_enabled = true;
 	sz::Toggle fx_enabled = true;

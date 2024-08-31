@@ -393,7 +393,7 @@ COMMIT_HASH_INCLUDE_FILE := $(outdir)/$(COMMIT_HASH_INCLUDE_FILE)
 #debug:; @echo "COMMIT_HASH_INCLUDE_FILE: $(COMMIT_HASH_INCLUDE_FILE)"
 $(COMMIT_HASH_INCLUDE_FILE):
 #	Using sh's echo explicitly, as this block is about calling an .sh script:
-	@echo "Make last commit ID available for \#including..."
+	@echo "Make last commit ID available for #including..."
 	$(SH) "tooling/git/_create_commit_hash_include_file.sh"
 	@echo
 else

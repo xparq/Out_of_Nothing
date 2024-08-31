@@ -39,7 +39,7 @@ SFML_Audio::SFML_Audio()
 bool SFML_Audio::toggle_audio()
 {
 	if (Audio::toggle_audio()) {
-		if (_music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started
+		if (_music.getStatus() != sf::Music::Status::Playing) // (Re)start if paused/stopped/never started
 			if (music_enabled) _music.play();
 	} else {
 		_music.pause(); //! not stop()
@@ -83,7 +83,7 @@ cerr << "- Error loading music: " << filename << endl;
 bool SFML_Audio::toggle_music()
 {
 	if (Audio::toggle_music()) {
-		if (enabled && _music.getStatus() != sf::Music::Playing) // (Re)start if paused/stopped/never started?
+		if (enabled && _music.getStatus() != sf::Music::Status::Playing) // (Re)start if paused/stopped/never started?
 			_music.play();
 	} else {
 		_music.pause();

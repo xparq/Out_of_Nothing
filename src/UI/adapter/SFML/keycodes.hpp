@@ -8,6 +8,8 @@
 #include "UI/Input.hpp"
 #include "SFML/Window/Event.hpp"
 
+#include "sfw/Event.hpp"
+
 namespace UI {
 
 //!! Simple, but FRAGILE map from SFML keys to ours -- SFML codes can change at any time!
@@ -56,6 +58,9 @@ constexpr auto _keycode_from_SFML(auto sfml_keycode) { return _SFMLKEY_TO_VKEY_M
 // Call this once, somewhere in the (beginning of the) app's SFML event loop!
 void update_keys_from_SFML(const sf::Event& sfml_event);
 //!! Note: ideally, other UI backends would just need their own overloads on their specific event type.
+
+//!! TMP. UNTIL xparq/sfw2#460:
+void update_keys_from_SFW(const sfw::event::Input& sfw_event);
 
 } // namespace UI
 

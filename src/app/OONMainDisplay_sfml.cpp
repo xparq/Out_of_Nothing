@@ -286,7 +286,7 @@ void OONMainDisplay_sfml::draw_banner(const char* text) // override
 
 	auto TXT_WIDTH = 300u;
 	auto TXT_HEIGHT = 80u;
-	sfw::Text banner(text, TXT_HEIGHT); //!! Not UTF-8! :-/
+	sfw::gfx::Text banner(text, TXT_HEIGHT); //!! Not UTF-8! :-/
 	banner.setPosition({
 		(float)SFML_WINDOW(game).getSize().x/2 - TXT_WIDTH/2,
 		(float)SFML_WINDOW(game).getSize().y/2 - TXT_HEIGHT/2 - 16 //!!fuckup offset

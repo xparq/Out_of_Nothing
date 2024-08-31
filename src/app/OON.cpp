@@ -609,7 +609,7 @@ void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* 
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
 
-/*!!
+#if 0//!!
 	auto dx = source->p.x - target->p.x,
 	     dy = source->p.y - target->p.y;
 //	auto distance = Math::mag2(dx, dy);
@@ -625,7 +625,8 @@ void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* 
 	Vector2f dv_source = Vector2f{dx * a_source, dy * a_source} * dt; //!! Fake "vectorization"!...
 	//!! Or perhaps: Vector2f dv_source(dx / distance * g, dy / distance * g) * dt;
 	source->v += dv_source;
-!!*/
+//!!*/
+#endif//!!
 }
 
 //----------------------------------------------------------------------------

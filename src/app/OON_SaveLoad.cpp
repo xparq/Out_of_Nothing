@@ -57,17 +57,20 @@ void OONApp::_on_snapshot_loaded()
 	//
 	using namespace sfw;
 
-	// Grav. mode:
-	//!! The grav. bias widget can only do +/-1000x, so no clean mapping from gravity_strength to that! :-/
-	gui.set<GravityModeSelector>("Gravity mode", world().gravity_mode);
+	if (!cfg.headless) {
+		// Grav. mode:
+		//!! The grav. bias widget can only do +/-1000x, so no clean mapping from gravity_strength to that! :-/
+		gui.set<GravityModeSelector>("Gravity mode", world().gravity_mode);
 
-	// Drag:
-	gui.set<Slider>("Friction", world().friction);
-		//!! The stepping may be inconsistent with the loaded value though! :-o
-		//!! I think sfw::Slider will just round it...
-	//!!
-	//!! ...
-	//!!
+		// Drag:
+		gui.set<Slider>("Friction", world().friction);
+			//!! The stepping may be inconsistent with the loaded value though! :-o
+			//!! I think sfw::Slider will just round it...
+
+		//!!
+		//!! ...
+		//!!
+	}
 
 	oon_main_view().reset(); //!! Technically this doesn't belong to the UI currently.
 	                         //!! Kinda considered part of the model, but with some

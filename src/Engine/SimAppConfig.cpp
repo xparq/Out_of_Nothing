@@ -17,6 +17,12 @@
 using namespace Szim;
 using namespace std;
 
+
+namespace {
+	void WARNING(string_view msg) { cerr << "- WARNING: " << msg << '\n'; }
+//	void ERROR  (string_view msg) { cerr << "- ERROR: "   << msg << '\n'; }
+}
+
 //----------------------------------------------------------------------------
 SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::string defaults)
 	: Config(cfg_path, nullptr, defaults)
@@ -38,6 +44,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	cfg_dir = base_path(); //!! But...: #368 - infer from the exe dir, in Config already!...
 
 	headless = false;
+	start_muted = false;
 
 	// 2. Override from the config...
 
@@ -95,14 +102,19 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 		start_fullscreen = sz::to_bool(args("fullscreen"), sz::str::empty_is_true);
 	} if (args["headless"]) {
 		headless = true;
+	} if (args["snd"]) { //!! Rename to sg. less ambiguous, like "mute" (note: this can be turned back on),
+	                     //!! and then use empty_is_false below!
+	                     //!! Also add sg. like "silent" or "disable-sound", that wouldn't allow turning it on,
+	                     //!! and would also disable the control UI entirely!
+		start_muted = sz::to_bool(args("snd"), sz::str::empty_is_true);
 	} if (args["no-save-compressed"]) {
 		save_compressed = false;
 	} if (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
 		try { iteration_limit = stoul(args("loop-cap")); } catch(...) { // stoul crashes on empty! :-/
-			cerr << "- WRNING: --loop-cap ignored! \""<<args("loop-cap")<<"\" must be a valid positive integer.\n"; }
+			WARNING("--loop-cap ignored! \"" + args("loop-cap") + "\" must be a valid positive integer."); }
 	} if (args["loop_cap"]) { //!! Sigh, the dup...
 		try { iteration_limit = stoul(args("loop_cap")); } catch(...) { // stoul crashes on empty! :-/
-			cerr << "- WRNING: --loop_cap ignored! \""<<args("loop_cap")<<"\" must be a valid positive integer.\n"; }
+			WARNING("--loop_cap ignored! \"" + args("loop_cap") + "\" must be a valid positive integer."); }
 	} if (args["fixed-dt"]) { //!! No "fixed_dt" yet!... :-/
 		try {
 			if (args("fixed-dt").empty() ) { // stof crashes on empty! :-/
@@ -113,15 +125,15 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 				fixed_model_dt_enabled = true;
 			}
 		} catch(...) {
-			cerr << "- WRNING: --fixed-dt ignored! \""<<args("fixed-dt")<<"\" must be a valid floating-pont number.\n";
+			WARNING("--fixed-dt ignored! \"" + args("fixed-dt") + "\" must be a valid floating-pont number.");
 		}
 	} if (args["fps-limit"]) { // Use =0 for no limit (just --fps-limit[=] is ignored!); but -> #521!
 
 		try { fps_limit = stoul(args("fps-limit")); } catch(...) {
-			cerr << "- WRNING: --fps-limit ignored! \""<<args("fps-limit")<<"\" must be a valid positive integer.\n"; }
+			WARNING("--fps-limit ignored! \"" + args("fps-limit") + "\" must be a valid positive integer."); }
 	} if (args["fps_limit"]) { //!! Sigh, the dup...
 		try { fps_limit = stoul(args("fps_limit")); } catch(...) {
-			cerr << "- WRNING: --fps_limit ignored! \""<<args("fps_limit")<<"\" must be a valid positive integer.\n"; }
+			WARNING("--fps_limit ignored! \"" + args("fps_limit") + "\" must be a valid positive integer."); }
 	} if (args["dbg-keys"]) {
 		DEBUG_show_keycode = true;
 	} if (args["interact"]) {
@@ -131,7 +143,7 @@ cerr << "- NOTE: --interact overrides cfg/sim/global_interactions.\n";
 
 	// Warn about deprecated options (!!should have a proper declarative mechanism for this!!):
 	auto _warn_deprecated = [](const char* argname, const char* alt = nullptr) {
-		cerr << "- WARNING: " << argname << " is DEPRECATED!\n";
+		WARNING(argname + " is DEPRECATED!"s);
 		if (alt) cerr << "  Use " << alt << " instead.\n";
 	};
 	const char* argname;

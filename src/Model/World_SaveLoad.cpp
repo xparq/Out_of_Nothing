@@ -8,6 +8,7 @@
 //#include "Engine/SimApp.hpp"
 
 #include "extern/semver.hpp"
+#include "extern/flatbuffers/flexbuffers.h" // Schemaless self-descriptive format
 
 #include <cassert>
 #include <fstream>
@@ -41,6 +42,9 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 //!! For reg. testing:
 //!!	version = "0.0.1";
 	semver::version saved_version(version ? version : Model::VERSION);
+
+	//!! Dummy compilation smoke test only yet:
+	flexbuffers::Builder fbb;
 
 	out << "MODEL_VERSION = " << saved_version << '\n';
 

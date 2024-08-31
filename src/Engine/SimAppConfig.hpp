@@ -48,8 +48,13 @@ struct SimAppConfig : Config
 //	std::string addon_dir;
 	std::string quick_snapshot_filename_pattern; // Relative paths will be prefixed with session_dir
 	bool save_compressed;
+
 	// UI
 	bool        headless;
+	// Audio
+	bool        start_muted;
+	//!!bool        audio_disabled;
+
 	bool        start_fullscreen;
 	std::string window_title;
 	std::string default_font_file;

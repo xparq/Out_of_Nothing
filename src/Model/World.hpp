@@ -43,7 +43,7 @@ namespace Model {
 // Origin: center of the screen (window, view pane...)
 
 
-static constexpr char const* VERSION = "0.1.3";
+static constexpr char const* VERSION = "0.1.4";
 
 //============================================================================
 class World // The model world

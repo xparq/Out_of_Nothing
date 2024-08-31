@@ -59,23 +59,22 @@ void SimApp::init()
 // >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE YET!  <<<
 //
 {
-	// Guard against multiple calls (which can happen if not overridden):
+	// Guard against multiple calls (which would happen if not overridden!):
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
 
 	// Apply the config...
 
 	// Misc. fixup that should've been in the ctors, but C++...
 
-	//
 	// Some args aren't yet (!!?? can't/shouldn't be?) handled by SimAppConfig itself...
-	//
-	//!! Disabling sound from the cmdline may mean either disabling the sound
-	//!! engine + the control UI entirely, or just the initial state!
-	//!! -> Well, --snd=off should remain the latter, and for disabling, there
-	//!!    should be a --disable-sound option!
-	//!! ALSO: This in fact should be treated the same way as e.g. --headless! (See that one in the cfg!)
-	if (args["snd"])
-		backend.audio.enabled(sz::to_bool(args("snd"), sz::str::empty_is_true));
+
+	// UI...
+	if (cfg.headless)
+		gui.disable();
+
+	// Audio...
+	if (cfg.start_muted)
+		backend.audio.enabled(false);
 
 	// Time control...
 	iterations.max(cfg.iteration_limit);

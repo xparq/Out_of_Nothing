@@ -75,12 +75,14 @@ SimApp::SimApp(int argc, char** argv, View::ScreenView& main_view)
 	// Bootstrap the backend...
 	, backend(SFML_Backend::use(cfg))
 	// Init the GUI...
-	, gui(((SFML_Backend&)backend).SFML_window(), {
-		.basePath = cfg.asset_dir.c_str(), // Trailing / provided by the cfg. fixup!
-		.textureFile = "gui/texture.png",
-		.bgColor = sfw::Color(cfg.default_bg_hexcolor),
-		.fontFile = cfg.default_font_file.c_str(),
-		}, false // Don't manage the window
+	, gui(((SFML_Backend&)backend).SFML_window(),
+	      {
+	        .basePath = cfg.asset_dir.c_str(), // Trailing / ensured by the cfg. fixup!
+	        .textureFile = "gui/texture.png",
+	        .bgColor = sfw::Color(cfg.default_bg_hexcolor),
+	        .fontFile = cfg.default_font_file.c_str(),
+	      },
+	      false // Don't manage the window
 	  )
 	, _main_view(main_view)
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(main_window())}
