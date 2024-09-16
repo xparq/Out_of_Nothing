@@ -2,7 +2,7 @@
 
 #include "View/ScreenView.hpp"
 
-#include "sz/stringtools.hh"
+#include "sz/str.hh"
 //	using sz::to_bool
 
 #include <string>

@@ -79,7 +79,7 @@ private:
 	std::string _current_config; // path (string)
 	std::string _cfg_base_path; //!!TBD: append trailing (back)slash? BEWARE:
 	                           //!!It's just a quirk of Windows, Unix etc.; IT'S NOT PART OF THE PATH!!
-};
+}; // class Config
 
 } // namespace Szim
 

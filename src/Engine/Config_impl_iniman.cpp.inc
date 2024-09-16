@@ -1,6 +1,7 @@
 #include "Config.hpp"
 
-#include "extern/toml++/sz-toml.hpp" // Proxy header for a custom setup of TOML++
+#define INIMAN_CFG_GET_STD_STRING
+#include "extern/iniman/iniman.cc"
 
 #include <stdexcept>
 #include <cassert>
@@ -8,6 +9,8 @@
 
 //============================================================================
 #include "sz/sys/fs.hh" // dirname, basename
+#include "sz/str.hh"    // to_bool
+#undef NDEBUG
 #include "sz/diag/DBG.hh"
 
 static auto split(std::string_view name)
@@ -27,6 +30,7 @@ static auto split(std::string_view name)
 //============================================================================
 namespace Szim {
 
+using ini::IniMan;
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -35,42 +39,52 @@ class Config_impl
 friend class Config;
 
 	Config& _cfgi;
-	toml::table _config;
+	IniMan _config;
 
-	Config_impl(Config& ifc) : _cfgi(ifc) {}
-	bool select(string_view cfg_path, bool can_throw, const Config::Callback& post_load);
-
-	// Typed getters...
-
-//	// Special-casing const char* -> string (as the template would incorrectly return const char* if def is that!):
-//	string _get(string_view propname, const char* def) { return _get(propname, string(def)); }
-
-	template <typename T>
-	T _get(string_view propname, T def) {
-		auto [section, name] = split(propname); // Splits at the *last* / (if any)
-		return section.empty() ? _config[name].value_or(def) //!!?? Why not the same chained fallback as below?! :-o
-		                       : _config[section][name].value_or(_cfgi._base ? _cfgi._base->get(propname, def) : def);
+	Config_impl(Config& ifc)
+	:	_cfgi(ifc),
+		_config(IniMan::Config{
+	//		.SUBSTITUTION = false,
+	//		.KEEP_UNRESOLVED_REF_AS_IS = true,
+	//		.NUM_C_OCTAL = true,
+			.SUBST_ENV = true,
+			.CONTINUE_ON_SYNTAX_ERRORS = true,
+			.GLOBAL_SEARCH_BY_DEFAULT  = true,
+		})
+	{
+		//IniMan::Config::CONSOLE_MESSAGES = false;
 	}
 
-//!!??string   Config::get(string_view prop, const char* def) noexcept { return _impl->_get(prop, string(def)); }
-	//!!?? Why is this weird messing with the default type?! If it's specific to TOML++, then it should
-	//!!?? be dealt with in its adapter impl.!
+	bool select(std::string_view cfg_path, bool can_throw, const Config::Callback& post_load);
+
+	// Typed getters...
+	
+	template <typename T> //!!??, typename = enable_if_t<!is_same_v<T, string>>>
+	T _get(string_view propname, T def) {
+		auto [section, name] = split(propname); // Splits at the *last* / (if any)
+		string section_s(section);
+		string key_s(name);
+		return section.empty() ? _config.get(key_s.c_str(), def) //!!?? Why not the same chained fallback as below?! :-o
+		                       : _config.get(section_s.c_str(), key_s.c_str(), _cfgi._base ? _cfgi._base->get(propname, def) : def);
+	}
+
+	// Special-casing bool:
+	bool _get(string_view propname, bool def) {
+//DBG "BOOL: " << propname;
+		string boolstr = _get(propname, "false"s);
+		return sz::to_bool(boolstr);
+	}
 
 };
 
-bool Config_impl::select(std::string_view cfg_path, bool can_throw, const Config::Callback& post_load)
+bool Config_impl::select(string_view cfg_path, [[maybe_unused]] bool can_throw, const Config::Callback& post_load)
 {
-	//!! Wishful attempt below to try and unify both the exc. and noexc.
-	//!! modes in one control flow...
-	//!! ...and it works fine, as long as exceptions are disabled! :)
-	toml::parse_result result;
-	try {
-		result = cfg_path.empty() ?
-			toml::parse(_cfgi.defaults) : toml::parse_file(cfg_path);
-	} catch (...) {
-		assert(!result); //!! This may well be not how TOML++ works with exceptions enabled!
-	}
+//DBG "Loading " << cfg_path;
+	string fname(cfg_path);
+	auto result = /*cfg_path.empty() ?
+		_config.load(_cfgi.defaults) : */_config.load(fname.c_str());
 	if (!result) {
+/*		
 		auto& err = (toml::parse_error&)result;
 		auto errmsg = "Failed to load config \""s;
 		     errmsg += cfg_path;
@@ -79,9 +93,11 @@ bool Config_impl::select(std::string_view cfg_path, bool can_throw, const Config
 		     errmsg += "\n        at line: ";
 		     errmsg += std::to_string(err.source().begin.line);
 		if (can_throw) throw std::runtime_error(errmsg);
-		else { std::cerr << errmsg; return false; }
+		else { cerr << errmsg; return false; }
+*/
+		cerr << "- ERROR: Failed to load configuration from '"<< cfg_path <<"' ";
+		return false;
 	}
-	_config = result.table(); //!! Will not compile with exceptions enabled (I guess)!
 
 	_cfgi._current_config = cfg_path;
 	_cfgi._cfg_base_path = sz::dirname(cfg_path);

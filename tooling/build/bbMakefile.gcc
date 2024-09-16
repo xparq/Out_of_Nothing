@@ -242,6 +242,8 @@ objs_of_modules = $(CPP_MODULE_IFCS:%.ifc=%.o)
 build: info .WAIT mk_outdirs .WAIT collect_sources .WAIT cpp_modules .WAIT $(exe) .WAIT smoke_test
 	@echo "Main target ready: $(exe)"
 info:
+	@echo "WARNING: This build proc. does NOT support auto header-dep. tracking! :-/"
+	@echo
 	@echo "Build mode: DEBUG=$(DEBUG), CRT=$(CRT), SFML=$(SFML)"
 
 _mkdir = test -d $@ || mkdir $@

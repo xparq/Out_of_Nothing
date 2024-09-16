@@ -1,9 +1,12 @@
 #include "Config.hpp"
 
-#include "Config_impl_TOML++.cpp.inc"
+//#include "Config_impl_TOML++.cpp.inc"
+// My simple INI reader takes 5-6s(!!!) (and ~120K) less to compile:
+#include "Config_impl_iniman.cpp.inc"
+
 
 //============================================================================
-// Config's own impl. -- most of which depends on Config_impl already defined!
+// Generic Config impl. -- most of it depends on Config_impl already defined!
 //============================================================================
 
 namespace Szim {
@@ -38,7 +41,7 @@ std::string Config::current() const noexcept
 }
 
 //----------------------------------------------------------------------------
-// Typed getters
+// Supported typed getters
 //----------------------------------------------------------------------------
 string   Config::get(string_view prop, const char* def) noexcept { return _impl->_get(prop, string(def)); }
 bool     Config::get(string_view prop, bool def)        noexcept { return _impl->_get(prop, def); }

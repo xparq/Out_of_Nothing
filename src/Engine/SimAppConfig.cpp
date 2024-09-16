@@ -2,7 +2,7 @@
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/sys/fs.hh"
 	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
-#include "sz/stringtools.hh"
+#include "sz/str.hh"
 //	using sz::to_bool
 #include <string>
 #include <string_view>
@@ -13,14 +13,17 @@
 //!! which in turn should be split from the Engine cfg... -> #272!
 #include "UI/hud.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
 
+//!!#undef NDEBUG
+#include "sz/diag/DBG.hh"
+
 
 using namespace Szim;
 using namespace std;
 
 
 namespace {
-	void WARNING(string_view msg) { cerr << "- WARNING: " << msg << '\n'; }
 //	void ERROR  (string_view msg) { cerr << "- ERROR: "   << msg << '\n'; }
+	void WARNING(string_view msg) { cerr << "- WARNING: " << msg << '\n'; }
 }
 
 //----------------------------------------------------------------------------
@@ -176,18 +179,19 @@ cerr << "- NOTE: --interact overrides cfg/sim/global_interactions.\n";
 #endif
 	window_title += ")";
 
-cerr << "DBG> current dir: " << sz::getcwd() << '\n';
-cerr << "DBG> exe dir: " << exe_dir << '\n';
-cerr << "DBG> current config: " << (current().empty() ? "built-in defaults(!)" : current()) << '\n';
-cerr << "DBG> cfg.base_path(): " << base_path() << '\n';
-cerr << "DBG> cfg_dir: " << cfg_dir << '\n';
-cerr << "DBG> asset_dir: "   << asset_dir << '\n';
-cerr << "DBG> engine_state_dir: "   << engine_state_dir << '\n';
-cerr << "DBG> log_dir: "     << log_dir << '\n';
-cerr << "DBG> user_dir: "    << user_dir << '\n';
-cerr << "DBG> session_dir: " << session_dir << '\n';
-cerr << "DBG> model_dir: "   << model_dir << '\n';
-cerr << "DBG> iteration_limit: " << iteration_limit << '\n';
-cerr << "DBG> fixed_model_dt: " << fixed_model_dt
-     << (fixed_model_dt_enabled ? ", enabled" : ", disabled!") << '\n';
+//!! Change these to non-DBG output ("notices"), so NDEBUG won't kill it! Requires a proper (also macro-based, for line/func) logger...
+DBG "current dir: " << sz::getcwd();
+DBG "exe dir: "     << exe_dir;
+DBG "current config: " << (current().empty() ? "built-in defaults(!)" : current());
+DBG "cfg.base_path(): " << base_path();
+DBG "cfg_dir: "     << cfg_dir;
+DBG "asset_dir: "   << asset_dir;
+DBG "default_font: "<< default_font_file;
+DBG "engine_state_dir: "   << engine_state_dir;
+DBG "log_dir: "     << log_dir;
+DBG "user_dir: "    << user_dir;
+DBG "session_dir: " << session_dir;
+DBG "model_dir: "   << model_dir;
+DBG "iteration_limit: " << iteration_limit;
+DBG "fixed_model_dt: " << fixed_model_dt << (fixed_model_dt_enabled ? ", enabled" : ", disabled!");
 }

@@ -1,5 +1,5 @@
 #include "Object.hpp"
-#include "sz/stringtools.hh"
+#include "sz/str.hh"
 
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;

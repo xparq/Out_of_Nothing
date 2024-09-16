@@ -1,21 +1,49 @@
-﻿//#define DEBUG
+﻿// 0.1.2
+//#define DEBUG
 /*
-Constant-time (free-list) resource manager/allocator/container 0.1.0
+Constant-time "free-list" resource manager/allocator/container
 
-	Clients can request "keys" (opaque handles) of "locker slots" (cells)
-	from a managed pool (as long as there are free ones left), and then
-	return those keys to the container, when no longer needed, to free
-	up cells for reuse.
+	Clients can obtain opaque handles (keys) of "locker slots" (cells)
+	from a managed pool of a fixed number of contiguous cells, as long
+	as there are free ones left, and store a value of type T there.
+	(The container itself is agnostic to that actual type, it's just
+	a parameter to it.)
 
-	The stored T "cargo" values can be accessed via those keys, like using
-	a map. There is no ordering defined among the elements. There isn't
-	even iterator support either (in that, this isn't really a container;
-	see later). Copying the container (resource mgr.!) is disabled, too.
+	Each cell represents a resource, and the key of the cell is
+	meant to be used as a handle to that resource. Each key is unique
+	in the context of the container.
+	(In practice, often proxy resources (real OS handles, (smart)
+	pointers, (weak) references, indexes etc.) would be stored in
+	the cells.)
+
+	The intended use case is to model resource allocation (i.e. "locked"
+	exclusive use -- not in terms of concurrency, but ownership.
+	Once a key has been obtained, another key to the same slot can't
+	be obtained.
+
+	Later, when done using the slot, its key should be "returned" to
+	the container, so the cell be freed for reuse.
+	(Subsequent use of the same cell is not guaranteed to have the same
+	key assigned to it as before; actually, the notion of "same cell"
+	isn't even defined: it's always just one isolated cell that can be
+	accessed via a key, and there is no defined relation between keys.)
+
+	Note: upon returning the key, the content of the cell will be
+	implicitly disposed of (destructed), but whether that would also
+	mean destroying (deallocating) the actual resource, is completely
+	outside of the concern of the container.
+
+	Accessing the cell contents (e.g. to store or retrieve a T cargo
+	value) is done via the usual key-value map semantics. There is
+	no ordering defined among the elements. There isn't even iterator
+	support either (so, e.g. in the STL sense, this isn't even a
+	container; see later). Copying the container (considered to be
+	a resource manager) is disabled, too.
 
 	Otherwise, the usual STL-like semantics applies: default-constructed
-	empty cells, by-value (copy) semantics on 'store' (via op=), the usual
-	queries (empty, size, capacity etc.), no checks by default, making it
-	the user's responsibility to keep things valid.
+	empty cells, by-value copy on 'store' (via op=), the usual STL-like
+	queries (empty, size, capacity etc.), no checks by default (making
+	it the user's responsibility to keep things valid).
 
 	No exceptions are thrown currently. Instead, the enum value ERROR
 	is returned, when trying to obtain a slot while none is available.
@@ -24,23 +52,22 @@ NOTES:
 
  -  Rationale for not adding iterators:
 
-    -	The keys are opaque, and the elements are not oredered, because in
+    -	The keys are opaque, and the elements are not ordered, because in
 	the target use case those elements live entirely independently, not
 	forming a set that would (often) need to be manipulated as a whole.
 
-	The manager itself (the owner of the container) may still need to
-	iterate through the elements occasionally (but note: the by-value
-	(copy) semantics means there's no need for explicit new/delete!),
-	which can be done "manually", using the pool() query & the "secret"
-	knowledge that it's a sequential, contiguous storage of every cell.
+	The owner of the container may still need to iterate through the
+	elements occasionally, which can be done "manually", using the
+	pool() query, and the guarantee that it's actually a sequential,
+	contiguous storage of a known number of cells.
 
-    -	Iterating through the allocated slots would be expensive. Just going
-	through each *existing* cell makes little sense (they can be free!),
-	and selecting the actually allocated ones would need an O(n) linear
-	search at every ++/-- to check if it's actually an occupied cell
-	(involving a by-value op==), *and* also repeating that to ignore
+    -	Iterating over the *allocated* slots could be expensive. Note:
+	just going through every *existing* (possibly free) cell makes
+	little sense, and selecting the actually allocated ones would need
+	an O(n) linear search *at every ++/-- operation* to find out
+	if the next/prev. cell , *and* also repeating that to ignore
 	empty slots -- in the worst case also ~n times, so we're somewhere
-	near O(n) x O(n) territory...
+	near O(n*n) territory...
 	(Keeping track of used slots, too, could make that constant time,
 	but only at the cost of degrading the performance of free() to
 	linear time (if I'm not mistaken, because removing a key from the
@@ -69,11 +96,11 @@ NOTES:
 
 namespace sz {
 
-template <typename T, size_t MAX>
+template <typename T, std::size_t MAX>
 class lockers
 {
 public:
-	using key_t = size_t; // (Could be some other int., preferably unsigned; !!NOT SUPPORTED YET!)
+	using key_t = std::size_t; // (Could be some other int., preferably unsigned; !!NOT SUPPORTED YET!)
 
 	enum : key_t { ERROR = key_t(-1) };
 
@@ -100,7 +127,7 @@ public:
 		_push_free(slot);
 	}
 
-	// "Offical" alloc/free synonyms (until I can decide which set to keep...):
+	// Alloc/free synonyms (until I can decide which set to keep...):
 	[[nodiscard]] key_t get()                { return alloc(); }
 	void                release(key_t slot)  { free(slot); }
 
@@ -121,14 +148,14 @@ public:
 	//--------------------------------------------------------------------
 	// Queries...
 
-	bool empty()      const { assert(_end_free_i <= _capacity); return _end_free_i == _capacity; }
-	bool full()       const { return _end_free_i == 0; } 
-	size_t size()     const { return _capacity - _end_free_i; }
-	size_t capacity() const { assert(_capacity == MAX); // a) for now..., b) Unbelievable: fails with MSVC /DBDEBUG! :-o
-	                          return _capacity; }
+	bool empty()    const { assert(_end_free_i <= _capacity); return _end_free_i == _capacity; }
+	bool full()     const { return _end_free_i == 0; }
+	auto size()     const { return _capacity - _end_free_i; }
+	auto capacity() const { assert(_capacity == MAX); // a) for now..., b) Unbelievable: fails with MSVC /DBDEBUG! :-o
+	                        return _capacity; }
 
-	const T* pool()   const { return _slots; } 
-	      T* pool()         { return _slots; } 
+	const T* pool() const { return _slots; }
+	      T* pool()       { return _slots; }
 
 	bool is_free(key_t slot) const {
 //std::cerr << "- checking key at is_free: " << slot << endl;
@@ -138,6 +165,7 @@ public:
 		//assert(!empty()); // Well, every key is free if there's nothing allocated... :)
 		return _is_free(slot); }
 
+	// Default ctor.
 	lockers()
 	{
 		// We're working backwards from a "fake" full state:
@@ -152,16 +180,16 @@ public:
 		assert(_end_free_i == _capacity);
 
 #ifdef DEBUG
-		for (size_t i = 0; i < _capacity; ++i) {
+		for (auto i = 0; i < _capacity; ++i) {
 			assert(_free_stack[i] == i);
 		}
-		for (size_t i = 0; i < _capacity; ++i) {
+		for (auto i = 0; i < _capacity; ++i) {
 			_slots[i] = (T)'_';
 		}
 #endif		
 	}
 
-	lockers(const lockers&) = delete; // No copying of such a resource manager object!
+	lockers(const lockers&) = delete; // No copy!
 
 /*
 	// This is a limited, not-very-useful "iterator" offering for now, just
@@ -184,10 +212,10 @@ protected:
 	//--------------------------------------------------------------------
 	// Internals - Data...
 
-	size_t _capacity = MAX; //!! DYNAMIC GROWTH NOT YET IMPL.!
-	T _slots[MAX];
-	key_t _free_stack[MAX];
-	size_t _end_free_i = 0; // Not key_t, as this is an internal iterator/index of keys! (Nice "illiteration", eh? ;) )
+	std::size_t  _capacity = MAX; //!! DYNAMIC GROWTH NOT YET IMPL.!
+	T            _slots[MAX];
+	key_t        _free_stack[MAX];
+	std::size_t _end_free_i = 0; // Not key_t, as this is an internal iterator/index of keys! (Nice "illiteration", eh? ;) )
 
 	//--------------------------------------------------------------------
 	// Internals - Utilities...
@@ -212,7 +240,7 @@ protected:
 	}
 #endif
 	bool _is_free(key_t slot) const {
-		for (size_t free_i = 0; free_i < _end_free_i; ++free_i) //! Not free_i < size()!...
+		for (auto free_i = 0; free_i < _end_free_i; ++free_i) //! Not free_i < size()!...
 			if (slot == _free_stack[free_i]) return true;
 		return false;
 	}
@@ -260,8 +288,8 @@ using namespace std;
 using namespace sz;
 
 template <class T>
-auto dump_state = [](const T& lockers){
-	for (size_t slot = 0; slot < lockers.capacity(); ++slot) {
+auto dump_state = [](const T& lockers) {
+	for (auto slot = 0; slot < lockers.capacity(); ++slot) {
 #ifdef DEBUG
 //		cout << (char)lockers[slot]; // The DEBUG extensions have already marked the free items.
 		                             // Umm... But... [] access is disallowed for freed items, so:

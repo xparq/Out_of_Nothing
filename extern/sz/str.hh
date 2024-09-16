@@ -1,15 +1,58 @@
-// v0.1.2
+// v0.2.0
 
 #ifndef _XPWOEMWIERCUWEIRU3489367B207X2_
 #define _XPWOEMWIERCUWEIRU3489367B207X2_
 
-#include <string>
 #include <cstring>
-#include <cstdint> // uint32_t (<- not guaranteed to exist! :-o let the world burn, if not defined!...)
+#include <cctype>  // isspace, toupper, ...
+#include <cstdint> // uint32_t (<- not guaranteed to exist; let the world burn, if not defined!...)
+#include <string>
 #include <cassert>
 
 namespace sz {
 
+//---------------------------------------------------------------------------
+//  Strip leading/ending whitespace (or other) chars, in-place
+//
+//  Returns `src`.
+//
+inline char* strtrim(char* src, const char* leading_junk = " \t\v\r\n\f")
+{
+	const char* res;
+	const char* ptr;
+	std::size_t newend;
+
+	assert(src);
+
+	// Skip leading junk...
+	res = src + std::strspn(src, leading_junk);
+	// Find the *last* non-space char...
+	for (newend = 0, ptr = res; *ptr; ++ptr)
+	{
+		if (!std::isspace(*ptr))
+			newend = ptr - res + 1;
+	}
+	// Move the string left...
+	std::memmove(src, res, newend + 1);
+	src[newend] = '\0';
+
+	return src;
+}
+
+//---------------------------------------------------------------------------
+inline char* strlwr(char* s)
+{
+	for (char* r = s; *r; ++r) *r = (char)std::tolower(*r);
+	return s;
+}
+
+inline char* strupr(char* s)
+{
+	for (char* r = s; *r; ++r) *r = (char)std::toupper(*r);
+	return s;
+}
+
+//---------------------------------------------------------------------------
 inline bool escape_quotes(std::string* str, char quote = '"', char escmark = '\\')
 // Intended to supplement istream >> std::quoted(...).
 // And then the escape char itself must also be escaped!...
@@ -83,7 +126,8 @@ inline bool to_bool(const std::string& str, int flags = str::defaults)
 }
 
 
-}; // namespace
+} // namespace sz
+
 #endif // _XPWOEMWIERCUWEIRU3489367B207X2_
 
 
