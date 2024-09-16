@@ -8,7 +8,7 @@
 #include <iostream>
 	using std::cerr, std::endl;
 #include <cassert>
-#include "sz/debug.hh"
+#include "sz/diag/DBG.hh"
 
 using namespace Szim;
 using namespace Model;

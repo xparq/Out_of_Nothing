@@ -5,7 +5,7 @@
 
 #include <string>
 #include <cstring>
-#include <cstdint> // uint32_t -- it's optional, but let the world burn, if not defined!...
+#include <cstdint> // uint32_t (<- not guaranteed to exist! :-o let the world burn, if not defined!...)
 #include <cassert>
 
 namespace sz {
@@ -51,10 +51,10 @@ inline bool to_bool(const char* cstr, int flags = str::defaults)
 
 	if (!*cstr) return flags & str::empty_is_true;
 
-	if (*cstr == '0') { // false also if "00000" or "0.0"!
+	if (*cstr == '0') { // false also if 00000 or 0.0, but not 012 or 0.012!
 		while (*++cstr)
 			if (*cstr != '0' && *cstr != '.') return true;
-		return false; // Meh, for "0...0" etc. :)
+		return false; // Meh, for 0...0 etc. :)
 	}
 
 	// Fast-track cheats for 1st chars (accepting anything that follows):

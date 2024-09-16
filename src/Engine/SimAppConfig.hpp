@@ -3,7 +3,7 @@
 
 #include "Config.hpp"
 #include "Time.hpp"
-#include "sz/unilang.hh" // AUTO_CONST
+#include "sz/lang/.hh" // AUTO_CONST
 
 class Args; // Enough to actually #include it in the .cpp
 

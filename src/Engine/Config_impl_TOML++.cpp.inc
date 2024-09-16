@@ -1,18 +1,17 @@
 #include "Config.hpp"
 
-#include "extern/toml++/sz-toml.hpp" // Proxy header for custom TOML cfg.
+#include "extern/toml++/sz-toml.hpp" // Proxy header for a custom setup of TOML++
 
 #include <stdexcept>
 #include <cassert>
 #include <iostream> // For config load/parse errors, when exceptions are disallowed
-using namespace std;
 
 //============================================================================
-#include "sz/fs.hh" // dirname, basename
+#include "sz/sys/fs.hh" // dirname, basename
 
-static auto split(string_view name)
+static auto split(std::string_view name)
 {
-	struct { string section, prop; } result;
+	struct { std::string section, prop; } result;
 	// "Abuse" sz::dirname()/basename() to extract (hierarchical) section name:
 	result.section = sz::dirname(name);
 	//!! If the section name is identical to 'name', that means no section:
@@ -40,8 +39,8 @@ friend class Config;
 
 	// Typed getters
 	template <typename T>
-	T _get(string_view propname, T def) {
-		auto [section, name] = split(propname);
+	T _get(std::string_view propname, T def) {
+		auto [section, name] = split(propname); // Splits at the *last* / (if any)
 		return section.empty() ? _config[name].value_or(def)
 		                       : _config[section][name].value_or(_cfgi._base ? _cfgi._base->get(propname, def) : def);
 	}
@@ -68,7 +67,7 @@ bool Config_impl::select(std::string_view cfg_path, bool can_throw, const Config
 		     errmsg += "\n        at line: ";
 		     errmsg += std::to_string(err.source().begin.line);
 		if (can_throw) throw std::runtime_error(errmsg);
-		else { cerr << errmsg; return false; }
+		else { std::cerr << errmsg; return false; }
 	}
 	_config = result.table(); //!! Will not compile with exceptions enabled (I guess)!
 

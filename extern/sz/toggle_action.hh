@@ -2,12 +2,22 @@
 
 #ifndef _DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
 #define _DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
+
+//----------------------------------------------------------------------------
+// Make sure the other headers won't want to add their own unit tests...
 #ifdef UNIT_TEST
 # define save_UNIT_TEST_DN8CSVBUYTTBVYUC78HN02807XNXZ989485_ UNIT_TEST
 # undef UNIT_TEST
 #endif
 
 #include "toggle.hh"
+
+#ifdef save_UNIT_TEST_DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
+# define UNIT_TEST save_UNIT_TEST_DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
+# undef save_UNIT_TEST_DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
+#endif
+//----------------------------------------------------------------------------
+
 #include <functional>
 
 namespace sz {
@@ -26,10 +36,6 @@ protected:
 } // namespace sz
 
 
-#ifdef save_UNIT_TEST_DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
-# define UNIT_TEST save_UNIT_TEST_DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
-# undef save_UNIT_TEST_DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
-#endif
 #endif // _DN8CSVBUYTTBVYUC78HN02807XNXZ989485_
 
 

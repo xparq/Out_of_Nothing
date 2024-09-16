@@ -23,7 +23,7 @@ TODO:
 
 #include "Model/Emitter.hpp"
 
-#include "sz/unilang.hh" // AUTO_CONST
+#include "sz/lang/.hh" // AUTO_CONST
 
 #include <string>
 #include <cassert>

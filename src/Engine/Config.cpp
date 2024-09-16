@@ -8,6 +8,8 @@
 
 namespace Szim {
 
+using namespace std;
+
 //----------------------------------------------------------------------------
 Config::Config(std::string_view cfg_path, Config* base, std::string defaults, const Callback& post_load)
 	: _base(base)
@@ -30,7 +32,7 @@ bool Config::select(std::string_view cfg_path, bool can_throw, const Callback& p
 }
 
 //----------------------------------------------------------------------------
-string Config::current() const noexcept
+std::string Config::current() const noexcept
 {
 	return _current_config; //!! But... implement tagging!... (That's why this is not in the header.)
 }

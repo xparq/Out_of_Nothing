@@ -1,14 +1,16 @@
+#ifndef _90RKLJHGT45M764V6B5NC2GHDNXK86Y35J_
+#define _90RKLJHGT45M764V6B5NC2GHDNXK86Y35J_
+
+// 0.0.3
 /*****************************************************************************
-  My personal C++ "dialect add-on" and simple extensions 0.0.3
+  My personal C++ "dialect add-on" and simple extensions
 
   (Syntactic sugar, types, utilities etc. for ground-levelling across
   projects, platforms, even programming languages etc.)
 
 *****************************************************************************/
 
-#ifndef _90RKLJHGT45M764V6B5NC2GHDNXK86Y35J_
-#define _90RKLJHGT45M764V6B5NC2GHDNXK86Y35J_
-
+#include "types.hh"
 //!!#include "a proper enum..."
 
 //!! Preprocessor:

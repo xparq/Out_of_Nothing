@@ -15,7 +15,7 @@
                   // its source vector<sf::SoundBuffer> changes & reallocates!)
 #include <vector>
 
-#include "sz/debug.hh"
+#include "sz/diag/DBG.hh"
 
 namespace Szim {
 

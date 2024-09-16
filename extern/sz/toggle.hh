@@ -1,9 +1,10 @@
-﻿// v0.1.1
+﻿// v0.1.2
 
 #ifndef _8BNVCX8567245872V85BN78456NBV8C_
 #define _8BNVCX8567245872V85BN78456NBV8C_
 
-//#include <ostream> //!! The conv. op. may not be enough: templates exact-match, AFAIK!
+//!!#include <ostream> //!! For defining our own >> op, as the std >>
+                       //!! (templates!) won't see our op. bool! :-/
 #include <cassert>
 
 namespace sz {

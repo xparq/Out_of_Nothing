@@ -21,9 +21,9 @@
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
 
-#include "sz/unilang.hh" // ON/OFF, AUTO_CONST, OUT
-#include "sz/counter.hh"
-#include "sz/rolling_average.hh"
+#include "sz/lang/.hh" // ON/OFF, AUTO_CONST, OUT
+#include "sz/stat/counter.hh"
+#include "sz/stat/rolling_average.hh"
 
 //!!GCC still doesn't like modules:
 //!!import Storage;

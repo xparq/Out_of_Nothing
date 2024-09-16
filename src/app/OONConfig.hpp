@@ -4,7 +4,7 @@
 #include "Engine/Config.hpp"
 #include "extern/Args.hpp"
 
-#include "sz/unilang.hh" // AUTO_CONST
+#include "sz/lang/.hh" // AUTO_CONST
 
 class Args; // Enough to actually #include it in the .cpp
 

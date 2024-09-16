@@ -5,7 +5,7 @@
 	using namespace std::string_literals;
 //#include <string_view>
 //	using std::string_view;
-#include "sz/fs.hh"
+#include "sz/sys/fs.hh"
 	using sz::prefix_if_rel;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;

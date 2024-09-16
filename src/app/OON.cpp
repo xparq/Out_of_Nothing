@@ -12,7 +12,7 @@
 #include "UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
                        //!! And we're already using keystate() here, too, shamelessly! ;) )
 
-#include "sz/sign.hh"
+#include "sz/math/sign.hh"
 
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
@@ -21,7 +21,7 @@
 #include <iostream>
 	using std::cerr, std::endl;
 #include <cassert>
-#include "sz/debug.hh"
+#include "sz/diag/DBG.hh"
 
 using namespace Szim;
 using namespace Model;

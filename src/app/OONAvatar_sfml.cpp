@@ -1,5 +1,5 @@
 #include "OONAvatar_sfml.hpp"
-#include <sz/fs.hh>
+#include <sz/sys/fs.hh>
 #include <string_view>
 	using std::string_view;
 #include <iostream> //!! DEBUG

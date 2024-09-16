@@ -1,6 +1,6 @@
 #include "SimAppConfig.hpp"
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
-#include "sz/fs.hh"
+#include "sz/sys/fs.hh"
 	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
 #include "sz/stringtools.hh"
 //	using sz::to_bool

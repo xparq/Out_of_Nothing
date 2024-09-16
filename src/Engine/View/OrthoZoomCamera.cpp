@@ -1,6 +1,6 @@
 #include "OrthoZoomCamera.hpp"
 
-#include "sz/sign.hh"
+#include "sz/math/sign.hh"
 
 #include <iostream> //!! DEBUG
 	using std::cerr;

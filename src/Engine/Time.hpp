@@ -1,7 +1,7 @@
 ﻿#ifndef _KJHWERHKWHQNCEURTHNY48_
 #define _KJHWERHKWHQNCEURTHNY48_
 
-#include "sz/stats/collect.hh" // generic min/max/avg perf. counter
+#include "sz/stat/collect.hh" // generic min/max/avg perf. counter
 
 #include <cstdint>
 //!!#include <functional> // function<> (e.g. for timers)
