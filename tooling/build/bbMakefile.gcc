@@ -188,6 +188,7 @@ CFLAGS  += -I$(objdir) -I$(outdir)
 CFLAGS  += -Iextern
 CFLAGS  += -Wall
 # -pedantic -Wall -Wextra -Wshadow -Wwrite-strings
+CFLAGS  += -MMD
 CFLAGS  += $(CFLAGS_)
 CPPFLAGS   = $(CFLAGS) -std=c++23 # -fmodules-ts
 #			 /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/
@@ -242,8 +243,6 @@ objs_of_modules = $(CPP_MODULE_IFCS:%.ifc=%.o)
 build: info .WAIT mk_outdirs .WAIT collect_sources .WAIT cpp_modules .WAIT $(exe) .WAIT smoke_test
 	@echo "Main target ready: $(exe)"
 info:
-	@echo "WARNING: This build proc. does NOT support auto header-dep. tracking! :-/"
-	@echo
 	@echo "Build mode: DEBUG=$(DEBUG), CRT=$(CRT), SFML=$(SFML)"
 
 _mkdir = test -d $@ || mkdir $@
@@ -312,22 +311,19 @@ _cc_exitcode = $(outdir)/.tool-exitcode.tmp
 
 .c.o:
 	$(_cc_info)
-	-@$(CC) $(CFLAGS) -o$(objdir)/$(@F) $< $(_cc_depgen)
-	@mv $(objdir)/`basename $@` -t `dirname $@`
+	-@$(CC) $(CFLAGS) -o$@ $< $(_cc_depgen)
 
 .cpp.o:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) -o$(objdir)/$(@F) $< $(_cc_depgen)
-	@mv $(objdir)/`basename $@` -t `dirname $@`
+	-@$(CXX) $(CPPFLAGS) -o$@ $< $(_cc_depgen)
 
 .ixx.ifc:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$(objdir)/$(@F) $< $(_cc_depgen)
+	-@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
 
 .ixx.o:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$(objdir)/$(@F) $< $(_cc_depgen)
-	@mv $(objdir)/`basename $@` -t `dirname $@`
+	-@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
 
 #-----------------------------------------------------------------------------
 # Custom rules...
@@ -338,9 +334,9 @@ COMMIT_HASH_INCLUDE_FILE != basename $(COMMIT_HASH_INCLUDE_FILE)
 COMMIT_HASH_INCLUDE_FILE := $(outdir)/$(COMMIT_HASH_INCLUDE_FILE)
 #debug:; @echo "COMMIT_HASH_INCLUDE_FILE: $(COMMIT_HASH_INCLUDE_FILE)"
 $(COMMIT_HASH_INCLUDE_FILE): .git/logs/HEAD
-#	Using sh's echo explicitly, as this block is about calling an .sh script:
-	@echo "Make last commit ID available for #including..."
-	$(SH) "tooling/git/_create_commit_hash_include_file.sh"
+#	Using sh's echo explicitly, as this block calls an .sh script anyway:
+	@echo "Make the last commit ID available for #including..."
+	@$(SH) "tooling/git/_create_commit_hash_include_file.sh"
 	@echo
 
 #! If pdmake fails with with "dunno how to make that c:/... commit hash file"
