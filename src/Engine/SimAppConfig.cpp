@@ -194,4 +194,5 @@ DBG "session_dir: " << session_dir;
 DBG "model_dir: "   << model_dir;
 DBG "iteration_limit: " << iteration_limit;
 DBG "fixed_model_dt: " << fixed_model_dt << (fixed_model_dt_enabled ? ", enabled" : ", disabled!");
+//DBG "save_compressed: " << save_compressed; // Can be seen from the UI, too.
 }

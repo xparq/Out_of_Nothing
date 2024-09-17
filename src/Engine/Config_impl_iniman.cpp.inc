@@ -71,7 +71,7 @@ friend class Config;
 	// Special-casing bool:
 	bool _get(string_view propname, bool def) {
 //DBG "BOOL: " << propname;
-		string boolstr = _get(propname, "false"s);
+		string boolstr = _get(propname, string(1, static_cast<char>(def)));
 		return sz::to_bool(boolstr);
 	}
 
