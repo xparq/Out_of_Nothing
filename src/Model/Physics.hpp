@@ -3,8 +3,8 @@
 
 #include "cfg.h" // Model::BasicNumberType
 
-
 #include "Math.hpp"
+#include "Math/Vector2.hpp"
 
 #include <cstdint> // uint32_t for colors... --> Physics/Color.hpp!!
 
@@ -22,17 +22,27 @@ public:
 	//!!using DynamicsNumberType = BasicNumberType;
 	//!!...
 
+	using Time     = NumType; // s
+	using Length   = NumType; // m
+	using Position = Math::Vector2<Length>;
+	using Velocity = Math::Vector2<NumType>; // m/s
+	using Mass     = NumType; // kg
+	using Density  = NumType; // kg/m3
+	using Temperature = NumType; // K
+
+
 	//--------------------------------------------------------------------
 	// Constants...
 	//----------------
 
-	//! Wow, C++ `const` can't do non-integer static?! :-o
-	static constexpr auto G = NumType(6.67430e-11); //!! No point keeping this real and all the others stretched,
-	                                                //!! unless a real orbital simulation is the goal (which isn't)!...
-	static constexpr auto RADIUS_OF_EARTH  = NumType(6371000); // km
-	static constexpr auto MASS_OF_EARTH    = NumType(6e24); // kg
-	static constexpr auto DENSITY_OF_EARTH = NumType(5500); // kg/m3
-	static constexpr auto DENSITY_ROCK     = NumType(2000); // kg/m3
+	//!C++: Wow, just `const` can't do non-integer static?! :-o
+	static constexpr auto G = NumType(6.67430e-11); // N*m2/kg2 (m3/kg/s2)
+		//!! No point keeping this real and all the others stretched, unless
+		//!! a real orbital simulation is the goal (it isn't for this impl.)!...
+	static constexpr auto RADIUS_OF_EARTH  = Length(6371000);
+	static constexpr auto MASS_OF_EARTH    = Mass(6e24);
+	static constexpr auto DENSITY_OF_EARTH = Density(5500);
+	static constexpr auto DENSITY_ROCK     = Density(2000);
 
 	//--------------------------------------------------------------------
 	// Formulas...
@@ -50,18 +60,19 @@ public:
 	//! E.g. that's exactly what the OON renderer does, so it's
 	//! fine to just store this directly in the objects.
 
-	constexpr     static NumType mass_from_radius_and_density(NumType r, NumType d)
-	                               { return NumType(Math::FOUR_THIRD_PI<NumType>)* r*r*r * d; }
-	/*constexpr*/ static NumType radius_from_mass_and_density(NumType m, NumType d)
-	                               { return NumType(Math::power(m/d/NumType(Math::FOUR_THIRD_PI<NumType>), NumType(1)/NumType(3))); } //!! cmath's pow() is not constepxr! :-o
+	constexpr     static Mass mass_from_radius_and_density(Length r, Density d)
+	                               { return Mass(Math::FOUR_THIRD_PI<NumType>)* r*r*r * d; }
+	/*constexpr*/ static Length radius_from_mass_and_density(Mass m, Density d)
+	                               { return Length(Math::power(m/d/NumType(Math::FOUR_THIRD_PI<NumType>), NumType(1)/NumType(3))); } //!! cmath's pow() is not constepxr! :-o
+//!!Should be this, but test:          { return Length(Math::power(m/d/Math::FOUR_THIRD_PI<NumType>, NumType(1)/NumType(3))); } //!! cmath's pow() is not constepxr! :-o
 
 	// Temp. -> color conversion
 	// OK, but now just this quick-and-dirty impromptu hack, instead of all the above... ;)
-	static inline NumType T_to_RGB_and_BV(NumType T, uint32_t* p_color = nullptr);
+	static inline NumType T_to_RGB_and_BV(Temperature T, uint32_t* p_color = nullptr);
 
 private:
-	static constexpr auto T_BV_MIN = NumType(15000);
-	static constexpr auto T_BV_MAX = NumType(200000);
+	static constexpr auto T_BV_MIN = Temperature(15000);
+	static constexpr auto T_BV_MAX = Temperature(200000);
 };
 
 } // namespace Model
@@ -70,7 +81,7 @@ private:
 // Inl. impl...
 namespace Model {
 
-template <typename NumType> NumType Physics<NumType>::T_to_BV(NumType T) //!! just faking something simple
+template <typename NumType> NumType Physics<NumType>::T_to_BV(Temperature T) //!! just faking something simple
 {
 	// "Hot stars have temperatures around 60,000 K while cold stars have temperatures around 3,000 K"
 	// But the hottest is around 200000 K, so...
@@ -90,7 +101,7 @@ template <typename NumType> NumType Physics<NumType>::T_to_BV(NumType T) //!! ju
 				T / T_BV_MAX;
 }
 
-template <typename NumType> NumType Physics<NumType>::T_to_RGB_and_BV(NumType T, uint32_t* p_color/* = nullptr*/) // BV: [-0.4,+2.0]
+template <typename NumType> NumType Physics<NumType>::T_to_RGB_and_BV(Temperature T, uint32_t* p_color/* = nullptr*/) // BV: [-0.4,+2.0]
 //! The resulting color must be shitfed <<8 to match SFML's sf::Color.
 //! E.g. that's exactly what the OON renderer does, so it's fine to just
 //! store this directly in the objects.
