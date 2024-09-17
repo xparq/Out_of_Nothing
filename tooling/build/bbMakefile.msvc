@@ -292,8 +292,6 @@ cpp_modules:: $(CPP_MODULE_IFCS) $(objs_of_modules)
 #!!??$(objs_using_modules) $(objs_of_modules): $(CPP_MODULE_IFCS)
 $(objs_using_modules): $(CPP_MODULE_IFCS)
 
-# Include autodeps if present
--include $(hdep_makinc_file)
 
 # Strip the ugly paths from each object
 #!! Alas, can't be done without my path-inference hack to pdpmake:
@@ -391,13 +389,23 @@ ifdef COMMIT_HASH_INCLUDE_FILE
 COMMIT_HASH_INCLUDE_FILE != basename $(COMMIT_HASH_INCLUDE_FILE)
 COMMIT_HASH_INCLUDE_FILE := $(outdir)/$(COMMIT_HASH_INCLUDE_FILE)
 #debug:; @echo "COMMIT_HASH_INCLUDE_FILE: $(COMMIT_HASH_INCLUDE_FILE)"
-$(COMMIT_HASH_INCLUDE_FILE):
+$(COMMIT_HASH_INCLUDE_FILE): .git/logs/HEAD
 #	Using sh's echo explicitly, as this block is about calling an .sh script:
 	@echo "Make last commit ID available for #including..."
 	$(SH) "tooling/git/_create_commit_hash_include_file.sh"
 	@echo
+
+#! If pdmake fails with with "dunno how to make that c:/... commit hash file"
+#! that means it sees the path in a .dep file, but can't match it with the
+#! cooked non-absolute path here (and we can't use the abs path here, because
+#! it just won't accept it as a target... :-/ ). To solve this, just delete
+#! the dependency file, or create that hash.inc file e.g. by one of the other
+#! (less handicapped) build procedures before using this makefile!
+$(objdir)/app/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
 else
+#!! No talking in BB's pdmake... :-/
 #!! message -ERROR: OON_HASH_INCLUDE_FILE not defined. Env setup was not run?
 endif
 
-$(objdir)/app/main.obj: $(COMMIT_HASH_INCLUDE_FILE)
+# Include autodeps if present
+-include $(hdep_makinc_file)

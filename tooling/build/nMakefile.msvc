@@ -1249,7 +1249,7 @@ OON_FULL_REBUILD_BY_MANUAL_DEPS=$(OON_CPP_MODULE_IFCS)
 $(obj_dir)\main.obj: $(COMMIT_HASH_INCLUDE_FILE)
 
 !if defined(COMMIT_HASH_INCLUDE_FILE)
-$(COMMIT_HASH_INCLUDE_FILE):
+$(COMMIT_HASH_INCLUDE_FILE): .git/logs/HEAD
 #	Using sh's echo explicitly, as this block is about calling an .sh script:
 	@$(SH) -c "echo 	Make last commit ID available for \#including..."
 	$(_mute)$(SH) "tooling/git/_create_commit_hash_include_file.sh"
