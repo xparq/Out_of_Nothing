@@ -106,7 +106,7 @@ if not exist "%build_out_dir%" (
 	goto :eof
 )
 pushd "%repo%\lib"
-	cl /nologo /c /EHsc /%CLmode% /O2 common/*.c compress/*.c decompress/*.c -I.;decompress;compress;common /Fo%build_out_dir%/ 
+	cl /nologo /c /EHsc /%CLmode% /Zl /O2 common/*.c compress/*.c decompress/*.c -I.;decompress;compress;common /Fo%build_out_dir%/ 
 popd
 
 set "lib=%lib_out_dir%\zstd-%CLmode%.lib"
