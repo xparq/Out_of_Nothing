@@ -1,6 +1,17 @@
 ﻿#ifndef _SKDJ03946H1D81DB67ZBV6435_
 #define _SKDJ03946H1D81DB67ZBV6435_
 
+/*
+	The use of the word "session" is NOT limited to the saved state itself,
+	but models the entire run-time context of a... well: session..., possibly
+	even shared by multiple simultaneous users, and serverd by multiple hosts.
+
+	Some (especially shared) sessions may not even be possible to save -- only
+	record -- meaningfully. (The difference being: saving is for continuing a
+	session, while recording only preserves (certain forms of) data history,
+	mainly for analysis or entertainment (e.g. playback) purposes.)
+*/
+
 #include <string>
 
 namespace Szim {
@@ -33,7 +44,7 @@ class SessionManager
 //!! flexibility features (that would be too much for the already fattening
 //!! SimApp).
 //!!
-//!! Support multiple live sessions, switching between them to select the active one! -> #274
+//!! #274: Support multiple live sessions, switching between them to select the active one!
 //!!
 {
 public:

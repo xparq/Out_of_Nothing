@@ -25,6 +25,7 @@
 //#include <stdexcept>
 //	using std::runtime_error;
 
+#include "sz/DBG.hh"
 
 namespace Szim {
 
@@ -89,7 +90,7 @@ void SimApp::init()
 	if (!args("session-save-as").empty()) // Even if autosave disabled. (Could be reenabled later, or manual save...)
 		session.set_save_as_filename(args("session-save-as"));
 
-cerr << "<<< SimApp Engine/API initialized. >>>\n\n";
+	cerr << "LOG> <<< SimApp Engine/API initialized. >>>\n\n";
 }
 
 //----------------------------------------------------------------------------
@@ -103,7 +104,7 @@ void SimApp::done()
 	// Guard against multiple calls (which can happen if not overridden):
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
 
-cerr << "\n<<< SimApp Engine/API shutting down... >>>\n";
+	cerr << "\nLOG> <<< SimApp Engine/API shutting down... >>>\n";
 }
 
 //----------------------------------------------------------------------------
@@ -143,7 +144,7 @@ int SimApp::run()
 		// but there *is* an overridden done() (-- wow, even weirder!!! :) ),
 		// that will be called normally, as if the default init was the client's.
 
-	cerr << "> Engine: Client app initialized. Starting main loop...\n";
+	cerr << "LOG> Engine: Client app initialized. Starting main loop...\n";
 
 	ui_event_state = SimApp::UIEventState::IDLE;
 
@@ -156,7 +157,7 @@ int SimApp::run()
 	try { default_BigBang_InflationInterval_s = std::stof(args("initial-dynamic-dt")); } catch(...){}
 	float BigBang_InflationInterval_s =
 		cfg.get("sim/timing/initial_dynamic_dt", default_BigBang_InflationInterval_s);
-//cerr <<"DBG> BigBang Inflation interval (s): "<< BigBang_InflationInterval_s << '\n';
+DBG_(BigBang_InflationInterval_s);
 	std::this_thread::sleep_for(std::chrono::duration<float>(BigBang_InflationInterval_s)); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
 		//!! This does (should do) nothing for deterministic (fixed-dt) time drive!
 		//!! More work is needed to make the Big Bang orthogonal to the timing method!
@@ -164,6 +165,7 @@ int SimApp::run()
 
 
 #ifndef DISABLE_THREADS
+DBGTRACE;
 	std::thread game_state_updates(&SimApp::update_thread_main_loop, this);
 		//! NOTES:
 		//! - When it wasn't a member fn, the value vs ref. form was ambiguous and failed to compile!
@@ -183,7 +185,7 @@ int SimApp::run()
 
 
 #ifndef DISABLE_THREADS
-//cerr << "TRACE - before threads join\n";
+//DBG "TRACE - before threads join";
 	game_state_updates.join();
 #endif
 
@@ -325,10 +327,10 @@ bool SimApp::is_entity_at_viewpos(size_t entity_id, float x, float y) const // v
 	//!! ... = e.bounding_box();
 	auto box_R = e.r * camera.scale(); //!! Not a terribly robust method to get that size...
 	auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327
-//cerr << "---> ...checking click at ("<<x<<", "<<y<<") against entity #"<<i<<" at ("<<ep.x<<", "<<ep.y<<")...\n";
+//DBG "---> ...checking click at ("<<x<<", "<<y<<") against entity #"<<i<<" at ("<<ep.x<<", "<<ep.y<<")...";
 
 	if (distance <= box_R) {
-//cerr << "- FOUND entity #" << i << "!\n";
+//DBG "- FOUND entity #" << i;
 		return true;
 	} else  return false;
 }
@@ -401,7 +403,7 @@ unsigned SimApp::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 
 	if (new_fps_limit != unsigned(-1)) { // -1 means get!
 	// Set...
-cerr << "DBG> "<<__FUNCTION__<<": Setting FPS limit to "<<new_fps_limit<<"\n";
+		cerr << "LOG> "<<__FUNCTION__<<": Setting FPS limit to "<<new_fps_limit<<"\n";
 		backend.hci.set_frame_rate_limit(new_fps_limit); // 0: no limit
 	}
 

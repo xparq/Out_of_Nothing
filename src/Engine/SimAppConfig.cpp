@@ -14,7 +14,7 @@
 #include "UI/hud.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
 
 //!!#undef NDEBUG
-#include "sz/diag/DBG.hh"
+#include "sz/DBG.hh"
 
 
 using namespace Szim;

@@ -21,7 +21,7 @@
 #include <iostream>
 	using std::cerr, std::endl;
 #include <cassert>
-#include "sz/diag/DBG.hh"
+#include "sz/DBG.hh"
 
 using namespace Szim;
 using namespace Model;

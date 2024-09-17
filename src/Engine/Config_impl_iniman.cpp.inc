@@ -11,7 +11,7 @@
 #include "sz/sys/fs.hh" // dirname, basename
 #include "sz/str.hh"    // to_bool
 #undef NDEBUG
-#include "sz/diag/DBG.hh"
+#include "sz/DBG.hh"
 
 static auto split(std::string_view name)
 {
