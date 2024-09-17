@@ -43,9 +43,9 @@ void OONApp::show_cmdline_help(const Args& args, const char* banner)
 
 	cout << R"(
   -C cfgfile
-          Load config. from 'cfgfile'. If not found, abort.
+          Load configuration from 'cfgfile'. If not found, abort.
 	  If omitted, ./default.cfg is tried, and if that doesn't exist,
-	  internal hardcoded defaultw will be used as a fallback.
+	  internal hardcoded defaults will be used as a fallback.
 
   ...lots more to be documented here, sorry!
 )";
@@ -322,7 +322,7 @@ void OONApp::ui_setup_HUDs()
 		<< "F12            Toggle (most) HUD overlays\n"
 		<< "-------------- Admin:\n"
 		<< "PAUSE, H       Halt time (model time only, sorry)\n"
-		<< "F1-F8          Quicksave (overwrites!), +SHIFT: qickload\n"
+		<< "F2-F8          Quicksave (overwrites!), +SHIFT: qickload\n"
 		<< "M              Mute/unmute music, N: sound fx\n"
 		<< "SHIFT+M        Mute/unmute all audio\n"
 //!! #543	<< "SHIFT+P        Performance (FPS) throttling on/off\n"
@@ -337,7 +337,9 @@ void OONApp::ui_setup_HUDs()
         //	<< "C              chg. collision mode: pass/stick/bounce\n"
 		<< "\n"
 		<< "-------------- Misc:\n"
+		<< "?, F1          This help\n"
 		<< "Command-line options: " << args.exename() << " /?"
+
 	;
 //cerr << help_hud;
 

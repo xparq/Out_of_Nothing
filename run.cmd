@@ -8,6 +8,7 @@ setlocal enabledelayedexpansion
 
 if _%1_ == __ (
 	echo Usage: %~n0 exename [args...]
+	echo (You meant `run-latest` perhaps?)
 	goto :eof
 )
 

@@ -364,7 +364,9 @@ try {
 				case SFML_KEY(Delete): remove_random_bodies(
 						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
 
-				case SFML_KEY(F1):  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
+//#586:				case SFML_KEY(F1):  keystate(SHIFT) ? quick_load_snapshot(1) : quick_save_snapshot(1); break;
+				case SFML_KEY(F1): toggle_help(); break; // See also '?'!
+
 				case SFML_KEY(F2):  keystate(SHIFT) ? quick_load_snapshot(2) : quick_save_snapshot(2); break;
 				case SFML_KEY(F3):  keystate(SHIFT) ? quick_load_snapshot(3) : quick_save_snapshot(3); break;
 				case SFML_KEY(F4):  keystate(SHIFT) ? quick_load_snapshot(4) : quick_save_snapshot(4); break;
@@ -448,7 +450,7 @@ try {
 				case 'x': toggle_fixed_model_dt();
 					sfw::set<sfw::CheckBox>("Fixed model Δt", cfg.fixed_model_dt_enabled);
 					break;
-				case '?': toggle_help(); break;
+				case '?': toggle_help(); break; // See also F1!
 				}
 				break;
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
