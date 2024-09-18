@@ -1,5 +1,6 @@
 #include "Object.hpp"
 #include "sz/str.hh"
+#include "sz/DBG.hh"
 
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
@@ -28,7 +29,8 @@ bool World::Body::save(std::ostream& out)
 	//!!
 	//!! Short of integrating a good 3rd-party lib, perhaps the most robust
 	//!! option could be loading whatever's saved into a std::map, and then
-	//!! initializing a template object from that.
+	//!! initializing a template object from that. [FUTURE ME HERE: I don't
+	//!! unrestand this std::map idea any more... :-/ ]
 	//!!
 
 	//!!out.write(BSIG, sizeof(BSIG));
@@ -45,6 +47,7 @@ bool World::Body::save(std::ostream& out)
 	return true;
 } // save
 
+//----------------------------------------------------------------------------
 // A static factory method:
 /*static*/ bool World::Body::load(std::istream& in, World::Body* result/* = nullptr*/)
 {
@@ -59,7 +62,10 @@ bool World::Body::save(std::ostream& out)
 		//! reallocation per every few dozen objects, BTW.
 //cerr << "["<<ndx<<"]" << c <<" \""<< objdump << "\"" << endl;
 
-	assert(sizeof(Body) == objdump.size());
+	if (sizeof(Body) != objdump.size()) {
+		cerr << "- ERROR: Failed to load object! Bytes expected: " << sizeof(Body) << ", found: " << objdump.size() <<".\n";
+		return false;
+	}
 
 	memcpy((void*)result, objdump.data(), sizeof(Body));
 //!!THIS IS BOGUS YET: THESE DIDN'T MATCH! :-o WTF?! :-ooo

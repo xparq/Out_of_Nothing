@@ -156,7 +156,7 @@ cerr << "DBG> World::load: gravity_mode = " << (unsigned)w_new.gravity_mode << '
 
 		Body template_obj;
 		if (!Body::load(in, &template_obj)) {
-cerr << "- Woah, loading entity #"<< n <<" failed!\n";
+			cerr << "- ERROR: Loading entity #"<< n <<" failed!\n";
 			return false;
 		}
 		w_new.add_body(std::move(template_obj));

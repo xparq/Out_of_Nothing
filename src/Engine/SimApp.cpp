@@ -189,7 +189,7 @@ DBGTRACE;
 	game_state_updates.join();
 #endif
 
-	cerr << "> Engine: Main loop finished. Cleaning up client app...\n";
+	cerr << "LOG> Engine: Main loop finished. Cleaning up client app...\n";
 
 	done(); // Unlike the dtor, this calls the override (or the "onced" NOOP default if none)
 

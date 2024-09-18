@@ -8,7 +8,7 @@ set regdir=%~dp0
 set tc_subdir=%tc_name%
 set tc_dir=%regdir%%tc_subdir%
 
-set baseline_version=d5de5369
+set baseline_version=2024-09-18
 
 set "baseline_dir=%regdir%_baseline-%baseline_version%"
 set "reference_startstate=%baseline_dir%/1000_bodies-START.state"
@@ -27,19 +27,19 @@ set loop=20
 :: Empty means use the latest, otherwise SZ_RUN_DIR/%1:
 set oon_use_exe=%1
 
-%SZ_PRJDIR%/tooling/diag/wtime run-latest ^
-	--headless ^
-	--cfg=test/default.cfg --snd=off ^
-	--interact ^
-	--friction=0.01 ^
-	--zoom-adjust=0.2 ^
-	--fixed-dt=0.033 ^
-	--fps-limit=0 ^
-	--loop-cap=%loop% ^
-	--exit-on-finish ^
-	--session=%reference_startstate% ^
-	--session-save-as=%new_endstate% ^
-	--no-save-compressed ^
+%SZ_PRJDIR%/tooling/diag/wtime %SZ_PRJDIR%/run-latest ^
+--headless ^
+--cfg=test/default.cfg --snd=off ^
+--interact ^
+--friction=0.01 ^
+--zoom-adjust=0.2 ^
+--fixed-dt=0.033 ^
+--fps-limit=0 ^
+--loop-cap=%loop% ^
+--exit-on-finish ^
+--session=%reference_startstate% ^
+--session-save-as=%new_endstate% ^
+--no-save-compressed ^
 
 
 ::busybox diff -b %SZ_RUN_DIR%\RESULT.save %SZ_RUN_DIR%\%baseline_version%-RESULT.ref && echo OK, SAME!

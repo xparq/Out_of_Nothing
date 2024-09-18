@@ -11,6 +11,8 @@
 	using std::ofstream, std::ifstream, std::ios;
 #include <iostream>
 	using std::cerr, std::cout, std::endl;
+#include <cerrno>
+#include <cstring> // strerror(errno)
 
 #ifndef DISABLE_SNAPSHOT_COMPRESSION
 #   include "extern/zstd/zstd.h"
@@ -38,14 +40,15 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 	auto print_error = [&fname](string alt_msg = "<unset>") {
 		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!
 		else cerr << "- ERROR: Couldn't save snapshot to file \"" << fname << "\"" << '\n';
-		perror("");
+		if (errno) { cerr << "  (CRT error: \""<< std::strerror(errno) << "\")\n"; /*errno = 0;*/ }
 	};
 
 	Model::World snapshot = world();
 	//!! OK, now we could start a low-priority background thread to actually save the snapshot...
 
-	//!! Note: perror("") may just print "No error" even if the stream is in failure mode! :-/
+	//!! Note: perror("") may just print "No error" (for errno == 0) even if the stream is in failure mode! :-/
 
+#ifndef DISABLE_SNAPSHOT_COMPRESSION
 	if (flags == UseDefaults ? cfg.save_compressed : flags & SaveOpt::Compress) { // Compressed
 		ofstream file(fname, ios::binary);
 		if (!file || file.bad()) { print_error(); return false; }
@@ -72,6 +75,7 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 		}
 		assert(out && !out.bad());
 	} else { // Not compressed
+#endif
 		ofstream out(fname, ios::binary);
 		if (!out || out.bad()) {  print_error(); return false; }
 
@@ -82,7 +86,9 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 			return false;
 		}
 		assert(out && !out.bad());
+#ifndef DISABLE_SNAPSHOT_COMPRESSION
 	} // Compressed?
+#endif
 
 	cerr << "World state saved to \"" << fname << "\".\n";
 	return true;
@@ -96,7 +102,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 	auto print_error = [&fname](string alt_msg = "<unset>") {
 		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!
 		else cerr << "- ERROR: Couldn't load snapshot from file \"" << fname << "\"" << '\n';
-		perror("");
+		if (errno) { cerr << "  (CRT error: \""<< std::strerror(errno) << "\")\n"; /*errno = 0;*/ }
 	};
 
 	//!! We could start a low-priority background thread
@@ -143,6 +149,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 	}
 	assert(in && !in.bad());
 #else //DISABLE_SNAPSHOT_COMPRESSION
+#error DISABLE_SNAPSHOT_COMPRESSION is NOT properly implemented! (It should probably be removed instead; compression can already be disabled at runtime!)
 /*
 	ifstream in(fname, ios::binary);
 	if (!in || in.bad()) { print_error(); return false; }

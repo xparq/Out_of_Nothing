@@ -9,7 +9,11 @@ rem !! These could crash horrendously, if e.g. a pre-existing value has & in it,
 rem !! Try with set "...=..."!
 rem !!
 
-if "%SZ_PRJDIR%"=="" set SZ_PRJDIR=%~dp0..
+if "%SZ_PRJDIR%"=="" (
+	pushd %~dp0..
+	set "SZ_PRJDIR=%CD%"
+	popd
+)
 if "%SZ_SFML_ROOT%"=="" set SZ_SFML_ROOT=%SZ_PRJDIR%/extern/sfml/msvc
 
 set SZ_SRC_SUBDIR=src
