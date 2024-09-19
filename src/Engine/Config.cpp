@@ -1,7 +1,8 @@
 #include "Config.hpp"
 
 //#include "Config_impl_TOML++.cpp.inc"
-// My simple INI reader takes 5-6s(!!!) (and ~120K) less to compile:
+// My simple INI reader takes 5-6s(!!!) (and ~120K) less to compile,
+// and it doesn't require quoting [main/sub] section names...
 #include "Config_impl_iniman.cpp.inc"
 
 

@@ -481,7 +481,7 @@ const char* IniMan::__findvalue(const char* section, const char* key,
 
 	const char* ptr = 0;
 
-	if (section)
+	if (section && *section)
 	{
 		if ((ptr = __findsection(section)) == 0)
 		{
@@ -609,10 +609,20 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 			{
 				mode = EOL;
 			}
-			else if (c == EOS || __IS_COMMENT(c))
+			else if (c == EOS || !quoted && __IS_COMMENT(c))
 			{
 				result = SYNTAX_INCOMPLETE;
 				cmd = STOP;
+			}
+			else if (!quoted && c == '\"')   // open quote...
+			{
+				quoted = true;
+				cmd = SKIP;
+			}
+			else if (quoted && c == '\"')  // close quote...
+			{
+				quoted = false;
+				cmd = SKIP;
 			}
 			__TOUPPER(c);
 			break;
@@ -842,7 +852,7 @@ char* IniMan::__load(const char* fnam, const char* section)
 	//
 	// locate the desired section (if one was specified)...
 	//
-	if (section)
+	if (section && *section)
 	{
 		// prepare the section name...
 		char secname_normalized[Config::MAX_LINE_SIZE] = "[";
@@ -913,7 +923,7 @@ section_found:
 
 		++lines_kept_;
 
-		if (section && procbuf[0] == '[')
+		if (section && *section && procbuf[0] == '[')
 		{
 			break;  // end of section found
 		}
@@ -978,6 +988,47 @@ void IniMan::dump() const
 //---------------------------------------------------------------------------
 #ifdef TEST
 
+//#include <cstring>
+#include <string_view>
+#include <string>
+//#include <cstddef>
+
+namespace test {
+namespace sz {
+inline std::string dirname(std::string_view path) {
+    std::size_t pos = path.find_last_of("/\\");
+    return (pos == std::string::npos) ? "" : std::string(path.substr(0, pos));
+}
+
+inline std::string basename(std::string_view path, bool keep_last_suffix = true) {
+    std::size_t pos = path.find_last_of("/\\");
+    std::string_view filename = (pos == std::string::npos) ? path : path.substr(pos + 1);
+
+    if (!keep_last_suffix) {
+        std::size_t dot_pos = filename.find_last_of('.');
+        if (dot_pos != std::string::npos) {
+            return std::string(filename.substr(0, dot_pos));
+        }
+    }
+    return std::string(filename);
+}
+} // namespace sz
+
+static auto split(std::string_view name)
+{
+	struct { std::string section, prop; } result;
+	// "Abuse" sz::dirname()/basename() to extract (hierarchical) section name:
+	result.section = sz::dirname(name);
+	//!! If the section name is identical to 'name', that means no section:
+	if (result.section == name) result.section = "";
+	result.prop = sz::basename(name);
+//DBG "cfg get: section: " << result.section;
+//DBG "cfg get: param: " << result.prop;
+	return result;
+}
+
+} // namespace test
+
 //#define IOSTREAM
 #ifdef IOSTREAM
 #	include <iostream>
@@ -1016,10 +1067,9 @@ _DEF_STREAM_TRAIT_(double,         "%g",  double, { return x; });
 #undef _DEF_STREAM_TRAIT_
 
 template <typename T>
-Stream& operator << (Stream& out, T x) { fprintf(out.handle(), _format<T>::fmt, _format<T>::conv(x)); return out; }
+Stream& operator << (Stream& out, T x)             { fprintf(out.handle(), _format<T>::fmt, _format<T>::conv(x)); return out; }
 
-//template <>
-//Stream& operator << <char> (Stream& out, char x) { fprintf(out.handle(), _format<T>::fmt, _format<T>::conv(x)); }
+Stream& operator << (Stream& out, const string& x) { fprintf(out.handle(), "%s", x.c_str()); return out; }
 
 } // namespace sz
 
@@ -1046,7 +1096,7 @@ int main(int argc, char** argv)
 //			.NUM_C_OCTAL = true,
 			.SUBST_ENV = true,
 			.CONTINUE_ON_SYNTAX_ERRORS = true,
-			.GLOBAL_SEARCH_BY_DEFAULT  = true,
+			.GLOBAL_SEARCH_BY_DEFAULT  = false,
 		}, fname);
 //	IniMan c(fname);
 
@@ -1054,8 +1104,9 @@ int main(int argc, char** argv)
 
 	if (argc >= 3)
 	{
-		key = argv[2];
-		cout << "Key '" << key << "' = " << c.get(key, "<NOT FOUND!>") << "\n";
+		auto raw_key = argv[2];
+		auto [section, key] = test::split(raw_key);
+		cout << "Section/Key: [" << section << "]/"<< key << " = " << c.get(section.c_str(), key.c_str(), "<NOT FOUND!>") << "\n";
 	}
 
 	if (argc < 2)
