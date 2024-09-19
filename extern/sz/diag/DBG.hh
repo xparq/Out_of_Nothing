@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 // My old, "meh, good enough" C++ debug helper macros
-// 2.3.5 (Public Domain; github.com/xparq/DBG.hh)
+// 2.3.7 (Public Domain; github.com/xparq/DBG.hh)
 //----------------------------------------------------------------------------
 //
 // CONTROL SYMBOLS:
@@ -173,9 +173,9 @@ namespace {
 #if defined(DBG_HAS_WIN32__) && !defined(WINAPI) //&& defined (_MSC_VER)
 #  ifndef _WINDOWS_ //!!?? Is this the canonical flag for including it (or _INC_WINDOWS)?
 #    ifndef _MSC_VER
-#      warning "Windows.h was not included, doing it with WIN32_LEAN_AND_MEAN, NOMINMAX, VC_EXTRALEAN... (Better to do it beforehand, to keep full control over how and when exactly it's done!)"
+//#      warning "Windows.h was not included, doing it with WIN32_LEAN_AND_MEAN, NOMINMAX, VC_EXTRALEAN... (Better to do it beforehand, to keep full control over how and when exactly it's done!)"
 #    else
-#      pragma message("Windows.h was not included, doing it with WIN32_LEAN_AND_MEAN, NOMINMAX, VC_EXTRALEAN... (Better to do it beforehand, to keep full control over how and when exactly it's done!)")
+//#      pragma message("Windows.h was not included, doing it with WIN32_LEAN_AND_MEAN, NOMINMAX, VC_EXTRALEAN... (Better to do it beforehand, to keep full control over how and when exactly it's done!)")
 #    endif
 #    undef  WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
@@ -303,6 +303,11 @@ namespace {
 //===========================================================================
 
 //!! Alas, StringStream still uses <string>, which will probably end up including everything anyway...:
+
+#if __has_include("sz/streams.hh")
+# include "sz/streams.hh"
+#else
+
 #include <string>
 #include <utility> // forward, decay
 #include <concepts>
@@ -547,13 +552,14 @@ template <class StreamT, typename T = void*> auto  operator << (StreamT& s, sz::
 
 } // namespace sz
 
+#endif // __has_include sz/streams
 
 //---------------------------------------------------------------------------
 #ifdef DBG_CFG_REPLACE_IOSTREAM
 
 namespace sz {
   // These get initialized before using any of the DBG... macros:
-  static inline OStream cout{stdout}, cerr{stderr}; //!! Must happen before the first streamed write!
+  static inline OStream cout{stdout}, cerr{stderr}; //!! Must happen before the first stream op.!
 } // namespace sz
   using DBG_OSTREAM_TYPE = decltype(sz::cerr);
   using DBG_SSTREAM_TYPE = sz::StringStream;
