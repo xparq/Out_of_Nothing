@@ -123,8 +123,9 @@ cflags_crt_linkmode_with_debug = $(_cflags_crt_linkmode_with_debug__$(DEBUG))
 #----------------------
 # DEBUG/RELEASE mode
 #------
-_cflags_debug__0 = -DNDEBUG /O2 /Ob3 /fp:fast #!! Adding /openmp made it SLOWER! :-o (or /openmp:experimental)
-_cflags_debug__1 = /DDEBUG /ZI /Od /Oy- /Ob0 /RTCsu /Fd$(objdir)/
+_cflags_debug__0 = -DNDEBUG /O2 /Ob3 /fp:precise #!! Adding /openmp made it SLOWER! :-o (or /openmp:experimental)
+_cflags_debug__1 = /DDEBUG /ZI /Od /Oy- /Ob0 /RTCsu /fp:precise /Fd$(objdir)/
+#	Note: /fp:precise is actually the default; it's also what GCC does by default.
 #	The -O...s above are borrowed from Dr. Memory's README/Quick start.
 #	-ZI enables edit-and-continue (but it only exists for Intel CPUs!).
 cflags_debug = $(_cflags_debug__$(DEBUG))
