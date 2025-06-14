@@ -67,9 +67,10 @@ public:
 	void right_thruster_stop();
 
 	//
-	// View control (note: panning is camera movement in world coordinates)...
+	// View control
 	//
-	void pan(Math::Vector2f delta);
+	// NOTE: panning is camera movement in screen coordinates, auto-converted to world coords.
+	void pan(sfw::fVec2 delta);
 	void pan_x(float delta);
 	void pan_y(float delta);
 	void pan_reset();

@@ -323,7 +323,7 @@ bool SimApp::is_entity_at_viewpos(size_t entity_id, float x, float y) const // v
 	//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
 	//!! Actully, in OONApp_sfml it is -- make this "tunnelable"!...
 	const auto& camera = main_view().camera();
-	auto ep = camera.world_to_view_coord(Math::Vector2f(e.p));
+	auto ep = camera.world_to_view_coord(e.p);
 	//!! ... = e.bounding_box();
 	auto box_R = e.r * camera.scale(); //!! Not a terribly robust method to get that size...
 	auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327

@@ -159,11 +159,12 @@ static int skipping_n_interactions = _PAIRWISE_UPDATE_SKIP_COUNT_;
 
 		// Thrust -- for objects with (working) thrusters...:
 		if (body->has_thruster()) {
-			Vector2<NumType> F_thr(
+			Phys::Force2 F_thr(
 				(-body->thrust_left.thrust_level() + body->thrust_right.thrust_level()) * dt,
 				( body->thrust_up.thrust_level()   - body->thrust_down.thrust_level() ) * dt
 			);
-			body->v += (F_thr / body->mass);
+			//!! Not physically correct, but a numbericall OK shortcut:
+			body->v += Phys::Velo2(F_thr / body->mass);
 		}
 	}
 
@@ -301,7 +302,7 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 
 					// Swallow the target -- for testing free-fall & accretion:
 					//target->v = source->v;
-					//target->p = source->p + Vector2<NumType>{1, 1};
+					//target->p = source->p + Pos2<NumType>{1, 1};
 
 					// Interestingly, if no speed reset/change is applied at all,
 					// an orbiting moon that hits the surface of its attractor with
@@ -330,14 +331,14 @@ if (loop_mode == LoopMode::Full) { // #65... Separate cycles for the two halves 
 	case Hyperbolic: // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
 
 				if (!target->superpower.gravity_immunity) {
-				  //! Note: doing it branchless, i.e. multiplying with the bool flag (as 0 or 1)
-				  //! made it significantly _slower_! :-o
+				  //!! Note: doing it branchless, i.e. multiplying with the bool flag (as 0 or 1)
+				  //!! made it significantly *SLOWER*! :-o
 					NumType a = gravity * source->mass / (distance * distance);
-					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt); // #525: dx/distance, dy/distance...
+					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt); // #525: dx/distance, dy/distance...
 					//! Optimizing ...*dt into a dv scaling factor (a*dt) resulted in
 					//! rounding errors & failed regression testing... But should be fine:
 //					float _dvscale = gravity * source->mass / (distance*distance) * dt;
-//					auto _dv = Vector2<NumType>(dx * _dvscale, dy * _dvscale);
+//					auto _dv = Velo2(dx * _dvscale, dy * _dvscale);
 /*!
 {static bool done=false;if(!done){done=true; // These look the same, but the calculations differ! :-o
 cerr << "dv : "<<  dv.x <<", "<<  dv.y <<"\n";
@@ -350,7 +351,8 @@ cerr << "_dv: "<< _dv.x <<", "<< _dv.y <<"\n"; }}
 	case Experimental:
 				if (!target->superpower.gravity_immunity) {
 					NumType a = gravity * source->mass / (distance * distance); //!!?? distance^3 too big for the divider?
-					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
+					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
+					//!! static_assert(is_same(decltype(dv), Phys::Velo2)));
 					target->v += dv;
 /*!!
 if(((OONApp&)game).controls.ShowDebug) {
@@ -378,24 +380,24 @@ if(((OONApp&)game).controls.ShowDebug) {
 				const NumType G_dt_div_d2 = gravity / (distance * distance) * dt;
 				if (!target->superpower.gravity_immunity) {
 					auto a = G_dt_div_d2 * source->mass;
-					auto dv = Vector2<NumType>{dx * a, dy * a};
+					auto dv = Phys::Velo2{dx * a, dy * a};
 					target->v += dv;
 				}
 				if (!source->superpower.gravity_immunity) {
 					auto a = -G_dt_div_d2 * target->mass;
-					auto dv = Vector2<NumType>{dx * a, dy * a};
+					auto dv = Phys::Velo2{dx * a, dy * a};
 					source->v += dv;
 				}
 		} else if (gravity_mode == Realistic) {
 				const NumType G_dt_div_d2 = gravity / (distance * distance) * dt; //!!?? distance^3 too big for the divider?
 				if (!target->superpower.gravity_immunity) {
 					auto a = G_dt_div_d2 * source->mass;
-					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
+					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
 					target->v += dv;
 				}
 				if (!source->superpower.gravity_immunity) {
 					auto a = -G_dt_div_d2 * target->mass;
-					auto dv = Vector2<NumType>{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
+					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
 					source->v += dv;
 				}
 		}
@@ -409,10 +411,10 @@ if(((OONApp&)game).controls.ShowDebug) {
 			}
 		} // if interacting with itself
 
-/*!! Very interesting magnified effect if calculated here, esp. with negative friction -- i.e. an expanding universe:
+/*!! Very interesting magnified effect if calculated here, esp. with negative friction (i.e. an expanding universe):
 		// Friction:
-		Vector2f dv = friction_decel * (dt);
-		Vector2f friction_decel(-target->v.x * friction, -target->v.y * friction);
+		V2f dv = friction_decel * (dt);
+		V2f friction_decel(-target->v.x * friction, -target->v.y * friction);
 		target->v += dv;
 !!*/		
 //cerr << "v["<<i<<"] = ("<<target->v.x<<","<<target->v.y<<"), " << " dx = "<<ds.x << ", dy = "<<ds.y << ", dt = "<<dt << endl;

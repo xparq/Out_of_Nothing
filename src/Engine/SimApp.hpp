@@ -16,8 +16,8 @@
                       //!! (mostly?) client .cpps that use should include it individually!)
 //!!#include "UI/HUD.hpp"
 #include "UI/Input.hpp"
-#include "Model.hpp" //!! Just a reminder/placeholder, not used yet!
-#include "Model/World.hpp"
+#include "Metamodel.hpp" //!! Just a reminder/placeholder yet...
+#include "Model/World.hpp" //!! The generic Model parts should move to Metamodel, and the specifics should be included from the (specific) app!
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
 

@@ -1,7 +1,7 @@
 #ifndef _Y8GVVY7TC880X820KS272475BTBT7V_
 #define _Y8GVVY7TC880X820KS272475BTBT7V_
 
-#include "cfg.h" // Model::BasicNumberType
+#include "Cfg.hpp" // Model::BasicNumberType
 
 #include "Math.hpp"
 #include "Math/Vector2.hpp"
@@ -21,13 +21,16 @@ public:
 	//!! Multiple number types should also be supported:
 	//!!using DynamicsNumberType = BasicNumberType;
 	//!!...
-
-	using Time     = NumType; // s
-	using Length   = NumType; // m
-	using Position = Math::Vector2<Length>;
-	using Velocity = Math::Vector2<NumType>; // m/s
-	using Mass     = NumType; // kg
-	using Density  = NumType; // kg/m3
+	template <typename T>
+	using V2 = Math::V2<T>; //!!FFS, C++: `using namespace Math` is not allowed in a class decl. :-/
+	                        //!!          Also, just `using Math::V2` is not a thing for templated aliases. :-/
+	using Time        = NumType; // s
+	using Length      = NumType; // m
+	using Pos2        = V2<Length>;
+	using Velo2       = V2<NumType>; // m/s
+	using Force2      = V2<NumType>; // N
+	using Mass        = NumType; // kg
+	using Density     = NumType; // kg/m3
 	using Temperature = NumType; // K
 
 
@@ -35,7 +38,7 @@ public:
 	// Constants...
 	//----------------
 
-	//!C++: Wow, just `const` can't do non-integer static?! :-o
+	//!C++: Wow, just `const` can't do non-integer static init?! :-o
 	static constexpr auto G = NumType(6.67430e-11); // N*m2/kg2 (m3/kg/s2)
 		//!! No point keeping this real and all the others stretched, unless
 		//!! a real orbital simulation is the goal (it isn't for this impl.)!...

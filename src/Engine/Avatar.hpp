@@ -1,7 +1,7 @@
 #ifndef _SOIUEYTB6729STVWO8E7RBYG968WRY6498754_
 #define _SOIUEYTB6729STVWO8E7RBYG968WRY6498754_
 
-#include <cstdint>
+#include <cstdint> //!! Use a proper color class (-> sz/gfx/color.hh) instead of uint32_t!
 
 namespace Szim {
 

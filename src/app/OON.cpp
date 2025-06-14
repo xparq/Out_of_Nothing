@@ -25,7 +25,7 @@
 
 using namespace Szim;
 using namespace Model;
-using namespace Math;
+//using namespace Math;
 using namespace UI;
 using namespace std;
 
@@ -213,10 +213,10 @@ cerr << "DBG> Adding player #1...\n";
 cerr << "DBG> Creating two small moons by default...\n";
 			// Add 2 "moons" with fixed parameters (mainly for testing):
 			add_entity({//.r = w.CFG_GLOBE_RADIUS/10, // Redundant: will be calculated!
-			            .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+				    .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
 			            .color = 0xff2020, .mass = 3e24f});
 			add_entity({//.r = w.CFG_GLOBE_RADIUS/7, // Redundant: will be calculated!
-			            .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS*1.8, -w.CFG_GLOBE_RADIUS*1.5},
+			            .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS * 1.8f, -w.CFG_GLOBE_RADIUS * 1.5f},
 			            .color = 0x3060ff, .mass = 3e24f});
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
@@ -246,18 +246,18 @@ void OONApp::resize_shape(size_t ndx, float factor) //override
 //----------------------------------------------------------------------------
 unsigned OONApp::add_player(World::Body&& obj, Avatar& avatar, VirtualController& ctrlr) //override
 {
-	// These are the player modelling differences:
+	// These are the player modelling differences from other objects:
 	obj.add_thrusters();
 	obj.superpower.gravity_immunity = appcfg.get("sim/player_antigravity", true);
 	obj.superpower.free_color = true;
-	obj/*.superpower*/.lifetime = Entity::Unlimited; //!!?? Should this be a superpower instead?
+	obj/*.superpower*/.lifetime = Entity::Unlimited; //!!?? Should be a superpower instead?
 
 	auto p_ent = (unsigned) //!! Blatant narrowing conv., hoping entity_count() will never overflow `unsigned`...
 		add_entity(std::forward<World::Body>(obj));
 
 	players.emplace_back(p_ent, avatar, ctrlr);
 	assert(players.size());
-	return (unsigned)players.size(); //! NOT size()-1!...
+	return (unsigned)players.size(); //!!?? Should it return the player ID instead?
 }
 
 void OONApp::remove_player(unsigned)
@@ -265,7 +265,7 @@ void OONApp::remove_player(unsigned)
 //!! A simple (not std!) player index map is needed! Or is this just the right job for sz::lockers?! :-o
 //!! However, that's a fixed number of players.
 //!! Must distinguish between a local game with *very few* local players,
-//!! and servers with a huge number of players!
+//!! and servers with a huge number of them!
 {
 }
 
@@ -385,15 +385,30 @@ void OONApp::pan_reset()
 	focused_entity_ndx = ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
-void OONApp::pan(Vector2f delta) { oon_main_camera().pan_x(delta.x); oon_main_camera().pan_y(delta.y); }
-void OONApp::pan_x(float delta)  { oon_main_camera().pan_x(delta); }
-void OONApp::pan_y(float delta)  { oon_main_camera().pan_y(delta); }
+void OONApp::pan(sfw::fVec2 delta) {
+	Phys::Pos2 w_delta{delta.x(), delta.y()};
+//!! Pretty sure it can't correctly convert a displacement, only an abs. pos:
+//!!??	auto       v_delta = oon_main_camera().world_to_view_coord(w_delta);
+//!! But they still should, in fact, work the same here, right?!
+//!!??	auto       v_delta = oon_main_camera().world_to_view_coord(w_delta);
+//!!??	oon_main_camera().pan_x(v_delta.x);
+//!!??	oon_main_camera().pan_y(v_delta.y);
+	oon_main_camera().pan_x(w_delta.x);
+	oon_main_camera().pan_y(w_delta.y);
+}
+
+//!! See #define VEC_IMPLICIT_NUM_CONV for getting rid of the expl. ctor syntax!
+void OONApp::pan_x(float delta)  { pan({delta, 0}); }
+void OONApp::pan_y(float delta)  { pan({0, delta}); }
 
 void OONApp::pan_to_center(size_t entity_id)
 {
-	oon_main_camera().center_to(Vector2f(entity(entity_id).p));
-	oon_main_camera().focus_to({0, 0});
-//!!??	oon_main_camera().focus_to(entity(id).p);
+	auto w_pos = entity(entity_id).p;
+	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+
+	oon_main_camera().center_to(v_pos);
+	oon_main_camera().focus_to(decltype(v_pos){0, 0});
+//!!??	oon_main_camera().focus_to(v_pos);
 }
 
 void OONApp::center_player(unsigned player_id)
@@ -401,10 +416,12 @@ void OONApp::center_player(unsigned player_id)
 	pan_to_center(player_entity_ndx(player_id));
 }
 
-void OONApp::pan_to_focus(size_t id)
+void OONApp::pan_to_focus(size_t entity_id)
 {
-	auto vpos = oon_main_camera().world_to_view_coord(Vector2f(entity(id).p));
-	oon_main_camera().pan(vpos - oon_main_camera().focus_offset);
+	auto w_pos = entity(entity_id).p;
+	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+
+	oon_main_camera().pan(v_pos - oon_main_camera().focus_offset);
 }
 
 /*!! OBSOLETE:
@@ -786,12 +803,12 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 	static Emitter::Config common_cfg = {
 		.eject_velocity = {0, 0},
 		.v_factor = appcfg.exhaust_v_factor, //!! Should just be calculated instead!,
-		.offset_factor = appcfg.exhaust_offset_factor, //!! Should just be calculated instead!
+		.offset_velo_factor = appcfg.exhaust_offset_factor, //!! Should just be calculated instead!
 		.particle_lifetime = appcfg.exhaust_lifetime,
 		.create_mass = appcfg.get("sim/exhaust_creates_mass", true),
 		.particle_density = exhaust_density,
 		.position_divergence = { appcfg.get("sim/exhaust_divergence", 1.f), // Scaled by the radius of the emitter!
-						appcfg.get("sim/exhaust_divergence", 1.f) },
+					 appcfg.get("sim/exhaust_divergence", 1.f) },
 		.velocity_divergence = 1.f, //!! Just an exp. "randomness factor" for now!...
 		.particle_mass_min = Phys::mass_from_radius_and_density(r_min, Phys::DENSITY_OF_EARTH), //!! WAS: exhaust_density
 		.particle_mass_max = Phys::mass_from_radius_and_density(r_max, Phys::DENSITY_OF_EARTH), //!! WAS: exhaust_density
@@ -871,7 +888,7 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 	Emitter::Config{
 		.eject_velocity = {0, 0},
 		.v_factor = appcfg.get("sim/shield_v_factor", 0.1f),
-		.offset_factor = appcfg.get("sim/shield_offset_factor", 4.f),
+		.offset_velo_factor = appcfg.get("sim/shield_offset_factor", 4.f),
 		.particle_lifetime = appcfg.get("sim/shield_decay_time", 5.f),
 		.create_mass = false, // Disabled: appcfg.get("sim/shield_creates_mass", false),
 		.particle_density = particle_density,
@@ -1054,7 +1071,9 @@ void OONApp::updates_for_next_frame()
 		//!! -- so, this reminder has been added for that case...
 
 		// One less time-step to make next time (if any):
-		if (timestepping) if (timestepping < 0 ) ++timestepping; else --timestepping;
+		if (timestepping) {
+			if (timestepping < 0 ) ++timestepping; else --timestepping;
+		}
 	}
 
 	//----------------------------
@@ -1087,8 +1106,8 @@ static const float autofollow_margin    = appcfg.get("controls/autofollow_margin
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
 			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(
-				Vector2f(entity(focused_entity_ndx).p));
-			if (oon_main_camera().confine(Vector2f(entity(focused_entity_ndx).p),
+				entity(focused_entity_ndx).p);
+			if (oon_main_camera().confine(entity(focused_entity_ndx).p,
 			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/OONConfig::DEFAULT_ZOOM,
 			    autofollow_throwback)) { // true = drifted off
 				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...

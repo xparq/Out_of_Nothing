@@ -1,7 +1,7 @@
 #ifndef _O9090N7B8C12345607N772V8456N720C45Y69780W5B76980YH_
 #define _O9090N7B8C12345607N772V8456N720C45Y69780W5B76980YH_
 
-#include <cstddef> // size_t
+#include <cstddef> // size_t, but #592!
 
 namespace Szim {
 

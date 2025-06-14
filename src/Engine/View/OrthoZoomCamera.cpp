@@ -61,7 +61,7 @@ void OrthoZoomCamera::reset_zoom(float trim/* = 1*/)
 }
 
 
-bool OrthoZoomCamera::confine(Math::Vector2f world_pos, float margin, float throwback)
+bool OrthoZoomCamera::confine(V2f world_pos, float margin, float throwback)
 {
 	auto vpos = world_to_view_coord(world_pos);
 	bool out_of_view = false;
@@ -87,13 +87,13 @@ void OrthoZoomCamera::zoom(float change_ratio)
 }
 
 
-Math::Vector2f OrthoZoomCamera::grid_offset() const
+Camera::V2f OrthoZoomCamera::grid_offset() const
 {
 //!!vpos = world_to_view_coord(offset);
 //cerr <<"pan offset to view: "<< vpos.x <<", "<< vpos.y << '\n'; // BTW, non-zero if there's an off-center focus point
 
 	auto vpos = offset;
-	auto v = Math::Vector2f{ // Easy-peasy, right?... ;)
+	auto v = Math::V2f{ // Easy-peasy, right?... ;)
 		- (float(int(abs(vpos.x + _edge_x_max)) % int(cfg.width))  - _edge_x_max) * sz::sign(vpos.x + _edge_x_max),
 		- (float(int(abs(vpos.y + _edge_y_max)) % int(cfg.height)) - _edge_y_max) * sz::sign(vpos.y + _edge_y_max)};
 //cerr <<"- gridline pos. for offset ("<<offset.x<<", "<<offset.y<<"): "<< (v.x)<<", "<< (v.y) << '\n';
@@ -101,10 +101,10 @@ Math::Vector2f OrthoZoomCamera::grid_offset() const
 }
 
 
-Math::Vector2f OrthoZoomCamera::screen_to_view_coord(int x, int y) const
+Camera::V2f OrthoZoomCamera::screen_to_view_coord(int x, int y) const
 {
 	return {(float)x + _edge_x_min, _edge_y_max - (float)y};
-//	Math::Vector2f v = {(float)x + _edge_x_min, _edge_y_max - (float)y};
+//	auto v = V2f{(float)x + _edge_x_min, _edge_y_max - (float)y};
 //cerr << "DBG> Camera coords. from screen pos ("<<x<<", "<<y<<"): "<<v.x <<", "<<v.y<<'\n';
 //	return v;
 }

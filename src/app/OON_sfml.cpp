@@ -491,7 +491,7 @@ try {
 				if (gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(mousepress->position.x, mousepress->position.y);
+				auto vpos = oon_main_camera().screen_to_view_coord(mousepress->position.x, mousepress->position.y);
 				oon_main_camera().focus_offset = vpos;
 				size_t clicked_entity_id = ~0u;
 				if (entity_at_viewpos(vpos.x, vpos.y, &clicked_entity_id)) {
@@ -535,7 +535,7 @@ cerr << "DBG> Click: no obj.\n";
 
 				if (gui.focused()) goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				Math::Vector2f vpos = oon_main_camera().screen_to_view_coord(mousemove->position.x, mousemove->position.y);
+				auto vpos = oon_main_camera().screen_to_view_coord(mousemove->position.x, mousemove->position.y);
 
 				if (keystate(SHIFT) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
 					// pan_to_focus(anything), essentially:

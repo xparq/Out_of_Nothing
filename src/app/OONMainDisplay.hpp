@@ -6,7 +6,6 @@
 
 //!!namespace Model { class World; class World::Body; } //!! *Sigh*, C++, still nope! :-o https://stackoverflow.com/a/36736618/1479945
 #include "Model/World.hpp"
-//#include "Model/Math/Vector2.hpp"
 
 #include <cstdint>
 

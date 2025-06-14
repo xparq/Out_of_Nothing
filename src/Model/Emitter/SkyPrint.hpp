@@ -45,7 +45,8 @@ public://!!for now...
 	mutable float H_SCALE = 1.0f;   //!! UNUSED YET! (Mostly useless anyway; depends on call frequency etc.)
 	mutable float NOZZLE_X = -1.0f; // Abstract X position of the printed scanline.
 
-	Math::Vector2<Phys::NumType> nozzles[NOZZLE_COUNT];
+	using Vect = Math::V2<Phys::NumType>;
+	Vect nozzles[NOZZLE_COUNT];
 		//!! Nozzle positions should be precalculated and (generally) fixed though, and
 		//!! only the on/off state + "ink color" should be calculated each time!
 		//!! (Not counting various distortion effects, like italic etc. -> Rich text support!)

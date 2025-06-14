@@ -2,9 +2,11 @@
 #define _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_
 
 #include "Engine/Config.hpp"
-#include "Engine/Model.hpp" // Includes Physics.hpp, which includes Math.hpp
-#include "Object.hpp" //!!This just includes World.hpp back, intentionally! :)
-                      //!!(Wouldn't be that way if World::Body{} could just be defined there, separetely.)
+#include "Engine/Metamodel.hpp"
+#include "Physics.hpp"
+#include "Object.hpp" //!! That will just blatantly #include World.hpp back (intentionally)! :-o :)
+                      //!! Note: it's basically empty, the obj. type is actually defined here, as World::Body.
+                      //!! (Wouldn't be this way if World::Body{} could be defined there, separetely, but C++...)
 
 #include <memory>     // shared_ptr
 #include <vector>
@@ -29,7 +31,7 @@ namespace Szim { class SimApp; } //! Sigh, must predeclare it here, outside the 
 namespace Model {
 
 
-// World coordinate system (Right-handed, like OpenGL):
+// World coordinate system (Right-handed, like OpenGL's):
 //
 //         +y  -z
 //          | /
@@ -106,8 +108,8 @@ public:
 		Phys::Time lifetime = Unlimited; // how many s to Event::Decay; < 0 means stable end state that can't decay (any further)
 		Phys::Length r = 0; // Calculated from mass and density
 		Phys::Density density = Phys::DENSITY_ROCK / 2; //!!low-density objects should look like Swiss cheese! ;)
-		Phys::Position p{0, 0};
-		Phys::Velocity v{0, 0};
+		Phys::Pos2  p{0, 0};
+		Phys::Velo2 v{0, 0};
 		Phys::Temperature T = 0; // affected by various events; represented by color
 
 		// Preset/recomputed:

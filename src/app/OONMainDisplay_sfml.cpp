@@ -171,19 +171,17 @@ void OONMainDisplay_sfml::render_scene()
 		//!! related to the camera view, but would obviously be best if they were identical!...
 
 	// a)
-		auto vpos = app().main_view().camera()
-			.world_to_view_coord(Math::Vector2f(body->p));
-				//!! - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset!
-			        //!! Mind the inverted camera & model y, too!
+		auto vpos = app().main_view().camera().world_to_view_coord(body->p); //!!?? No longer needed: ... - V2f(body->r, -body->r)); //!! Rely on the objects' own origin offset!
+			                                                             //!! Mind the inverted camera & model y, too!
 	// b)
 	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
-	//	auto vpos = oon_camera.world_to_view_coord(body->p); //!! - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
+	//	auto vpos = oon_camera.world_to_view_coord(body->p); //!!?? No longer needed: ... - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
 	//	                                                     //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
 		//!! -> #221, #445
-		trshape.setPosition({ vpos.x + float(app().main_window_width()/2),
-			             -vpos.y + float(app().main_window_height()/2)}); //!! "Standardize" on the view's centered origin instead!
+		trshape.setPosition(sf::Vector2f{ vpos.x + float(app().main_window_width()/2),
+			                         -vpos.y + float(app().main_window_height()/2)}); //!! "Standardize" on the view's centered origin instead!
 
 //cerr << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x) * oon_camera.scale() + oon_camera.offset.x
 //			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y) * oon_camera.scale() + oon_camera.offset.y <<'\n';

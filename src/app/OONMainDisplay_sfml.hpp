@@ -69,7 +69,7 @@ public:
 protected:
 	void render_scene(); //!!?? render_scene(some target or context or options?)
 
-	// Note: these are templates (by the auto arg), so must be in the header!
+	//! Templates (by the auto arg), so must be in the header!
 	void transform_object(size_t ndx, const auto& op) {
 		auto& trshape = dynamic_cast<sf::Transformable&>(shapes_to_change[ndx]);
 		op(trshape);
