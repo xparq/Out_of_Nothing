@@ -54,7 +54,7 @@ public:
 	// -------------------------------------------------------------------
 
 	// SFML-specific overrides
-	void create_cached_shape(const Model::World::Body& body, size_t entity_ndx) override;
+	void create_cached_shape(const Model::Entity& body, size_t entity_ndx) override;
 	void delete_cached_shape(size_t entity_ndx) override;
 	void resize_objects(float factor) override;
 	void resize_object(size_t ndx, float factor) override;

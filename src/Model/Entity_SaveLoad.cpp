@@ -1,4 +1,5 @@
-#include "Object.hpp"
+#include "Entity.hpp"
+
 #include "sz/str.hh"
 #include "sz/DBG.hh"
 
@@ -19,7 +20,7 @@ namespace Model {
 
 //static constexpr char BSIG[] = {'O','B','0','1'};
 //----------------------------------------------------------------------------
-bool World::Body::save(std::ostream& out)
+bool Entity::save(std::ostream& out)
 {
 	//!!
 	//!! This is totally brittle as yet, won't survive any change in the struct,
@@ -49,7 +50,7 @@ bool World::Body::save(std::ostream& out)
 
 //----------------------------------------------------------------------------
 // A static factory method:
-/*static*/ bool World::Body::load(std::istream& in, World::Body* result/* = nullptr*/)
+/*static*/ bool Entity::load(std::istream& in, Entity* result/* = nullptr*/)
 {
 	if (!result) {
 		return false; //!! VERIFY NOT IMPLEMENTED YET!
@@ -62,12 +63,12 @@ bool World::Body::save(std::ostream& out)
 		//! reallocation per every few dozen objects, BTW.
 //cerr << "["<<ndx<<"]" << c <<" \""<< objdump << "\"" << endl;
 
-	if (sizeof(Body) != objdump.size()) {
-		cerr << "- ERROR: Failed to load object! Bytes expected: " << sizeof(Body) << ", found: " << objdump.size() <<".\n";
+	if (sizeof(Entity) != objdump.size()) {
+		cerr << "- ERROR: Failed to load object! Bytes expected: " << sizeof(Entity) << ", found: " << objdump.size() <<".\n";
 		return false;
 	}
 
-	memcpy((void*)result, objdump.data(), sizeof(Body));
+	memcpy((void*)result, objdump.data(), sizeof(Entity));
 //!!THIS IS BOGUS YET: THESE DIDN'T MATCH! :-o WTF?! :-ooo
 //!!cerr << "template_obj.T = " << template_obj.T << endl;
 

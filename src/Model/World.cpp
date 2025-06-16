@@ -45,20 +45,20 @@ World::World() :
 }
 
 //----------------------------------------------------------------------------
-size_t World::add_body(Body const& obj)
+size_t World::add_body(Entity const& obj)
 {
 ZoneScoped; //!!IPROF("add_body-copy");
-	bodies.push_back(std::make_shared<Body>(obj));
+	bodies.push_back(std::make_shared<Entity>(obj));
 	auto ndx = bodies.size() - 1;
 	bodies[ndx]->recalc();
 	return ndx;
 }
 
-size_t World::add_body(Body&& obj)
+size_t World::add_body(Entity&& obj)
 {
 ZoneScoped; //!!IPROF("add_body-move");
 	obj.recalc(); // just recalc the original throw-away obj
-	bodies.emplace_back(std::make_shared<Body>(obj));
+	bodies.emplace_back(std::make_shared<Entity>(obj));
 	return bodies.size() - 1;
 }
 
@@ -240,10 +240,10 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 
 		if (source_obj_ndx == target_obj_ndx) continue; // Skip itself...
 
-		Body* target = bodies[target_obj_ndx].get(); //! shared_ptr
+		Entity* target = bodies[target_obj_ndx].get(); //! shared_ptr
 		if (target->terminated()) continue;
 
-		Body* source = bodies[source_obj_ndx].get();
+		Entity* source = bodies[source_obj_ndx].get();
 
 		// Collisions & gravity...
 		//!! see the relative looping now! if (i != source_obj_ndx)

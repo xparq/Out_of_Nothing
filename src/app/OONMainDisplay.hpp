@@ -4,8 +4,8 @@
 #include "Engine/View/ScreenView.hpp"
 #include "Engine/View/OrthoZoomCamera.hpp"
 
-//!!namespace Model { class World; class World::Body; } //!! *Sigh*, C++, still nope! :-o https://stackoverflow.com/a/36736618/1479945
-#include "Model/World.hpp"
+//!#include "Model/Entity.hpp"
+namespace Model { struct Entity; }
 
 #include <cstdint>
 
@@ -56,7 +56,7 @@ public:
 
 	// -------------------------------------------------------------------
 	// Pure virtuals for the actual drawing impl...
-	virtual void create_cached_shape(const Model::World::Body& body, size_t entity_ndx) = 0;
+	virtual void create_cached_shape(const Model::Entity& body, size_t entity_ndx) = 0;
 	virtual void delete_cached_shape(size_t entity_ndx) = 0;
 	virtual void resize_objects(float factor) = 0;
 	virtual void resize_object(size_t ndx, float factor) = 0;

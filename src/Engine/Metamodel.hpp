@@ -16,8 +16,13 @@ struct World
 };
 !!*/
 
+
+//!! Temporarily defined here (until it grows to need its own place):
+enum Event { None, Interacting, Collided, Terminated };
+
+
 //!! JUNK:
-constexpr static float Unlimited = -1; //! Not enum to avoid the atrocity of `World::Body::Enumname::Unlimited`
+constexpr static float Unlimited = -1; //! Not enum to avoid the atrocity of `Entity::Enumname::Unlimited`
 
 } // namespace Model
 

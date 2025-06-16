@@ -120,7 +120,8 @@ public:
 	}
 
 	// Entities...
-	using Entity = Model::World::Body;
+
+	using Entity = Model::Entity;
 
 	size_t entity_count() const { return world().bodies.size(); }
 //!! ADD DEBUG-MODE BOUNDS-CHECKING FOR THESE!

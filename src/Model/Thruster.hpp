@@ -5,7 +5,7 @@
 
 namespace Model {
 
-struct Thruster //!! : public Entity //!! Not only not ready for that, but it's even the other way around: Object (i.e. Entity) #includes Thruster currently!... :-o
+struct Thruster //!! : public Entity //!! Not only not ready for that, but it's even the other way around: Entity #includes Thruster currently!... :-o
 {
 	//!!Thrusters should be vectorized, relative to the body orientation,
 	//!!which is currently fixed to be identical to the world coordinate system...

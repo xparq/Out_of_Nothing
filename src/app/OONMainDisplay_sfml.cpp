@@ -83,7 +83,7 @@ cerr << "----------------------------------------- "<<__FUNCTION__<<"\n";
 
 
 //----------------------------------------------------------------------------
-void OONMainDisplay_sfml::create_cached_shape(const Model::World::Body& body, size_t entity_ndx) //override
+void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, size_t entity_ndx) //override
 {
 	auto& game = app();
 

@@ -212,7 +212,7 @@ void OONApp::ui_setup_HUDs()
 	// World
 	ui_gebi(WorldData)
 		<< "# of objs.: " << [this](){ return to_string(entity_count()); }
-		<< "\nBody interactions: " << &const_world()._interact_all
+		<< "\nEntity interactions: " << &const_world()._interact_all
 		<< "\nGravity mode: " << [this](){ return to_string((unsigned)const_world().gravity_mode); }
 		<< "\n  - strength: " << &const_world().gravity
 		<< "\nDrag: " << ftos(&this->const_world().friction)

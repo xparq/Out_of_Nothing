@@ -154,8 +154,8 @@ cerr << "DBG> World::load: gravity_mode = " << (unsigned)w_new.gravity_mode << '
 //cerr << "char after the index: '"<< c <<"'" <<endl;
 		assert(n == ndx);
 
-		Body template_obj;
-		if (!Body::load(in, &template_obj)) {
+		Entity template_obj;
+		if (!Entity::load(in, &template_obj)) {
 			cerr << "- ERROR: Loading entity #"<< n <<" failed!\n";
 			return false;
 		}

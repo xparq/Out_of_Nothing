@@ -244,7 +244,7 @@ void OONApp::resize_shape(size_t ndx, float factor) //override
 
 
 //----------------------------------------------------------------------------
-unsigned OONApp::add_player(World::Body&& obj, Avatar& avatar, VirtualController& ctrlr) //override
+unsigned OONApp::add_player(Entity&& obj, Avatar& avatar, VirtualController& ctrlr) //override
 {
 	// These are the player modelling differences from other objects:
 	obj.add_thrusters();
@@ -253,7 +253,7 @@ unsigned OONApp::add_player(World::Body&& obj, Avatar& avatar, VirtualController
 	obj/*.superpower*/.lifetime = Entity::Unlimited; //!!?? Should be a superpower instead?
 
 	auto p_ent = (unsigned) //!! Blatant narrowing conv., hoping entity_count() will never overflow `unsigned`...
-		add_entity(std::forward<World::Body>(obj));
+		add_entity(std::forward<Entity>(obj));
 
 	players.emplace_back(p_ent, avatar, ctrlr);
 	assert(players.size());
@@ -647,7 +647,7 @@ void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* 
 }
 
 //----------------------------------------------------------------------------
-bool OONApp::touch_hook(World* w, World::Body* obj1, World::Body* obj2)
+bool OONApp::touch_hook(World* w, Entity* obj1, Entity* obj2)
 {w;
 	if (obj1->is_player() || obj2->is_player()) {
 		backend.audio.play_sound(snd_clack);

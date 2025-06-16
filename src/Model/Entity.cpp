@@ -1,4 +1,4 @@
-#include "Object.hpp"
+#include "Entity.hpp"
 #include <cassert>
 //#include <iostream>
 //	using std::cerr, std::endl;
@@ -11,7 +11,7 @@ namespace Model {
 
 
 //============================================================================
-void World::Body::recalc()
+void Entity::recalc()
 {
 //	mass = powf(r, 3) * density;
 	r = Phys::radius_from_mass_and_density(mass, density);
@@ -20,7 +20,7 @@ void World::Body::recalc()
 }
 
 //----------------------------------------------------------------------------
-void World::Body::on_event(Event e, ...)
+void Entity::on_event(Event e, ...)
 {
 	r *= 0.1f; //!!Just to see if it works at all!...
 }
