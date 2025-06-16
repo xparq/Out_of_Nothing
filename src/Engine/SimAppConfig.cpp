@@ -109,7 +109,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	                     //!! and then use empty_is_false below!
 	                     //!! Also add sg. like "silent" or "disable-sound", that wouldn't allow turning it on,
 	                     //!! and would also disable the control UI entirely!
-		start_muted = sz::to_bool(args("snd"), sz::str::empty_is_true);
+		start_muted = !sz::to_bool(args("snd"), sz::str::empty_is_true);
 	} if (args["no-save-compressed"]) {
 		save_compressed = false;
 	} if (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
