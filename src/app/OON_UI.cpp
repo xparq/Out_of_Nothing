@@ -101,6 +101,7 @@ void OONApp::ui_setup()
 			->update(75); // %
 		auto	audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
 			audio_onoff->add("Audio: ", new CheckBox([&](auto*){ app.backend.audio.toggle_audio(); },  app.backend.audio.enabled));
+			audio_onoff->add(" - Music: ", new CheckBox([&](auto*){ app.backend.audio.toggle_music(); }, app.backend.audio.music_enabled));
 			audio_onoff->add(" - FX: ", new CheckBox([&](auto*){ app.backend.audio.toggle_sounds(); }, app.backend.audio.fx_enabled));
 
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
@@ -323,8 +324,9 @@ void OONApp::ui_setup_HUDs()
 		<< "-------------- Admin:\n"
 		<< "PAUSE, H       Halt time (model time only, sorry)\n"
 		<< "F2-F8          Quicksave (overwrites!), +SHIFT: qickload\n"
-		<< "M              Mute/unmute music, N: sound fx\n"
-		<< "SHIFT+M        Mute/unmute all audio\n"
+		<< "M              Toggle (mute/unmute) audio\n"
+		<< "SHIFT+M        Toggle music\n"
+		<< "SHIFT+N        Toggle sound fx. \"noise\"\n"
 //!! #543	<< "SHIFT+P        Performance (FPS) throttling on/off\n"
 		<< "RIGHT ALT      Stream debug info to the terminal\n"
 		<< "\n"

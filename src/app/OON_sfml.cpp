@@ -439,11 +439,13 @@ try {
 				case 't': time.scale *= 2.0f; break;
 				case 'T': time.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
-				case 'M': toggle_muting();
+				case 'm': toggle_muting();
 					sfw::set<sfw::CheckBox>("Audio: ", backend.audio.enabled);
 					break;
-				case 'm': toggle_music(); break;
-				case 'n': toggle_sound_fx();
+				case 'M': toggle_music();
+					sfw::set<sfw::CheckBox>(" - Music: ", backend.audio.music_enabled);
+					break;
+				case 'N': toggle_sound_fx();
 					sfw::set<sfw::CheckBox>(" - FX: ", backend.audio.fx_enabled);
 					break;
 //!! #543			case 'P': fps_throttling(!fps_throttling()); break;
