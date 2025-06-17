@@ -84,17 +84,21 @@ struct OrthoZoomCamera : Camera
 	// Operations...
 	// -------------------------------------------------------------------
 
-	// Movement
+	// Positioning, orientation
+
+	//!! Differentiate panning from actual camera movement: pan concerns the projected plane!
+	//!! (Which just happens to be the same as camera movement with ortographic proj...):
 	void pan(V2f delta) { pan_x(delta.x); pan_y(delta.y); }
 	void pan_x(float delta)        { offset.x += delta; }
 	void pan_y(float delta)        { offset.y += delta; }
-	void center_to(V2f world_pos) { offset = world_pos * _scale; }
 
-	// Moving the focus center only
-	void move_focus(V2f delta) { focus_offset += delta; }
+	void center_to_world_pos(WorldPos world_pos) { offset = world_pos * _scale; }
+
+	// Moving the focus "center point" only (in view coords.)
+	void set_focus_offset(ViewPos view_pos) { focus_offset = view_pos; }
+	void move_focus(ViewPos delta) { focus_offset += delta; }
 	void move_focus_x(float dx) { focus_offset.x += dx; }
 	void move_focus_y(float dy) { focus_offset.y += dy; }
-	void focus_to(V2f view_pos) { focus_offset = view_pos; }
 
 	// Zoom
 	void zoom(float change_factor); // Zoom in if > 1. Relative to the current scale! (scale *= chg)

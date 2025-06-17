@@ -31,6 +31,10 @@ public:
 	virtual ViewPos  world_to_view_coord(WorldPos wpos) const = 0;
 	virtual WorldPos view_to_world_coord(ViewPos vpos) const = 0;
 
+//!! Don't try to add this yet again! ;) The camera is always "centered"; it only makes sense to (re)orient it to something!
+//!! And the point {0,0} is not a special "something" at all.
+//!!	virtual void center() = 0;
+
 	virtual float scale() const { return 1; }
 
 	virtual ~Camera() = default;

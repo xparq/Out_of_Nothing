@@ -375,7 +375,7 @@ void OONApp::pan_reset()
 {
 	_pan_step_x = _pan_step_y = 0;
 
-	oon_main_camera().center_to({0, 0});
+	oon_main_camera().center_to_world_pos({0, 0});
 
 	// Since the player entity may have moved out of view, stop focusing on it:
 	//!!
@@ -404,11 +404,16 @@ void OONApp::pan_y(float delta)  { pan({0, delta}); }
 void OONApp::pan_to_center(size_t entity_id)
 {
 	auto w_pos = entity(entity_id).p;
-	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+	oon_main_camera().center_to_world_pos(w_pos);
+	oon_main_camera().set_focus_offset({0, 0});
 
-	oon_main_camera().center_to(v_pos);
-	oon_main_camera().focus_to(decltype(v_pos){0, 0});
-//!!??	oon_main_camera().focus_to(v_pos);
+/* cerr << "pan_to_center(" << entity_id <<"):\n"
+     << " -> world-pos: " << w_pos.x <<", "<< w_pos.y
+     << " -> view-pos: "  << v_pos.x <<", "<< v_pos.y
+     <<"\n"; */
+
+//!!	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+//!!??	oon_main_camera().set_focus_offset(v_pos);
 }
 
 void OONApp::center_player(unsigned player_id)

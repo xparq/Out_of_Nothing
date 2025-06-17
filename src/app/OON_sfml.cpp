@@ -315,6 +315,11 @@ try {
 //!! It felt more uneven if done here (due to the too coarse thread granularity of Windows -- and/or my own botched threading logic)! :-o
 //!!			poll_controls(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
 
+#ifndef _MSC_VER
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wparentheses" // F*, I'm not willing to litter the already noisy conditions below with even more parens...
+#endif
+
 			// Close req.?
 			if (event.type == sfw::event::WindowClosed ||
 			    event.type == sfw::event::KeyDown && event.get_if<sfw::event::KeyDown>()->code == SFML_KEY(Escape)) { //!!XLAT
@@ -331,8 +336,9 @@ try {
 			if (gui.focused() &&
 				event.type != sfw::event::WindowFocused && // Yeah, so this is an entirely different "focus"! :-o
 				event.type != sfw::event::WindowUnfocused &&
-				(event.type != sfw::event::MouseButtonDown ||
-				 event.type == sfw::event::MouseButtonDown && gui.contains(gui.getMousePosition()))) //!!{event.mouseButton.x, event.mouseButton.y})))
+				event.type != sfw::event::MouseButtonDown
+				||
+				event.type == sfw::event::MouseButtonDown && gui.contains(gui.getMousePosition())) //!!gui.contains(event.MousePosition)
 			{
 				goto process_ui_event;
 			}
@@ -343,6 +349,10 @@ try {
 			//!! to distinguish between player and non-player actions yet... Also, there's
 			//!! even less about *which* player it is!... :)
 			player_mark_active(/*!!Also no support for multiple players...!!*/);
+
+#ifndef _MSC_VER
+#pragma GCC diagnostic pop
+#endif
 
 			switch (event.type) //!! See above: morph into using abstracted events!
 			{

@@ -225,7 +225,7 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 
 
 	// Player halo...
-	// Only if the real size is too small...
+	// - But only if the real size is too small! See the `if` later below...
 	const auto player_ndx = app().player_entity_ndx();
 	const auto& player_body = app().player_entity();
 
@@ -237,14 +237,14 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	static float A = 1.f; // pixel
 	static float f = 2.0f; // Hz
 	float phase = app().session_time() * f * 2*3.141f;
-	float y = sin(phase);
+	float sin_phase = sin(phase);
+	unsigned alpha = 0x60 + unsigned(sin_phase * 20);
 	if (rb < 16) {
-		float r = 20 + y * A/2;
-		//r -= sin(phase) * 2/2; // Compensate when only pulsating the outline thickness.
+		float r = 20 + sin_phase * A/2; // r -= sin_phase * A/2; // Compensate when only pulsating the outline thickness.
 		auto halo = sf::CircleShape(r);
-		halo.setOutlineThickness(2); //(y * 2);
+		halo.setOutlineThickness(2); // (sin_phase * 2)
 		halo.setOutlineColor(sf::Color(unsigned((app().entity(player_ndx).color << 8)
-		                                        | 0x60 + unsigned(y * 20))));
+		                                        | alpha)));
 		halo.setFillColor(sf::Color(0)); // sf::Color(0x66663333)
 		halo.setOrigin({r, r});
 		halo.setPosition(player_shape.getPosition());
