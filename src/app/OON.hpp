@@ -70,10 +70,10 @@ public:
 	// View control
 	//
 	// NOTE: panning is camera movement in screen coordinates, auto-converted to world coords.
-	void pan(sfw::fVec2 delta);
-	void pan_x(float delta);
-	void pan_y(float delta);
-	void pan_reset();
+	void pan_view(sfw::fVec2 delta);
+	void pan_view_x(float delta);
+	void pan_view_y(float delta);
+	void pan_view_reset();
 	void zoom(float factor); // Multiply the current scaling with 'factor'
 	bool scroll_locked();    // Auto-panning via pinned focus point or object
 	// - Change the zoom ratio by 'amount' (e.g. 5%):
@@ -90,7 +90,7 @@ public:
 	bool pan_control(ViewControlMode mode = UserKeys);                              //!!?? should be an override already?
 	bool zoom_control(ViewControlMode mode = UserKeys, float mousewheel_delta = 0); //!!?? should be an override already?
 
-	void pan_to_center(size_t entity_id);
+	void center(size_t entity_id);
 	void pan_to_focus(size_t entity_id);
 	void center_player(unsigned player_id = 1);
 //!!	void pan_to_focus(unsigned player_id = 1);

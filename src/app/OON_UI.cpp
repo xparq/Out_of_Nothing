@@ -224,7 +224,7 @@ void OONApp::ui_setup_HUDs()
 	// View
 	ui_gebi(ViewData)
 		<< "MAIN CAMERA:"
-		<< "\n  X: " << &oon_main_camera().offset.x << ", Y: " << &oon_main_camera().offset.y
+		<< "\n  X: " << &oon_main_camera().view_offset.x << ", Y: " << &oon_main_camera().view_offset.y
 		//!! to_string() fucked it up and returned "0.000000" for e.g. 0.00000005f! :-o (#509)
 		//!! << "\n  Scale: " << [this](){ return to_string(oon_main_camera().scale() * 1e6f); } << " x 1e-6"
 		<< "\n  Base scale: " << &oon_main_camera().cfg.base_scale

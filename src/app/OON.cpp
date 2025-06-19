@@ -42,8 +42,8 @@ OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
 //!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
 //!!	oon_main_view().resize((float)backend.hci.window().width,
 //!!	                         (float)backend.hci.window().height);
-	oon_main_camera().resize((float)main_window_width(),
-	                         (float)main_window_height());
+	oon_main_camera().resize_view((float)main_window_width(),
+	                              (float)main_window_height());
 }
 
 //----------------------------------------------------------------------------
@@ -371,11 +371,11 @@ bool OONApp::_ctrl_update_thrusters()
 
 
 //----------------------------------------------------------------------------
-void OONApp::pan_reset()
+void OONApp::pan_view_reset()
 {
 	_pan_step_x = _pan_step_y = 0;
 
-	oon_main_camera().center_to_world_pos({0, 0});
+	oon_main_camera().look_at({0, 0});
 
 	// Since the player entity may have moved out of view, stop focusing on it:
 	//!!
@@ -385,40 +385,39 @@ void OONApp::pan_reset()
 	focused_entity_ndx = ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
-void OONApp::pan(sfw::fVec2 delta) {
-	Phys::Pos2 w_delta{delta.x(), delta.y()};
+void OONApp::pan_view(sfw::fVec2 delta)
+{
+	oon_main_camera().pan_view({delta.x(), delta.y()}); // Mannually converting that vector coming from the UI
+
+//!!	Phys::Pos2 w_delta = oon_main_camera().view_to_world_pos({delta.x(), delta.y()});
 //!! Pretty sure it can't correctly convert a displacement, only an abs. pos:
 //!!??	auto       v_delta = oon_main_camera().world_to_view_coord(w_delta);
 //!! But they still should, in fact, work the same here, right?!
 //!!??	auto       v_delta = oon_main_camera().world_to_view_coord(w_delta);
 //!!??	oon_main_camera().pan_x(v_delta.x);
 //!!??	oon_main_camera().pan_y(v_delta.y);
-	oon_main_camera().pan_x(w_delta.x);
-	oon_main_camera().pan_y(w_delta.y);
 }
 
 //!! See #define VEC_IMPLICIT_NUM_CONV for getting rid of the expl. ctor syntax!
-void OONApp::pan_x(float delta)  { pan({delta, 0}); }
-void OONApp::pan_y(float delta)  { pan({0, delta}); }
+void OONApp::pan_view_x(float delta)  { pan_view({delta, 0}); }
+void OONApp::pan_view_y(float delta)  { pan_view({0, delta}); }
 
-void OONApp::pan_to_center(size_t entity_id)
+void OONApp::center(size_t entity_id)
 {
-	auto w_pos = entity(entity_id).p;
-	oon_main_camera().center_to_world_pos(w_pos);
-	oon_main_camera().set_focus_offset({0, 0});
-
-/* cerr << "pan_to_center(" << entity_id <<"):\n"
+	oon_main_camera().look_at(entity(entity_id).p);
+/*	auto w_pos = entity(entity_id).p;
+	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+cerr << "center(" << entity_id <<"):\n"
      << " -> world-pos: " << w_pos.x <<", "<< w_pos.y
      << " -> view-pos: "  << v_pos.x <<", "<< v_pos.y
-     <<"\n"; */
-
-//!!	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+     <<"\n";
 //!!??	oon_main_camera().set_focus_offset(v_pos);
+*/
 }
 
 void OONApp::center_player(unsigned player_id)
 {
-	pan_to_center(player_entity_ndx(player_id));
+	center(player_entity_ndx(player_id));
 }
 
 void OONApp::pan_to_focus(size_t entity_id)
@@ -426,7 +425,7 @@ void OONApp::pan_to_focus(size_t entity_id)
 	auto w_pos = entity(entity_id).p;
 	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
 
-	oon_main_camera().pan(v_pos - oon_main_camera().focus_offset);
+	oon_main_camera().pan_view(v_pos - oon_main_camera().focus_offset);
 }
 
 /*!! OBSOLETE:
@@ -564,8 +563,8 @@ bool OONApp::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 		if (_pan_step_x) oon_main_camera().move_focus_x(- _pan_step_x * fps_factor);
 		if (_pan_step_y) oon_main_camera().move_focus_y(- _pan_step_y * fps_factor);
 	} else {
-		if (_pan_step_x) pan_x(_pan_step_x * fps_factor);
-		if (_pan_step_y) pan_y(_pan_step_y * fps_factor);
+		if (_pan_step_x) pan_view_x(_pan_step_x * fps_factor);
+		if (_pan_step_y) pan_view_y(_pan_step_y * fps_factor);
 	}
 
 	return action;
@@ -1112,7 +1111,7 @@ static const float autofollow_throwback = appcfg.get("controls/autofollow_throwb
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
 			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(
 				entity(focused_entity_ndx).p);
-			if (oon_main_camera().confine(entity(focused_entity_ndx).p,
+			if (oon_main_camera().track(entity(focused_entity_ndx).p,
 			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/OONConfig::DEFAULT_ZOOM,
 			    autofollow_throwback)) { // true = drifted off
 				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...

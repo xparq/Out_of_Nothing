@@ -395,7 +395,7 @@ try {
 						//!! It would be better to preserve it...
 						//!!auto save_focused = focused_entity_ndx;
 
-						pan_reset();
+						pan_view_reset();
 						//zoom_reset();
 
 						//!!focused_entity_ndx = save_focused;
@@ -410,12 +410,12 @@ try {
 							focused_entity_ndx = player_entity_ndx();
 
 						assert(focused_entity_ndx != ~0u);
-						pan_to_center(focused_entity_ndx);
+						center(focused_entity_ndx);
 					}
 					break;
 
 				case SFML_KEY(Numpad5): // See also Ctrl+Home!
-					pan_reset();
+					pan_view_reset();
 					zoom_reset();
 					break;
 
@@ -551,7 +551,7 @@ cerr << "DBG> Click: no obj.\n";
 
 				if (keystate(SHIFT) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
 					// pan_to_focus(anything), essentially:
-					oon_main_camera().pan(oon_main_camera().focus_offset - vpos);
+					oon_main_camera().pan_view(oon_main_camera().focus_offset - vpos);
 					oon_main_camera().focus_offset = vpos;
 				}
 

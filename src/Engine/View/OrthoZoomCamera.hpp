@@ -42,19 +42,16 @@ struct OrthoZoomCamera : Camera
 	OrthoZoomCamera(Config cfg);
 	void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
 	void reset(Config&& recfg);
-	void resize(float width, float height);
+	void resize_view(float width, float height);
 	void reset_zoom(float trim = 1); // Relative to base_scale! (scale = base_scale * level)
 
 	// -------------------------------------------------------------------
 	// Queries...
 	// -------------------------------------------------------------------
 
-	// Simple orthographic projection, plus scaling:
-	ViewPos world_to_view_coord(WorldPos wp) const override { return wp * _scale - offset; }
-//	ViewPos world_to_view_coord(float wx, float wy) const { return world_to_view_coord({wx, wy}); } //!! float hardcoded! :-/
-
-	WorldPos view_to_world_coord(ViewPos vp) const override { return (vp + offset)/_scale; }
-//	WorldPos view_to_world_coord(float vx, float vy) const { return view_to_world_coord({vx, vy}); } //!! float hardcoded! :-/
+	// Simple orthographic projection, with scaling:
+	ViewPos world_to_view_coord(WorldPos wp) const override { return wp * _scale - view_offset; }
+	WorldPos view_to_world_coord(ViewPos vp) const override { return (vp + view_offset) / _scale; }
 
 	float scale() const override { return _scale; }
 
@@ -67,9 +64,9 @@ struct OrthoZoomCamera : Camera
 	bool visible_y(float view_pos_y) const { return view_pos_y >= _edge_y_min && view_pos_y < _edge_y_max; }
 
 
-	V2f grid_offset() const;
+	ViewPos grid_offset() const;
 	//!! This does NOT belong here! -> #221
-	V2f screen_to_view_coord(int x, int y) const; //!! { return {(float)x + _edge_x_min, _edge_y_max - (float)y}; }
+	ViewPos screen_to_view_coord(int x, int y) const; //!! { return {(float)x + _edge_x_min, _edge_y_max - (float)y}; }
 		//!! Used currently to map e.g. mouse positions back to the world.
 		//!! (See also entity_at_wiewpos(...)!)
 		//!! The UI certainly needs it, but it should do OrthoZoomCamera - ScreenView conversions
@@ -86,13 +83,25 @@ struct OrthoZoomCamera : Camera
 
 	// Positioning, orientation
 
-	//!! Differentiate panning from actual camera movement: pan concerns the projected plane!
-	//!! (Which just happens to be the same as camera movement with ortographic proj...):
-	void pan(V2f delta) { pan_x(delta.x); pan_y(delta.y); }
-	void pan_x(float delta)        { offset.x += delta; }
-	void pan_y(float delta)        { offset.y += delta; }
+	void look_at(WorldPos world_pos) override;
 
-	void center_to_world_pos(WorldPos world_pos) { offset = world_pos * _scale; }
+	//!!?? This "intelligence" may be better elsewhere?
+	//!!?? This + all the visibility checks (mostly only used by this...) are the
+	//!!?? only reason view(finder) dimensions + resizing is needed here at all!
+	//!!?? AFAIK it's also separated (as the clip space coordinate system) in OpenGL, too.
+	bool track(WorldPos world_pos, float viewpos_margin = 0, float throwback = 2); // returns true if the player was out of view
+
+/*!!?
+	// Panning is actual camera movement, not just scrolling the projected plane
+	// (albeit they happen to be the same with ortographic proj.):
+	void pan_x(float delta)        { location.x += delta; }
+	void pan_y(float delta)        { location.y += delta; }
+?!!*/
+	// But scrolling the view plane is a very common op., too, so...
+	//!! -> #611: Move the view-space panning to the Display abstraction
+	void pan_view(ViewPos delta) { pan_view_x(delta.x); pan_view_y(delta.y); }
+	void pan_view_x(float delta)        { view_offset.x += delta; }
+	void pan_view_y(float delta)        { view_offset.y += delta; }
 
 	// Moving the focus "center point" only (in view coords.)
 	void set_focus_offset(ViewPos view_pos) { focus_offset = view_pos; }
@@ -105,21 +114,15 @@ struct OrthoZoomCamera : Camera
 	void zoom_in  (float step) { zoom(1.f + step); }
 	void zoom_out (float step) { zoom(1.f / (1.f + step)); }
 
-	//!!?? This "intelligence" may be better elsewhere?
-	//!!?? This + all the visibility checks (mostly only used by this...) are the
-	//!!?? only reason view(finder) dimensions + resizing is needed here at all! :-o
-	//!!?? AFAIK it's also separated (as the clip space coordinate system) in OpenGL, too!
-	bool confine(WorldPos world_pos, float viewpos_margin = 0, float throwback = 2); // returns true if the player was out of view
-
-
 	// --- "API Data" ----------------------------------------------------
 	Config cfg;
 
 	float _scale = 1;
-	ViewPos offset{0, 0}; // Displacement of the view relative to the initial implicit origin, in View (screen) coordinates
+	ViewPos view_offset{0, 0};  // Displacement of the view relative to the initial implicit origin, in View (screen) coordinates
+	                            //!! -> #611: Move the view-space panning to the Display abstraction
 	ViewPos focus_offset{0, 0}; // Pos. of a focus point in the image rect (in Camera View coord.)
-	                                      // Used as the zoom origin for now. (Usually set to the player's
-	                                      // on-screen pos, or some other interesting subject...)
+	                            // Used as the zoom origin for now. (Usually set to the player's
+	                            // on-screen pos, or some other interesting subject...)
 
 	// --- Internals -----------------------------------------------------
 protected:

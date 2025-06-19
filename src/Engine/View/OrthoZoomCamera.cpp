@@ -27,17 +27,17 @@ void OrthoZoomCamera::reset(const Config* recfg/* = nullptr*/)
 
 	// Reset all the derived state, too...
 	reset_zoom();
-	offset = {0, 0};
+	view_offset = {0, 0};
 	focus_offset = {0, 0};
 
-	resize(cfg.width, cfg.height);
+	resize_view(cfg.width, cfg.height);
 }
 
 
-void OrthoZoomCamera::resize(float width, float height)
+void OrthoZoomCamera::resize_view(float width, float height)
 {
 	//!! Adjust the offsets only if the resize would shift them off-screen!
-	//!! But even then, such a forced `confine()` may be undesired in some cases!
+	//!! But even then, such a forced `track()` may be undesired in some cases!
 	//!!new_offset = ...
 	//!!focus_offset = new_offset - offset; //!! Or what exactly is this relative to? I forgot... :)
 
@@ -61,15 +61,22 @@ void OrthoZoomCamera::reset_zoom(float trim/* = 1*/)
 }
 
 
-bool OrthoZoomCamera::confine(V2f world_pos, float margin, float throwback)
+void OrthoZoomCamera::look_at(WorldPos world_pos) //override
+{
+	view_offset = world_pos * _scale;
+	set_focus_offset({0, 0});
+}
+
+
+bool OrthoZoomCamera::track(WorldPos world_pos, float margin, float throwback)
 {
 	auto vpos = world_to_view_coord(world_pos);
 	bool out_of_view = false;
 
-	if      (vpos.x <  _edge_x_min + margin) { out_of_view = true; offset.x -= _edge_x_min - vpos.x + margin + throwback; }
-	else if (vpos.x >= _edge_x_max - margin) { out_of_view = true; offset.x += vpos.x - _edge_x_max + margin + throwback; }
-	if      (vpos.y <  _edge_y_min + margin) { out_of_view = true; offset.y -= _edge_y_min - vpos.y + margin + throwback; }
-	else if (vpos.y >= _edge_y_max - margin) { out_of_view = true; offset.y += vpos.y - _edge_y_max + margin + throwback; }
+	if      (vpos.x <  _edge_x_min + margin) { out_of_view = true; view_offset.x -= _edge_x_min - vpos.x + margin + throwback; }
+	else if (vpos.x >= _edge_x_max - margin) { out_of_view = true; view_offset.x += vpos.x - _edge_x_max + margin + throwback; }
+	if      (vpos.y <  _edge_y_min + margin) { out_of_view = true; view_offset.y -= _edge_y_min - vpos.y + margin + throwback; }
+	else if (vpos.y >= _edge_y_max - margin) { out_of_view = true; view_offset.y += vpos.y - _edge_y_max + margin + throwback; }
 
 	return out_of_view;
 }
@@ -79,29 +86,29 @@ void OrthoZoomCamera::zoom(float change_ratio)
 {
 	_scale *= change_ratio;
 
-	// Compensate for zoom displacement when the player object is not centered
-	pan((focus_offset + offset) * (change_ratio - 1));
+	// Compensate for zoom displacement when the focus is not centered
+	pan_view((focus_offset + view_offset) * (change_ratio - 1));
 		//!! 100% non-intuitive; I just solved the equations...
 	        //!!?? What to make of that `world + view` coord type "mismatch"?! :-o
 	        //!!?? And how would it translate to 3D?
 }
 
 
-Camera::V2f OrthoZoomCamera::grid_offset() const
+Camera::ViewPos OrthoZoomCamera::grid_offset() const
 {
-//!!vpos = world_to_view_coord(offset);
+//!!vpos = world_to_view_coord(view_offset);
 //cerr <<"pan offset to view: "<< vpos.x <<", "<< vpos.y << '\n'; // BTW, non-zero if there's an off-center focus point
 
-	auto vpos = offset;
-	auto v = Math::V2f{ // Easy-peasy, right?... ;)
+	auto vpos = view_offset;
+	auto v = ViewPos{ // Easy-peasy, right?... ;)
 		- (float(int(abs(vpos.x + _edge_x_max)) % int(cfg.width))  - _edge_x_max) * sz::sign(vpos.x + _edge_x_max),
 		- (float(int(abs(vpos.y + _edge_y_max)) % int(cfg.height)) - _edge_y_max) * sz::sign(vpos.y + _edge_y_max)};
-//cerr <<"- gridline pos. for offset ("<<offset.x<<", "<<offset.y<<"): "<< (v.x)<<", "<< (v.y) << '\n';
+//cerr <<"- gridline pos. for offset ("<<view_offset.x<<", "<<view_offset.y<<"): "<< (v.x)<<", "<< (v.y) << '\n';
 	return v;
 }
 
 
-Camera::V2f OrthoZoomCamera::screen_to_view_coord(int x, int y) const
+Camera::ViewPos OrthoZoomCamera::screen_to_view_coord(int x, int y) const
 {
 	return {(float)x + _edge_x_min, _edge_y_max - (float)y};
 //	auto v = V2f{(float)x + _edge_x_min, _edge_y_max - (float)y};

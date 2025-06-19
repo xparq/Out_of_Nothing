@@ -22,11 +22,10 @@ class Camera
 public:
 	using ViewPos  = Math::V2f; // Screen space (so always 2D)! The rebased (possibly 3D) "view space" for the view frustum (projection) IS NOT YET MODELLED AT ALL!
 	using WorldPos = Model::Phys::Pos2;
-	//!! TBD... (Probably translated, and/or zoomed ViewPos; review its use cases!):
-	//!! This may not be the best here, with all those awkward conversions:
-	//!! perhaps elsewhere in the rendering chain, closer to rasterizing,
-	//!! where things tend to be integer already anyway!
-	using V2f = Math::V2f;
+
+	virtual void look_at(WorldPos world_pos) = 0;
+	// Panning is actual camera movement, not just scrolling the projected view plane
+	void pan(WorldPos delta) { location += delta; }
 
 	virtual ViewPos  world_to_view_coord(WorldPos wpos) const = 0;
 	virtual WorldPos view_to_world_coord(ViewPos vpos) const = 0;
@@ -38,6 +37,11 @@ public:
 	virtual float scale() const { return 1; }
 
 	virtual ~Camera() = default;
+
+protected:
+	WorldPos location; // Location of the camera (modified via the panning ops, and/or dolly zoom...)
+	WorldPos target;   // Where's the view axis (z) looking at; normalized
+	WorldPos up;       // Up-vector to define the rotation around the view axis; normalized
 }; // class Camera
 
 } // namespace Szim::View
