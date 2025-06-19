@@ -16,7 +16,10 @@
                       //!! (mostly?) client .cpps that use should include it individually!)
 //!!#include "UI/HUD.hpp"
 #include "UI/Input.hpp"
-#include "Metamodel.hpp" //!! Just a reminder/placeholder yet...
+#include "Metamodel.hpp"
+	//!!C++: *Sigh...*
+	using EntityID = Model::EntityID;
+	using PlayerID = Model::PlayerID;
 #include "Model/World.hpp" //!! The generic Model parts should move to Metamodel, and the specifics should be included from the (specific) app!
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
@@ -126,59 +129,59 @@ public:
 	size_t entity_count() const { return world().bodies.size(); }
 //!! ADD DEBUG-MODE BOUNDS-CHECKING FOR THESE!
 	// Thread-safe, slower access:
-	      Entity& entity(size_t index)       { return *world().bodies[index]; }
-	const Entity& entity(size_t index) const { return *world().bodies[index]; }
-	const Entity& const_entity(size_t index) { return *world().bodies[index]; }
+	      Entity& entity(EntityID index)       { return *world().bodies[index]; }
+	const Entity& entity(EntityID index) const { return *world().bodies[index]; }
+	const Entity& const_entity(EntityID index) { return *world().bodies[index]; }
 	//!! This might be misguided, but keeping it as a reminder...
 	// Unprotected, faster access (when already locked):
-	      Entity& _entity(size_t index)       { return *_world.bodies[index]; }
-	const Entity& _entity(size_t index) const { return *_world.bodies[index]; }
-	const Entity& _const_entity(size_t index) { return *_world.bodies[index]; }
+	      Entity& _entity(EntityID index)       { return *_world.bodies[index]; }
+	const Entity& _entity(EntityID index) const { return *_world.bodies[index]; }
+	const Entity& _const_entity(EntityID index) { return *_world.bodies[index]; }
 
-//!!	bool entity_at(model::Math::Vector2f world_pos, size_t* entity_id OUT) const;
-//!!	bool entity_at(model::Math::Vector3f world_pos, size_t* entity_id OUT) const;
-//!!	bool entity_at_viewpos(View::Vector2f view_pos, size_t* entity_id OUT) const;
-	virtual bool entity_at_viewpos(float x, float y, size_t* entity_id OUT) const;
-	virtual bool is_entity_at_viewpos(size_t entity_id, float x, float y) const;
+//!!	bool entity_at(model::Math::Vector2f world_pos, EntityID* entity_id OUT) const;
+//!!	bool entity_at(model::Math::Vector3f world_pos, EntityID* entity_id OUT) const;
+//!!	bool entity_at_viewpos(View::Vector2f view_pos, EntityID* entity_id OUT) const;
+	virtual bool entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const;
+	virtual bool check_if_entity_is_at_viewpos(EntityID entity_id, float x, float y) const;
 
-	virtual size_t add_entity(Entity&& temp);     // Move from temporary/template obj.
-	virtual size_t add_entity(const Entity& src); // Copy from obj.
-	virtual void remove_entity(size_t ndx);
+	virtual EntityID add_entity(Entity&& temp);     // Move from temporary/template obj.
+	virtual EntityID add_entity(const Entity& src); // Copy from obj.
+	virtual void remove_entity(EntityID ndx);
 
 /*!!
 	using EntityTransform = void(*)(Entity&);
-	using EntityTransform_ByIndex = void(*)(size_t ndx);
+	using EntityTransform_ByIndex = void(*)(EntityID ndx);
 	virtual void transform_entity(EntityTransform f) {}
 	virtual void transform_entity(EntityTransform_ByIndex f) {}
 !!*/
 
-//!!	unsigned add_player(Player&& tempp); // Calls a virtual hook to let the app finish it...
-	virtual unsigned add_player(
+//!!	PlayerID add_player(Player&& tempp); // Calls a virtual hook to let the app finish it...
+	virtual PlayerID add_player(
 		Entity&& model,
 		Avatar& avatar,
 		VirtualController& controls
 	) = 0; //!! Ugh... Refine! (Can't really be done nicely in C++, though.)
-	virtual void   remove_player(unsigned player_id) = 0; //!this should then be virtual, too (like destructors)
-	Player& player(unsigned player_id = 1) {
+	virtual void   remove_player(PlayerID player_id) = 0; //!this should then be virtual, too (like destructors)
+	Player& player(PlayerID player_id = 1) {
 		assert(player_id > 0); // 1-based player IDs
 		assert(players.size());
 		assert(players.size() >= player_id); //! >=, not >, for player_id is 1-based!
 		return players[player_id - 1];
 	}
-	const Player& player(unsigned player_id = 1) const { return ((SimApp*)this)->player(player_id); }
+	const Player& player(PlayerID player_id = 1) const { return ((SimApp*)this)->player(player_id); }
 
-	size_t player_entity_ndx(unsigned player_id = 1) const {
+	EntityID player_entity_ndx(PlayerID player_id = 1) const {
 		auto ndx = player(player_id).entity_ndx;
 		assert(entity_count());
 		assert(ndx < entity_count());
 		return ndx;
 	}
-	       Entity& player_entity(unsigned p = 1)       { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
-	 const Entity& player_entity(unsigned p = 1) const { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+	       Entity& player_entity(PlayerID p = 1)       { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+	 const Entity& player_entity(PlayerID p = 1) const { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 
-	float player_idle_time(  unsigned player_id = 1) const; // No input for so many seconds (0: busy; gated by cfg.player_idle_threshold)
-	bool  player_idle(       unsigned player_id = 1) const { return player_idle_time(player_id) > 0; }
-	void  player_mark_active(unsigned player_id = 1);
+	float player_idle_time(  PlayerID player_id = 1) const; // No input for so many seconds (0: busy; gated by cfg.player_idle_threshold)
+	bool  player_idle(       PlayerID player_id = 1) const { return player_idle_time(player_id) > 0; }
+	void  player_mark_active(PlayerID player_id = 1);
 
 	//----------------------------------------------------------------------------
 	// Model event hooks (callbacks)
@@ -220,7 +223,7 @@ protected:
 	// Rendering... (See also main_view()!)
 	virtual void draw() = 0;
 	//!! Render sync. kludge (used e.g. by the general-purpose particle emitter) -> #516...):
-		public: virtual void resize_shape(size_t /*ndx*/, float /*factor*/) {}
+		public: virtual void resize_shape(EntityID /*ndx*/, float /*factor*/) {}
 		public: virtual void resize_shapes(float /*factor*/) {}
 
 //----------------------------------------------------------------------------

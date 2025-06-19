@@ -54,10 +54,10 @@ public:
 	// -------------------------------------------------------------------
 
 	// SFML-specific overrides
-	void create_cached_shape(const Model::Entity& body, size_t entity_ndx) override;
-	void delete_cached_shape(size_t entity_ndx) override;
+	void create_cached_shape(const Model::Entity& body, Model::EntityID entity_ndx) override;
+	void delete_cached_shape(Model::EntityID entity_ndx) override;
 	void resize_objects(float factor) override;
-	void resize_object(size_t ndx, float factor) override;
+	void resize_object(Model::EntityID ndx, float factor) override;
 
 	//!! Move it to the UI, FFS:
 	void draw_banner(const char* text) override;
@@ -70,7 +70,7 @@ protected:
 	void render_scene(); //!!?? render_scene(some target or context or options?)
 
 	//! Templates (by the auto arg), so must be in the header!
-	void transform_object(size_t ndx, const auto& op) {
+	void transform_object(Model::EntityID ndx, const auto& op) {
 		auto& trshape = dynamic_cast<sf::Transformable&>(shapes_to_change[ndx]);
 		op(trshape);
 	}

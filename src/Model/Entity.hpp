@@ -19,8 +19,13 @@ namespace Model {
 	{
 		using NumType = Phys::NumType;
 
+		// Placeholder/sentinel ID for "no entity":
+		//!! Clean this hackfest up (see them also in Metamodel.hpp!):
+		constexpr static EntityID NONE = NO_ENTITY;
+		constexpr static auto     Unlimited = Model::UNLIMITED;
+
 		//!!ObjConfig cfg; // basically the obj. type
-		constexpr static auto Unlimited = Model::Unlimited;
+
 
 		struct {
 			bool gravity_immunity = false;

@@ -21,7 +21,7 @@ public:
 		Phys::Pos2  eject_offset{};   // Relative to the emitter's origin
 		NumT v_factor = 0.1f; //!! May be redundant with eject_velocity now!
 		NumT offset_velo_factor = 0.2f; // 1/(m/s)
-		float particle_lifetime = Model::Unlimited; //!! Rename to sg. less vague!
+		float particle_lifetime = Model::UNLIMITED; //!! Rename to sg. less vague!
 		bool  create_mass = true;
 		Phys::Density particle_density = Phys::DENSITY_ROCK * 0.001f;
 		Phys::Pos2 position_divergence = {5.f, 5.f}; // Scaled by the emitter's radius
@@ -35,7 +35,7 @@ public:
 	Emitter(const Config& cfg, Szim::SimApp& app);
 	virtual ~Emitter() = default;
 
-	void emit_particles(unsigned emitter_ndx, unsigned n = 10, Phys::Pos2 nozzles[] = nullptr);
+	void emit_particles(EntityID emitter, unsigned n = 10, Phys::Pos2 nozzles[] = nullptr);
 		// 'nozzles' must have n elements if not null, each relative to the
 		// origin of the emitter, and normalized to a [-1, 1] bounding range!
 

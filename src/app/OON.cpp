@@ -382,7 +382,7 @@ void OONApp::pan_view_reset()
 	//!!?? What is the rule for Scroll Lock in this case?
 	//!!The key should be turned off!...
 	//!!
-	focused_entity_ndx = ~0u; //!!... Whoa! :-o See updates_for_next_frame()!
+	focused_entity_ndx = Entity::NONE; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
 void OONApp::pan_view(sfw::fVec2 delta)
@@ -402,7 +402,7 @@ void OONApp::pan_view(sfw::fVec2 delta)
 void OONApp::pan_view_x(float delta)  { pan_view({delta, 0}); }
 void OONApp::pan_view_y(float delta)  { pan_view({0, delta}); }
 
-void OONApp::center(size_t entity_id)
+void OONApp::center(EntityID entity_id)
 {
 	oon_main_camera().look_at(entity(entity_id).p);
 /*	auto w_pos = entity(entity_id).p;
@@ -415,12 +415,12 @@ cerr << "center(" << entity_id <<"):\n"
 */
 }
 
-void OONApp::center_player(unsigned player_id)
+void OONApp::center_player(PlayerID player_id)
 {
 	center(player_entity_ndx(player_id));
 }
 
-void OONApp::pan_to_focus(size_t entity_id)
+void OONApp::pan_to_focus(EntityID entity_id)
 {
 	auto w_pos = entity(entity_id).p;
 	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
@@ -667,27 +667,8 @@ bool OONApp::touch_hook(World* w, Entity* obj1, Entity* obj2)
 }
 
 
-
 //----------------------------------------------------------------------------
-void OONApp::add_random_bodies_near(size_t base_ndx, size_t n)
-{
-	while (n--) add_random_body_near(base_ndx);
-}
-
-//----------------------------------------------------------------------------
-void OONApp::remove_random_bodies(size_t n/* = -1*/)
-{
-	if (!n) return;
-
-	backend.audio.play_sound(snd_pwhiz);
-
-	if (n == (unsigned)-1) n = entity_count();
-	while (n--) remove_random_body();
-}
-
-
-//----------------------------------------------------------------------------
-size_t OONApp::add_entity(Entity&& temp) //override
+EntityID OONApp::add_entity(Entity&& temp) //override
 // Add new entity (moved) from a temporary template obj.
 {
 	auto ndx = SimApp::add_entity(temp);
@@ -696,8 +677,36 @@ size_t OONApp::add_entity(Entity&& temp) //override
 	return ndx;
 }
 
+
 //----------------------------------------------------------------------------
-size_t OONApp::add_random_body_near(size_t base_ndx)
+void OONApp::remove_entity(EntityID ndx) //override
+{
+	SimApp::remove_entity(ndx);
+
+	//-------------------------
+	// Adjust references...
+	//--------------
+
+	// Focus obj.:
+	if (focused_entity_ndx != Entity::NONE) {
+		if (focused_entity_ndx > ndx) {
+//cerr << "- NOTE: Index of the followed object has changed due to object removal.\n";
+			--focused_entity_ndx;
+		} else if (focused_entity_ndx == ndx) {
+cerr << "- WARNING: The followed object has ceased to exist...\n";
+			focused_entity_ndx = Entity::NONE; //!! Don't just fall back to the player!
+		}                                 //!! That'd be too subtle/unexpected/unwanted.
+	}
+
+	assert(focused_entity_ndx == Entity::NONE || focused_entity_ndx < entity_count());
+
+	// Remove from the view cache, too:
+	oon_main_view().delete_cached_shape(ndx);
+}
+
+
+//----------------------------------------------------------------------------
+EntityID OONApp::add_random_body_near(EntityID base_id)
 //!! This is still a version of (mass-ignoring) spawn()!...
 //!! Callers may not know, but this depends on the properties of the player body!
 //!! See also spawn() (that calls this), which is at least is explicit about it!
@@ -709,7 +718,7 @@ size_t OONApp::add_random_body_near(size_t base_ndx)
 	auto constexpr p_range = cw.CFG_GLOBE_RADIUS * 30;
 	auto constexpr v_range = cw.CFG_GLOBE_RADIUS * 10; //!!Stop depending on GLOBE_RADIUS so directly/cryptically!
 
-	const auto& base = const_entity(base_ndx);
+	const auto& base = const_entity(base_id);
 	auto M_min = base.mass / 9;
 	auto M_max = base.mass * 3;
 
@@ -725,29 +734,9 @@ size_t OONApp::add_random_body_near(size_t base_ndx)
 }
 
 //----------------------------------------------------------------------------
-void OONApp::remove_entity(size_t ndx) //override
+void OONApp::add_random_bodies_near(EntityID base_id, size_t n)
 {
-	SimApp::remove_entity(ndx);
-
-	//-------------------------
-	// Adjust references...
-	//--------------
-
-	// Focus obj.:
-	if (focused_entity_ndx != ~0u) {
-		if (focused_entity_ndx > ndx) {
-//cerr << "- NOTE: Index of the followed object has changed due to object removal.\n";
-			--focused_entity_ndx;
-		} else if (focused_entity_ndx == ndx) {
-cerr << "- WARNING: The followed object has ceased to exist...\n";
-			focused_entity_ndx = ~0u; //!! Don't just fall back to the player!
-		}                                 //!! That'd be too subtle/unexpected/unwanted.
-	}
-
-	assert(focused_entity_ndx == ~0u || focused_entity_ndx < entity_count());
-
-	// Remove from the view cache, too:
-	oon_main_view().delete_cached_shape(ndx);
+	while (n--) add_random_body_near(base_id);
 }
 
 
@@ -760,27 +749,40 @@ void OONApp::remove_random_body()
 		return;
 	}
 
-	auto ndx = 1/*leave the globe!*/ + (size_t) (rand() * (float(entities-1)) / (RAND_MAX + 1));
+	auto ndx = 1/*leave the "player globe"!*/ + size_t(rand() * (float(entities-1)) / (RAND_MAX + 1));
 //cerr << "Deleting object #" << ndx << "...\n";
 	assert(ndx < entities); // Note: entity indexes are 0-based
-	assert(ndx > 0);        // Note: 0 is the player globe
+	assert(ndx > 0);        // Note: #0 is the player globe
 	remove_entity(ndx);
 }
 
+
 //----------------------------------------------------------------------------
-void OONApp::spawn(size_t parent_ndx, unsigned n)
+void OONApp::remove_random_bodies(size_t n/* = -1*/)
+{
+	if (!n) return;
+
+	backend.audio.play_sound(snd_pwhiz);
+
+	if (n == (unsigned)-1) n = entity_count();
+	while (n--) remove_random_body();
+}
+
+
+//----------------------------------------------------------------------------
+void OONApp::spawn(EntityID parent_id, unsigned n)
 //!! Should not ignore mass!...
 //!!??Should gradually become a method of the object itself?
 {
-if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"<<parent_ndx<<" is spawning...\n";
+if (parent_id != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"<<parent_id<<" is spawning...\n";
 
 	if (!n) return;
 
-	const auto& parent = const_entity(parent_ndx); // #41: Support inheritance
+	const auto& parent = const_entity(parent_id); // #41: Support inheritance
 
 	backend.audio.play_sound(n == 1 ? snd_plop1 : n <= 10 ? snd_plop2 : snd_plop3 );
 
-	for (size_t i = 0; i < n; ++i) {
+	for (unsigned i = 0; i < n; ++i) {
 		auto ndx = add_random_body_near(player_entity_ndx());
 		auto& newborn = entity(ndx);
 		newborn.lifetime = Entity::Unlimited;
@@ -792,7 +794,7 @@ if (parent_ndx != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"
 
 //----------------------------------------------------------------------------
 //!! An exhaust jet should be created for each thruster!
-void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vector,*/ unsigned n/* = ...*/)
+void OONApp::exhaust_burst(EntityID base_id/* = 0*/, /*Math::Vector2f thrust_vector,*/ unsigned n/* = ...*/)
 {
 	static unsigned particles_to_add = appcfg.get("sim/exhaust_particles_add", n);
 	static auto     exhaust_density = Phys::DENSITY_ROCK * appcfg.get("sim/exhaust_density_ratio", 0.001f);
@@ -819,7 +821,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		.color = exhaust_color,
 	};
 
-	auto& base = entity(base_ndx); // Not const: will deplete!
+	auto& base = entity(base_id); // Not const: will deplete!
 
 	// This "accidentally" creates a nice rainbowish color pattern in the plumes...
 	auto adjust_color = [](uint32_t base_color){
@@ -838,7 +840,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		thruster->cfg.eject_velocity = {0, -eject_v};
 		thruster->cfg.eject_offset = {0, -base.r * airgap};
 		thruster->cfg.color = adjust_color(exhaust_color);
-		thruster->emit_particles(base_ndx, particles_to_add);
+		thruster->emit_particles(base_id, particles_to_add);
 	}
 	if (base.thrust_down.thrust_level()) {
 		static Emitter dn_thrust_emitter(common_cfg, *this);
@@ -846,7 +848,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		thruster->cfg.eject_velocity = {0, eject_v};
 		thruster->cfg.eject_offset = {0, base.r * airgap};
 		thruster->cfg.color = adjust_color(exhaust_color);
-		thruster->emit_particles(base_ndx, particles_to_add);
+		thruster->emit_particles(base_id, particles_to_add);
 	}
 	if (base.thrust_left.thrust_level()) {
 		static Emitter lt_thrust_emitter(common_cfg, *this);
@@ -854,7 +856,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 		thruster->cfg.eject_velocity = {eject_v, 0};
 		thruster->cfg.eject_offset = {base.r * airgap, 0};
 		thruster->cfg.color = adjust_color(exhaust_color);
-		thruster->emit_particles(base_ndx, particles_to_add);
+		thruster->emit_particles(base_id, particles_to_add);
 	}
 	if (base.thrust_right.thrust_level()) {
 		static Emitter rt_thrust_emitter(common_cfg, *this);
@@ -872,7 +874,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 			thruster->cfg.eject_offset = {-base.r * airgap, 0}; //!! = {-eject_v/10, 0}; // A gap looks shit here!
 			thruster->cfg.eject_velocity = {-eject_v/10, 0}; // To avoid garbled clouds if not moving...
 			thruster->cfg.color = adjust_color(exhaust_color);
-			thruster->emit_particles(base_ndx, loremipsum_skyprinter.active_pixels, loremipsum_skyprinter.nozzles);
+			thruster->emit_particles(base_id, loremipsum_skyprinter.active_pixels, loremipsum_skyprinter.nozzles);
 			thruster = nullptr; // Prevent the default action...
 		}
 	}
@@ -880,7 +882,7 @@ void OONApp::exhaust_burst(size_t base_ndx/* = 0*/, /*Math::Vector2f thrust_vect
 
 
 //----------------------------------------------------------------------------
-void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*/ unsigned n/* = ...*/)
+void OONApp::shield_energize(EntityID emitter_id, /*Math::Vector2f shoot_vector,*/ unsigned n/* = ...*/)
 {
 	static auto     particle_density = Phys::DENSITY_ROCK * appcfg.get("sim/shield_density_ratio", 0.001f);
 	static uint32_t color = appcfg.get("sim/shield_color", 0xffff99);
@@ -904,13 +906,13 @@ void OONApp::shield_energize(size_t emitter_ndx, /*Math::Vector2f shoot_vector,*
 		.color = color,
 	}, *this);
 
-//	emitter_cfg.eject_velocity = entity(emitter_ndx).v;
-	thrust_exhaust_emitter.emit_particles(emitter_ndx, n ? n : appcfg.shield_burst_particles);
+//	emitter_cfg.eject_velocity = entity(emitter_id).v;
+	thrust_exhaust_emitter.emit_particles(emitter_id, n ? n : appcfg.shield_burst_particles);
 }
 
 
 //----------------------------------------------------------------------------
-void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, unsigned n/* = ...*/)
+void OONApp::chemtrail_burst(EntityID emitter_id/* = 0*/, unsigned n/* = ...*/)
 {
 	static auto  chemtrail_v_factor      = appcfg.get("sim/chemtrail_v_factor", 0.1f);
 	static auto  chemtrail_offset_factor = appcfg.get("sim/chemtrail_offset_factor", 0.2f);
@@ -923,7 +925,7 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, unsigned n/* = ...*/)
 	static auto  M_min = Phys::mass_from_radius_and_density(r_min, chemtrail_density);
 	static auto  M_max = Phys::mass_from_radius_and_density(r_max, chemtrail_density);
 
-	auto& emitter = entity(emitter_ndx); // Not const: will deplete!
+	auto& emitter = entity(emitter_id); // Not const: will deplete!
 	auto p_range = emitter.r * 5;
 	auto v_range = Model::World::CFG_GLOBE_RADIUS * chemtrail_divergence; //!! ...by magic, right? :-/
 
@@ -954,7 +956,7 @@ void OONApp::chemtrail_burst(size_t emitter_ndx/* = 0*/, unsigned n/* = ...*/)
 
 	assert(emitter.mass >= 0);
 	emitter.recalc();
-	resize_shape(emitter_ndx, float(emitter.r / emitter_old_r));
+	resize_shape(emitter_id, float(emitter.r / emitter_old_r));
 }
 
 
@@ -1054,7 +1056,7 @@ void OONApp::updates_for_next_frame()
 			++iterations;
 
 			// Clean-up decayed bodies:
-			for (size_t i = player_entity_ndx() + 1; i < entity_count(); ++i) {
+			for (auto i = player_entity_ndx() + 1; i < entity_count(); ++i) {
 				auto& e = entity(i);
 				if (e.lifetime != Entity::Unlimited && e.lifetime <= 0) {
 					remove_entity(i); // Takes care of "known" references, too!
@@ -1100,12 +1102,12 @@ void OONApp::updates_for_next_frame()
 	if (scroll_locked()) {
 		// Panning follows focused obj. with locked focus point:
 		_focus_locked_ = true;
-		if (focused_entity_ndx != ~0u)
+		if (focused_entity_ndx != Entity::NONE)
 			pan_to_focus(focused_entity_ndx);
 	} else {
 		// Focus point follows focused obj., with panning only if drifting off-screen:
 		//!! Should be possible to switch this off!
-		if (focused_entity_ndx != ~0u) {
+		if (focused_entity_ndx != Entity::NONE) {
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);

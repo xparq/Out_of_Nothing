@@ -1,9 +1,9 @@
 #ifndef _O9090N7B8C12345607N772V8456N720C45Y69780W5B76980YH_
 #define _O9090N7B8C12345607N772V8456N720C45Y69780W5B76980YH_
 
-#include <cstddef> // size_t, but #592!
+#include "Model/Entity.hpp"
 
-namespace Szim {
+namespace Szim { //!! It's a PITA not seeing Model here, too! :-/
 
 class Avatar;
 class VirtualController;
@@ -11,7 +11,7 @@ class VirtualController;
 class Player
 {
 public:
-	Player(size_t entity_ndx, Avatar& avatar, VirtualController& controls);
+	Player(Model::EntityID entity_ndx, Avatar& avatar, VirtualController& controls);
 	virtual ~Player();
 
 //----------------------------------------------------------------------------
@@ -19,8 +19,8 @@ public:
 //
 	//--------------------------------------------------------------------
 	// Config
-	size_t      entity_ndx = ~0u; // Associated (root) model entity
-	Avatar*     avatar = nullptr;
+	Model::EntityID    entity_ndx = Model::Entity::NONE; // Associated (root) model entity
+	Avatar*            avatar = nullptr;
 	VirtualController* controls = nullptr;
 
 	//--------------------------------------------------------------------

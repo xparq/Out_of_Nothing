@@ -240,19 +240,19 @@ void SimApp::set_world(Model::World const& w) { _world = w; }
 
 
 //----------------------------------------------------------------------------
-size_t SimApp::add_entity(Entity&& temp)
+EntityID SimApp::add_entity(Entity&& temp)
 {
 	return world().add_body(std::forward<decltype(temp)>(temp)); //!!?? That forward is redundant here?
 }
 
-size_t SimApp::add_entity(const Entity& src)
+EntityID SimApp::add_entity(const Entity& src)
 {
 	return world().add_body(src);
 }
 
-void SimApp::remove_entity(size_t ndx)
+void SimApp::remove_entity(EntityID id)
 {
-	world().remove_body(ndx);
+	world().remove_body(id);
 }
 
 
@@ -317,11 +317,11 @@ float SimApp::player_idle_time(unsigned player_id) const
 
 
 //----------------------------------------------------------------------------
-bool SimApp::is_entity_at_viewpos(size_t entity_id, float x, float y) const // virtual
+bool SimApp::check_if_entity_is_at_viewpos(EntityID id, float x, float y) const // virtual
 {
-	const auto& e = entity(entity_id);
+	const auto& e = entity(id);
 	//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
-	//!! Actully, in OONApp_sfml it is -- make this "tunnelable"!...
+	//!! Actually, in OONApp_sfml it is -- make this "tunnelable"!...
 	const auto& camera = main_view().camera();
 	auto ep = camera.world_to_view_coord(e.p);
 	//!! ... = e.bounding_box();
@@ -336,10 +336,11 @@ bool SimApp::is_entity_at_viewpos(size_t entity_id, float x, float y) const // v
 }
 
 //----------------------------------------------------------------------------
-bool SimApp::entity_at_viewpos(float x, float y, size_t* entity_id OUT) const // virtual
+bool SimApp::entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const // virtual
 {
+	//!! Assert that EntityID is size_t, or implement proper iteration!...:
 	for (size_t i = entity_count(); i-- != 0;) { //!! Poor man's Z-order... Override for less hamfisted ways!
-		if (is_entity_at_viewpos(i, x, y)) {
+		if (check_if_entity_is_at_viewpos(i, x, y)) {
 			*entity_id = i;
 			return true;
 		}

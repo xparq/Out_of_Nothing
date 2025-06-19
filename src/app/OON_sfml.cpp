@@ -406,10 +406,10 @@ try {
 						//!! off view confinement, but it can't be done yet. :-/
 					} else {
  						// Select the player obj. by default (or with a dedicated modifier); same as with MouseButton!
- 						if (/*keystate(ALT) || */focused_entity_ndx == ~0u)
+						if (/*keystate(ALT) || */focused_entity_ndx == Entity::NONE)
 							focused_entity_ndx = player_entity_ndx();
 
-						assert(focused_entity_ndx != ~0u);
+						assert(focused_entity_ndx != Entity::NONE);
 						center(focused_entity_ndx);
 					}
 					break;
@@ -505,12 +505,12 @@ try {
 
 				auto vpos = oon_main_camera().screen_to_view_coord(mousepress->position.x, mousepress->position.y);
 				oon_main_camera().focus_offset = vpos;
-				size_t clicked_entity_id = ~0u;
+				EntityID clicked_entity_id = Entity::NONE;
 				if (entity_at_viewpos(vpos.x, vpos.y, &clicked_entity_id)) {
 cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
 				} else {
 cerr << "DBG> Click: no obj.\n";
-					assert(clicked_entity_id == ~0u);
+					assert(clicked_entity_id == Entity::NONE);
 				}
 
 			//!! PROCESSING SHIFT MAKES NO SENSE WHILE ALSO HAVING SHIFT+MOVE, AS THAT WOULD ALWAYS JUST KEEP
@@ -519,10 +519,10 @@ cerr << "DBG> Click: no obj.\n";
 
 				// Select the clicked object, if any (unless holding CTRL!)
 				/*if (!keystate(CTRL))*/ //!! Really should be ALT, but... that's the stupid shield. :)
-					focused_entity_ndx = clicked_entity_id == ~0u
+					focused_entity_ndx = clicked_entity_id == Entity::NONE
 					                     ? (/*keystate(ALT) ? player_entity_ndx() // Select the player with a dedicated modifier; same as with Home!
-				                                                : */(keystate(SHIFT) ? focused_entity_ndx : ~0u))
-				                             : clicked_entity_id; // ~0u if none... //!!... Whoa! :-o See updates_for_next_frame()!
+				                                                : */(keystate(SHIFT) ? focused_entity_ndx : Entity::NONE))
+				                             : clicked_entity_id; // Entity::NONE if none... //!!... Whoa! :-o See updates_for_next_frame()!
 /*!!
 				// Pan the selected object to focus, if holding SHIFT
 				//!!?? -- WHAT? There should be no panning whatsoever on a simple click!
@@ -530,13 +530,13 @@ cerr << "DBG> Click: no obj.\n";
  					// Select the player by default; same as with Home!
  					// (Unless, as above, holding CTRL!)
 					if (//!keystate(CTRL) &&
-					    focused_entity_ndx == ~0u)
+					    focused_entity_ndx == Entity::NONE)
 						focused_entity_ndx = player_entity_ndx();
 //!!?? -- SHIFT should just have the usual effect of locking the scroll!
-					pan_to_focus(focused_entity_ndx); //! Tolerates ~0u!
+					pan_to_focus(focused_entity_ndx); //! Tolerates Entity::NONE!
 				}
 !!*/
-				if (focused_entity_ndx == ~0u)
+				if (focused_entity_ndx == Entity::NONE)
 					cerr << "- Nothing there. Focusing on the deep void...\n"; //!! Do something better than this... :)
 				break;
 			}
@@ -555,13 +555,13 @@ cerr << "DBG> Click: no obj.\n";
 					oon_main_camera().focus_offset = vpos;
 				}
 
-				size_t entity_id = ~0u;
-				if (entity_at_viewpos(vpos.x, vpos.y, &entity_id)) {
+				auto entity = Entity::NONE;
+				if (entity_at_viewpos(vpos.x, vpos.y, &entity)) {
 //cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
-					hovered_entity_ndx = entity_id;
+					hovered_entity_ndx = entity;
 				} else {
 //cerr << "DBG> Click: no obj.\n";
-					hovered_entity_ndx = ~0u;
+					hovered_entity_ndx = Entity::NONE;
 				}
 				break;
 			}

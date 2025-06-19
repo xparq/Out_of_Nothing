@@ -56,10 +56,10 @@ public:
 
 	// -------------------------------------------------------------------
 	// Pure virtuals for the actual drawing impl...
-	virtual void create_cached_shape(const Model::Entity& body, size_t entity_ndx) = 0;
-	virtual void delete_cached_shape(size_t entity_ndx) = 0;
+	virtual void create_cached_shape(const Model::Entity& body, Model::EntityID entity_ndx) = 0;
+	virtual void delete_cached_shape(Model::EntityID entity_ndx) = 0;
 	virtual void resize_objects(float factor) = 0;
-	virtual void resize_object(size_t ndx, float factor) = 0;
+	virtual void resize_object(Model::EntityID ndx, float factor) = 0;
 
 	//!! Sigh... Move this to the UI already:
 	virtual void draw_banner(const char* text) = 0;

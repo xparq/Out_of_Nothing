@@ -45,7 +45,7 @@ World::World() :
 }
 
 //----------------------------------------------------------------------------
-size_t World::add_body(Entity const& obj)
+EntityID World::add_body(Entity const& obj)
 {
 ZoneScoped; //!!IPROF("add_body-copy");
 	bodies.push_back(std::make_shared<Entity>(obj));
@@ -54,7 +54,7 @@ ZoneScoped; //!!IPROF("add_body-copy");
 	return ndx;
 }
 
-size_t World::add_body(Entity&& obj)
+EntityID World::add_body(Entity&& obj)
 {
 ZoneScoped; //!!IPROF("add_body-move");
 	obj.recalc(); // just recalc the original throw-away obj
@@ -62,11 +62,11 @@ ZoneScoped; //!!IPROF("add_body-move");
 	return bodies.size() - 1;
 }
 
-void World::remove_body(size_t ndx)
+void World::remove_body(EntityID ndx)
 {
 ZoneScoped;
 	assert(bodies.size() > 0);
-	assert(ndx != (size_t)-1);
+	assert(ndx != Entity::NONE);
 	bodies.erase(bodies.begin() + ndx);
 }
 

@@ -50,10 +50,10 @@ public:
 
 	// OON gameplay actions...
 
-	virtual void spawn(size_t parent_ndx = 0, unsigned n = 1);      //!! requires: 0 == player_entity_ndx()
-	void exhaust_burst(size_t entity_ndx = 0, /* Math::Vector2f thrust_vector, */unsigned n = 20);
-	void chemtrail_burst(size_t emitter_ndx = 0, unsigned n = 10);
-	void shield_energize(size_t emitter_ndx = 0, /*Math::Vector2f shoot_vector,*/ unsigned n = 5);
+	virtual void spawn(EntityID parent = 0, unsigned n = 1);      //!! requires: 0 == player_entity_ndx()
+	void exhaust_burst(EntityID base_entity = 0, /* Math::Vector2f thrust_vector, */unsigned n = 20);
+	void chemtrail_burst(EntityID emitter = 0, unsigned n = 10);
+	void shield_energize(EntityID emitter = 0, /*Math::Vector2f shoot_vector,*/ unsigned n = 5);
 
 	//!!These should be idempotent, to tolerate keyboard repeats (which could be disabled but may be problematic)!
 	//!!Also -> #105: sanitize thrusters...
@@ -90,10 +90,10 @@ public:
 	bool pan_control(ViewControlMode mode = UserKeys);                              //!!?? should be an override already?
 	bool zoom_control(ViewControlMode mode = UserKeys, float mousewheel_delta = 0); //!!?? should be an override already?
 
-	void center(size_t entity_id);
-	void pan_to_focus(size_t entity_id);
-	void center_player(unsigned player_id = 1);
-//!!	void pan_to_focus(unsigned player_id = 1);
+	void center(EntityID entity_id);
+	void pan_to_focus(EntityID entity_id);
+	void center_player(PlayerID player_id = 1);
+//!!	void pan_to_focus(PlayerID player_id = 1);
 
 	//!! A more generic _adjust_pan() (or even _adjust_view()) should also exist, e.g.
 	//!! to bring back things on-screen, if drifted off!
@@ -121,17 +121,17 @@ public:
 	// "Internal ops.", rather than "user actions" (well, some still are, e.g. for testing)
 	//!!Make a proper distinction between these and player/user actions!
 	//!!(One thing's that those tend/should go through the UI, whereas these shouldn't.)
-	size_t add_random_body_near(size_t base_ndx);
-	void   add_random_bodies_near(size_t base_ndx, size_t n);
-	void   remove_random_body();
-	void   remove_random_bodies(size_t n = -1); // -1 -> all
+	EntityID add_random_body_near(EntityID base_entity);
+	void     add_random_bodies_near(EntityID base_entity, size_t n);
+	void     remove_random_body();
+	void     remove_random_bodies(size_t n = -1); // -1 -> all
 
 	unsigned add_player(
 		Entity&& model,
 		Szim::Avatar& avatar,
 		Szim::VirtualController& controls
 	) override;
-	void     remove_player(unsigned ndx) override;
+	void     remove_player(PlayerID ndx) override;
 
 protected:
 	bool _ctrl_update_thrusters(); // true if any engine is firing
@@ -139,8 +139,8 @@ protected:
 	//------------------------------------------------------------------------
 	// Op. implementations/overrides...
 	void updates_for_next_frame() override;
-	size_t add_entity(Entity&& temp) override;
-	void remove_entity(size_t ndx) override;
+	EntityID add_entity(Entity&& temp) override;
+	void remove_entity(EntityID ndx) override;
 //	void transform_entity(EntityTransform f) override;
 //	void transform_entity(EntityTransform_ByIndex f) override;
 	//--------------------------------------------------------------------
@@ -241,9 +241,9 @@ protected:
 	size_t snd_jingle_loop;
 	size_t snd_shield;
 
-public://!! Directly accessed by e.g. main_view() and the ObjMonitor HUD:
-	size_t focused_entity_ndx = 0; // The player object by default
-	size_t hovered_entity_ndx = ~0u; // None
+public://!! Directly accessed by e.g. main_view() and the ObjMonitor HUD...:
+	EntityID focused_entity_ndx = 0; // Player #1 by default //!!CRYPTIC HARDCODING
+	EntityID hovered_entity_ndx = Entity::NONE;
 };
 
 } // namespace OON

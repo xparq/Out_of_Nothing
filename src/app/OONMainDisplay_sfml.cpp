@@ -76,20 +76,22 @@ cerr << "----------------------------------------- "<<__FUNCTION__<<"\n";
 	shapes_to_change.clear();
 	shapes_to_draw.clear();
 
-	for (size_t n = 0; n < c_simapp.world().bodies.size(); ++n) {
+	//!! Assert size_t is_same EntityID, or implement proper iteration!...:
+	for (EntityID n = 0; n < c_simapp.world().bodies.size(); ++n) {
 		create_cached_shape(*(c_simapp.world().bodies[n]), n); // * for smart_ptr
 	}
 }
 
 
 //----------------------------------------------------------------------------
-void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, size_t entity_ndx) //override
+void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, Model::EntityID entity_ndx) //override
 {
 	auto& game = app();
 
 	// There must be objects actually added already:
 	assert(game.const_world().bodies.size() > 0);
 
+//!!?? WTF is this handling of -1 ("NONE"?) here:
 	//!!Can only "append" for now, so ndx must refer to the last element...
 	if (entity_ndx == (size_t)-1) entity_ndx = game.const_world().bodies.size() - 1;
 //	assert(entity_ndx == game.world().bodies.size() - 1);
@@ -112,9 +114,9 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, size_t 
 }
 
 //----------------------------------------------------------------------------
-void OONMainDisplay_sfml::delete_cached_shape(size_t entity_ndx) //override
+void OONMainDisplay_sfml::delete_cached_shape(Model::EntityID entity_ndx) //override
 {
-	assert(entity_ndx != (size_t)-1);
+	assert(entity_ndx != Model::Entity::NONE);
 	// Requires that the body has already been deleted from the world:
 	[[maybe_unused]] auto& game = app();
 	assert(game.entity_count() == shapes_to_draw.size() - 1);
@@ -136,7 +138,7 @@ void OONMainDisplay_sfml::resize_objects(float factor) //override
 }
 
 //----------------------------------------------------------------------------
-void OONMainDisplay_sfml::resize_object(size_t ndx, float factor) //override
+void OONMainDisplay_sfml::resize_object(EntityID ndx, float factor) //override
 {
 	assert(ndx < shapes_to_change.size());
 	sf::Transformable& shape = *(shapes_to_change[ndx]);
@@ -150,7 +152,8 @@ void OONMainDisplay_sfml::resize_object(size_t ndx, float factor) //override
 void OONMainDisplay_sfml::render_scene()
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	// Shape indexes must be the same as the corresponding entity indexes!
+	//!! Shape indexes must be the same as the corresponding entity indexes ("ID"s...)!
+	//!! Also, assert size_t is_same EntityID, or implement proper iteration!...
 	for (size_t i = 0; i < shapes_to_change.size(); ++i) {
 		auto& body = app().world().bodies[i];
 

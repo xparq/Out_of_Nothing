@@ -89,9 +89,9 @@ public:
 //----------------------------------------------------------------------------
 	// add_body() also does an initial recalc() on the object, to allow
 	// partially initialized template obj as input:
-	size_t add_body(Entity const& obj);
-	size_t add_body(Entity&& obj);
-	void remove_body(size_t ndx);
+	EntityID add_body(Entity const& obj);
+	EntityID add_body(Entity&& obj);
+	void remove_body(EntityID ndx);
 
 	bool is_colliding([[maybe_unused]] const Entity* obj1, [[maybe_unused]] const Entity* obj2)
 	// Takes the body shape into account.

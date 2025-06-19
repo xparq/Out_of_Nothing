@@ -328,18 +328,18 @@ void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
 		return;
   	}
 
+	static auto id = [this]() -> EntityID {
+		return        hovered_entity_ndx != Entity::NONE ? hovered_entity_ndx : focused_entity_ndx;
+	};
+	static auto obj = [this]() -> const Entity& {
+		return entity(hovered_entity_ndx != Entity::NONE ? hovered_entity_ndx : focused_entity_ndx);
+	};
 	static auto no_obj = [this]() { //! Either static, or [no_obj, obj] for the callers (instead of just [&])!...
 //cerr << "no_obj - hovered_entity_ndx: " << this->hovered_entity_ndx << "\n";
-//		return hovered_entity_ndx != ~0u ? hovered_entity_ndx >= entity_count()
+//		return hovered_entity_ndx != Entity::NONE ? hovered_entity_ndx >= entity_count()
 //		                                 : focused_entity_ndx >= entity_count();
 		return !( hovered_entity_ndx < entity_count() ||
 		          focused_entity_ndx < entity_count() );
-	};
-	static auto obj = [this]() -> const Entity& {
-		return entity(hovered_entity_ndx != ~0u ? hovered_entity_ndx : focused_entity_ndx);
-	};
-	static auto id = [this]() -> size_t {
-		return hovered_entity_ndx != ~0u ? hovered_entity_ndx : focused_entity_ndx;
 	};
 
 	ui_gebi(ObjMonitor)

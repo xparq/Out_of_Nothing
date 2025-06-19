@@ -3,10 +3,12 @@
 
 namespace Szim {
 
-Player::Player(size_t entity_ndx, Avatar& avatar, VirtualController& controls)
+using namespace Model;
+
+Player::Player(EntityID entity_ndx, Avatar& avatar, VirtualController& controls)
 	: entity_ndx(entity_ndx), avatar(&avatar), controls(&controls)
 {
-	assert(entity_ndx != ~0u);
+	assert(entity_ndx != Entity::NONE);
 	assert(this->avatar);
 	assert(this->controls);
 }
