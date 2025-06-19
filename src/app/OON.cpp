@@ -1029,7 +1029,7 @@ void OONApp::updates_for_next_frame()
 		//
 		Time::Seconds Δt;
 		if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
-			//!! A fixed dt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
+			//!! Fixed Δt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
 			Δt = cfg.fixed_model_dt;
 			//!!Don't check: won't be true if changing cfg.fixed_model_dt_enabled at run-time!
 			//!!assert(Δt == time.last_model_Δt); // Should be initialized by the SimApp init!

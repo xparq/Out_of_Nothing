@@ -25,14 +25,14 @@ typedef float Seconds;
 	// Controls
 		bool  paused = false;
 		bool  reversed = false;
-		float scale = 1.0f; // > 0 (Decoupled from time reversal, for more flexible controls.)
+		float scale = 1.0f; // > 0, so it's decoupled from time reversal (for more flexible controls)
 
 	// State
 		Seconds last_frame_delay; // In some modes it's not tied to the model Δt at all!
+		Seconds last_model_Δt;
 		Seconds real_session_time = 0; // (real-world) life-time of this Time instance
 
-		Seconds last_model_Δt;
-		//!! Should be kept in the model world!
+		//!! These should be kept in the model world!
 		//!! The app can come and go, while a persistent model is still up,
 		//!! and conversely: models can be loaded/reset, outside the view on
 		//!! this feeble class, at least as-is: it's not really in control yet!...
@@ -41,7 +41,7 @@ typedef float Seconds;
 
 		//!! Also keep a limited time series irrespective of the running avgs,
 		//!! so that it can be examined retrospectively for diagnistics.
-		//!! (Note: feeding live perf. graphs dont' need it, they keep their own data.)
+		//!! (Note: feeding live perf. graphs don't need it, they keep their own data.)
 
 		/* Δt modes:// Not really time modes tho, but more generic engine/run modes...
 

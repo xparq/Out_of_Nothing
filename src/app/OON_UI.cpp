@@ -174,79 +174,29 @@ void OONApp::ui_setup()
 #ifndef DISABLE_HUDS
 void OONApp::ui_setup_HUDs()
 {
-	//!!?? Why do all these member pointers just work, also without so much as a warning,
-	//!!?? in this generic pointer passing context?!
-	//!!
-	//!! "Evenfurthermore": why do all these insane `this` captures apparently survive
-	//!! all the obj recreation shenanigans (they *are* recreated, right??...) after
-	//!! a World reload?!?!?!
-	//!!
+	//!!??
+	//!!?? Why do all those member pointers in ui_setup_HUD_...() just work — also without
+	//!!?? so much as a warning, in those generic pointer-passing contexts?!
+	//!!??
+	//!!?? "Evenfurthermore": why do all those insane `this` captures apparently survive
+	//!!?? all the obj recreation shenanigans (they *are* recreated, right??...) after
+	//!!?? a World reload?!?!?!
+	//!!??
 
 	//------------------------------------------------------------------------
-	// Timing
-	ui_gebi(TimingStats)
-		<< "FPS: " << [this](){ return to_string(1 / (float)avg_frame_delay); }
-		           << [this](){ return fps_throttling() ? " (fixed)" : ""; }
-		<< "\nlast frame Δt: " << [this](){ return to_string(time.last_frame_delay * 1000.0f) + " ms"; }
-		<< "\nmodel Δt: " << [this](){ return to_string(time.last_model_Δt * 1000.0f) + " ms"; }
-		<<            " " << [this](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
-		<< "\ncycle: " << [this](){ return to_string(iterations); }
-		<< "\nReal elapsed time: " << &time.real_session_time
-	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
-	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
-		<< "\nTime reversed: " << &time.reversed
-		<< "\nTime scale: " << ftos(&this->time.scale)
-		<< "\nModel timing stats:"
-//		<< "\n    updates: " << &time.model_Δt_stats.samples
-		<< "\n    total t: " << &time.model_Δt_stats.total
-		<< "\n  Δt:"
-		<< "\n    last: " << &time.model_Δt_stats.last
-		<< "\n    min abs: " << &time.model_Δt_stats.umin
-		<< "\n    max abs: " << &time.model_Δt_stats.umax
-		<< "\n    min: " << &time.model_Δt_stats.min
-		<< "\n    max: " << &time.model_Δt_stats.max
-		<< "\n    avg.: " << [this]{ return to_string(time.model_Δt_stats.average());}
-	;
-//cerr << timing_hud;
-
-	//------------------------------------------------------------------------
-	// World
-	ui_gebi(WorldData)
-		<< "# of objs.: " << [this](){ return to_string(entity_count()); }
-		<< "\nEntity interactions: " << &const_world()._interact_all
-		<< "\nGravity mode: " << [this](){ return to_string((unsigned)const_world().gravity_mode); }
-		<< "\n  - strength: " << &const_world().gravity
-		<< "\nDrag: " << ftos(&this->const_world().friction)
-		<< "\n"
-	;
-
-	//------------------------------------------------------------------------
-	// View
-	ui_gebi(ViewData)
-		<< "MAIN CAMERA:"
-		<< "\n  X: " << &oon_main_camera().view_offset.x << ", Y: " << &oon_main_camera().view_offset.y
-		//!! to_string() fucked it up and returned "0.000000" for e.g. 0.00000005f! :-o (#509)
-		//!! << "\n  Scale: " << [this](){ return to_string(oon_main_camera().scale() * 1e6f); } << " x 1e-6"
-		<< "\n  Base scale: " << &oon_main_camera().cfg.base_scale
-		<< "\n  Zoom adj.: "<< [this](){ return to_string(oon_main_camera().scale() / oon_main_camera().cfg.base_scale); }
-		<< "\n  Focus: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
-/*
-		<< "\nVIEWPORT:"
-		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_min
-		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_max
-		<< "\n_edge_y_min: "<< &oon_main_camera()._edge_y_min
-		<< "\n_edge_y_min: "<< &oon_main_camera()._edge_y_max
-*/	;
-
-//	???_hud << "\nPress ? for help...";
-
-	//------------------------------------------------------------------------
-	// "Object Observer"
+	ui_setup_HUD_World();
+	ui_setup_HUD_Time();
+	ui_setup_HUD_View();
+	// "Object Observer"...
 	if (!(player_entity_ndx() < entity_count())) {
 		cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
 	} else {
 		ui_setup_HUD_ObjMonitor();
 	}
+	// Help...
+	ui_setup_HUD_Help();
+	auto& help_hud = ui_gebi(HelpPanel);
+	help_hud.active(cfg.get("show_help_on_start", true));
 
 	//------------------------------------------------------------------------
 	// Debug
@@ -286,68 +236,70 @@ void OONApp::ui_setup_HUDs()
 	;
 */
 #endif
-
-	//------------------------------------------------------------------------
-	// Help
-	auto& help_hud = ui_gebi(HelpPanel);
-	help_hud
-		<< "-------------- Actions:\n"
-		<< "A W S D        Thrust\n"
-		<< "SPACE          \"Chemtrail\" sprinkle\n"
-		<< "LEFT ALT       Shield particles (doing nothing yet...)\n"
-		<< "INS            Spawn object(s), +CTRL: 10, +SHIFT: 100\n"
-		<< "DEL            Remove object(s), +CTRL: 10, +SHIFT: 100\n"
-		<< "-------------- God Mode - Time Control:\n"
-		<< "ENTER          Step 1 time slice forward\n"
-		<< "BACKSPACE      Step 1 time slice backward\n"
-		<< "R              Reverse time (not 100% exact even with fix Δt!)\n" // #376...
-		<< "T              Time speedup (half resol.), +SHIFT: slowdown\n"
-		<< "X              Toggle fixed Δt for model updates\n"
-		<< "-------------- View:\n"
-		<< "← → ↑ ↓        Pan\n"
-		<< "MOUSE WHEEL,\n"
-		<< "NUMPAD +/-     Zoom\n"
-		<< "SHIFT          Auto-scroll to follow the focused object\n"
-		<< "SCROLL LOCK    Lock/unlock auto-scroll\n"
-		<< "MOUSE CLICK    Set focused object (or any point as zoom center)\n"
-		<< "HOME           Home in on (center) the focused obj. (If\n"
-		<< "               no focused obj. then select the player.)\n"
-		<< "SHIFT+HOME     - also keep auto-scrolling (as usual with SHIFT)\n"
-		<< "CTRL+HOME      Reset view to Home position (keep the zoom)\n"
-		<< "NUMPAD 5       Reset view to Home position & default zoom\n"
-		<< "L.CTRL+R.CTRL  Leave trails (by not clearing the screen)\n"
-		<< "MOUSE MOVE     Show data of hovered object in the obj. HUD\n"
-		<< "MOUSE DRAG     Pan freely (untracking any prev. focus obj.)\n"
-		<< "SHIFT+MOUSE M. Pan with the focus pt./obj locked to the mouse\n"
-		<< "F11            Toggle fullscreen\n"
-		<< "F12            Toggle (most) HUD overlays\n"
-		<< "-------------- Admin:\n"
-		<< "PAUSE, H       Halt time (model time only, sorry)\n"
-		<< "F2-F8          Quicksave (overwrites!), +SHIFT: qickload\n"
-		<< "M              Toggle (mute/unmute) audio\n"
-		<< "SHIFT+M        Toggle music\n"
-		<< "SHIFT+N        Toggle sound fx. \"noise\"\n"
-//!! #543	<< "SHIFT+P        Performance (FPS) throttling on/off\n"
-		<< "RIGHT ALT      Stream debug info to the terminal\n"
-		<< "\n"
-		<< "ESC            Quit\n"
-		<< "\n"
-		<< "-------------- God Mode - Metaphysics:\n"
-		<< "TAB            Toggle object interactions\n"
-		<< "G              Gravity mode\n"
-	//	<< "F              Decrease friction, +SHIFT: increase\n"
-        //	<< "C              chg. collision mode: pass/stick/bounce\n"
-		<< "\n"
-		<< "-------------- Misc:\n"
-		<< "?, F1          This help\n"
-		<< "Command-line options: " << args.exename() << " /?"
-
-	;
-//cerr << help_hud;
-
-	help_hud.active(cfg.get("show_help_on_start", true));
 }
 
+
+//------------------------------------------------------------------------
+void OONApp::ui_setup_HUD_World(/*!!, mode/config...!!*/)
+{
+	ui_gebi(WorldData)
+		<< "# of objs.: " << [this](){ return to_string(entity_count()); }
+		<< "\nEntity interactions: " << &const_world()._interact_all
+		<< "\nGravity mode: " << [this](){ return to_string((unsigned)const_world().gravity_mode); }
+		<< "\n  - strength: " << &const_world().gravity
+		<< "\nDrag: " << ftos(&this->const_world().friction)
+		<< "\n"
+	;
+}
+
+//------------------------------------------------------------------------
+void OONApp::ui_setup_HUD_Time(/*!!, mode/config...!!*/)
+{
+	// Timing
+	ui_gebi(TimingStats)
+		<< "FPS: " << [this](){ return to_string(1 / (float)avg_frame_delay); }
+		           << [this](){ return fps_throttling() ? " (fixed)" : ""; }
+		<< "\nlast frame Δt: " << [this](){ return to_string(time.last_frame_delay * 1000.0f) + " ms"; }
+		<< "\nmodel Δt: " << [this](){ return to_string(time.last_model_Δt * 1000.0f) + " ms"; }
+		<<            " " << [this](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
+		<< "\ncycle: " << [this](){ return to_string(iterations); }
+		<< "\nReal elapsed time: " << &time.real_session_time
+	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
+	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
+		<< "\nTime reversed: " << &time.reversed
+		<< "\nModel timing stats (s):"
+//		<< "\n    updates: " << &time.model_Δt_stats.samples
+		<< "\n    total t: " << &time.model_Δt_stats.total
+		<< "\n  Δt, as scaled x" << &time.scale << ":"
+		<< "\n    last: " << &time.model_Δt_stats.last
+		<< "\n    |min|: " << &time.model_Δt_stats.umin
+		<< "\n    |max|: " << &time.model_Δt_stats.umax
+//		<< "\n    min: " << &time.model_Δt_stats.min
+//		<< "\n    max: " << &time.model_Δt_stats.max
+		<< "\n    avg.: " << [this]{ return to_string(time.model_Δt_stats.average());}
+	;
+//cerr << timing_hud;
+}
+
+//------------------------------------------------------------------------
+void OONApp::ui_setup_HUD_View(/*!!, mode/config...!!*/)
+{
+	ui_gebi(ViewData)
+		<< "MAIN CAMERA:"
+		<< "\n  X: " << &oon_main_camera().view_offset.x << ", Y: " << &oon_main_camera().view_offset.y
+		//!! to_string() fucked it up and returned "0.000000" for e.g. 0.00000005f! :-o (#509)
+		//!! << "\n  Scale: " << [this](){ return to_string(oon_main_camera().scale() * 1e6f); } << " x 1e-6"
+		<< "\n  Base scale: " << &oon_main_camera().cfg.base_scale
+		<< "\n  Zoom adj.: "<< [this](){ return to_string(oon_main_camera().scale() / oon_main_camera().cfg.base_scale); }
+		<< "\n  Focus: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
+/*
+		<< "\nVIEWPORT:"
+		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_min
+		<< "\n_edge_x_min: "<< &oon_main_camera()._edge_x_max
+		<< "\n_edge_y_min: "<< &oon_main_camera()._edge_y_min
+		<< "\n_edge_y_min: "<< &oon_main_camera()._edge_y_max
+*/	;
+}
 
 //----------------------------------------------------------------------------
 void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
@@ -414,6 +366,65 @@ void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
 		<< "\n  vx: " << [&]{ return no_obj() ? ""s : (ftos(&obj().v.x))(); }
 		<<   ", vy: " << [&]{ return no_obj() ? ""s : (ftos(&obj().v.y))(); }
 	;
+}
+
+//------------------------------------------------------------------------
+void OONApp::ui_setup_HUD_Help(/*!!, mode/config...!!*/)
+{
+	auto& help_hud = ui_gebi(HelpPanel);
+	help_hud
+		<< "-------------- Actions:\n"
+		<< "A W S D        Thrust\n"
+		<< "SPACE          \"Chemtrail\" sprinkle\n"
+		<< "LEFT ALT       Emit shield particles (no actual shielding yet)\n"
+		<< "INS            Spawn object(s), +CTRL: 10, +SHIFT: 100\n"
+		<< "DEL            Remove object(s), +CTRL: 10, +SHIFT: 100\n"
+		<< "-------------- God Mode - Time Control:\n"
+		<< "PAUSE, H       Halt time (model time only — sorry! ;) )\n"
+		<< "ENTER          Step forward 1 time slice, when paused\n"
+		<< "BACKSPACE      Step back 1 time slice, when paused\n"
+		<< "R              Reverse time (not 100% exact even with fix Δt!)\n" // #376...
+		<< "T              Time warp ↑ (half sim. res.), +SHIFT: ↓ (dbl. res)\n"
+		<< "X              Toggle fixed Δt for model updates\n"
+		<< "-------------- View:\n"
+		<< "← → ↑ ↓        Pan\n"
+		<< "MOUSE WHEEL,\n"
+		<< "NUMPAD +/-     Zoom\n"
+		<< "SHIFT          Auto-scroll to follow the focused object\n"
+		<< "SCROLL LOCK    Lock/unlock auto-scroll\n"
+		<< "MOUSE CLICK    Set focused object (or any point as zoom center)\n"
+		<< "HOME           Home in on (center) the focused obj. (If\n"
+		<< "               no focused obj. then select the player.)\n"
+		<< "SHIFT+HOME     - also keep auto-scrolling (as usual with SHIFT)\n"
+		<< "CTRL+HOME      Reset view to Home position (keep the zoom)\n"
+		<< "NUMPAD 5       Reset view to Home position & default zoom\n"
+		<< "L.CTRL+R.CTRL  Leave trails (by not clearing the screen)\n"
+		<< "MOUSE MOVE     Show data of hovered object in the obj. HUD\n"
+		<< "MOUSE DRAG     Pan freely (untracking any prev. focus obj.)\n"
+		<< "SHIFT+MOUSE M. Pan with the focus pt./obj locked to the mouse\n"
+		<< "F11            Toggle fullscreen\n"
+		<< "F12            Toggle (most) HUD overlays\n"
+		<< "-------------- God Mode (\"metaphysics\"):\n"
+		<< "TAB            Toggle object interactions\n"
+		<< "G              Gravity mode\n"
+	//	<< "F              Decrease friction, +SHIFT: increase\n"
+        //	<< "C              chg. collision mode: pass/stick/bounce\n"
+		<< "-------------- Admin:\n"
+		<< "F2-F8          Quicksave (overwrites!), +SHIFT: qickload\n"
+		<< "M              Toggle (mute/unmute) audio\n"
+		<< "SHIFT+M        Toggle music\n"
+		<< "SHIFT+N        Toggle sound fx. \"noise\"\n"
+//!! #543	<< "SHIFT+P        Performance (FPS) throttling on/off\n"
+		<< "RIGHT ALT      Stream debug info to the terminal\n"
+		<< "\n"
+		<< "ESC            Quit\n"
+		<< "\n"
+		<< "-------------- Misc:\n"
+		<< "?, F1          This help\n"
+		<< "Command-line options: " << args.exename() << " /?"
+
+	;
+//cerr << help_hud;
 }
 
 #endif // DISABLE_HUDS

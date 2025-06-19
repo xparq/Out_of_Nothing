@@ -250,8 +250,6 @@ protected:
 	sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
 	              //!! -- e.g. via a unique_ptr, or just a plain manual PIMPL. (Plus a gui() accessor then?!)
 
-	SessionManager session;
-
 	//--------------------------------------------------------------------
 	// Abstract (Generic) Model World & View state...
 
@@ -261,6 +259,8 @@ private: // <- Forcing the use of accessors
 	View::ScreenView& _main_view;
 
 protected:
+	SessionManager session;
+
 	//--------------------------------------------------------------------
 	// Time control...
 

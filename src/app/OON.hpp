@@ -193,6 +193,10 @@ protected:
 		//!!void _sync_to_model_state(const SimApp& app/*!!, ...what (optionally, for optimization)...!!*/);
 
 		void ui_setup_HUDs();
+		void ui_setup_HUD_Help();
+		void ui_setup_HUD_World();
+		void ui_setup_HUD_Time();
+		void ui_setup_HUD_View();
 		void ui_setup_HUD_ObjMonitor();
 	//!!} ui;
 	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
