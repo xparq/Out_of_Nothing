@@ -14,8 +14,8 @@
 //!!namespace sfw { class GUI; }
 #include "sfw/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
                       //!! (mostly?) client .cpps that use should include it individually!)
-//!!#include "UI/HUD.hpp"
-#include "UI/Input.hpp"
+//!!#include "Engine/UI/HUD.hpp"
+#include "Engine/UI/Input.hpp"
 #include "Metamodel.hpp"
 	//!!C++: *Sigh...*
 	using EntityID = Model::EntityID;

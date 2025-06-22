@@ -10,7 +10,7 @@
 //!!TBD: These are not direct SFML deps., only they themselves depend on it...
 //!!??   How to deal with this cleanly?
 //!!#include "sfw/GUI.hpp"     //!! Not yet at its appropriate location!
-//!!#include "UI/hud_sfml.hpp" //!! Not yet at its appropriate location! (Should be in sfw!)
+//!!#include "Engine/UI/hud_sfml.hpp" //!! Not yet at its appropriate location! (Should be in sfw!)
 
 //!!Which subsystem should this go to, if any?
 //!!#include <SFML/System/Sleep.hpp>

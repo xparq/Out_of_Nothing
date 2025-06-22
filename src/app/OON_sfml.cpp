@@ -22,7 +22,7 @@
 //!!GCC still doesn't like modules:
 //!!import Storage; //!! Just a dummy (reminder, smoke test etc.) for now!
 
-#include "UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
+#include "Engine/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Context.hpp>

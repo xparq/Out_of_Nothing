@@ -14,7 +14,7 @@
 
 //!! This is an outlier for now: its own config should be reconciled with this,
 //!! which in turn should be split from the Engine cfg... -> #272!
-#include "UI/hud.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
+#include "Engine/UI/hud.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
 
 
 using namespace Szim;

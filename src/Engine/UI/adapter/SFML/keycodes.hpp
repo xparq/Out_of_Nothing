@@ -5,7 +5,7 @@
 // Interfacing with the SFML keyboard API
 //
 
-#include "UI/Input.hpp"
+#include "Engine/UI/Input.hpp"
 #include "SFML/Window/Event.hpp"
 
 #include "sfw/Event.hpp"

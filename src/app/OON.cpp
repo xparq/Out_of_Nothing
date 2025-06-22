@@ -9,7 +9,7 @@
 #include "Engine/Backend/HCI.hpp"
 #include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
-#include "UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
+#include "Engine/UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
                        //!! And we're already using keystate() here, too, shamelessly! ;) )
 
 #include "sz/math/sign.hh"

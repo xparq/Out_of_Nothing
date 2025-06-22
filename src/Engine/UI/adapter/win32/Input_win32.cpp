@@ -1,7 +1,7 @@
-﻿#include "UI/Input.hpp"
+﻿#include "Engine/UI/Input.hpp"
 
 //!! Ugh... Relay instead, like the rest of the backend adapters!
-//!!??#include "UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
+//!!??#include "Engine/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
