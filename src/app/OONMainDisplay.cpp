@@ -1,8 +1,7 @@
 #include "OONMainDisplay.hpp"
 #include "OONConfig.hpp"
 
-#include <iostream> //!! DEBUG
-	using std::cerr;
+#include "Engine/diag/Log.hpp"
 
 using namespace Szim::View;
 
@@ -21,7 +20,7 @@ OONMainDisplay::OONMainDisplay(OONViewConfig cfg, OONApp& app)
 	, _oon_default_camera({.base_scale = OONConfig::DEFAULT_ZOOM})
 {
 //	reset(); // Calc. initial state
-cerr <<	"DBG> OONMainDisplay ctor: camera pointer is now: " << _camera << "\n";
+	LOGD <<	"Camera pointer (_camera): " << _camera;
 }
 
 /*
@@ -40,6 +39,5 @@ void OONMainDisplay::resize(unsigned width, unsigned height)
 	_cfg.height = height;
 }
 */
-
 
 } // namespace OON

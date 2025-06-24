@@ -2,8 +2,8 @@
 
 #include <string>
 	using std::string;
-#include <iostream> // cerr, for debugging only!...
-	using std::cerr;
+
+#include "Engine/diag/Log.hpp"
 
 using namespace Szim;
 
@@ -17,7 +17,7 @@ SFML_HCI::Window::Window(const Window::Config& initial_cfg)
 	//!! instead the HCI subsystem should simply not create a window (or create
 	//!! a dummy one)! .headless shouldn't even be a Window.cfg member!
 	if (cfg.headless) {
-cerr << "NOTE: HEADLESS mode: Main window NOT created.\n";
+		LOG << "HEADLESS mode: Main window NOT created.";
 		return;
 	}
 
@@ -54,7 +54,7 @@ cerr << "NOTE: HEADLESS mode: Main window NOT created.\n";
 	cfg.height = _owned_sfml_window.getSize().y;
 	//!! We might need to save the requested dimensions!
 
-cerr << "DBG> "<<__FUNCTION__<<": HCI Window size set to: "<<cfg.width<<" x "<<cfg.height<<"\n";
+	LOGI << "HCI Window size set to: "<<cfg.width<<" x "<<cfg.height;
 }
 
 //----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ void SFML_HCI::switch_fullscreen(bool fullscreen) // override
 
 	_main_window.cfg.width  = SFML_window().getSize().x;
 	_main_window.cfg.height = SFML_window().getSize().y;
-cerr << "DBG> "<<__FUNCTION__<<": HCI Window size updated to: "<<_main_window.cfg.width<<" x "<<_main_window.cfg.height<<"\n";
+	LOGI << "HCI Window size updated to: "<<_main_window.cfg.width<<" x "<<_main_window.cfg.height;
 }
 
 //----------------------------------------------------------------------------

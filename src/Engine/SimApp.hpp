@@ -24,7 +24,7 @@
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
 
-#include "sz/lang/.hh" // ON/OFF, AUTO_CONST, OUT
+#include "sz/lang/.hh" // IGNORE, ON/OFF, AUTO_CONST, OUT
 #include "sz/stat/counter.hh"
 #include "sz/stat/rolling_average.hh"
 

@@ -9,7 +9,8 @@
 //	using sz::to_bool
 #include <string>
 #include <string_view>
-#include <iostream>
+
+#include "Engine/diag/Log.hpp"
 
 
 //!! This is an outlier for now: its own config should be reconciled with this,
@@ -79,7 +80,7 @@ OONConfig::OONConfig(Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& ar
 
 	background_music = sz::prefix_if_rel(syscfg.asset_dir, background_music);
 
-cerr << "DBG> current config: " << (current().empty() ? "built-in defaults(!)" : current()) << '\n';
-cerr << "DBG> cfg.base_path(): " << base_path() << '\n';
+	LOG << "Current config: " << (current().empty() ? "built-in defaults(!)" : current());
+	LOG << "- cfg. base_path: " << base_path();
 //!!cerr << "DBG> cfg_dir: " << appcfg_dir << '\n';
 }

@@ -25,7 +25,10 @@
 //#include <stdexcept>
 //	using std::runtime_error;
 
-#include "sz/DBG.hh"
+#include "diag/Log.hpp"
+#include "sz/DBG.hh" // My old debug macros for DEBUG builds
+#include "sz/lang/IGNORE.hh"
+
 
 namespace Szim {
 
@@ -60,8 +63,24 @@ void SimApp::init()
 // >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE YET!  <<<
 //
 {
+	LOGD << "SimApp::init entered...";
+
 	// Guard against multiple calls (which would happen if not overridden!):
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
+
+	// Logging...
+	// The logger instance(s) has (have) already been through static init, with defaults.
+	// Here we just adjust what we can/need, e.g. from command line args etc.
+	using namespace diag;
+
+	// Log level override, if requested (with --log-level=<letter>)
+	//! NOTE: WAY TOO LATE here for debugging the App ctor init chain (which has already been done)! :-/
+	auto log_level = log::letter_to_level(args("log-level")[0]);
+	if (log_level) { log::LogMan::instance()->set_level(log_level); }
+
+	//!! Open the file-backed Session Log:
+	//!!log::init(log_level, "Szim-debug.log");
+
 
 	// Apply the config...
 
@@ -90,7 +109,8 @@ void SimApp::init()
 	if (!args("session-save-as").empty()) // Even if autosave disabled. (Could be reenabled later, or manual save...)
 		session.set_save_as_filename(args("session-save-as"));
 
-	cerr << "LOG> <<< SimApp Engine/API initialized. >>>\n\n";
+	LOG << "<<< Engine/API initialized. >>>";
+	LOGD << "SimApp::init finished.";
 }
 
 //----------------------------------------------------------------------------
@@ -104,7 +124,7 @@ void SimApp::done()
 	// Guard against multiple calls (which can happen if not overridden):
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
 
-	cerr << "\nLOG> <<< SimApp Engine/API shutting down... >>>\n";
+	LOG << "<<< Engine/API shutting down... >>>";
 }
 
 //----------------------------------------------------------------------------
@@ -144,7 +164,7 @@ int SimApp::run()
 		// but there *is* an overridden done() (-- wow, even weirder!!! :) ),
 		// that will be called normally, as if the default init was the client's.
 
-	cerr << "LOG> Engine: Client app initialized. Starting main loop...\n";
+	LOG << "Engine: App initialized, starting main loop...";
 
 	ui_event_state = SimApp::UIEventState::IDLE;
 
@@ -189,7 +209,7 @@ DBGTRACE;
 	game_state_updates.join();
 #endif
 
-	cerr << "LOG> Engine: Main loop finished. Cleaning up client app...\n";
+	LOG << "Engine: Main loop finished, cleaning up the app...";
 
 	done(); // Unlike the dtor, this calls the override (or the "onced" NOOP default if none)
 
@@ -351,7 +371,7 @@ bool SimApp::entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const 
 
 //----------------------------------------------------------------------------
 void SimApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...)
-{w, obj1, obj2, dt, distance;
+{IGNORE w, obj1, obj2, dt, distance;
 }
 
 void SimApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...)
@@ -404,7 +424,7 @@ unsigned SimApp::fps_throttling(unsigned new_fps_limit/* = -1u*/)
 
 	if (new_fps_limit != unsigned(-1)) { // -1 means get!
 	// Set...
-		cerr << "LOG> "<<__FUNCTION__<<": Setting FPS limit to "<<new_fps_limit<<"\n";
+		LOGD << "Setting FPS limit to "<<new_fps_limit;
 		backend.hci.set_frame_rate_limit(new_fps_limit); // 0: no limit
 	}
 

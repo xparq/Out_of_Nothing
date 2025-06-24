@@ -38,6 +38,7 @@ gcm.cache
 
 import/
 
+*.log
 *.lock
 cache/
 

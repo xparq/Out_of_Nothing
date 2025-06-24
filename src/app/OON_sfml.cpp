@@ -37,9 +37,11 @@
 	using std::rand; // + RAND_MAX (macro!)
 #include <charconv>
 	using std::to_chars;
-#include <iostream>
+#include <iostream> // For error reporting
 	using std::cerr, std::endl;
 #include <cassert>
+
+#include "Engine/diag/Log.hpp"
 
 using namespace Szim;
 using namespace Model;
@@ -68,7 +70,7 @@ namespace _internal {
 	//!!WAS:	                  .height = Szim::SimAppConfig::VIEWPORT_HEIGHT},
 		: _oon_main_view(app)
 	{
-	//cerr << "DBG> _oon_view_and_cam_container: _oon_main_view.camera ptr: "<<&_oon_main_view.camera()<<"\n";
+	//LOGD << "_oon_view_and_cam_container: _oon_main_view.camera ptr: "<<&_oon_main_view.camera();
 	}
 }
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -127,7 +129,7 @@ void OONApp_sfml::update_thread_main_loop()
 #endif
 		switch (ui_event_state) {
 		case UIEventState::BUSY:
-//cerr << " [[[...BUSY...]]] ";
+//LOGI << " [[[...BUSY...]]]";
 			break;
 		case UIEventState::IDLE:
 /*!! THIS HELPED NOTHING HERE:
@@ -139,7 +141,7 @@ void OONApp_sfml::update_thread_main_loop()
 #ifndef DISABLE_THREADS
 			try { proc_lock.lock(); } // Blocks
 			catch (...) {
-cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_lock() << ")\n";
+LOGE << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_lock() << ")";
 			}
 #endif
 
@@ -149,7 +151,7 @@ cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_l
 			if (!cfg.headless) {
 				//!!?? Why is this redundant?!
 				if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-					cerr << "\n- [update_thread_main_loop] sf::setActive(true) failed!\n";
+					LOGE << "\n- [update_thread_main_loop] sf::setActive(true) failed!";
 	//?				request_exit(-1);
 	//?				return;
 				}
@@ -166,7 +168,7 @@ cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_l
 				//!!draw();
 
 				if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-					cerr << "\n- [update_thread_main_loop] sf::setActive(false) failed!\n";
+					LOGE << "\n- [update_thread_main_loop] sf::setActive(false) failed!";
 	//?				request_exit(-1);
 	//?				return;
 				}
@@ -176,7 +178,7 @@ cerr << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_l
 #ifndef DISABLE_THREADS
 			try { proc_lock.unlock(); } // This can throw, too!
 			catch (...) {
-cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.owns_lock() << ")\n";
+LOGE << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.owns_lock() << ")";
 			}
 #endif
 			break;
@@ -192,7 +194,7 @@ cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.o
 		}
 
 
-//cerr << "- releasing Events...\n";
+//LOGD << "- releasing Events...";
 		//sync::EventsFreeToGo.release();
 
 //!!IPROF_SYNC_THREAD;
@@ -205,7 +207,7 @@ cerr << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.o
 		//! Nor does it ruin the smooth rendering! :-o WTF?!
 		//! -> Because SFML double-buffers implicitly, AFAIK...
 */
-//cerr << "sf::Context [update loop]: " << sf::Context::getActiveContextId() << endl;
+//LOGD << "sf::Context [update loop]: " << sf::Context::getActiveContextId();
 #ifndef DISABLE_THREADS
 	}
 #endif
@@ -222,10 +224,10 @@ void OONApp_sfml::draw() // override
 
 	oon_main_view().draw(); //!! Change it to draw(surface)!
 
-/*cerr << std::boolalpha
-	<< "wallpap? "<<gui.hasWallpaper() << ", "
-	<< "clea bg? "<<sfw::Theme::clearBackground << ", "
-	<< hex << sfw::Theme::bgColor.toInteger() << '\n';
+/*LOGD	<< std::boolalpha
+	<< "wallpapr? "<<gui.hasWallpaper() << ", "
+	<< "clear bg? "<<sfw::Theme::clearBackground << ", "
+	<< hex << sfw::Theme::bgColor.toInteger();
 */
         gui.render(); // Draw last, as a translucent overlay!
 //!! These are (will be...) also part of the GUI:
@@ -286,11 +288,11 @@ try {
 //!!			exit(-1);
 //!!		}
 
-//cerr << "- acquiring lock for events...\n";
+//LOGD << "- acquiring lock for events...";
 			noproc_lock.lock();
 #endif
 			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-				cerr << "\n- [event_loop] sf::setActive(false) failed!\n";
+				LOGE << "\n- [event_loop] sf::setActive(false) failed!";
 //?				request_exit(-1);
 //?				return;
 			}
@@ -428,9 +430,9 @@ try {
 					//!! E.g. #288, and wrong .view size etc.!...
 					break;
 
-				default:
-//cerr << "UNHANDLED KEYPRESS: " << event.key.code << endl;
-					; // Keep GCC happy about unhandled enum values...
+				default: // Keep GCC happy about unhandled enum values...
+//LOGD << "UNHANDLED KEYPRESS: " << event.key.code;
+					;
 				}
 				break;
 			}
@@ -478,7 +480,7 @@ try {
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
-//cerr << "-- mouse: " << mouse.x <<", "<< mouse.y << "\n";
+//LOGD << "-- mouse: " << mouse.x <<", "<< mouse.y;
 				if (gui.focused() || gui.contains(gui.getMousePosition()))
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
@@ -492,7 +494,7 @@ try {
 			{
 				const auto* mousepress = event.get_if<sfw::event::MouseButtonDown>();
 //sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
-//cerr << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y << "\n";
+//LOGD << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y;
 
 //!!??auto vpos = oon_main_camera().screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o
 //!!?? Where did this x,y=={-520,-391} come from?! :-ooo
@@ -507,9 +509,9 @@ try {
 				oon_main_camera().focus_offset = vpos;
 				EntityID clicked_entity_id = Entity::NONE;
 				if (entity_at_viewpos(vpos.x, vpos.y, &clicked_entity_id)) {
-cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
+LOGI << "Click: following object #"<<clicked_entity_id<<" now...";
 				} else {
-cerr << "DBG> Click: no obj.\n";
+LOGD << "Click: no obj.";
 					assert(clicked_entity_id == Entity::NONE);
 				}
 
@@ -557,10 +559,10 @@ cerr << "DBG> Click: no obj.\n";
 
 				auto entity = Entity::NONE;
 				if (entity_at_viewpos(vpos.x, vpos.y, &entity)) {
-//cerr << "- Following object #"<<clicked_entity_id<<" now...\n";
 					hovered_entity_ndx = entity;
+//LOGD << "Hover: pointing to #"<<hovered_entity_ndx;
 				} else {
-//cerr << "DBG> Click: no obj.\n";
+//LOGD << "Hover: no obj.";
 					hovered_entity_ndx = Entity::NONE;
 				}
 				break;
@@ -586,7 +588,7 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 				break;
 			} // switch
 
-//cerr << "sf::Context [event loop]: " << sf::Context::getActiveContextId() << endl;
+//LOGD << "sf::Context [event loop]: " << sf::Context::getActiveContextId();
 
 			ui_event_state = UIEventState::EVENT_READY;
 
@@ -595,7 +597,7 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 
 		update_thread_main_loop(); // <- Doesn't actually loop, when threads are disabled, so crank it from here!
 #else
-//cerr << "- freeing the proc. lock...\n";
+//LOGD << "- freeing the proc. lock...";
 			noproc_lock.unlock();
 
 			//! Sleep some here, too (not just outside this inner loop, while

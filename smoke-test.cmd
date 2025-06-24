@@ -27,6 +27,7 @@ if not defined oon_use_exe (
 
 
 :run
-echo Chekcing %exe%...
+echo Latest build: "%SZ_RUN_DIR%\%exe%"
+echo Press Ctrl+C now, if this is not the one you wanted^^!
 pause
-%~dp0test\regression\tc-smoke.cmd %exe%
+%~dp0test\regression\tc-smoke.cmd %exe% %*

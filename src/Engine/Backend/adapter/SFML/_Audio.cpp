@@ -1,8 +1,14 @@
-#include "_Audio.hpp"
-
 //============================================================================
 // SFML-BACKED AUDIO SUBSYSTEM - IMPLEMENTATION
 //============================================================================
+
+#include "_Audio.hpp"
+
+#include <iostream> // For error reporting
+	using std::cerr, std::endl;
+
+#include "Engine/diag/Log.hpp"
+
 
 #ifndef DISABLE_AUDIO
 
@@ -16,7 +22,7 @@ namespace Szim {
 SFML_Audio::buffer_wrapper::buffer_wrapper(const char* filename)
 {
 	if (!loadFromFile(filename)) {
-std::cerr << "- Error loading sound from " << filename << std::endl;
+		std::cerr << "- Error loading sound from " << filename << std::endl;
 		return; // 'empty' remains true
 	}
 
@@ -135,7 +141,7 @@ short SFML_Audio::_get_sound_channel_ndx(const PlayReq& opt) const
 //----------------------------------------------------------------------------
 inline bool SFML_Audio::_channel_ndx_valid(short ndx) const
 {
-	return ndx >= 0 && ndx < MAX_FX_CHANNELS;
+	return ndx >= 0 && ndx < (short)MAX_FX_CHANNELS;
 }
 
 
@@ -145,7 +151,7 @@ SoundPlayer& SFML_Audio::_get_channel(short ndx)
 	assert(_channel_ndx_valid(ndx));
 	//!! Albeit an internal call, also check run-time, while things are unstable:
 	if (!_channel_ndx_valid(ndx)) {
-cerr << "DBG> _get_channel: ERROR: invalid channel index "<<ndx<<"! :-o \n";
+		LOGE << "Invalid audio channel index "<<ndx<<"! :-o ";
 		return _fx_channels[0];
 	}
 
@@ -162,16 +168,17 @@ size_t SFML_Audio::add_sound(const char* filename)
 
 	if (_sound_buffer_autoptrs.back()->empty) { // Failed init?
 		_sound_buffer_autoptrs.pop_back();
-cerr << "- Error loading sound "<< buffer_ndx <<" from "<< filename <<'\n';
-cerr << "DBG> NOTE: Removing empty sound after load failure.\n";
+LOGE << "- Error loading sound "<< buffer_ndx <<" from "<< filename;
+LOGD << "Removing empty sound buffer after load failure.";
 		return INVALID_SOUND_BUFFER;
 	}
 
 //	play_sound(buffer_ndx);
-cerr << "DBG> "<<__FUNCTION__<<": Loaded buffer "<<buffer_ndx<<" from file: "<<filename<<"\n";
-if(0)cerr << "DBG> - length: "<<_sound_buffer_autoptrs.back()->length<<"s"
+LOGI << "Loaded buffer "<<buffer_ndx<<" from file: "<<filename;
+//if(0)
+LOGD << " - length: "<<_sound_buffer_autoptrs.back()->length<<"s"
      <<         ", sample rate: "<<_sound_buffer_autoptrs.back()->sample_rate
-     <<         ", channels: "<<_sound_buffer_autoptrs.back()->getChannelCount()<<'\n';
+     <<         ", channels: "<<_sound_buffer_autoptrs.back()->getChannelCount();
 	return buffer_ndx;
 }
 
@@ -180,7 +187,7 @@ if(0)cerr << "DBG> - length: "<<_sound_buffer_autoptrs.back()->length<<"s"
 float SFML_Audio::length(size_t buffer_ndx) const //override
 {
 	if (buffer_ndx >= _sound_buffer_autoptrs.size()) {
-cerr << "DBG> "<<__FUNCTION__<<": WARNING: invalid sound index "<<buffer_ndx<<" ignored.\n";
+		LOGW << "length: Invalid sound index "<<buffer_ndx<<" ignored.";
 		return 0;
 	}
 
@@ -193,7 +200,7 @@ cerr << "DBG> "<<__FUNCTION__<<": WARNING: invalid sound index "<<buffer_ndx<<" 
 short SFML_Audio::play_sound(size_t buffer_ndx, PlayReq options)
 {
 	if (buffer_ndx >= _sound_buffer_autoptrs.size()) {
-cerr << "DBG> "<<__FUNCTION__<<": WARNING: invalid sound index "<<buffer_ndx<<" ignored.\n";
+		LOGW << "play_sound: Invalid sound index "<<buffer_ndx<<" ignored.";
 		return INVALID_SOUND_CHANNEL;
 	}
 	if (!enabled || !fx_enabled ||
@@ -222,7 +229,7 @@ cerr << "DBG> "<<__FUNCTION__<<": WARNING: invalid sound index "<<buffer_ndx<<" 
 bool SFML_Audio::playing(short channel_ndx) const //override
 {
 	if (!_channel_ndx_valid(channel_ndx)) {
-cerr << "DBG> "<<__FUNCTION__<<": WARNING: invalid channel index "<<channel_ndx<<"\n";
+		LOGW << "playing(): Invalid channel index "<<channel_ndx<<" ignored.";
 		return false; // All the API functions tolerate invalid inputs.
 	}
 
@@ -239,7 +246,7 @@ void SFML_Audio::toggle_sound(size_t buffer_ndx)
 //!! - Also, it can't really stop currently playing (i.e. long...) sounds!
 {
 	if (buffer_ndx >= _sound_buffer_autoptrs.size()) {
-cerr << "DBG> toggle_sound: WARNING: invalid sound index "<<buffer_ndx<<" ignored.\n";
+		LOGW << "toggle_sound: Invalid sound index "<<buffer_ndx<<" ignored.";
 		return;
 	}
 	if ( false == (_sound_buffer_autoptrs[buffer_ndx]->muted = !_sound_buffer_autoptrs[buffer_ndx]->muted)) {
@@ -253,8 +260,8 @@ cerr << "DBG> toggle_sound: WARNING: invalid sound index "<<buffer_ndx<<" ignore
 //----------------------------------------------------------------------------
 void SFML_Audio::kill_sound(short channel_ndx)
 {
-	if (channel_ndx < 0 || channel_ndx >= MAX_FX_CHANNELS) {
-cerr << "DBG> kill_sound: WARNING: invalid channel index "<<channel_ndx<<" ignored.\n";
+	if (channel_ndx < 0 || channel_ndx >= (short)MAX_FX_CHANNELS) {
+		LOGW << "kill_sound: Invalid sound index "<<channel_ndx<<" ignored.";
 		return;
 	}
 

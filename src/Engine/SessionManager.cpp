@@ -3,8 +3,10 @@
 #include "sz/sys/fs.hh"
 
 #include <string>
-#include <iostream>
+#include <iostream> // cerr for error reporting
 #include <cassert>
+
+#include "Engine/diag/Log.hpp"
 
 using namespace Szim;
 using namespace std;
@@ -23,13 +25,13 @@ SessionManager::SessionManager(SimApp& app) :
 	app(app)
 //	active_session{.filename = ...} // Leave the active session empty for now!
 {
-cerr << "+++ SessionManager started.\n";
+	LOGI << "+++ SessionManager started.";
 }
 
 //----------------------------------------------------------------------------
 SessionManager::~SessionManager()
 {
-cerr << "+++ SessionManager stopped.\n";
+	LOGI << "+++ SessionManager stopped.";
 }
 
 
@@ -56,13 +58,13 @@ void SessionManager::set_save_as_filename(const string& fn)
 //----------------------------------------------------------------------------
 void SessionManager::create(const string& /*!!session_name!!*/)
 {
-cerr << __FUNCTION__ << ": New sessions are not yet \"created\"! They just happen!... :) \n";
+LOGD << "New sessions are not yet \"created\"! They just happen!... :)";
 }
 
 //----------------------------------------------------------------------------
 void SessionManager::open(const string& session_name/* = ""*/)
 {
-cerr << __FUNCTION__; // To be continued...
+	LOGD << "Session Open...";
 
 	//!! Should handle things like:
 	//!! - saving an existing session first
@@ -73,7 +75,7 @@ cerr << __FUNCTION__; // To be continued...
 
 	if (active_session_name.empty()) {
 		create("");
-cerr << " starting new session\n";
+		LOGD << "...as new session!\n";
 		return;
 	}
 /*!! DISABLED FOR #555 (Double-prefixed session paths...)
@@ -89,7 +91,7 @@ cerr << " starting new session\n";
 !!*/
 	active_session.filename = active_session_name; //!! #555 load_snapshot *will* prefix it!
 
-cerr << " " << active_session.filename << '\n';
+	LOGD << "...from session file: " << active_session.filename << '\n';
 
 	if (!app.load_snapshot(active_session.filename.c_str())) {
 		cerr << __FUNCTION__ << ": Failed to load session state (from "<<active_session.filename<<")!\n";
@@ -100,7 +102,7 @@ cerr << " " << active_session.filename << '\n';
 //----------------------------------------------------------------------------
 void SessionManager::close()
 {
-cerr << __FUNCTION__; // To be continued...
+	LOGD << "Session Close...";
 
 	if (active_session.autosave) {
 
@@ -134,12 +136,12 @@ cerr << __FUNCTION__; // To be continued...
 		}
 		assert(!save_as.empty());
 
-cerr << " with autosave to \"" << save_as << "\"\n";
+		LOGD << "...with autosave to \"" << save_as << "\"";
 
 		if (!app.save_snapshot(save_as.c_str())) {
 			cerr << __FUNCTION__ << ": Failed to save session state (to "<<save_as<<")!\n";
 		}
 	} else {
-cerr << '\n';
+		//!! LOG_LINE_END //cerr << '\n';
 	}
 }

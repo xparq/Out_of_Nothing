@@ -7,6 +7,8 @@
 //!! only its modelling-related services that are actually used:
 //#include "Engine/SimApp.hpp"
 
+#include "Engine/diag/Log.hpp"
+
 #include "extern/semver.hpp"
 #include "extern/flatbuffers/flexbuffers.h" // Schemaless self-descriptive format
 
@@ -15,7 +17,7 @@
 	using std::ofstream, std::ifstream;
 #include <iomanip>
 //	using std::quoted;
-#include <iostream>
+#include <iostream> // For error reporting...
 	using std::cerr;
 //!!NOT YET! Too cumbersome for the trivial alternative.
 //!!#include <optional>
@@ -91,7 +93,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 			&& (in >> name >> eq >> std::quoted(val)) && eq == "=";) {
 			props[name] = val;
 		}
-	//cerr << "DBG> LOADED:\n"; for (auto& [n, v] : props) cerr << n << ": " << v << endl;
+		LOGD << "LOADED World params.: "; for (auto& [n, v] : props) LOGD << n << ": " << v;
 	} catch (...) {
 		cerr << "- ERROR: Failed to read world data!\n";
 		return false;
@@ -102,6 +104,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	//!! Verify a prev. save assuming a locked state, so the world hasn't changed since.
 	//!! This might be a very stupid idea actually...
+	//!!?? [Future me:] WTF did I even mean by this above?!?!
 	if (loaded_version > runtime_version) {
 		cerr << "- ERROR: Unsupported snapshot version \"" << props["MODEL_VERSION"] << "\"\n";
 		return false;
@@ -133,11 +136,11 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 		++_prop_ndx_; w_new._interact_all = stof(props["interactions"]);
 		if (loaded_version >= semver::version("0.1.0"))
 			{ ++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]);
-cerr << "DBG> World::load: gravity_mode = " << (unsigned)w_new.gravity_mode << '\n';
+LOGD << "World::load: gravity_mode = " << (unsigned)w_new.gravity_mode;
 			}
 		if (loaded_version >= semver::version("0.1.2")) // G was saved incorrectly (cast to unsigned) in 0.1.1; ignore that
 			{ ++_prop_ndx_; w_new.gravity = stof(props["gravity_strength"]);
-//cerr << "DBG> gravity strength after load: " << w_new.gravity << '\n';
+//LOGD << "gravity strength after load: " << w_new.gravity;
 			}
 	} catch (...) {
 		cerr << "- ERROR: Invalid (type of) property #"<<_prop_ndx_<<" in the loaded snapshot.\n";
@@ -145,13 +148,13 @@ cerr << "DBG> World::load: gravity_mode = " << (unsigned)w_new.gravity_mode << '
 	}
 
 	// Load the objects, too...
-	auto obj_count = stoi(props["objects"].c_str()); //!! stoi may throw!!!
+	size_t obj_count = stoi(props["objects"].c_str()); //!! stoi may throw!!!
 	w_new.bodies.reserve(obj_count);
-//cerr << obj_count << " ~ " << w_new.bodies.size() << endl;
+//LOGD << obj_count << " ~ " << w_new.bodies.size();
 	for (size_t n = 0; in && !in.bad() && n < obj_count; ++n) {
 		size_t ndx; char c;
 		in >> ndx >> c;
-//cerr << "char after the index: '"<< c <<"'" <<endl;
+//LOGD << "char after the index: '"<< c <<"'";
 		assert(n == ndx);
 
 		Entity template_obj;

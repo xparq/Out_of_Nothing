@@ -18,10 +18,13 @@
 	using std::rand; // and the RAND_MAX macro!
 #include <cmath>
 	using std::pow;
-#include <iostream>
+#include <iostream> // For status/error reporting
 	using std::cerr, std::endl;
 #include <cassert>
 #include "sz/DBG.hh"
+
+#include "Engine/diag/Log.hpp"
+
 
 using namespace Szim;
 using namespace Model;
@@ -69,7 +72,7 @@ ZoneScoped;
 	//!! OMG, also the cringefest!... The view.reset() below is needed to sync the view._avatars list with the "real" avatars,
 	//!! which is -- alas, counterintuitively! -- expected by (something in) add_entity(), I guess! :-o :-/
 	//!! -> WHICH SHOULD BE FIXED, MOST LIKELY!
-cerr << "DBG> Right after loading the avatar images (in "<<__FUNCTION__<<"):\n";
+LOGD << "Display.reset right after loading the avatar images:";
 	oon_main_view().reset(); //!!REPLACE THIS WITH A SANER WAY TO SYNC THE VIEW TO THE APP STATE (i.e. the avatars)!
 
 	//!!
@@ -138,7 +141,7 @@ cerr << "DBG> Right after loading the avatar images (in "<<__FUNCTION__<<"):\n";
 	//!! (And this is a pretty arbitrary place for that, too! :-o :-/ )
 	//!! ALSO: if there was a session load, it has already called it, so there
 	//!! are double debug outputs for it...
-cerr << "DBG> After UI setup (in "<<__FUNCTION__<<"):\n";
+LOGD << "Display.reset after the UI setup:";
 	oon_main_view().reset();
 
 	// Audio...
@@ -185,7 +188,7 @@ void OONApp::init_world_hook() //override
 	//!!
 	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
 	//!!
-cerr << "DBG> Adding player #1...\n";
+LOGI << "Adding player #1...";
 	auto player_id [[maybe_unused]] = //! Only for assertions in a DEBUG build!
 	add_player(
 		{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
@@ -210,7 +213,7 @@ cerr << "DBG> Adding player #1...\n";
 			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
 		   } else if (!args["session"]) { //! Only if no session being loaded...
 		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
-cerr << "DBG> Creating two small moons by default...\n";
+LOGI << "Creating two small moons by default...";
 			// Add 2 "moons" with fixed parameters (mainly for testing):
 			add_entity({//.r = w.CFG_GLOBE_RADIUS/10, // Redundant: will be calculated!
 				    .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
@@ -328,7 +331,7 @@ bool OONApp::perform_control_actions() //override
 			if (time.real_session_time > shield_depletion_timestamp) {
 
 				shield_active = -int(appcfg.shield_recharge_time / float(avg_frame_delay));
-cerr << "- Shield depleted! Recharging for " << -shield_active << " frames...\n";
+LOGI << "- Shield depleted! Recharging for " << -shield_active << " frames...";
 
 				//!! Not killing the sound, as its length is supposed to be the same
 				//!! as the shield depletion time, and an accidental miscalibration
@@ -690,10 +693,10 @@ void OONApp::remove_entity(EntityID ndx) //override
 	// Focus obj.:
 	if (focused_entity_ndx != Entity::NONE) {
 		if (focused_entity_ndx > ndx) {
-//cerr << "- NOTE: Index of the followed object has changed due to object removal.\n";
+LOGD << "The index of the followed object has changed due to object removal(s).\n";
 			--focused_entity_ndx;
 		} else if (focused_entity_ndx == ndx) {
-cerr << "- WARNING: The followed object has ceased to exist...\n";
+cerr << "- WARNING: The followed object has ceased to exist!...\n";
 			focused_entity_ndx = Entity::NONE; //!! Don't just fall back to the player!
 		}                                 //!! That'd be too subtle/unexpected/unwanted.
 	}
@@ -774,7 +777,7 @@ void OONApp::spawn(EntityID parent_id, unsigned n)
 //!! Should not ignore mass!...
 //!!??Should gradually become a method of the object itself?
 {
-if (parent_id != player_entity_ndx()) cerr << "- INTERANL: Non-player object #"<<parent_id<<" is spawning...\n";
+if (parent_id != player_entity_ndx()) LOGD << "Non-player object #"<<parent_id<<" is spawning entities...\n";
 
 	if (!n) return;
 
@@ -965,7 +968,7 @@ void OONApp::pause_hook(bool)
 {
 	//!! As a quick hack, time must restart from 0 when unpausing...
 	//!! (The other restart() on pausing is redundant; just keeping it simple...)
-cerr << "- INTERNAL: Main clock restarted on pause on/off (in the pause-hook)!\n";
+	LOGD << "Main clock restarted on Pause On/Off (in the pause-hook)!\n";
 	backend.clock.restart();
 }
 

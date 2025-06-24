@@ -18,8 +18,8 @@
 	using std::make_shared;
 #include <cmath> // sin //!! Seriously, replace with a fast table lookup!
 #include <cassert>
-#include <iostream> //!! DEBUG
-	using std::cerr;
+
+#include "Engine/diag/Log.hpp"
 
 
 namespace OON {
@@ -28,7 +28,7 @@ const Avatar_sfml& OONMainDisplay_sfml::avatar(size_t ndx) const
 {
 //!!	assert(_avatars.size());
 if (!_avatars.size()) { static Avatar_sfml dummy({});
-cerr <<"- INTERNAL: Hey, avatar loading must happen before other View ops.!\n";
+LOGN <<"- Hey, avatar loading must happen before other View ops.!";
 return dummy; }
 
 	return *_avatars[ndx > _avatars.size() - 1
@@ -48,13 +48,13 @@ OONMainDisplay_sfml::OONMainDisplay_sfml(OONApp& app)
 //!! i.e. no Engine (SimApp) init has been done at all yet! :-o :-/
 //!!	reset(); // Calc. initial state
 
-cerr <<	"DBG> OONMainDisplay_sfml ctor: camera pointer is now: " << _camera << "\n";
+	LOGD << "Camera pointer (_camera): " << _camera;
 }
 
 //----------------------------------------------------------------------------
 void OONMainDisplay_sfml::reset(const Config* recfg)
 {
-cerr << "----------------------------------------- "<<__FUNCTION__<<"\n";
+LOGD << "------------------ DISPLAY RESET ---------------------";
 
 	if (recfg) _cfg = *recfg;
 
@@ -186,8 +186,8 @@ void OONMainDisplay_sfml::render_scene()
 		trshape.setPosition(sf::Vector2f{ vpos.x + float(app().main_window_width()/2),
 			                         -vpos.y + float(app().main_window_height()/2)}); //!! "Standardize" on the view's centered origin instead!
 
-//cerr << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x) * oon_camera.scale() + oon_camera.offset.x
-//			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y) * oon_camera.scale() + oon_camera.offset.y <<'\n';
+//LOGD << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x) * oon_camera.scale() + oon_camera.offset.x
+//			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y) * oon_camera.scale() + oon_camera.offset.y;
 	}
 }
 

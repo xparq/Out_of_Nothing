@@ -3,6 +3,7 @@
 #include "extern/Tracy/public/TracyClient.cpp"
 
 #include "OON_sfml.hpp"
+#include "Engine/diag/Log.hpp"
 
 #include <iostream>
 	using std::cout, std::cerr;
@@ -11,24 +12,38 @@
 
 
 // LAST_COMMIT_HASH is defined here:
-#include "commit_hash.inc"
-	//!! Must be placed somewhere on the INCLUDE path by the build proc.!
+#include "commit_hash.inc" // The build proc. must put it somewhere on the INCLUDE path!
 
 
 //============================================================================
 int main(int argc, char* argv[])
 //============================================================================
 {
+	struct Main_ {
+		int exit_code = 0;
+		// Only log levels up to "notice" are enabled by default (before main)!
+		// But that's overridden to "info" (in Log.hpp, by SZ_LOG_USE_DEFAULT_LEVEL)...
+		Main_()  { LOGI << "main() entered..."; }
+		~Main_() { LOGI << "main() returning:" << exit_code; }
+	} Main;
+
 	using namespace OON;
+	using namespace Szim::diag;
+
+	Args args(argc, argv); // Just for -h -V etc.
+
+	// Explicit manual log level adjustment... The same thing will also be done
+	// in SimApp::init, but that's too late for tracing the App ctor logic! :-/
+	auto log_level = log::letter_to_level(args("log-level")[0]); //! `args` dependency...
+	if (log_level) { log::LogMan::instance()->set_level(log_level); }
 
 	//!! Sad kludge util #348...:
-	Args args(argc, argv); // Just for -h -V etc.
 	if (args["?"] || args["h"] || args["help"]) {
 		//!!game.show_cmdline_help();
 		OONApp_sfml::show_cmdline_help(args);
-		return 0;
+		return Main.exit_code;
 	} else if (args["V"]) {
-		cout
+		cout //! This is not a logging feature, that's why it writes directly to stdout.
 			<< "Version: " << LAST_COMMIT_HASH
 //!! The build proc. should just send the VDIR tag in a macro! -> #254
 #ifdef DEBUG
@@ -38,35 +53,30 @@ int main(int argc, char* argv[])
 			<< "-SFML_STATIC"
 #endif
 			<< '\n';
-		return 0;
+		return Main.exit_code;
 	}
 
+	Main.exit_code = -1;
 
-	int exit_code = 0;
 	try {
 		OONApp_sfml game(argc, argv);
-cerr << "DBG> Size of the app (game) obj.: "<< sizeof(game) << '\n';
+		LOGD << "Size of the entire app/game obj.: sizeof(game) == " << sizeof(game);
 
-		exit_code = game.run();
+		Main.exit_code = game.run(); // exit_code won't be set on exceptions!
+
+		LOGI	<< "Profiling stats:\n"
+			<< "------------------------------------------------------\n"
+			<< "- Use Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n"
+			<< "------------------------------------------------------\n"
+		;
 
 	} catch (runtime_error& x) {
-		cerr << "- ERROR: " << x.what() << '\n';
-		return -1;
+		cerr << "- ERROR: " << x.what() << '\n'; //!! FATAL(...) -> #619
 	} catch (exception& x) {
-		cerr << "- EXCEPTION: " << x.what() << '\n';
-		return -1;
+		cerr << "- EXCEPTION: " << x.what() << '\n'; //!! FATAL(...) -> #619
 	} catch (...) {
-		cerr << "- UNKNOWN EXCEPTION!\n";
-		return -1;
+		cerr << "- UNKNOWN EXCEPTION!\n"; //!! FATAL(...) -> #619
 	}
 
-	cerr	<< "Profiling stats:\n"
-		<< "------------------------------------------------------\n"
-		<< "- Use Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n"
-		<< "------------------------------------------------------\n"
-	;
-
-	cerr << "DBG> main() returning: " << exit_code << '\n';
-
-	return exit_code;
+	return Main.exit_code;
 }

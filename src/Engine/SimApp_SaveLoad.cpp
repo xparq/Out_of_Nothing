@@ -1,5 +1,7 @@
 ﻿#include "SimApp.hpp"
 
+#include "Engine/diag/Log.hpp"
+
 #include <string>
 	using std::string, std::to_string;
 	using namespace std::string_literals;

@@ -1,7 +1,6 @@
 ﻿#include "_Backend.hpp"
 
-#include <iostream>
-	using std::cerr;
+#include "Engine/diag/Log.hpp"
 
 using namespace Szim;
 
@@ -20,7 +19,7 @@ SFML_Backend::SFML_Backend(SimAppConfig& syscfg)
 		sfml_audio
 	)
 {
-cerr << "DBG> SFML backend initialized.\n";
+	LOG << "SFML backend initialized.";
 }
 
 //-------------------------------------
