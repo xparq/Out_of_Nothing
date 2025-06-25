@@ -93,7 +93,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 			&& (in >> name >> eq >> std::quoted(val)) && eq == "=";) {
 			props[name] = val;
 		}
-		LOGD << "LOADED World params.: "; for (auto& [n, v] : props) LOGD << n << ": " << v;
+		LOGD << "LOADED metadata & World params: "; for (auto& [n, v] : props) LOGD << " - " << n << ": " << v;
 	} catch (...) {
 		cerr << "- ERROR: Failed to read world data!\n";
 		return false;
