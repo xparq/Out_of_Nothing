@@ -36,6 +36,7 @@
 //#define SZ_NO_LOG_MACROS
 //#define SZ_LOG_DISABLE
 
-#include "sz/diag/log.hh"
+#include "extern/sz/diag/log.hh"
 
+// Imports...
 namespace Szim::diag { namespace log = sz::log; }

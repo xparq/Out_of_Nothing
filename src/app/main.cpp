@@ -75,11 +75,12 @@ int main(int argc, char* argv[])
 //ABORT("Explicit abort!");
 //cerr << "- ...but couldn't really?! WTF??? :-o ";
 
-	} catch (Szim::FatalError&) { //!! Make this ALSO a macro, for the fkn namespace qual. so easy to forget here?!... :-o
+	} catch (const Szim::diag::FatalError&) { //!! Do sg. about this ugly low-level-internal-detail name!... :-/
+	                                    //!! Well, it'll disappear when moving from this direct-main to an app-runner setup! :)
 		// Message already delivered by FATAL_ERROR()...
-	} catch (runtime_error& x) {
+	} catch (const runtime_error& x) {
 		ERROR( ("`std::runtime_error` exception: "s + x.what()).c_str() );
-	} catch (exception& x) {
+	} catch (const exception& x) {
 		ERROR( ("`std::exception`: "s + x.what()).c_str() );
 	} catch (...) {
 		ERROR("UNKNOWN EXCEPTION!");
