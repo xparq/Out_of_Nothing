@@ -12,6 +12,9 @@
 #include "Engine/SimApp.hpp"
 #include "_Backend.hpp"
 
+#include "Engine/diag/Error.hpp"
+//#include "Engine/diag/Log.hpp"
+
 #include <string>
 	using std::string, std::to_string;
 	using namespace std::string_literals;
@@ -23,10 +26,11 @@
 	using std::ofstream, std::ifstream, std::ios;
 #include <format>
 	using std::format;
-#include <iostream>
-	using std::cerr, std::endl;
 //#include <stdexcept>
 //	using std::runtime_error;
+
+//#include "Engine/diag/Error.hpp"
+//#include "Engine/diag/Log.hpp"
 
 
 using namespace Szim;
@@ -114,7 +118,7 @@ SimApp::~SimApp()
 	this->SimApp::done(); // Our own internal done() is called "secretly", even if overridden...
 	                      // (Note: the qualifier is only for emphasis; dtors don't dispatch virtuals.)
   } catch (...) {
-	cerr << "- INTERNAL ERROR: *REALLY UNEXPECTED* exception from SimApp::done()! :-o " << endl;
+	BUG("*REALLY UNEXPECTED* exception from SimApp::done()! :-o ");
 	//... throw; // <- Could be useful to see the fireworks in DEBUG mode,
 	             //    but can't compile without noexcept-violation warnings.
   }

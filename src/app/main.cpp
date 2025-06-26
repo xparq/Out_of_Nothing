@@ -3,10 +3,11 @@
 #include "extern/Tracy/public/TracyClient.cpp"
 
 #include "OON_sfml.hpp"
+#include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
 
-#include <iostream>
-	using std::cout, std::cerr;
+#include <iostream> // For normal user-facing output
+	using std::cout, std::endl;
 #include <stdexcept>
 	using std::exception, std::runtime_error;
 
@@ -70,13 +71,18 @@ int main(int argc, char* argv[])
 			<< "------------------------------------------------------\n"
 		;
 
-	} catch (runtime_error& x) {
-		cerr << "- ERROR: " << x.what() << '\n'; //!! FATAL(...) -> #619
-	} catch (exception& x) {
-		cerr << "- EXCEPTION: " << x.what() << '\n'; //!! FATAL(...) -> #619
-	} catch (...) {
-		cerr << "- UNKNOWN EXCEPTION!\n"; //!! FATAL(...) -> #619
-	}
+//BUG("Oh, crap!");
+//ABORT("Explicit abort!");
+//cerr << "- ...but couldn't really?! WTF??? :-o ";
 
+	} catch (Szim::FatalError&) { //!! Make this ALSO a macro, for the fkn namespace qual. so easy to forget here?!... :-o
+		// Message already delivered by FATAL_ERROR()...
+	} catch (runtime_error& x) {
+		ERROR( ("`std::runtime_error` exception: "s + x.what()).c_str() );
+	} catch (exception& x) {
+		ERROR( ("`std::exception`: "s + x.what()).c_str() );
+	} catch (...) {
+		ERROR("UNKNOWN EXCEPTION!");
+	}
 	return Main.exit_code;
 }

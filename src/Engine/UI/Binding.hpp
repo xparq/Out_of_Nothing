@@ -62,7 +62,7 @@ public:
 	{
 //!!?? Why is this never triggered, even when the arg was &&:
 //!!		static_assert(!std::is_rvalue_reference_v<decltype(f)>, "Only lvalues are allowed for binding!");
-//std::cerr << "- unknown type -- hopefully a lambda! :) -- catched...\n";
+//cerr << "- unknown type -- hopefully a lambda! :) -- catched...\n";
 	}
 
 /*!! GCC bug 85282 prevents these from being declared right here:
@@ -98,7 +98,7 @@ public:
 				//!! Cf.: charptr_name!
 				return _PTR(const char*);
 			} else if constexpr (actual_type == Binding::charptr_name) { //!!??
-	//cerr << "GOT 'charptr_name' ("<< type_name <<")\n";
+	//cerr << "GOT 'charptr_name' (== actual_type == "<< type_name <<")";
 		//!!WAS:	out << (const char*) (* _PTR(const char**)) << '\n';
 		//!!??		out << _PTR(const char*) << '\n';
 		//!!Why exactly does this need const?! Did crash with <char**>, omitting it -- was it just bac_any_cast?
@@ -111,11 +111,10 @@ public:
 				return *_PTR(T*);
 			}
 		} catch(std::bad_any_cast&) {
-
-	cerr << "- ERROR: " <<__FUNCTION__<< ": Couldn't convert "<< actual_type <<" to "<< requested_type <<'\n';
+			LOGE("Couldn't convert "s + actual_type + " to " + requested_type); //!! What LOG?! :-/
 			throw; // I'd prefer a safe ptr-to-empty return, but can't have a "universal" return type! :-/
 		} catch(...) {
-	cerr << "- ERROR: " <<__FUNCTION__<< ": Wow, unknown exception!\n";
+			BUG("Wow, unknown exception in Binding::get()!"); //!! What BUG?! :-/
 			throw; // I'd prefer a safe ptr-to-empty return, but can't have a "universal" return type! :-/
 		}
 

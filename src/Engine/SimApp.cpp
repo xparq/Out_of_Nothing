@@ -17,7 +17,7 @@
 #include <format>
 	using std::format;
 #include <iostream>
-	using std::cerr, std::cout, std::endl;
+	using std::cout, std::endl; // For normal user-facing output
 #include <thread>
 //	using std::thread, std::sleep_for;
 #include <chrono>
@@ -25,6 +25,7 @@
 //#include <stdexcept>
 //	using std::runtime_error;
 
+#include "diag/Error.hpp"
 #include "diag/Log.hpp"
 #include "sz/DBG.hh" // My old debug macros for DEBUG builds
 #include "sz/lang/IGNORE.hh"

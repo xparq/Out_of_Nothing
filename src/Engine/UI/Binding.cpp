@@ -10,10 +10,11 @@
 #include <limits>
 	using std::numeric_limits; // # of digits for precise float output
 //#include <format>
-#include <iostream>
-	using std::cerr, std::endl;
 #include <iomanip>
 	using std::setprecision;
+
+#include "Engine/diag/Error.hpp"
+//#include "Engine/diag/Log.hpp"
 
 using namespace std;
 using namespace UI;
@@ -152,10 +153,10 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 		}
 
 	} catch(std::bad_any_cast&) {
-cerr << "- Binding ERROR: Type mismatch for a binding with saved type \"" <<type_name<< "\" ["<<Binding::string_fn_ptr_name<<"]!\n";
+		ERROR("Type mismatch binding with saved type \"" + string(type_name) + "\" [" + Binding::string_fn_ptr_name + "]!");
 		// Nothing added to 'out', continuing...
 	} catch(...) {
-cerr << "- ERROR: Wow, unknown exception in " <<__FUNCTION__<< "!\n";
+		ERROR("Wow, unknown exception in " + __FUNCTION__ + "!");
 	}
 	
 #undef _CAST

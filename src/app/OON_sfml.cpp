@@ -37,10 +37,9 @@
 	using std::rand; // + RAND_MAX (macro!)
 #include <charconv>
 	using std::to_chars;
-#include <iostream> // For error reporting
-	using std::cerr, std::endl;
 #include <cassert>
 
+#include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
 
 using namespace Szim;
@@ -362,7 +361,7 @@ try {
 			{
 				auto keycode = event.get_if<sfw::event::KeyDown>()->code;
 #ifdef DEBUG
-	if (cfg.DEBUG_show_keycode) cerr << "key code: " << keycode << "\n"; //!! SFML3 has started making things harder every day... :-/
+	if (cfg.DEBUG_show_keycode) NOTE("key code: " + keycode); //!! SFML3 has started making things harder every day... :-/
 #endif
 				switch (keycode) {
 				case SFML_KEY(Pause): toggle_pause(); break;
@@ -539,7 +538,7 @@ LOGD << "Click: no obj.";
 				}
 !!*/
 				if (focused_entity_ndx == Entity::NONE)
-					cerr << "- Nothing there. Focusing on the deep void...\n"; //!! Do something better than this... :)
+					NOTE("- Nothing there. Focusing on the deep void..."); //!! Do something better than this... :)
 				break;
 			}
 
@@ -628,13 +627,13 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 	} // while - still running
 
 } catch (runtime_error& x) {
-	cerr <<__FUNCTION__<< " - ERROR: " << x.what() << '\n';
+	ERROR(x.what());
 	return;
 } catch (exception& x) {
-	cerr <<__FUNCTION__<< " - EXCEPTION: " << x.what() << '\n';
+	ERROR("EXCEPTION: " + x.what());
 	return;
 } catch (...) {
-	cerr <<__FUNCTION__<< " - UNKNOWN EXCEPTION!\n";
+	ERROR("UNKNOWN EXCEPTION!");
 	return;
 }
 }

@@ -10,8 +10,8 @@
 #include <limits>
 	using std::numeric_limits; // # of digits for precise float output
 //#include <format>
-#include <iostream>
-	using std::cerr, std::endl; // Only for debugging!
+
+#include "Engine/diag/Log.hpp"
 
 using namespace std;
 using namespace UI;

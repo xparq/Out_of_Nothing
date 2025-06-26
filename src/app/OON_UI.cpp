@@ -5,10 +5,9 @@
                        //!! (And sooner or later it must be usable unrestricted anyway!
 #include "Engine/UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
                        //!! And we're already using keystate() here, too, shamelessly! ;) )
-#include <iostream>
-	using std::cerr, std::endl;
-#include <cassert>
-#include "sz/DBG.hh"
+#include "Engine/diag/Error.hpp"
+//#include "Engine/diag/Log.hpp"
+//#include "sz/DBG.hh"
 
 using namespace Szim;
 using namespace Model;
@@ -189,7 +188,7 @@ void OONApp::ui_setup_HUDs()
 	ui_setup_HUD_View();
 	// "Object Observer"...
 	if (!(player_entity_ndx() < entity_count())) {
-		cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
+		BUG("UI/PlayerHUD init before player entity init!");
 	} else {
 		ui_setup_HUD_ObjMonitor();
 	}
@@ -324,7 +323,7 @@ void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
 	//! So... Just checking it run-time, too, as I have made this mistake
 	//! too many times now... :)
   	if ( !(player_entity_ndx() < entity_count()) ) {
-		cerr << "- INTERNAL ERROR: UI/PlayerHUD init before player entity init!\n";
+		BUG("UI/PlayerHUD init before player entity init!");
 		return;
   	}
 

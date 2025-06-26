@@ -1,7 +1,7 @@
 #include "ScreenView.hpp"
 
-#include <iostream> //!! DEBUG
-	using std::cerr;
+//#include "Engine/diag/Error.hpp"
+#include "Engine/diag/Log.hpp"
 
 namespace Szim::View {
 

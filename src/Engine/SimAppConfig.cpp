@@ -4,9 +4,11 @@
 	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
 #include "sz/str.hh"
 //	using sz::to_bool
+
+#include "Engine/diag/Error.hpp"
+
 #include <string>
 #include <string_view>
-#include <iostream>
 
 
 //!! This is an outlier for now: its own config should be reconciled with this,
@@ -20,11 +22,6 @@
 using namespace Szim;
 using namespace std;
 
-
-namespace {
-//	void ERROR  (string_view msg) { cerr << "- ERROR: "   << msg << '\n'; }
-	void WARNING(string_view msg) { cerr << "- WARNING: " << msg << '\n'; }
-}
 
 //----------------------------------------------------------------------------
 SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::string defaults)
@@ -140,14 +137,16 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	} if (args["dbg-keys"]) {
 		DEBUG_show_keycode = true;
 	} if (args["interact"]) {
-cerr << "- NOTE: --interact overrides cfg/sim/global_interactions.\n";
+		//!! Either stop telling this, or make it automatic, and tell about all of those then:
+		NOTE("Command-line options (like "s + "--interact" + ") override the config. (" + "cfg/sim/global_interactions" + ").");
 		global_interactions = sz::to_bool(args("interact"), sz::str::empty_is_true);
 	}
 
 	// Warn about deprecated options (!!should have a proper declarative mechanism for this!!):
 	auto _warn_deprecated = [](const char* argname, const char* alt = nullptr) {
-		WARNING(argname + " is DEPRECATED!"s);
-		if (alt) cerr << "  Use " << alt << " instead.\n";
+		string msg = argname + " is DEPRECATED!"s;
+		if (alt) msg += "  Use "s + alt + " instead.";
+		WARNING(msg);
 	};
 	const char* argname;
 	argname = "--session-no-save"; if (args[argname+2]) _warn_deprecated(argname, "--no-session-autosave");

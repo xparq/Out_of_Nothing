@@ -18,11 +18,10 @@
 	using std::rand; // and the RAND_MAX macro!
 #include <cmath>
 	using std::pow;
-#include <iostream> // For status/error reporting
-	using std::cerr, std::endl;
 #include <cassert>
 #include "sz/DBG.hh"
 
+#include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
 
 
@@ -124,7 +123,7 @@ LOGD << "Display.reset right after loading the avatar images:";
 			}
 		}
 	} catch(...) {
-		cerr << __FUNCTION__ << ": ERROR processing/applying some cmdline args!\n";
+		ERROR("Failed to process/apply some cmdline args!");
 		request_exit(-1);
 		return;
 	}
@@ -226,7 +225,7 @@ LOGI << "Creating two small moons by default...";
 			world().friction = f;
 		};
 	} catch(...) {
-		cerr << __FUNCTION__ << ": ERROR processing/applying some cmdline args!\n";
+		ERROR("Failed to process/apply some cmdline args!");
 		request_exit(-1);
 		return;
 	}
@@ -696,7 +695,7 @@ void OONApp::remove_entity(EntityID ndx) //override
 LOGD << "The index of the followed object has changed due to object removal(s).\n";
 			--focused_entity_ndx;
 		} else if (focused_entity_ndx == ndx) {
-cerr << "- WARNING: The followed object has ceased to exist!...\n";
+WARNING("The tracked object has ceased to exist!...");
 			focused_entity_ndx = Entity::NONE; //!! Don't just fall back to the player!
 		}                                 //!! That'd be too subtle/unexpected/unwanted.
 	}
@@ -1068,7 +1067,7 @@ void OONApp::updates_for_next_frame()
 
 		} else {
 			if (cfg.exit_on_finish) {
-				cerr << "Exiting (as requested): iterations finished.\n";
+				NOTE("Exiting (as requested): iterations finished.");
 				request_exit();
 			}
 		}

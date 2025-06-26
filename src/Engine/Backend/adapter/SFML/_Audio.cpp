@@ -4,16 +4,11 @@
 
 #include "_Audio.hpp"
 
-#include <iostream> // For error reporting
-	using std::cerr, std::endl;
-
+#include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
 
 
 #ifndef DISABLE_AUDIO
-
-#include <iostream>
-	using std::cerr, std::endl;
 
 
 namespace Szim {
@@ -22,7 +17,7 @@ namespace Szim {
 SFML_Audio::buffer_wrapper::buffer_wrapper(const char* filename)
 {
 	if (!loadFromFile(filename)) {
-		std::cerr << "- Error loading sound from " << filename << std::endl;
+		ERROR("Failed to load sound from " + filename);
 		return; // 'empty' remains true
 	}
 
@@ -73,7 +68,7 @@ float SFML_Audio::volume() const
 bool SFML_Audio::play_music(const char* filename)
 {
 	if (!_music.openFromFile(filename)) {
-cerr << "- Error loading music: " << filename << endl;
+		ERROR("Failed to load music: " + filename);
 		return false;
 	}
 	_music.setLoop(true);

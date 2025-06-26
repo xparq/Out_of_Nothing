@@ -1,6 +1,7 @@
 ﻿#include "SimApp.hpp"
 
-#include "Engine/diag/Log.hpp"
+#include "diag/Log.hpp"
+#include "diag/Error.hpp"
 
 #include <string>
 	using std::string, std::to_string;
@@ -11,8 +12,6 @@
 	using sz::prefix_if_rel;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
-#include <iostream>
-	using std::cerr, std::cout, std::endl;
 #include <cerrno>
 #include <cstring> // strerror(errno)
 
@@ -40,9 +39,12 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
 
 	auto print_error = [&fname](string alt_msg = "<unset>") {
-		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!
-		else cerr << "- ERROR: Couldn't save snapshot to file \"" << fname << "\"" << '\n';
-		if (errno) { cerr << "  (CRT error: \""<< std::strerror(errno) << "\")\n"; /*errno = 0;*/ }
+		string msg;
+		if (alt_msg != "<unset>") msg = alt_msg;
+		else msg = "Couldn't save snapshot to file \"" + fname + "\"";
+		if (errno) { if (msg != "") msg += "\n  - ";
+		             msg += "CRT error: \""s + std::strerror(errno); /*errno = 0;*/ }
+		if (msg != "") ERROR(msg);
 	};
 
 	Model::World snapshot = world();
@@ -92,7 +94,7 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 	} // Compressed?
 #endif
 
-	cerr << "World state saved to \"" << fname << "\".\n";
+	NOTE("World state saved to \"" + fname + "\".");
 	return true;
 } // save
 
@@ -101,10 +103,18 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 {
 	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
 
+//	auto print_error = [&fname](string alt_msg = "<unset>") {
+//		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!
+//		else cerr << "- ERROR: Couldn't load snapshot from file \"" << fname << "\"" << '\n';
+//		if (errno) { cerr << "  (CRT error: \""<< std::strerror(errno) << "\")\n"; /*errno = 0;*/ }
+//	};
 	auto print_error = [&fname](string alt_msg = "<unset>") {
-		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!
-		else cerr << "- ERROR: Couldn't load snapshot from file \"" << fname << "\"" << '\n';
-		if (errno) { cerr << "  (CRT error: \""<< std::strerror(errno) << "\")\n"; /*errno = 0;*/ }
+		string msg;
+		if (alt_msg != "<unset>") msg = alt_msg;
+		else msg = "Couldn't load snapshot from file \"" + fname + "\"";
+		if (errno) { if (msg != "") msg += "\n  - ";
+		             msg += "CRT error: \""s + std::strerror(errno); /*errno = 0;*/ }
+		if (msg != "") ERROR(msg);
 	};
 
 	//!! We could start a low-priority background thread
@@ -168,7 +178,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 	set_world(snapshot);
 
-	cerr << "World state loaded from \"" << fname << "\".\n";
+	NOTE("World state loaded from \"" + fname + "\".");
 	return true;
 } // load
 

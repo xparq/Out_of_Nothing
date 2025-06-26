@@ -12,6 +12,7 @@
 #include <ostream>
 
 #ifdef DEBUG
+//#include "Engine/diag/Log.hpp"
 #  include <iostream> // for debugging only!
 	using std::cerr;
 #  include <type_traits> // is_same

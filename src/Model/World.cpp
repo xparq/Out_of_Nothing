@@ -26,8 +26,8 @@
 #include <utility>
 	using std::move;
 
-#include <iostream>
-	using std::cerr;
+//#include <iostream>
+//	using std::cerr;
 
 
 namespace Model {
@@ -441,11 +441,11 @@ void World::update_after_interactions(float dt, Szim::SimApp& app)
 		body->v -= friction_decel * NumType(dt);
 		
 		// And finally, the positions:
-///*!!
+/*!! This gets stuck even after immediately releasing the Alt keys, and just keeps dumping to the console (e.g. 2 x 515 lines)!...
 if(((OONApp&)app).controls.ShowDebug) {
 	cerr << "#"<<i<<": moving this much: "<< body->v.x * dt <<", "<< body->v.x <<"\n";
 }
-//!!*/
+!!*/
 		body->p += body->v * NumType(dt);
 	}
 }

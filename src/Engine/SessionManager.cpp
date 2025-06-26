@@ -3,9 +3,9 @@
 #include "sz/sys/fs.hh"
 
 #include <string>
-#include <iostream> // cerr for error reporting
 #include <cassert>
 
+#include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
 
 using namespace Szim;
@@ -94,7 +94,7 @@ void SessionManager::open(const string& session_name/* = ""*/)
 	LOGD << "...from session file: " << active_session.filename << '\n';
 
 	if (!app.load_snapshot(active_session.filename.c_str())) {
-		cerr << __FUNCTION__ << ": Failed to load session state (from "<<active_session.filename<<")!\n";
+		ERROR("Failed to load session (from " + active_session.filename +")!");
 		//!!??... create(name)
 	}
 }
@@ -139,7 +139,7 @@ void SessionManager::close()
 		LOGD << "...with autosave to \"" << save_as << "\"";
 
 		if (!app.save_snapshot(save_as.c_str())) {
-			cerr << __FUNCTION__ << ": Failed to save session state (to "<<save_as<<")!\n";
+			ERROR("Failed to save session state (to " + save_as + ")!");
 		}
 	} else {
 		//!! LOG_LINE_END //cerr << '\n';

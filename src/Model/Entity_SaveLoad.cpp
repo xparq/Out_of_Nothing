@@ -8,13 +8,13 @@
 #include <iomanip>
 //	using std::quoted;
 #include <string>
-	using std::string;
+	using std::string, std::to_string;
 //#include <cstddef>
 //	using std::byte; //!!No use: ofstream can't write() bytes! :-o Congratulations, C++!... :-/
 #include <cassert>
-#include <iostream>
-	using std::cerr, std::endl;
 
+#include "Engine/diag/Error.hpp"
+//#include "Engine/diag/Log.hpp"
 
 namespace Model {
 
@@ -42,7 +42,7 @@ bool Entity::save(std::ostream& out)
 		out.write(memdump.data(), memdump.size());
 		//!!?? if (out.bad()) {...
 	} catch (...) {
-		cerr << "- ERROR: Failed to write to the output stream!\n";
+		ERROR("Failed to write to the output stream!");
 		return false;
 	}
 	return true;
@@ -64,7 +64,8 @@ bool Entity::save(std::ostream& out)
 //cerr << "["<<ndx<<"]" << c <<" \""<< objdump << "\"" << endl;
 
 	if (sizeof(Entity) != objdump.size()) {
-		cerr << "- ERROR: Failed to load object! Bytes expected: " << sizeof(Entity) << ", found: " << objdump.size() <<".\n";
+		ERROR("Failed to load object! Bytes expected: "
+			+ to_string(sizeof(Entity)) + ", found: " + to_string(objdump.size()));
 		return false;
 	}
 

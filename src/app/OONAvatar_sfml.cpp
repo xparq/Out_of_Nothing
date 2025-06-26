@@ -2,8 +2,9 @@
 #include <sz/sys/fs.hh>
 #include <string_view>
 	using std::string_view;
-#include <iostream> //!! DEBUG
-	using std::cerr;
+
+#include "Engine/diag/Error.hpp"
+//#include "Engine/diag/Log.hpp"
 
 namespace OON {
 
@@ -27,7 +28,7 @@ bool Avatar_sfml::load(const char* prefix_path_arg) /*!!override!!*/
 
 	auto path = sz::prefix_if_rel(prefix, image_path);
 	if (!image.loadFromFile(path)) {
-cerr <<"- ERROR: Failed to load image \""<< path <<"\"!\n";
+		ERROR("Failed to load image \"" + path + "\"!");
 		return false;
 	}
 	return true;

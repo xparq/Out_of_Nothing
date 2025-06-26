@@ -2,8 +2,9 @@
 
 #include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
                        //!! (And sooner or later it must be usable unrestricted anyway!
-#include <iostream>
-	using std::cerr;
+
+//#include "Engine/diag/Error.hpp"
+//#include "Engine/diag/Log.hpp"
 #include <cassert>
 
 namespace OON {

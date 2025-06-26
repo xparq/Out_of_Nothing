@@ -7,6 +7,7 @@
 //!! only its modelling-related services that are actually used:
 //#include "Engine/SimApp.hpp"
 
+#include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
 
 #include "extern/semver.hpp"
@@ -17,10 +18,7 @@
 	using std::ofstream, std::ifstream;
 #include <iomanip>
 //	using std::quoted;
-#include <iostream> // For error reporting...
-	using std::cerr;
-//!!NOT YET! Too cumbersome for the trivial alternative.
-//!!#include <optional>
+//!!#include <optional> //!!NOT YET! Too cumbersome for too little gain.
 //!!	using std::optional, std::nullopt;
 #include <map>
 #include <string>
@@ -95,7 +93,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 		}
 		LOGD << "LOADED metadata & World params: "; for (auto& [n, v] : props) LOGD << " - " << n << ": " << v;
 	} catch (...) {
-		cerr << "- ERROR: Failed to read world data!\n";
+		ERROR("Failed to read world data!");
 		return false;
 	}
 
@@ -106,17 +104,17 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	//!! This might be a very stupid idea actually...
 	//!!?? [Future me:] WTF did I even mean by this above?!?!
 	if (loaded_version > runtime_version) {
-		cerr << "- ERROR: Unsupported snapshot version \"" << props["MODEL_VERSION"] << "\"\n";
+		ERROR("Unsupported snapshot version:" + props["MODEL_VERSION"]);
 		return false;
 	}
 	if (loaded_version != runtime_version) {
-		cerr << "- NOTE: Loading a version ("<< loaded_version <<") older than the runtime ("
-			<< runtime_version <<").\n  Consider resaving in the new format to avoid obsolescence!\n";
+		NOTE("Loading a version (" + loaded_version.to_string() + ") older than the runtime ("
+		    + runtime_version.to_string() + ").\n  Consider resaving in the new format to avoid obsolescence!");
 	}
 
 	/*
 	if (stoul(props["interactions"]) > 1) {
-		cerr << "- ERROR: Inconsistent snapshot data (`interactions` is not bool?!)\n";
+		ERROR("Inconsistent snapshot data! (`interactions` is not bool?!)");
 		return false;
 	}*/
 	//!!
@@ -143,7 +141,7 @@ LOGD << "World::load: gravity_mode = " << (unsigned)w_new.gravity_mode;
 //LOGD << "gravity strength after load: " << w_new.gravity;
 			}
 	} catch (...) {
-		cerr << "- ERROR: Invalid (type of) property #"<<_prop_ndx_<<" in the loaded snapshot.\n";
+		ERROR("Invalid (type of) property #" + to_string(_prop_ndx_) + " in the loaded snapshot.");
 		return false;
 	}
 
@@ -159,7 +157,7 @@ LOGD << "World::load: gravity_mode = " << (unsigned)w_new.gravity_mode;
 
 		Entity template_obj;
 		if (!Entity::load(in, &template_obj)) {
-			cerr << "- ERROR: Loading entity #"<< n <<" failed!\n";
+			ERROR("Loading entity #" + to_string(n) + " failed!");
 			return false;
 		}
 		w_new.add_body(std::move(template_obj));
