@@ -1,3 +1,7 @@
+//!!
+//!! The current config subsystem design is too (subtly) convoluted for not documenting it at all... -> #628!
+//!!
+
 #include "Config.hpp"
 
 //#include "Config_impl_TOML++.cpp.inc"
@@ -5,6 +9,8 @@
 // and it doesn't require quoting [main/sub] section names...
 #include "Config_impl_iniman.cpp.inc"
 
+//#include "diag/Log.hpp"
+//#include "diag/Error.hpp"
 
 //============================================================================
 // Generic Config impl. -- most of it depends on Config_impl already defined!
@@ -21,7 +27,8 @@ Config::Config(std::string_view cfg_path, Config* base, std::string defaults, co
 {
 	_impl = new Config_impl(*this);
 
-	select(cfg_path, true, post_load); // Let it throw
+	select(cfg_path, true, post_load); // Let it throw... //!!?? But move the load logic here? Check & throw here, favoring consistency over flexibility?
+	                                                      //!! Config.hpp says: "Calls select(), throws on error (only if cfg_path is not empty, but not found)"
 }
 
 Config::~Config()

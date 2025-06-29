@@ -17,7 +17,7 @@ namespace Szim {
 SFML_Audio::buffer_wrapper::buffer_wrapper(const char* filename)
 {
 	if (!loadFromFile(filename)) {
-		ERROR("Failed to load sound from " + filename);
+		Error("Failed to load sound from "s + filename);
 		return; // 'empty' remains true
 	}
 
@@ -68,7 +68,7 @@ float SFML_Audio::volume() const
 bool SFML_Audio::play_music(const char* filename)
 {
 	if (!_music.openFromFile(filename)) {
-		ERROR("Failed to load music: " + filename);
+		Error("Failed to load music: "s + filename);
 		return false;
 	}
 	_music.setLoop(true);

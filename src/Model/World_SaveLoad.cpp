@@ -93,7 +93,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 		}
 		LOGD << "LOADED metadata & World params: "; for (auto& [n, v] : props) LOGD << " - " << n << ": " << v;
 	} catch (...) {
-		ERROR("Failed to read world data!");
+		Error("Failed to read world data!");
 		return false;
 	}
 
@@ -104,17 +104,17 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	//!! This might be a very stupid idea actually...
 	//!!?? [Future me:] WTF did I even mean by this above?!?!
 	if (loaded_version > runtime_version) {
-		ERROR("Unsupported snapshot version:" + props["MODEL_VERSION"]);
+		Error("Unsupported snapshot version:" + props["MODEL_VERSION"]);
 		return false;
 	}
 	if (loaded_version != runtime_version) {
-		NOTE("Loading a version (" + loaded_version.to_string() + ") older than the runtime ("
+		Note("Loading a version (" + loaded_version.to_string() + ") older than the runtime ("
 		    + runtime_version.to_string() + ").\n  Consider resaving in the new format to avoid obsolescence!");
 	}
 
 	/*
 	if (stoul(props["interactions"]) > 1) {
-		ERROR("Inconsistent snapshot data! (`interactions` is not bool?!)");
+		Error("Inconsistent snapshot data! (`interactions` is not bool?!)");
 		return false;
 	}*/
 	//!!
@@ -141,7 +141,7 @@ LOGD << "World::load: gravity_mode = " << (unsigned)w_new.gravity_mode;
 //LOGD << "gravity strength after load: " << w_new.gravity;
 			}
 	} catch (...) {
-		ERROR("Invalid (type of) property #" + to_string(_prop_ndx_) + " in the loaded snapshot.");
+		Error("Invalid (type of) property #" + to_string(_prop_ndx_) + " in the loaded snapshot.");
 		return false;
 	}
 
@@ -157,7 +157,7 @@ LOGD << "World::load: gravity_mode = " << (unsigned)w_new.gravity_mode;
 
 		Entity template_obj;
 		if (!Entity::load(in, &template_obj)) {
-			ERROR("Loading entity #" + to_string(n) + " failed!");
+			Error("Loading entity #" + to_string(n) + " failed!");
 			return false;
 		}
 		w_new.add_body(std::move(template_obj));

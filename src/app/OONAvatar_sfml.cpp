@@ -28,7 +28,7 @@ bool Avatar_sfml::load(const char* prefix_path_arg) /*!!override!!*/
 
 	auto path = sz::prefix_if_rel(prefix, image_path);
 	if (!image.loadFromFile(path)) {
-		ERROR("Failed to load image \"" + path + "\"!");
+		Error("Failed to load image \"" + path + "\"!");
 		return false;
 	}
 	return true;

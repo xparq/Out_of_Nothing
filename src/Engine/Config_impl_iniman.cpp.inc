@@ -13,6 +13,10 @@
 #undef NDEBUG
 #include "sz/DBG.hh"
 
+#include "diag/Log.hpp"
+#include "diag/Error.hpp"
+
+//============================================================================
 static auto split(std::string_view name)
 {
 	struct { std::string section, prop; } result;
@@ -95,8 +99,14 @@ bool Config_impl::select(string_view cfg_path, [[maybe_unused]] bool can_throw, 
 		if (can_throw) throw std::runtime_error(errmsg);
 		else { cerr << errmsg; return false; }
 */
-		cerr << "- ERROR: Failed to load configuration from '"<< cfg_path <<"' ";
-		return false;
+
+// ...This is not what Config.hpp says:
+//		Error("Failed to load configuration from '" + string(cfg_path) + "' ");
+//		return false;
+// ...And this is way too heavy-handed here:
+//		Abort("Failed to load configuration from '" + string(cfg_path) + "' ");
+// ...This might be OK, but then it should be done by Config itself:
+		throw std::runtime_error("Failed to load configuration from \"" + string(cfg_path) + "\"");
 	}
 
 	_cfgi._current_config = cfg_path;

@@ -114,7 +114,7 @@ public:
 			LOGE("Couldn't convert "s + actual_type + " to " + requested_type); //!! What LOG?! :-/
 			throw; // I'd prefer a safe ptr-to-empty return, but can't have a "universal" return type! :-/
 		} catch(...) {
-			BUG("Wow, unknown exception in Binding::get()!"); //!! What BUG?! :-/
+			Bug("Wow, unknown exception in Binding::get()!"); //!! What BUG?! :-/
 			throw; // I'd prefer a safe ptr-to-empty return, but can't have a "universal" return type! :-/
 		}
 

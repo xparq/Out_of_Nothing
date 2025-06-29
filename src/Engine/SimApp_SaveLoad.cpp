@@ -44,7 +44,7 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 		else msg = "Couldn't save snapshot to file \"" + fname + "\"";
 		if (errno) { if (msg != "") msg += "\n  - ";
 		             msg += "CRT error: \""s + std::strerror(errno); /*errno = 0;*/ }
-		if (msg != "") ERROR(msg);
+		if (msg != "") Error(msg);
 	};
 
 	Model::World snapshot = world();
@@ -94,7 +94,7 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 	} // Compressed?
 #endif
 
-	NOTE("World state saved to \"" + fname + "\".");
+	Note("World state saved to \"" + fname + "\".");
 	return true;
 } // save
 
@@ -114,7 +114,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 		else msg = "Couldn't load snapshot from file \"" + fname + "\"";
 		if (errno) { if (msg != "") msg += "\n  - ";
 		             msg += "CRT error: \""s + std::strerror(errno); /*errno = 0;*/ }
-		if (msg != "") ERROR(msg);
+		if (msg != "") Error(msg);
 	};
 
 	//!! We could start a low-priority background thread
@@ -178,7 +178,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 	set_world(snapshot);
 
-	NOTE("World state loaded from \"" + fname + "\".");
+	Note("World state loaded from \"" + fname + "\".");
 	return true;
 } // load
 

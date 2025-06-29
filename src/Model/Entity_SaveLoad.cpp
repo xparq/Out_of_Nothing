@@ -42,7 +42,7 @@ bool Entity::save(std::ostream& out)
 		out.write(memdump.data(), memdump.size());
 		//!!?? if (out.bad()) {...
 	} catch (...) {
-		ERROR("Failed to write to the output stream!");
+		Error("Failed to write to the output stream!");
 		return false;
 	}
 	return true;
@@ -64,7 +64,7 @@ bool Entity::save(std::ostream& out)
 //cerr << "["<<ndx<<"]" << c <<" \""<< objdump << "\"" << endl;
 
 	if (sizeof(Entity) != objdump.size()) {
-		ERROR("Failed to load object! Bytes expected: "
+		Error("Failed to load object! Bytes expected: "
 			+ to_string(sizeof(Entity)) + ", found: " + to_string(objdump.size()));
 		return false;
 	}

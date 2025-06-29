@@ -94,7 +94,7 @@ void SessionManager::open(const string& session_name/* = ""*/)
 	LOGD << "...from session file: " << active_session.filename << '\n';
 
 	if (!app.load_snapshot(active_session.filename.c_str())) {
-		ERROR("Failed to load session (from " + active_session.filename +")!");
+		Error("Failed to load session (from " + active_session.filename +")!");
 		//!!??... create(name)
 	}
 }
@@ -139,7 +139,7 @@ void SessionManager::close()
 		LOGD << "...with autosave to \"" << save_as << "\"";
 
 		if (!app.save_snapshot(save_as.c_str())) {
-			ERROR("Failed to save session state (to " + save_as + ")!");
+			Error("Failed to save session state (to " + save_as + ")!");
 		}
 	} else {
 		//!! LOG_LINE_END //cerr << '\n';

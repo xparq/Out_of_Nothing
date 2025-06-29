@@ -153,10 +153,10 @@ std::ostream& operator <<(std::ostream& out, const UI::Binding& d)
 		}
 
 	} catch(std::bad_any_cast&) {
-		ERROR("Type mismatch binding with saved type \"" + string(type_name) + "\" [" + Binding::string_fn_ptr_name + "]!");
+		Error("Type mismatch binding with saved type \"" + string(type_name) + "\" [" + Binding::string_fn_ptr_name + "]!");
 		// Nothing added to 'out', continuing...
 	} catch(...) {
-		ERROR("Wow, unknown exception in " + __FUNCTION__ + "!");
+		Error("Wow, unknown exception in "s + __FUNCTION__ + "!");
 	}
 	
 #undef _CAST

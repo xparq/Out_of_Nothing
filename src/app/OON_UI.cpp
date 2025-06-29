@@ -36,7 +36,7 @@ static auto ftos = [](auto* ptr_x) { return [ptr_x]() { static constexpr size_t 
 //----------------------------------------------------------------------------
 void OONApp::show_cmdline_help(const Args& args, const char* banner)
 {
-	banner = "\"Out of Nothing\" - experimental simulation toy\n";
+	banner = "\"Out of Nothing\" - Experimental N-body simulation toy\n";
 
 	SimApp::show_cmdline_help(args, banner);
 
@@ -46,7 +46,7 @@ void OONApp::show_cmdline_help(const Args& args, const char* banner)
 	  If omitted, ./default.cfg is tried, and if that doesn't exist,
 	  internal hardcoded defaults will be used as a fallback.
 
-  ...lots more to be documented here, sorry!
+  ...lots more (yet to be documented here, sorry)!
 )";
 }
 
@@ -188,7 +188,7 @@ void OONApp::ui_setup_HUDs()
 	ui_setup_HUD_View();
 	// "Object Observer"...
 	if (!(player_entity_ndx() < entity_count())) {
-		BUG("UI/PlayerHUD init before player entity init!");
+		Bug("UI/PlayerHUD init before player entity init!");
 	} else {
 		ui_setup_HUD_ObjMonitor();
 	}
@@ -323,7 +323,7 @@ void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
 	//! So... Just checking it run-time, too, as I have made this mistake
 	//! too many times now... :)
   	if ( !(player_entity_ndx() < entity_count()) ) {
-		BUG("UI/PlayerHUD init before player entity init!");
+		Bug("UI/PlayerHUD init before player entity init!");
 		return;
   	}
 

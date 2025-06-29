@@ -6,6 +6,7 @@
 //	using sz::to_bool
 
 #include "Engine/diag/Error.hpp"
+#include "Engine/diag/Log.hpp"
 
 #include <string>
 #include <string_view>
@@ -111,10 +112,10 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 		save_compressed = false;
 	} if (args["loop-cap"]) { // Use =0 for no limit (just --loop-cap[=] is ignored!
 		try { iteration_limit = stoul(args("loop-cap")); } catch(...) { // stoul crashes on empty! :-/
-			WARNING("--loop-cap ignored! \"" + args("loop-cap") + "\" must be a valid positive integer."); }
+			Warning("--loop-cap ignored! \"" + args("loop-cap") + "\" must be a valid positive integer."); }
 	} if (args["loop_cap"]) { //!! Sigh, the dup...
 		try { iteration_limit = stoul(args("loop_cap")); } catch(...) { // stoul crashes on empty! :-/
-			WARNING("--loop_cap ignored! \"" + args("loop_cap") + "\" must be a valid positive integer."); }
+			Warning("--loop_cap ignored! \"" + args("loop_cap") + "\" must be a valid positive integer."); }
 	} if (args["fixed-dt"]) { //!! No "fixed_dt" yet!... :-/
 		try {
 			if (args("fixed-dt").empty() ) { // stof crashes on empty! :-/
@@ -125,20 +126,20 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 				fixed_model_dt_enabled = true;
 			}
 		} catch(...) {
-			WARNING("--fixed-dt ignored! \"" + args("fixed-dt") + "\" must be a valid floating-pont number.");
+			Warning("--fixed-dt ignored! \"" + args("fixed-dt") + "\" must be a valid floating-pont number.");
 		}
 	} if (args["fps-limit"]) { // Use =0 for no limit (just --fps-limit[=] is ignored!); but -> #521!
 
 		try { fps_limit = stoul(args("fps-limit")); } catch(...) {
-			WARNING("--fps-limit ignored! \"" + args("fps-limit") + "\" must be a valid positive integer."); }
+			Warning("--fps-limit ignored! \"" + args("fps-limit") + "\" must be a valid positive integer."); }
 	} if (args["fps_limit"]) { //!! Sigh, the dup...
 		try { fps_limit = stoul(args("fps_limit")); } catch(...) {
-			WARNING("--fps_limit ignored! \"" + args("fps_limit") + "\" must be a valid positive integer."); }
+			Warning("--fps_limit ignored! \"" + args("fps_limit") + "\" must be a valid positive integer."); }
 	} if (args["dbg-keys"]) {
 		DEBUG_show_keycode = true;
 	} if (args["interact"]) {
 		//!! Either stop telling this, or make it automatic, and tell about all of those then:
-		NOTE("Command-line options (like "s + "--interact" + ") override the config. (" + "cfg/sim/global_interactions" + ").");
+		Note("Command-line options (like "s + "--interact" + ") override the config. (" + "cfg/sim/global_interactions" + ").");
 		global_interactions = sz::to_bool(args("interact"), sz::str::empty_is_true);
 	}
 
@@ -146,7 +147,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	auto _warn_deprecated = [](const char* argname, const char* alt = nullptr) {
 		string msg = argname + " is DEPRECATED!"s;
 		if (alt) msg += "  Use "s + alt + " instead.";
-		WARNING(msg);
+		Warning(msg);
 	};
 	const char* argname;
 	argname = "--session-no-save"; if (args[argname+2]) _warn_deprecated(argname, "--no-session-autosave");
@@ -178,20 +179,21 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 #endif
 	window_title += ")";
 
-//!! Change these to non-DBG output ("notices"), so NDEBUG won't kill it! Requires a proper (also macro-based, for line/func) logger...
-DBG "current dir: " << sz::getcwd();
-DBG "exe dir: "     << exe_dir;
-DBG "current config: " << (current().empty() ? "built-in defaults(!)" : current());
-DBG "cfg.base_path(): " << base_path();
-DBG "cfg_dir: "     << cfg_dir;
-DBG "asset_dir: "   << asset_dir;
-DBG "default_font: "<< default_font_file;
-DBG "engine_state_dir: "   << engine_state_dir;
-DBG "log_dir: "     << log_dir;
-DBG "user_dir: "    << user_dir;
-DBG "session_dir: " << session_dir;
-DBG "model_dir: "   << model_dir;
-DBG "iteration_limit: " << iteration_limit;
-DBG "fixed_model_dt: " << fixed_model_dt << (fixed_model_dt_enabled ? ", enabled" : ", disabled!");
+
+LOGD << "current dir: " << sz::getcwd();
+LOGD << "SimApp config: ";
+LOGD << " - exe dir: "     << exe_dir; //!! Feels off here, in a config... Why did I put this here (instead of SimApp::)?
+LOGD << " - cfg. profile: " << (current().empty() ? "built-in defaults(!)" : current());
+LOGD << " - cfg.base_path(): " << base_path();
+LOGD << " - cfg_dir: "     << cfg_dir;
+LOGD << " - asset_dir: "   << asset_dir;
+LOGD << " - default_font: "<< default_font_file;
+LOGD << " - engine_state_dir: "   << engine_state_dir;
+LOGD << " - log_dir: "     << log_dir;
+LOGD << " - user_dir: "    << user_dir;
+LOGD << " - session_dir: " << session_dir;
+LOGD << " - model_dir: "   << model_dir;
+LOGD << " - iteration_limit: " << iteration_limit;
+LOGD << " - fixed_model_dt: " << fixed_model_dt << (fixed_model_dt_enabled ? ", enabled" : ", disabled!");
 //DBG "save_compressed: " << save_compressed; // Can be seen from the UI, too.
 }

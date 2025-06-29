@@ -29,7 +29,7 @@
 //#include <stdexcept>
 //	using std::runtime_error;
 
-//#include "Engine/diag/Error.hpp"
+#include "Engine/diag/Error.hpp"
 //#include "Engine/diag/Log.hpp"
 
 
@@ -118,7 +118,7 @@ SimApp::~SimApp()
 	this->SimApp::done(); // Our own internal done() is called "secretly", even if overridden...
 	                      // (Note: the qualifier is only for emphasis; dtors don't dispatch virtuals.)
   } catch (...) {
-	BUG("*REALLY UNEXPECTED* exception from SimApp::done()! :-o ");
+	Bug("*REALLY UNEXPECTED* exception from SimApp::done()! :-o ");
 	//... throw; // <- Could be useful to see the fireworks in DEBUG mode,
 	             //    but can't compile without noexcept-violation warnings.
   }

@@ -2,7 +2,7 @@
 #define _298745SLKWERKJUEIUYCUIUIE12346_
 
 #include <string>
-	using namespace std::string_literals; // Ugh. Just ...::operator""s did't compile! WTF?!
+	using namespace std::string_literals; // Ugh: just using ...::operator""s won't even compile...
 #include <string_view>
 #include <functional>
 
@@ -21,7 +21,7 @@ public:
 	//--------------------------------------------------------------------
 	//!! Support comfy cfg tagging, at least by filename!
 
-	// Calls select(), throws on error:
+	// Calls select(), throws on error (only if cfg_path is not empty, but not found): //!! That error-throw condition is NOT GUARANTEED/ENFORCED! -> #628
 	Config(std::string_view cfg_path,  //!!?? = "" to allow default empty init with a later select()?
 	       Config* base = nullptr,     // Chained "base" cfg. instance for defaults
 	       std::string defaults = "",  // Final internal fallback defaults (as raw cfg. text)

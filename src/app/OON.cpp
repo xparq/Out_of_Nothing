@@ -123,7 +123,7 @@ LOGD << "Display.reset right after loading the avatar images:";
 			}
 		}
 	} catch(...) {
-		ERROR("Failed to process/apply some cmdline args!");
+		Error("Failed to process/apply some cmdline args!");
 		request_exit(-1);
 		return;
 	}
@@ -225,7 +225,7 @@ LOGI << "Creating two small moons by default...";
 			world().friction = f;
 		};
 	} catch(...) {
-		ERROR("Failed to process/apply some cmdline args!");
+		Error("Failed to process/apply some cmdline args!");
 		request_exit(-1);
 		return;
 	}
@@ -695,7 +695,7 @@ void OONApp::remove_entity(EntityID ndx) //override
 LOGD << "The index of the followed object has changed due to object removal(s).\n";
 			--focused_entity_ndx;
 		} else if (focused_entity_ndx == ndx) {
-WARNING("The tracked object has ceased to exist!...");
+Warning("The tracked object has ceased to exist!...");
 			focused_entity_ndx = Entity::NONE; //!! Don't just fall back to the player!
 		}                                 //!! That'd be too subtle/unexpected/unwanted.
 	}
@@ -1067,7 +1067,7 @@ void OONApp::updates_for_next_frame()
 
 		} else {
 			if (cfg.exit_on_finish) {
-				NOTE("Exiting (as requested): iterations finished.");
+				Note("Exiting (as requested): iterations finished.");
 				request_exit();
 			}
 		}

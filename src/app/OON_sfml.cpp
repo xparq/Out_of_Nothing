@@ -361,7 +361,7 @@ try {
 			{
 				auto keycode = event.get_if<sfw::event::KeyDown>()->code;
 #ifdef DEBUG
-	if (cfg.DEBUG_show_keycode) NOTE("key code: " + keycode); //!! SFML3 has started making things harder every day... :-/
+	if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started making things harder every day... :-/
 #endif
 				switch (keycode) {
 				case SFML_KEY(Pause): toggle_pause(); break;
@@ -538,7 +538,7 @@ LOGD << "Click: no obj.";
 				}
 !!*/
 				if (focused_entity_ndx == Entity::NONE)
-					NOTE("- Nothing there. Focusing on the deep void..."); //!! Do something better than this... :)
+					Note("- Nothing there. Focusing on the deep void..."); //!! Do something better than this... :)
 				break;
 			}
 
@@ -627,13 +627,13 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 	} // while - still running
 
 } catch (runtime_error& x) {
-	ERROR(x.what());
+	Error(x.what());
 	return;
 } catch (exception& x) {
-	ERROR("EXCEPTION: " + x.what());
+	Error("EXCEPTION: "s + x.what());
 	return;
 } catch (...) {
-	ERROR("UNKNOWN EXCEPTION!");
+	Error("UNKNOWN EXCEPTION!");
 	return;
 }
 }

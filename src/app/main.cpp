@@ -15,6 +15,12 @@
 // LAST_COMMIT_HASH is defined here:
 #include "commit_hash.inc" // The build proc. must put it somewhere on the INCLUDE path!
 
+/*!! TESTING ABORT:
+void nested_abort()
+{
+	Abort("Explicit abort!"s + " let's see how a string"s + " temporary fares...");
+}
+!!*/
 
 //============================================================================
 int main(int argc, char* argv[])
@@ -25,7 +31,14 @@ int main(int argc, char* argv[])
 		// Only log levels up to "notice" are enabled by default (before main)!
 		// But that's overridden to "info" (in Log.hpp, by SZ_LOG_USE_DEFAULT_LEVEL)...
 		Main_()  { LOGI << "main() entered..."; }
-		~Main_() { LOGI << "main() returning:" << exit_code; }
+		~Main_() {
+			if      (exit_code < 0) LOGE << "main() returning: " << exit_code;
+			else if (exit_code > 0) LOGW << "main() returning: " << exit_code;
+			else                    LOGI << "main() returning: " << exit_code;
+			//!! Alas, the underlying PLOG* macros conflict with just this:
+			//!!(exit_code ? LOGW : LOGI) << "main() returning: " << exit_code;
+		}
+
 	} Main;
 
 	using namespace OON;
@@ -70,20 +83,24 @@ int main(int argc, char* argv[])
 			<< "- Use Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n"
 			<< "------------------------------------------------------\n"
 		;
-
-//BUG("Oh, crap!");
-//ABORT("Explicit abort!");
-//cerr << "- ...but couldn't really?! WTF??? :-o ";
-
-	} catch (const Szim::diag::FatalError&) { //!! Do sg. about this ugly low-level-internal-detail name!... :-/
-	                                    //!! Well, it'll disappear when moving from this direct-main to an app-runner setup! :)
-		// Message already delivered by FATAL_ERROR()...
+/*!! TESTING ABORT():
+if (argv) {
+	nested_abort();
+	//Bug("Oh, crap!");
+	//Abort("Explicit abort!"s + "let's see how a string temporary fares");
+	cout << "- ...wait, but it didn't abort actually?! WTF??? :-o ";
+}
+!!*/
+	} catch (const Szim::diag::FatalError& x) { //!! Do sg. about this ugly low-level-internal-detail name!... :-/
+	                                            //!! Well, it'll disappear when moving from this direct-main to an app-runner setup!...
+		// Message already delivered by Fatal()/Abort()...
+		cout << x.what() << endl;
 	} catch (const runtime_error& x) {
-		ERROR( ("`std::runtime_error` exception: "s + x.what()).c_str() );
+		Error( ("`std::runtime_error` exception: "s + x.what()).c_str() );
 	} catch (const exception& x) {
-		ERROR( ("`std::exception`: "s + x.what()).c_str() );
+		Error( ("`std::exception`: "s + x.what()).c_str() );
 	} catch (...) {
-		ERROR("UNKNOWN EXCEPTION!");
+		Error("UNKNOWN EXCEPTION!");
 	}
 	return Main.exit_code;
 }
