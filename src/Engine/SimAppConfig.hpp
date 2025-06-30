@@ -80,7 +80,7 @@ struct SimAppConfig : Config
 	//----------------------------------------------------------------------------
 	SimAppConfig(const std::string& cfg_path, const Args& args, std::string defaults = "");
 
-	SimAppConfig(const SimAppConfig&) = delete; // Could actually be copied _now_, but I'll forget, and make mistakes...
+	SimAppConfig(const SimAppConfig&) = delete; // Could actually be copied _now_, but no guarantee; and I'll forget and make mistakes _later_...
 };
 
 } // namespace Szim

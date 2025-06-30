@@ -44,29 +44,32 @@ using namespace Szim;
 //      `args` to be initialized as well. And then, if we are at it, I just put
 //      the GUI init there, too, for good measure...
 //      (The ctor still has work left to do, so its body is not empty though.)
-// 
+//
 SimApp::SimApp(int argc, char** argv, View::ScreenView& main_view)
 	: args(argc, argv, {
-		// Long options with 1 param. don't need to be defined:
-		//{"moons", 1}, // number of moons to start with
-		// Short ones do, unfortunately (they're predicates by default, and don't have '=' to override):
-		{"C", 1}, {"cfg", 1},
+		// Long options with 1 param. (only those with 1?) don't need to be defined, e.g.:
+		//{"moons", 1},
+		// Short ones do, unfortunately (they're predicates by default, and don't have the '=' syntax to disambiguate):
+		{"C", 1}, // {"cfg", 1},
 	  })
 	// Load & fixup the SimApp config...
-	, cfg(args("cfg").empty()
+	, cfg(
+/*
+		args("cfg").empty()
 		? args("C").empty() ? DEFAULT_CFG_FILE // `... ? ""` would use .defaults instead
 			            : args("C")
 		: args("cfg")
-/* For a pedantic warning:
+*/
+///* For a pedantic warning:
 		args("cfg").empty()
 		? args("C").empty()
 			? DEFAULT_CFG_FILE
 			: args("C")
 		: args("C").empty()
 			? args("cfg")
-			: (cerr << "- WARNING: Both -C and --cfg have been specified; ignoring \"-C " << args("C") << "\"!\n",
+			: (Warning("Both -C and --cfg have been specified; ignoring \"-C "s + args("C")),
 			  args("C"))
-*/
+//*/
 	      , args
 	      , //! Note: this default config here is pretty redundant, basically only useful for debugging,
 		//! as the cfg ctor takes care of the defaults anyway...:

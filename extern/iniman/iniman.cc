@@ -1,17 +1,23 @@
 #include "iniman.hh"
 
-#include <cstdlib>
+#include <cstdlib> //!! Use <charconv> instead of atoi etc.
 #include <cstring> // memmove, ...
-//!! Use this instead of atoi etc.: #include <charconv>
+#include <cctype>
 #include <cstdio>
 #include <cerrno>
 #include <cassert>
 
+#ifdef INIMAN_ENABLE_GET_STD_STRING // See also the instantiation of the string getter in .cc!
+#include <string>
+#endif
+
+// For uniform error reporting:
+#define FNAME_OR_STR(filename_or_content) (cfg.LOAD_FROM_STRING ? "(in-memory text)" : (filename_or_content))
+
 
 //===========================================================================
-// Staged for sz.lib...
+// Support stuff staged for sz.lib... (still kept inside iniman:: here though)
 //===========================================================================
-
 #include <cstdlib>
 #include <cstdint>
 #include <cstdio>
@@ -52,7 +58,7 @@ char* strtrim(char* src, const char* leading_junk = " \t\v\r\n\f")
 	// Find the *last* non-space char...
 	for (newend = 0, ptr = res; *ptr; ++ptr)
 	{
-		if (!isspace(*ptr))
+		if (!isspace(unsigned(*ptr) & 0xff) /* MSVC asserted out in isctype.cpp without the clamping! */)
 			newend = ptr - res + 1;
 	}
 	// Move the string left...
@@ -65,9 +71,36 @@ char* strtrim(char* src, const char* leading_junk = " \t\v\r\n\f")
 //---------------------------------------------------------------------------
 char* strupr(char* s)
 {
-	for (char* r = s; *r; ++r) *r = (char)toupper(*r);
+	for (char* r = s; *r; ++r)
+		*r = (char)toupper(unsigned(*r) & 0xff); //! Not clipping *r to unsigned char is UB!
 	return s;
 }
+
+
+//---------------------------------------------------------------------------
+// Match byte pattern in a file. On mismatch, restore read position.
+// Optionally return the number of bytes matched. (But not on a low-level ftell error.)
+bool fmatch(FILE* f, const char* pattern, size_t pattern_len, size_t* match_len_ptr = nullptr)
+{
+	auto start = ftell(f);
+	if (start == -1L) return false;
+
+	size_t match_len = 0;
+	for (; match_len < pattern_len; ++match_len)
+		if (fgetc(f) != (unsigned char)pattern[match_len]) // Cast the pattern *byte*(!) to unsigned to not accidentally match EOF (int)!
+			break;
+
+	if (match_len_ptr) // Optional result reporting (regardless of success)
+		*match_len_ptr = match_len; // strlen for free, on full match (in case pattern is a C-string) ;)
+
+	if (match_len != pattern_len) { // Mismatch? Roll back...
+		fseek(f, start, SEEK_SET); //!! NOTE: fseek IS NOT UNIVERSALLY AVAILABLE FOR EVERY STREAM type!
+		return false;
+	}
+
+	return true; // On success the read pos. is right after the pattern (else reset to where it was).
+}
+
 
 namespace UTF
 {
@@ -83,37 +116,19 @@ namespace UTF
 
 	Encoding detect_encoding(FILE* f)
 	// Checks the presence (& value) of a BOM in the opened file f, at the
-	// current position.
+	// current(!) position.
 	//
-	// Moves the file position past the BOM, if one was recognized, else
+	// Moves the file position past the BOM if one was matched, else
 	// restores it to where it was.
-	//
-	// Any IO errors are deferred to the caller.
 	{
-		long fpos = ftell(f);
-
-		auto freset  = [f, fpos] (uint offset = 0) { fseek(f, fpos + offset, SEEK_SET); };
-		auto getbyte = [f] () { int c = fgetc(f);
-//!!			if (c == EOF) ... What now, deep in here?...
-			return c;
-		};
-
-		Encoding result = Encoding::Unknown;
-		freset(); if (getbyte() == 0xEF && getbyte() == 0xBB && getbyte() == 0xBF)
-				{ result = Encoding::UTF8; goto done; }
-		freset(); if (getbyte() == 0xFF && getbyte() == 0xFE)
-				{ result = Encoding::UTF16_LE; goto done; }
-		freset(); if (getbyte() == 0xFE && getbyte() == 0xFF)
-				{ result = Encoding::UTF16_BE; goto done; }
-		freset(); if (getbyte() == 0xFF && getbyte() == 0xFE && getbyte() == 0x00 && getbyte() == 0x00)
-				{ result = Encoding::UTF32_LE; goto done; }
-		freset(); if (getbyte() == 0x00 && getbyte() == 0x00 && getbyte() == 0xFE && getbyte() == 0xFF)
-				{ result = Encoding::UTF32_BE; goto done; }
-	done:
-		if (result == Encoding::Unknown)
-			freset(); // Restore the file pos., if not detected!
-
-		return result;
+		// Check the UTF-8 first to get it over with the fastest (it's fortunately unique!),
+		// but then take the long ones first (note the identical leading LE bytes! ;) )
+		if (fmatch(f, "\xEF\xBB\xBF", 3))     return Encoding::UTF8;
+		if (fmatch(f, "\xFF\xFE\x00\x00", 4)) return Encoding::UTF32_LE;
+		if (fmatch(f, "\x00\x00\xFE\xFF", 4)) return Encoding::UTF32_BE;
+		if (fmatch(f, "\xFF\xFE", 2))         return Encoding::UTF16_LE;
+		if (fmatch(f, "\xFE\xFF", 2))         return Encoding::UTF16_BE;
+		return Encoding::Unknown;
 	}
 
 	const char* encoding_name(Encoding encoding)
@@ -145,7 +160,35 @@ namespace UTF
 // Returns # of chars of the line read, or EOF after the last line.
 // NOTE: All but the last lines end with 'LF' and the last ends with EOF.
 //---------------------------------------------------------------------------
-int loadline(FILE* f, char* line, int linemaxlen)
+
+// Poor man's char reader "lambdas" (with no <functional>):
+struct _GetChar_
+{
+	using ReaderF = int(*)(void*);
+
+	void*   context      = nullptr;
+	ReaderF reader_call  = nullptr;
+
+	int operator()() const { return reader_call(context); }
+};
+struct StringReader
+{
+	const char* ptr;
+	static int read(void* ctx) {
+		auto* self = static_cast<StringReader*>(ctx);
+		assert(self->ptr);
+		return *self->ptr ? *self->ptr++ : EOF;
+	}
+};
+struct FileReader
+{
+	FILE* f;
+	static int read(void* ctx) {
+		return fgetc(static_cast<FileReader*>(ctx)->f);
+	}
+};
+
+int loadline(_GetChar_ _getc_, char* line, int linemaxlen)
 {
 	int     cnt;        // # of chars loaded into the buffer
 	int     c;          // the last char read
@@ -153,7 +196,7 @@ int loadline(FILE* f, char* line, int linemaxlen)
 	assert(linemaxlen > 0);
 
 	// Read until LF (or CR!) or EOF...
-	for (cnt = 0; c = fgetc(f), c != '\n' && c != '\r' && c != EOF;)
+	for (cnt = 0; c = _getc_(), c != '\n' && c != '\r' && c != EOF;)
 	{
 		// put char into the buffer...
 		if (cnt + 1 < linemaxlen)
@@ -166,10 +209,10 @@ int loadline(FILE* f, char* line, int linemaxlen)
 	return (cnt == 0 && c == EOF) ? EOF : cnt;
 }
 
-//---------------------------------------------------------------------------
+//===========================================================================
 struct File
 {
-	File(const char* name, const char* flags = "rb") { f = fopen(name, flags); }
+	File(const char* name, const char* flags = "rb") { errno = 0; f = fopen(name, flags); }
 	~File() { if (autoclose && f) fclose(f); }
 	File(const File&) = delete;
 	//!!...File(File&& src) { ... } //!! Can't have std::swap: <algorithm> is a ridiculous burden nowadays! :-/
@@ -184,7 +227,7 @@ struct File
 		{
 			//!! Still a landmine...: if f was opened in text mode, it's actually UNSPECIFIED! And also WRONG...
 			fseek(f, 0, SEEK_END);
-			size = ftell(f) + 2; // + EOS + my paranoia... (but also: it says it'll have a double EOS at the end!)
+			size = ftell(f) + 2; // + EOS + ...my paranoia?! See other notes about a double EOS at the end of the buffer...
 			fseek(f, 0, SEEK_SET);
 		}
 		return size;
@@ -199,25 +242,18 @@ protected:
 	File(FILE* h) : autoclose(false), f(h) {}
 };
 
-} // namespace sz
-
-
+}  // namespace sz
+  //=========================================================================
+ // End of stuff staged for sz.lib...
 //===========================================================================
-//===========================================================================
-//===========================================================================
-
-
-//!! Moved up to enclose sz::, to avoid collisions with other places also having sz::File etc...:
-//!!namespace INIMAN_NAMESPACE
-//!!{
-
-static inline const char EOS = '\0';
-static inline const char BC_SUBST = '\x1A';
 
 
 #define INI_ERROUT(...) (Config::CONSOLE_MESSAGES ? fprintf(stderr, __VA_ARGS__) : 0)
 #define INI_ERR(...) (INI_ERROUT("- [IniMan] "),   INI_ERROUT(__VA_ARGS__), INI_ERROUT("\n"))
 #define INI_DBG(...) (INI_ERROUT("[IniMan DBG> "), INI_ERROUT(__VA_ARGS__), INI_ERROUT("]\n"))
+
+static const char EOS = '\0';
+static const char BC_SUBST = '\x1A';
 
 
 //---------------------------------------------------------------------------
@@ -244,26 +280,26 @@ bool IniMan::Config::valid() const
 IniMan::IniMan(const Config& cfg)
 :	cfg(cfg)
 {
-	__check_cfg();
-
-	buffer_ = strdup("");  // Start with an empty list //!! BUT!... -> #40, #38!
+	__check_cfg();   // Just for the error message, if the config is invalid!
+	__new_buffer();  //!! #40, #38!
 }
 
 //---------------------------------------------------------------------------
-IniMan::IniMan(const char* fnam, const char* section)
-:	IniMan(Config(), fnam, section) {}
+IniMan::IniMan(const char* filename_or_content, const char* section)
+:	IniMan(Config(), filename_or_content, section) {}
 
-IniMan::IniMan(const Config& cfg, const char* fnam, const char* section)
-:	cfg(cfg)
+IniMan::IniMan(const Config& cfg, const char* filename_or_content, const char* section)
+:	cfg(cfg),
+	buffer_(0), buffer_size_(0)
 {
 	if (!__check_cfg()) {
-		buffer_ = strdup("");  // Start with an empty list //!! BUT!... -> #40, #38!
+		__new_buffer(); // Init. with empty data in case of invalid config. //!! BUT!... -> #40, #38!
 		return;
 	}
 
-	__load(fnam, section);
+	__load(filename_or_content, section);
 	if (!buffer_) {
-		INI_ERR("ERROR: Failed to load '%s'!", fnam);
+		INI_ERR("ERROR: Failed to load '%s'!", FNAME_OR_STR(filename_or_content));
 	}
 }
 
@@ -271,22 +307,77 @@ IniMan::IniMan(const Config& cfg, const char* fnam, const char* section)
 //---------------------------------------------------------------------------
 IniMan::~IniMan()
 {
-	if (buffer_) free(buffer_);
+	__release_buffer();
 }
 
 
 //---------------------------------------------------------------------------
 void IniMan::clear()
+// Must NOT be called for an uninitialized instance! (I.e. from a ctor.)
 {
-	if (buffer_) free(buffer_);
-	buffer_ = strdup(""); //!! BUT... -> #40, #38!
+	__release_buffer(); // Also resets buffer_size_ to 0.
+	__new_buffer();
 
 	explicit_input_encoding_detected_ = 0;
 	input_encoding_used_ = 0;
-	buffer_size_ = 0;
 	lines_seen_ = 0;
 	lines_kept_ = 0;
 	syntax_errors_ = 0;
+}
+
+//---------------------------------------------------------------------------
+bool IniMan::load(const char* filename_or_content, const char* section)
+{
+	clear(); __release_buffer();
+	return !!__load(filename_or_content, section);
+}
+
+
+//---------------------------------------------------------------------------
+void IniMan::__new_buffer(unsigned long bufsize)
+// buffer_ and/or buffer_size_ can both be 0 on return.
+{
+	// Contract check...
+	assert(bufsize);
+	if (!bufsize) {
+		INI_ERR("ERROR: 0 bufsize was passed to __new_buffer!");
+		return;
+	}
+
+	buffer_ = (char*)malloc(bufsize);
+	buffer_size_ = buffer_ ? bufsize : 0;
+	if (!buffer_)
+		INI_ERR("ERROR: Couldn't allocate buffer for loading content!");
+}
+
+void IniMan::__new_buffer(const char* content)
+//!! Limit bufsize, because `content` may not be null-terminated at all (even though we expect it)!
+//!! -> #66
+// buffer_ and/or buffer_size_ can both be 0 on return.
+{
+	// Contract check...
+	assert(content);
+	if (!content) {
+		INI_ERR("ERROR: null content was passed to __new_buffer!");
+		return;
+	}
+
+	buffer_      = strdup(content ? content : "");
+	buffer_size_ = strlen(content ? content : "") + 1; //!! strlen may segfault if content is not 0-terminated! -> #66
+		//!! The file loader logic in __load allocates a buffer with +2 though! :-o
+		//!! Check if that's just paranoia, or the trailing double 0 is indeed part of the design!
+		//!! And then document it... Otherwise remove the extra byte from there! (Note: +1 for EOS is still required!) -> #67
+
+	if (!buffer_)
+		INI_ERR("ERROR: Couldn't copy the content buffer!");
+}
+
+//---------------------------------------------------------------------------
+void IniMan::__release_buffer()
+{
+	if (buffer_) free(buffer_);
+	buffer_ = 0;
+	buffer_size_ = 0;
 }
 
 
@@ -326,7 +417,8 @@ void _report_overflow(const char* input, const char* type)
 } // namespace impl
 
 #define _NUM_CONV_IMPL_(TargetType, strtoT, Section, Key, Defval) \
-	const char* ptr = __findvalue(Section, Key); \
+	errno = 0; \
+	const char* ptr = __get_value(Section, Key); \
 	if (!ptr || !*ptr) return Defval; \
 	int b = impl::_base(cfg.NUM_C_OCTAL, &ptr); \
 	char* end; auto val = strtoT(ptr, &end, b); \
@@ -345,46 +437,60 @@ void _report_overflow(const char* input, const char* type)
 //---------------------------------------------------------------------------
 const char* IniMan::__get_raw(const char* section, const char* name, const char* def) const
 {
-	const char* ptr = __findvalue(section, name);
+	const char* ptr = __get_value(section, name);
 	return ptr ? ptr : (def ? def : "");
 }
 
+//---------------------------------------------------------------------------
+#ifdef INIMAN_ENABLE_GET_STD_STRING
+template<>
+std::string IniMan::get(const char* section, const char* name, std::string def) const
+{
+	return get(section, name, def.c_str());
+}
+#endif
 
 //---------------------------------------------------------------------------
+//template<>
 int IniMan::get(const char* section, const char* name, int def) const
 {
 	_NUM_CONV_IMPL_(int, strtol, section, name, def)
 }
 
 //---------------------------------------------------------------------------
+//template<>
 unsigned IniMan::get(const char* section, const char* name, unsigned def) const
 {
 	_NUM_CONV_IMPL_(unsigned, strtoul, section, name, def)
 }
 
 //---------------------------------------------------------------------------
+//template<>
 long IniMan::get(const char* section, const char* name, long def) const
 {
 	_NUM_CONV_IMPL_(long, strtol, section, name, def)
 }
 
 //---------------------------------------------------------------------------
+//template<>
 unsigned long IniMan::get(const char* section, const char* name, unsigned long def) const
 {
 	_NUM_CONV_IMPL_(unsigned long, strtoul, section, name, def)
-//	const char* ptr = __findvalue(section, name);
+//	const char* ptr = __get_value(section, name);
 //	return ptr ? atol(ptr) : def;
 }
 
 //---------------------------------------------------------------------------
+//template<>
 float IniMan::get(const char* section, const char* name, float def) const
 {
 	_NUM_CONV_IMPL_(float, _NUM_CONV_F2_(strtof), section, name, def)
-//	const char* ptr = __findvalue(section, name);
+//	const char* ptr = __get_value(section, name);
 //	return ptr ? atof(ptr) : def;
 }
 
 //---------------------------------------------------------------------------
+//template<>
 double IniMan::get(const char* section, const char* name, double def) const
 {
 	_NUM_CONV_IMPL_(float, _NUM_CONV_F2_(strtod), section, name, def)
@@ -409,8 +515,8 @@ bool IniMan::__check_cfg()
 
 
 //---------------------------------------------------------------------------
-// NOTE: not case sensitive
-const char* IniMan::__findsection(const char* section) const
+// NOTE: not case-sensitive
+const char* IniMan::__find_section(const char* section) const
 {
 	const char* ptr = buffer_;
 	size_t      s;
@@ -418,7 +524,7 @@ const char* IniMan::__findsection(const char* section) const
 	assert(section);
 	if (!valid()) return 0; //!!?? Or just assert?... -> #18
 
-	// prepare section-name string...
+	// Prepare section-name string...
 	char linebuf[Config::MAX_LINE_SIZE]; memset(linebuf, 0, Config::MAX_LINE_SIZE);
 	linebuf[0] = '[';
 	strncpy(linebuf + 1, section, Config::MAX_LINE_SIZE - 3); // '[' + ']' + EOS
@@ -430,48 +536,48 @@ const char* IniMan::__findsection(const char* section) const
 	{
 		if (strcmp(ptr, linebuf) == 0)
 			return ptr + s + 1;
-		ptr = ptr + s + 1;
+		ptr += s + 1;
 	}
 
 	return 0;
 }
 
 //---------------------------------------------------------------------------
-// NOTE: not case sensitive
-const char* IniMan::__findkey(const char* name, const char* start, bool section_local) const
+// NOTE: not case-sensitive
+const char* IniMan::__find_value(const char* key, const char* start, bool section_local) const
 {
 	const char* ptr;
 	size_t      s;
 
-	assert(name);
+	assert(key);
 	if (!valid()) return 0; //!!?? Or just assert?...
 
-	// search from...
+	// Search from...:
 	ptr = (start ? start : buffer_);
 
-	// prepare key-name string...
+	// Prepare key-name string...
 	char linebuf[Config::MAX_LINE_SIZE]; memset(linebuf, 0, Config::MAX_LINE_SIZE);
-	strncpy(linebuf, name, Config::MAX_LINE_SIZE - 2); // '=' + EOS
+	strncpy(linebuf, key, Config::MAX_LINE_SIZE - 2); // '=' + EOS
 	strcat(linebuf, "=");
 	sz::strupr(linebuf);
-//cerr << "SEARCHING for key '"<<name<<"', as in the linebuf: [" << linebuf << "]\n";
+//cerr << "SEARCHING for key '"<<key<<"', as in the linebuf: [" << linebuf << "]\n";
 
 	while ((s = strlen(ptr)) != 0)
 	{
-		if (ptr[0] == '[') // another section reached?
+		if (ptr[0] == '[') // Another section reached?
 			if (section_local) return 0;
 
 		if (strstr(ptr, linebuf) == ptr)
 			return strchr(ptr, '=') + 1;
 
-		ptr = ptr + s + 1;
+		ptr += s + 1;
 	}
 
 	return 0;
 }
 
 //---------------------------------------------------------------------------
-const char* IniMan::__findvalue(const char* section, const char* key,
+const char* IniMan::__get_value(const char* section, const char* key,
 	// For subst. processing:
 	int reclimit/* = -1*/, [[maybe_unused]] const char* lastkey/* = 0*/) const
 {
@@ -483,14 +589,14 @@ const char* IniMan::__findvalue(const char* section, const char* key,
 
 	if (section && *section)
 	{
-		if ((ptr = __findsection(section)) == 0)
+		if ((ptr = __find_section(section)) == 0)
 		{
 //INI_DBG("section not found: '%s'", section);
 			return 0;   // section not found
 		}
 	}
 
-	const char* val = __findkey(key, ptr, section || !cfg.GLOBAL_SEARCH_BY_DEFAULT);
+	const char* val = __find_value(key, ptr, section || !cfg.GLOBAL_SEARCH_BY_DEFAULT);
 	if (!val)
 	{
 //INI_DBG("key not found: '%s'", key);
@@ -506,6 +612,7 @@ const char* IniMan::__findvalue(const char* section, const char* key,
 			//!! Cringy attempt to backtrack from unresolved reference to literal value...
 			if (cfg.KEEP_UNRESOLVED_REF_AS_IS)     // ...and reusing the ref. name is enabled!
 			{
+INI_ERR("KEEP_UNRESOLVED_REF_AS_IS is not implemented yet! The result will be incorrect. (Attempted for: '%s')", key);
 				//!! WOAH!... :)) Have you seen anything like this before?! ;)
 				assert(key > buffer_); // This is not assurance, only encouragement! ;)
 				if (*(key - 1) == BC_SUBST) //!! But also %...% or ${...}, one day!...
@@ -535,7 +642,7 @@ const char* IniMan::__findvalue(const char* section, const char* key,
 		INI_ERR("ERROR: Substitution depth limit (%u) reached at resolving '%s'", cfg.SUBST_CHAIN_LIMIT, val);
 		return 0;
 	}
-	return __findvalue(section, val, reclimit - 1, key);
+	return __get_value(section, val, reclimit - 1, key);
 
 #undef _SUBST_MODE_
 }
@@ -548,13 +655,15 @@ const char* IniMan::__findvalue(const char* section, const char* key,
 //---------------------------------------------------------------------------
 
 enum ParseResult : int { ABORT = -1, OK = 0, EMPTY, SYNTAX_UNEXPECTED, SYNTAX_INCOMPLETE };
-	// ABORT is only used as a return value of __preprocess_line, not for its own processing!
+	// ABORT is only used as a return value of __preprocess_line, not for keeping track of parsing stata!
 
 int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 {
 #define __PUTCH(c)  if (wr - output + 1 < outbufsize) (*wr++ = (char)c)
-#define __TOUPPER(c)  (c = (char)toupper(c))
+#define __TOUPPER(c)  (c = (char)toupper(unsigned(c) & 0xff))
 #define __IS_COMMENT(c)  (c == ';' || c == '#')
+#define __IS_SPACE(c) isspace(unsigned(c) & 0xff) /* MSVC asserted out in isctype.cpp without the clamping! */
+
 //#define __IS_COMMENT(c)  (c == '/' && *rd == '/')
 
 	enum { SEEK, SECTION, KEY, PREVALUE, VALUE, POSTQUOTE, EOL } mode;
@@ -573,6 +682,7 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 	result = EMPTY;
 	cmd = WRITE;
 
+//INI_DBG("__preprocess_line: Start looping...");
 	do
 	{
 		if (cmd != RESCAN)
@@ -580,10 +690,11 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 
 		cmd = WRITE;
 
+//INI_DBG("__preprocess_line: '%c' [%0x]...", c, c);
 		switch (mode)
 		{
 		case SEEK:
-			if (isspace(c))
+			if (__IS_SPACE(c))
 			{
 				cmd = SKIP;   // skip leading whitespace
 			}
@@ -602,6 +713,7 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 				result = OK;
 				mode = KEY;
 			}
+
 			break;
 
 		case SECTION:
@@ -644,7 +756,7 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 			break;
 
 		case PREVALUE:
-			if (isspace(c))
+			if (__IS_SPACE(c))
 			{
 				cmd = SKIP;   // skip spaces after the '='
 			}
@@ -656,7 +768,7 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 				//!! - to allow $ anywhere else, not just as a value prefix
 				//!! - to optional ${key} refs, with another BC_... prefix + a key size
 				//!!   byte replacing the '{', and then eating up its '}' pair... Plus
-				//!!   + extra logic in __findvalue to continue interpreting the value for
+				//!!   + extra logic in __get_value to continue interpreting the value for
 				//!!   other possible references (perhaps assisted with a line prefix byte code
 				//!!   flag (allowed by the eaten-up closing '}' telling whether there are any!...)
 
@@ -699,7 +811,7 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 			{
 				cmd = STOP;
 			}
-			else if (isspace(c))
+			else if (__IS_SPACE(c))
 			{
 				cmd = SKIP;
 			}
@@ -787,8 +899,9 @@ int IniMan::__preprocess_line(const char* line, char* output, int outbufsize)
 
 //---------------------------------------------------------------------------
 //
-char* IniMan::__load(const char* fnam, const char* section)
+char* IniMan::__load(const char* filename_or_content, const char* section)
 {
+	assert(buffer_ == 0);
 	if (!__check_cfg()) return 0; // #40
 
 	char linebuf[Config::MAX_LINE_SIZE]; memset(linebuf, 0, Config::MAX_LINE_SIZE);
@@ -796,59 +909,91 @@ char* IniMan::__load(const char* fnam, const char* section)
 
 	using namespace sz; using namespace sz::UTF;
 
-	File f(fnam, "rt");
-	if (!f) {
-		INI_ERR("ERROR: Failed to open '%s'! (errno: %i)", fnam, errno);
-		return 0;
-	}
+	// Prepare to dispatch between reading from file vs. memory...
+	_GetChar_ _getc_;
+	StringReader getc_str;
+	FileReader  getc_file;
+	const char* DummyFileName =
+#ifdef _WIN32
+		"NUL";
+#else
+		"/dev/null";
+#endif
+	// In the "load from file" case, we'd need to reuse this RAII-only File object later,
+	// outside the if's scope below, so hoisting it here (from inside the "load from file" case below):
+	File f(cfg.LOAD_FROM_STRING ? DummyFileName : filename_or_content, "rt");
 
-	// Get buffer size big enough for the file... (!!BUT: #44)
-	buffer_size_ = f.size() + 2; // + EOS + my paranoia... (but also: it says it'll have a double EOS at the end!)
+	if (cfg.LOAD_FROM_STRING) {
+		getc_str = StringReader{ filename_or_content };
+		_getc_ = { &getc_str, StringReader::read };
 
-	//
-	// Determine the (input) encoding...
-	//
-	explicit_input_encoding_detected_ = detect_encoding(f.handle());
-	switch (explicit_input_encoding_detected_)
-	{
-	case Encoding::Unknown:
-	default:
-		INI_ERR("Note: No explicit encoding detected for '%s', assuming UTF-8...", fnam);
+		__new_buffer(filename_or_content); // `filename_or_content` is the content now, and __new_buffer(src) copies it!
+
+ 		//!! Hardcoded dummy defaults!... detect_encoding() can only read FILE... :-/
+ 		explicit_input_encoding_detected_ = Encoding::Unknown;
 		input_encoding_used_ = Encoding::UTF8;
-		break;
-	case Encoding::UTF16_LE:
-	case Encoding::UTF16_BE:
-	case Encoding::UTF32_LE:
-	case Encoding::UTF32_BE:
-		INI_ERR("ERROR: Input encoding %s is not supported for '%s'!", encoding_name(Encoding(explicit_input_encoding_detected_)), fnam);
-		assert(input_encoding_used_ == 0);
+	}
+	else
+	{
+		//File f(...); — See actually doing this before `if (LOAD_FROM_STRING)`, instead of here!
+		if (!f) {
+			INI_ERR("ERROR: Failed to open '%s'! (errno: %i)", filename_or_content, errno);
+			return 0;
+		}
+//INI_DBG("Opened for loading: '%s'", filename_or_content);
+
+		getc_file = FileReader{ f.handle() };
+		_getc_ = { &getc_file, FileReader::read };
+
+		//
+		// Determine the (input) encoding...
+		//
+		explicit_input_encoding_detected_ = detect_encoding(f.handle());
+		switch (explicit_input_encoding_detected_)
+		{
+		case Encoding::Unknown:
+		default:
+			INI_ERR("Note: No explicit encoding detected for '%s', assuming UTF-8...", filename_or_content);
+			input_encoding_used_ = Encoding::UTF8;
+			break;
+		case Encoding::UTF16_LE:
+		case Encoding::UTF16_BE:
+		case Encoding::UTF32_LE:
+		case Encoding::UTF32_BE:
+			INI_ERR("ERROR: Input encoding %s is not supported for '%s'!", encoding_name(Encoding(explicit_input_encoding_detected_)), filename_or_content);
+			assert(input_encoding_used_ == 0);
+			assert(Encoding::Unknown == 0);
+			return 0;
+		case Encoding::UTF8:
+			INI_ERR("Note: Expliciti UTF-8 encoding detected for '%s'.", filename_or_content);
+			input_encoding_used_ = Encoding::UTF8;
+			break;
+		}
 		assert(Encoding::Unknown == 0);
-		return 0;
-	case Encoding::UTF8:
-		INI_ERR("Note: Expliciti UTF-8 encoding detected for '%s'.", fnam);
-		input_encoding_used_ = Encoding::UTF8;
-		break;
-	}
-	assert(Encoding::Unknown == 0);
-	assert(input_encoding_used_ != Encoding::Unknown); // explicit_input_encoding_detected_ can be Unknown (0)
+		assert(input_encoding_used_ != Encoding::Unknown); // explicit_input_encoding_detected_ can be Unknown (0)
 
-	//
-	// Allocate space of sufficient size...
-	//
-	//!!
-	//!! -> #38!
-	//!!
-	buffer_ = (char*)malloc(buffer_size_);
-	if (!buffer_)
-	{
-		INI_ERR("ERROR: Couldn't allocate file buffer for '%s'!", fnam);
-		return 0;
+		//
+		// Allocate space of sufficient size...
+		//
+		//!!
+		//!! -> #38!
+		//!!
+		// Get buffer size big enough for the file... !!BUT: #44!
+		__new_buffer(f.size() + 2); // + EOS + ...my paranoia? (It says [what "it"?! Where?] it'll have a double EOS at the end! :-o ) -> #67
+		                            //!! NOTE: f.size() ALREADY did a dumb paranoid, but useless +2 there! :-o That's NOT TO BE RELIED ON HERE!!!
+		if (!buffer_)
+		{
+			INI_ERR("ERROR: Couldn't allocate buffer for loading '%s'!", filename_or_content);
+			return 0;
+		}
 	}
+
 	assert(buffer_);
 
 	char* bufferend = buffer_;
 	bufferend[0] = EOS;
 
+//INI_DBG("__load: Locate initial reading position...");
 	//
 	// locate the desired section (if one was specified)...
 	//
@@ -862,7 +1007,7 @@ char* IniMan::__load(const char* fnam, const char* section)
 		sz::strupr(secname_normalized);
 
 		// eat up text until the desired section name found...
-		while (EOF != sz::loadline(f.handle(), linebuf, cfg.MAX_LINE_SIZE))
+		while (EOF != sz::loadline(_getc_, linebuf, cfg.MAX_LINE_SIZE))
 		{
 			++lines_seen_;
 
@@ -909,9 +1054,12 @@ section_found:
 	// Read the entries...
 	// (up to the next section only, if single-section-load)...
 	//
-	while (EOF != sz::loadline(f.handle(), linebuf, cfg.MAX_LINE_SIZE))
+//INI_DBG("__load: Start reading lines...");
+	while (EOF != sz::loadline(_getc_, linebuf, cfg.MAX_LINE_SIZE))
 	{
 		++lines_seen_;
+
+//INI_DBG("__load: Line %i loaded.", lines_seen_);
 
 		if (int result = __preprocess_line(linebuf, procbuf, cfg.MAX_LINE_SIZE); result != 0)
 		{
@@ -956,10 +1104,11 @@ void IniMan::dump() const
 	assert(buffer_);
 
 	printf(">>>========>>> (buffer [%p] size: %lu)\n", (void*)buffer_, buffer_size_);
-	printf(">>> BOM detected:");
+	printf(">>> BOM detected: ");
 		auto [fBOM, fBOMlen] = sz::UTF::encoding_BOM(sz::UTF::Encoding(explicit_input_encoding_detected_));
 		for (unsigned i = 0; i < fBOMlen; ++i) { printf(" %02X", fBOM[i]); }
-		if (fBOMlen) printf(" (inferred encoding: %s (%08x))",
+		if (!fBOMlen) printf("-");
+		if ( fBOMlen) printf(" (inferred encoding: %s (%08x))",
 			sz::UTF::encoding_name(sz::UTF::Encoding(explicit_input_encoding_detected_)),
 			explicit_input_encoding_detected_);
 		printf("\n");
@@ -1105,8 +1254,8 @@ int main(int argc, char** argv)
 	if (argc >= 3)
 	{
 		auto raw_key = argv[2];
-		auto [section, key] = test::split(raw_key);
-		cout << "Section/Key: [" << section << "]/"<< key << " = " << c.get(section.c_str(), key.c_str(), "<NOT FOUND!>") << "\n";
+		auto [sect, k] = test::split(raw_key);
+		cout << "Section/Key: [" << sect << "]/"<< k << " = " << c.get(sect.c_str(), k.c_str(), "<NOT FOUND!>") << "\n";
 	}
 
 	if (argc < 2)
@@ -1165,6 +1314,21 @@ int main(int argc, char** argv)
 		cout << section << "." << key << " = " << "'" << c.get(key, 0) << "'\n";
 		cout << section << "." << key << " = " << "'" << c.get(section, key, 0) << "'\n";
 	}
+
+
+	cout	<< "\n"
+		<< ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Loading from string...\n"
+		<< "\n";
+	c.cfg.LOAD_FROM_STRING = true;
+	const char* content = "[one]\nk1=v1\n[two]\nk2=v2\n";
+	c.load(content);
+	c.dump();
+	c.load(content, "missing");
+	c.dump();
+	c.load(content, "Two");
+	c.dump();
+	c.load(content, "One");
+	c.dump();
 
 	return 0;
 }

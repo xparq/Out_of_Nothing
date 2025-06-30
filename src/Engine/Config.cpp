@@ -27,10 +27,10 @@ Config::Config(std::string_view cfg_path, Config* base, std::string defaults, co
 {
 	_impl = new Config_impl(*this);
 
-	select(cfg_path, true, post_load); // Let it throw... //!!?? But move the load logic here? Check & throw here, favoring consistency over flexibility?
-	                                                      //!! Config.hpp says: "Calls select(), throws on error (only if cfg_path is not empty, but not found)"
+	select(cfg_path, true, post_load); // `true` -> make it throw, when called from the ctor!
 }
 
+//----------------------------------------------------------------------------
 Config::~Config()
 {
 	delete _impl;
@@ -39,7 +39,26 @@ Config::~Config()
 //----------------------------------------------------------------------------
 bool Config::select(std::string_view cfg_path, bool can_throw, const Callback& post_load)
 {
-	return _impl->select(cfg_path, can_throw, post_load);
+	if (cfg_path.empty())
+	{
+		// Use built-in defaults...
+	}
+
+	if (_impl->_load(cfg_path))
+	{ // Success...
+		_current_config = cfg_path;
+		_cfg_base_path = sz::dirname(cfg_path);
+
+		// Call the user callback (NOOP by default)
+		post_load(*this);
+		return true;
+	}
+
+	// Fail...
+	if (can_throw)
+		throw std::runtime_error("Failed to load configuration from \"" + string(cfg_path) + "\"");
+	else
+		return false;
 }
 
 //----------------------------------------------------------------------------
@@ -51,7 +70,8 @@ std::string Config::current() const noexcept
 //----------------------------------------------------------------------------
 // Supported typed getters
 //----------------------------------------------------------------------------
-string   Config::get(string_view prop, const char* def) noexcept { return _impl->_get(prop, string(def)); }
+//!!...string   Config::get(string_view prop, const char* def) noexcept { return _impl->_get(prop, string(def)); }
+const char*   Config::get(string_view prop, const char* def) noexcept { return _impl->_get(prop, def); }
 bool     Config::get(string_view prop, bool def)        noexcept { return _impl->_get(prop, def); }
 int      Config::get(string_view prop, int def)         noexcept { return _impl->_get(prop, def); }
 unsigned Config::get(string_view prop, unsigned def)    noexcept { return _impl->_get(prop, def); }
