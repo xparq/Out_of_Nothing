@@ -30,6 +30,7 @@ OONConfig::OONConfig(Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& ar
 	// 1. Preset hardcoded baseline defaults...
 	// ...Well, just default them in one step with loading; see below!
 	quick_snapshot_filename_pattern = DEFAULT_SNAPSHOT_FILE_PATTERN;
+	gravity_mode = Model::World::GravityMode::Default;
 
 	// 2. Override from the config...
 
