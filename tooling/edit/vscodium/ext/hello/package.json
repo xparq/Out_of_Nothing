@@ -1,0 +1,18 @@
+﻿{
+  "name": "portable-aware",
+  "displayName": "Portable Aware Extension",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": ["*"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "portableAware.hello",
+        "title": "Portable: Hello"
+      }
+    ]
+  }
+}

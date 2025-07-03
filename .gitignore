@@ -24,7 +24,12 @@ gcm.cache
 #test/*.lib
 
 !tooling/*.exe
-
+tooling/edit/vscodium/user-data-dir
+!tooling/edit/vscodium/user-data-dir/User
+!tooling/edit/vscodium/user-data-dir/User/settings.json
+!tooling/edit/vscodium/user-data-dir/User/keybindings.json
+!tooling/edit/vscodium/user-data-dir/User/extensions.json
+!tooling/edit/vscodium/user-data-dir/User/snippets
 *.code-workspace
 *.vscode
 

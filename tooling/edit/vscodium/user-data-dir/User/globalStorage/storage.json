@@ -1,0 +1,66 @@
+{
+    "userDataProfilesMigration": true,
+    "profileAssociations": {
+        "workspaces": {
+            "file:///c%3A/sz/prj/Out_of_Nothing/prj.code-workspace": "__default__profile__"
+        },
+        "emptyWindows": {}
+    },
+    "profileAssociationsMigration": true,
+    "telemetry.machineId": "bed6e96a1c18eaa01d76ab116426c55b0d66fe9a80e926c4a92578f76fe43cb1",
+    "telemetry.sqmId": "{1F69FBD1-CAB3-4525-BA8E-3862E8A576AE}",
+    "telemetry.devDeviceId": "518202ff-40ff-46d5-8082-b0ba2e663abe",
+    "backupWorkspaces": {
+        "workspaces": [
+            {
+                "id": "ec05a7f4fe0adf340df41049b1aa2cd0",
+                "configURIPath": "file:///c%3A/sz/prj/Out_of_Nothing/prj.code-workspace"
+            }
+        ],
+        "folders": [],
+        "emptyWindows": []
+    },
+    "windowControlHeight": 35,
+    "theme": "vs-dark",
+    "themeBackground": "#1e1e1e",
+    "windowSplash": {
+        "zoomLevel": 0,
+        "baseTheme": "vs-dark",
+        "colorInfo": {
+            "foreground": "#cccccc",
+            "background": "#1e1e1e",
+            "editorBackground": "#1e1e1e",
+            "titleBarBackground": "#3c3c3c",
+            "activityBarBackground": "#333333",
+            "sideBarBackground": "#252526",
+            "statusBarBackground": "#007acc",
+            "statusBarNoFolderBackground": "#68217a"
+        },
+        "layoutInfo": {
+            "sideBarSide": "left",
+            "editorPartMinWidth": 220,
+            "titleBarHeight": 35,
+            "activityBarWidth": 48,
+            "sideBarWidth": 250,
+            "statusBarHeight": 22,
+            "windowBorder": false
+        }
+    },
+    "windowsState": {
+        "lastActiveWindow": {
+            "workspaceIdentifier": {
+                "id": "ec05a7f4fe0adf340df41049b1aa2cd0",
+                "configURIPath": "file:///c%3A/sz/prj/Out_of_Nothing/prj.code-workspace"
+            },
+            "backupPath": "C:\\sz\\prj\\Out_of_Nothing\\tooling\\edit\\vscodium\\user-data-dir\\Backups\\ec05a7f4fe0adf340df41049b1aa2cd0",
+            "uiState": {
+                "mode": 1,
+                "x": 71,
+                "y": 24,
+                "width": 1746,
+                "height": 1080
+            }
+        },
+        "openedWindows": []
+    }
+}
