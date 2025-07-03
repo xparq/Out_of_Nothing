@@ -2,11 +2,12 @@
 #define _8PA37GTB7NX73945Y6B2V6C7X245Y45_
 
 #include "Engine/Config.hpp"
-#include "extern/Args.hpp"
+//#include "extern/Args.hpp"
+class Args; // Enough to actually #include it in the .cpp
 
 #include "sz/lang/.hh" // AUTO_CONST
 
-class Args; // Enough to actually #include it in the .cpp
+#include "Model/World.hpp"
 
 // Fw.-declare the System config (the app cfg. will have a reference to it):
 namespace Szim { struct SimAppConfig; }
@@ -59,6 +60,7 @@ struct OONConfig : Szim::Config
 	std::string background_music; //!!?? Awkward... App stuff that needs convenient engine support. How exactly?
 
 	// Sim.
+	Model::World::GravityMode gravity_mode;
 	unsigned chemtrail_burst_particles;
 	unsigned exhaust_burst_particles;
 	float    exhaust_v_factor;

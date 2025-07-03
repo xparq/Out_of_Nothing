@@ -162,6 +162,12 @@ LOGD << "Display.reset after the UI setup:";
 	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
 	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 
+	// Apply custom config adjustments/fixup...
+	sfw::set<GravityModeSelector>("Gravity mode", appcfg.gravity_mode);
+		auto readback = sfw::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
+		assert(gravity_mode == readback);
+	world().gravity_mode = appcfg.gravity_mode;
+
 //!!IPROF_SYNC_THREAD;
 } // init
 

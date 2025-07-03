@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 
+#include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
 
 
@@ -72,6 +73,17 @@ OONConfig::OONConfig(Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& ar
 //!! See also main.cpp! And if main goes to Szim [turning all this essentially into a framework, not a lib, BTW...],
 //!! then it's TBD where to actually take care of the cmdline. -- NOTE: There's also likely gonna be an app
 //!! configuration/layout/mode, where the client retains its own main()!
+
+	if (args("g-mode") == "R") {
+		gravity_mode = Model::World::GravityMode::Realistic;
+		Note("Gravity mode will be set to: "s + "Realistic");
+	} else if (args("g-mode") == "H") {
+		gravity_mode = Model::World::GravityMode::Hyperbolic;
+		Note("Gravity mode will be set to: "s + "Hyperbolic");
+	} else if (args("g-mode") == "0") {
+		gravity_mode = Model::World::GravityMode::Off;
+		Note("Gravity will be turned off.");
+	}
 
 	//!! 4. Fixup...
 
