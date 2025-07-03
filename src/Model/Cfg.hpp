@@ -3,7 +3,7 @@
 
 namespace Model {
 
-	using BasicNumberType = float;
+	using BasicNumberType = double;
 
 }
 

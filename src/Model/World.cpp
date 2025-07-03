@@ -248,11 +248,30 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 		// Collisions & gravity...
 		//!! see the relative looping now! if (i != source_obj_ndx)
 		{
-			auto dx = source->p.x - target->p.x,
-			     dy = source->p.y - target->p.y;
+			// First this:
+			auto distance_vect = source->p - target->p;
+			auto dist_normal = distance_vect.normalized();
+			auto distance = distance_vect.length(); //Math::mag2(dx, dy);
 
-//			auto distance = Math::distance2(target->p.x, target->p.y, source->p.x, source->p.y);
-			auto distance = Math::mag2(dx, dy);
+			// Then (using the distance):
+			NumType g_factor;
+			switch (gravity_mode) {
+			case Hyperbolic:
+				g_factor = gravity / distance; break;
+			case Realistic:
+			case Experimental:
+				g_factor = gravity / (distance * distance); break;
+			default:
+				g_factor = 0; break;
+				assert(gravity_mode == Off); break;
+			}
+			/* OR:
+			if (gravity_mode == Hyperbolic) {
+				g_factor = gravity / distance;
+			} else if (gravity_mode == Realistic) {
+				g_factor = gravity / (distance * distance);
+			}
+			*/
 
 			//! Collision det. is crucial also for preventing 0 distance to divide by!
 			//!!Collision and "distance = 0" are not the samne things!
@@ -326,89 +345,55 @@ for (size_t source_obj_ndx = 0; source_obj_ndx < (_interact_all ? obj_cnt : 1); 
 				//!!app.directed_interaction_hook(this, source, target, dt, distance);
 					//!! Wow, this fn. call costs an FPS drop from ~175 to ~165 with 500 objs.! :-/
 #ifndef DISABLE_FULL_INTERACTION_LOOP
-if (loop_mode == LoopMode::Full) { // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
-	switch (gravity_mode) {
-	case Hyperbolic: // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
+	if (loop_mode == LoopMode::Full) { // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
 
-				if (!target->superpower.gravity_immunity) {
-				  //!! Note: doing it branchless, i.e. multiplying with the bool flag (as 0 or 1)
-				  //!! made it significantly *SLOWER*! :-o
-					NumType a = gravity * source->mass / (distance * distance);
-					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt); // #525: dx/distance, dy/distance...
-					//! Optimizing ...*dt into a dv scaling factor (a*dt) resulted in
-					//! rounding errors & failed regression testing... But should be fine:
-//					float _dvscale = gravity * source->mass / (distance*distance) * dt;
-//					auto _dv = Velo2(dx * _dvscale, dy * _dvscale);
+		if (!target->superpower.gravity_immunity) {
+			//!! Note: doing it branchless, i.e. multiplying with the bool flag (as 0 or 1)
+			//!! made it significantly *SLOWER*! :-o
+			NumType a = g_factor * source->mass;
+			target->v += Phys::Velo2{dist_normal * a * NumType(dt)};
+//			auto dv = Phys::Velo2{dist_normal * a} * NumType(dt);
+			//! Optimizing ...*dt into a dv scaling factor (a*dt) resulted in
+			//! rounding errors & failed regression testing... [With float or double?!]
+			//! But should be fine:
+//			float _dvscale = gravity * source->mass / (distance*distance) * dt;
+//			auto _dv = Velo2(dx * _dvscale, dy * _dvscale);
 /*!
 {static bool done=false;if(!done){done=true; // These look the same, but the calculations differ! :-o
 cerr << "dv : "<<  dv.x <<", "<<  dv.y <<"\n";
 cerr << "_dv: "<< _dv.x <<", "<< _dv.y <<"\n"; }}
 !*/
-					target->v += dv; //! += _dv;
-				}
-		break;
-	case Realistic:
-	case Experimental:
-				if (!target->superpower.gravity_immunity) {
-					NumType a = gravity * source->mass / (distance * distance); //!!?? distance^3 too big for the divider?
-					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
-					//!! static_assert(is_same(decltype(dv), Phys::Velo2)));
-					target->v += dv;
+//			target->v += dv; //! += _dv;
+
 /*!!
 if(((OONApp&)game).controls.ShowDebug) {
-	//!!This is useless, while the event loop is stalled, as the update loop here
-	//!!would just blast through this a million times with the old input state! :-/
-	cerr << "a: "<< a_target <<", distance: "<< distance <<"\n"; // It was like 0.x with 3 bodies in close proximity, and barely moving.
+//!!This is useless, while the event loop is stalled, as the update loop here
+//!!would just blast through this a million times with the old input state! :-/
+cerr << "a: "<< a_target <<", distance: "<< distance <<"\n"; // It was like 0.x with 3 bodies in close proximity, and barely moving.
 }
 !!*/
-				}
-		break;
-//!!	case Experimental:
-//!!		assert(gravity_mode == Experimental);
-//!!		break;
-	default:
-		assert(gravity_mode == Off);
-		break;
-	} // switch (gravity_mode)
-
-} else { // loop_mode == Half (-> #65)
-#endif // DISABLE_FULL_INTERACTION_LOOP
-
-	//!! Do the same switch here, too!
-
-		if (gravity_mode == Hyperbolic) {
-				const NumType G_dt_div_d2 = gravity / (distance * distance) * dt;
-				if (!target->superpower.gravity_immunity) {
-					auto a = G_dt_div_d2 * source->mass;
-					auto dv = Phys::Velo2{dx * a, dy * a};
-					target->v += dv;
-				}
-				if (!source->superpower.gravity_immunity) {
-					auto a = -G_dt_div_d2 * target->mass;
-					auto dv = Phys::Velo2{dx * a, dy * a};
-					source->v += dv;
-				}
-		} else if (gravity_mode == Realistic) {
-				const NumType G_dt_div_d2 = gravity / (distance * distance) * dt; //!!?? distance^3 too big for the divider?
-				if (!target->superpower.gravity_immunity) {
-					auto a = G_dt_div_d2 * source->mass;
-					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
-					target->v += dv;
-				}
-				if (!source->superpower.gravity_immunity) {
-					auto a = -G_dt_div_d2 * target->mass;
-					auto dv = Phys::Velo2{dx * a, dy * a} * NumType(dt/distance); // #525: dx/distance, dy/distance...
-					source->v += dv;
-				}
 		}
 
+	} else { // loop_mode == Half (-> #65)
+#endif // DISABLE_FULL_INTERACTION_LOOP
+
+		if (!target->superpower.gravity_immunity) {
+			auto a =  g_factor * source->mass;
+			target->v += Phys::Velo2{dist_normal * a * dt};
+		}
+		if (!source->superpower.gravity_immunity) {
+			auto a = -g_factor * target->mass;
+			source->v += Phys::Velo2{dist_normal * a * dt};
+		}
 
 #ifndef DISABLE_FULL_INTERACTION_LOOP
-}
+	}
 #endif
 
 //cerr << "gravity pull on ["<<i<<"]: dist = "<<distance << ", g = "<<g << ", gv = ("<<target->v.x<<","<<target->v.y<<") " << endl;
-			}
+
+			} // Process gravity?
+
 		} // if interacting with itself
 
 /*!! Very interesting magnified effect if calculated here, esp. with negative friction (i.e. an expanding universe):
