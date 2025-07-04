@@ -57,45 +57,24 @@ Options:
 }
 
 //----------------------------------------------------------------------------
-void SimApp::init()
+void SimApp::internal_app_init()
 //
 // Internal engine init, called from the ctor...
 //
 // >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE YET!  <<<
 //
 {
-	LOGD << "SimApp::init entered...";
+	LOGD << "SimApp::internal_app_init entered...";
 
-	// Guard against multiple calls (which would happen if not overridden!):
+	// Guard against multiple calls (which could happen if *not* overridden: once from the ctor,
+	// and then again from run(), or if the app (main) calls it explicitly):
 	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
-
-	// Logging...
-	// The logger instance(s) has (have) already been through static init, with defaults.
-	// Here we just adjust what we can/need, e.g. from command line args etc.
-	using namespace diag;
-
-	// Log level override, if requested (with --log-level=<letter>)
-	//! NOTE: WAY TOO LATE here for debugging the App ctor init chain (which has already been done)! :-/
-	auto log_level = log::letter_to_level(args("log-level")[0]);
-	if (log_level) { log::LogMan::instance()->set_level(log_level); }
-
-	//!! Open the file-backed Session Log:
-	//!!log::init(log_level, "Szim-debug.log");
 
 
 	// Apply the config...
+	// - Some args aren't yet (!!?? can't/shouldn't be?) handled by SimAppConfig itself.
+	// - Misc. fixup...
 
-	// Misc. fixup that should've been in the ctors, but C++...
-
-	// Some args aren't yet (!!?? can't/shouldn't be?) handled by SimAppConfig itself...
-
-	// UI...
-	if (cfg.headless)
-		gui.disable();
-
-	// Audio...
-	if (cfg.start_muted)
-		backend.audio.enabled(false);
 
 	// Time control...
 	iterations.max(cfg.iteration_limit);
@@ -110,22 +89,31 @@ void SimApp::init()
 	if (!args("session-save-as").empty()) // Even if autosave disabled. (Could be reenabled later, or manual save...)
 		session.set_save_as_filename(args("session-save-as"));
 
-	LOG << "<<< Engine/API initialized. >>>";
-	LOGD << "SimApp::init finished.";
+	//!!---------------------------------------------
+	//!!This is custom app-specific init actually!... (Moved here from run(), because that in turn is being replaced by Engine::__run...) {
+		// Avoid the accidental Big Bang (#500):
+		backend.clock.restart(); //! The clock auto-starts at construction(!), causing a huge initial delay, so reset it!
+
+		// ...but do a controlled Big Bang instead (#504):
+		float default_BigBang_InflationInterval_s = 0.3f;
+		try { default_BigBang_InflationInterval_s = std::stof(args("initial-dynamic-dt")); } catch(...){}
+		float BigBang_InflationInterval_s =
+			cfg.get("sim/timing/initial_dynamic_dt", default_BigBang_InflationInterval_s);
+	DBG_(BigBang_InflationInterval_s);
+		std::this_thread::sleep_for(std::chrono::duration<float>(BigBang_InflationInterval_s)); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
+			//!! This does (should do) nothing for deterministic (fixed-dt) time drive!
+			//!! More work is needed to make the Big Bang orthogonal to the timing method!
+	//!! }
+	//!!---------------------------------------------
+
+
+	LOGD << "SimApp::internal_app_init finished.";
 }
 
 //----------------------------------------------------------------------------
-void SimApp::done()
-//
-// Internal engine cleanup, called from the dtor...
-//
-// >>>  NO VIRTUAL DISPATCH IS AVAILABLE HERE ANY MORE!  <<<
-//
+void SimApp::internal_app_cleanup()
 {
-	// Guard against multiple calls (which can happen if not overridden):
-	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
-
-	LOG << "<<< Engine/API shutting down... >>>";
+	LOGD << "SimApp::internal_app_cleanup...";
 }
 
 //----------------------------------------------------------------------------
@@ -154,38 +142,10 @@ int SimApp::run()
 		return -1;
 	}
 */
-	if (terminated()) // Terminated during construction? (e.g. by the default init())...
-		return exit_code();
-
-	init(); // Unlike the ctor, this calls the override (or the "onced" NOOP default, if none)
-
-	if (terminated()) // init() may have been "aborted"...
-		return exit_code();
-		// NOTE: If there's no init() override (-- weird, but who knows! :-o ),
-		// but there *is* an overridden done() (-- wow, even weirder!!! :) ),
-		// that will be called normally, as if the default init was the client's.
-
-	LOG << "Engine: App initialized, starting main loop...";
-
 	ui_event_state = SimApp::UIEventState::IDLE;
 
-//!!sim_init() {
-	// Avoid the accidental Big Bang (#500):
-	backend.clock.restart(); //! The clock auto-starts at construction(!), causing a huge initial delay, so reset it!
-
-	// ...but do a controlled Big Bang instead (#504):
-	float default_BigBang_InflationInterval_s = 0.3f;
-	try { default_BigBang_InflationInterval_s = std::stof(args("initial-dynamic-dt")); } catch(...){}
-	float BigBang_InflationInterval_s =
-		cfg.get("sim/timing/initial_dynamic_dt", default_BigBang_InflationInterval_s);
-DBG_(BigBang_InflationInterval_s);
-	std::this_thread::sleep_for(std::chrono::duration<float>(BigBang_InflationInterval_s)); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
-		//!! This does (should do) nothing for deterministic (fixed-dt) time drive!
-		//!! More work is needed to make the Big Bang orthogonal to the timing method!
-//!! }
-
-
-#ifndef DISABLE_THREADS
+#ifndef DISABLE_THREADS //!!?? Could these be runtime flags instead (at least here, in run())?
+                        //!!   Not sure, because DISABLE_THREADS might also control build options!
 DBGTRACE;
 	std::thread game_state_updates(&SimApp::update_thread_main_loop, this);
 		//! NOTES:
@@ -209,10 +169,6 @@ DBGTRACE;
 //DBG "TRACE - before threads join";
 	game_state_updates.join();
 #endif
-
-	LOG << "Engine: Main loop finished, cleaning up the app...";
-
-	done(); // Unlike the dtor, this calls the override (or the "onced" NOOP default if none)
 
 	return exit_code();
 }

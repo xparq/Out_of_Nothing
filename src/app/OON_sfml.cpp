@@ -75,9 +75,9 @@ namespace _internal {
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 //----------------------------------------------------------------------------
-OONApp_sfml::OONApp_sfml(int argc, char** argv)
+OONApp_sfml::OONApp_sfml(RuntimeContext& runtime, int argc, char** argv)
 	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
-	, OONApp(argc, argv, _oon_view._oon_main_view) //!! Ugh...
+	, OONApp(runtime, argc, argv, _oon_view._oon_main_view) //!! Ugh...
 #ifndef DISABLE_HUDS
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(sfw::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!

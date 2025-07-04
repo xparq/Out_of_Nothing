@@ -170,7 +170,7 @@ protected:
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	OONApp(int argc, char** argv, OONMainDisplay& main_view);
+	OONApp(Szim::RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view);
 	OONApp(const OONApp&) = delete;
 
 //----------------------------------------------------------------------------

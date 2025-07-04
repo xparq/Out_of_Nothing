@@ -45,52 +45,18 @@ using namespace Szim;
 //      the GUI init there, too, for good measure...
 //      (The ctor still has work left to do, so its body is not empty though.)
 //
-SimApp::SimApp(int argc, char** argv, View::ScreenView& main_view)
-	: args(argc, argv, {
+SimApp::SimApp(RuntimeContext& engine, int argc, char** argv, View::ScreenView& main_view)
+	: runtime(engine)
+	, args(argc, argv, {
 		// Long options with 1 param. (only those with 1?) don't need to be defined, e.g.:
 		//{"moons", 1},
 		// Short ones do, unfortunately (they're predicates by default, and don't have the '=' syntax to disambiguate):
 		{"C", 1}, // {"cfg", 1},
 	  })
 	// Load & fixup the SimApp config...
-	, cfg(
-/*
-		args("cfg").empty()
-		? args("C").empty() ? DEFAULT_CFG_FILE // `... ? ""` would use .defaults instead
-			            : args("C")
-		: args("cfg")
-*/
-///* For a pedantic warning:
-		args("cfg").empty()
-		? args("C").empty()
-			? DEFAULT_CFG_FILE
-			: args("C")
-		: args("C").empty()
-			? args("cfg")
-			: (Warning("Both -C and --cfg have been specified; ignoring \"-C "s + args("C")),
-			  args("C"))
-//*/
-	      , args
-	      , //! Note: this default config here is pretty redundant, basically only useful for debugging,
-		//! as the cfg ctor takes care of the defaults anyway...:
-	        R"(
-		app_name = "Don't put the app name to the config, FFS! ;) "
-		[appearance]
-		window_title = "OON <Running with hardcoded defaults!>"
-		)"
-	  ) // cfg()
-	// Bootstrap the backend...
-	, backend(SFML_Backend::use(cfg))
-	// Init the GUI...
-	, gui(((SFML_Backend&)backend).SFML_window(),
-	      {
-	        .basePath = cfg.asset_dir.c_str(), // Trailing / ensured by the cfg. fixup!
-	        .textureFile = "gui/texture.png",
-	        .bgColor = sfw::Color(cfg.default_bg_hexcolor),
-	        .fontFile = cfg.default_font_file.c_str(),
-	      },
-	      false // Don't manage the window
-	  )
+	, cfg(engine.cfg)
+	, backend(engine.backend)
+	, gui(engine.gui)
 	, _main_view(main_view)
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(main_window())}
 	, session(*this/*!!, args("session")!!*/)
@@ -110,7 +76,8 @@ SimApp::SimApp(int argc, char** argv, View::ScreenView& main_view)
 	//!!auto basename = fs::path(cfgfile).filename().string();
 !!*/
 
-	this->SimApp::init(); // Our own internal init() is called "secretly", even if overridden...
+//!! Not any more (since #438 and #626):
+//!!	this->SimApp::init(); // Our own internal init() is called "secretly", even if overridden...
 	                      // (Note: the qualifier is only for emphasis; ctors don't dispatch virtuals.)
 }
 

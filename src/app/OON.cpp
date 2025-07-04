@@ -35,8 +35,8 @@ using namespace std;
 namespace OON {
 
 //----------------------------------------------------------------------------
-OONApp::OONApp(int argc, char** argv, OONMainDisplay& main_view)
-	: SimApp(argc, argv, main_view)
+OONApp::OONApp(RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
+	: SimApp(runtime, argc, argv, main_view)
 	, appcfg(cfg, args) //!! appcfg(SimApp::syscfg)
 {
 //!! This shouldn't be needed, the engine should take care of it: #462!
@@ -56,6 +56,8 @@ void OONApp::init() //override
 !*/
 {_
 ZoneScoped;
+
+LOGD << __FUNCTION__ <<" started...";
 
 	// Images...
 	//!!
@@ -164,9 +166,11 @@ LOGD << "Display.reset after the UI setup:";
 
 	// Apply custom config adjustments/fixup...
 	sfw::set<GravityModeSelector>("Gravity mode", appcfg.gravity_mode);
-		auto readback = sfw::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
+		[[maybe_unused]] auto readback = sfw::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
 		assert(gravity_mode == readback);
 	world().gravity_mode = appcfg.gravity_mode;
+
+LOGD << __FUNCTION__ <<" finished.";
 
 //!!IPROF_SYNC_THREAD;
 } // init
@@ -175,7 +179,7 @@ LOGD << "Display.reset after the UI setup:";
 //----------------------------------------------------------------------------
 void OONApp::done() //override
 {
-//	cerr << __FUNCTION__ << ": Put any 'onExit' tasks (like saving the last state) here!...\n";
+	LOGD << __FUNCTION__ <<": Put any custom 'onExit' tasks (like saving the last state) here!...\n";
 
 	//!! MOVE THE SESSION LOGIC TO SimApp:
 	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
@@ -782,7 +786,7 @@ void OONApp::spawn(EntityID parent_id, unsigned n)
 //!! Should not ignore mass!...
 //!!??Should gradually become a method of the object itself?
 {
-if (parent_id != player_entity_ndx()) LOGD << "Non-player object #"<<parent_id<<" is spawning entities...\n";
+if (parent_id != player_entity_ndx()) { LOGD << "Non-player object #"<<parent_id<<" is spawning entities...\n"; }
 
 	if (!n) return;
 

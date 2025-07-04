@@ -2,9 +2,8 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 #include "extern/Tracy/public/TracyClient.cpp"
 
+#include "Engine.hpp"
 #include "OON_sfml.hpp"
-#include "Engine/diag/Error.hpp"
-#include "Engine/diag/Log.hpp"
 
 #include <iostream> // For normal user-facing output
 	using std::cout, std::endl;
@@ -73,10 +72,12 @@ int main(int argc, char* argv[])
 	Main.exit_code = -1;
 
 	try {
-		OONApp_sfml game(argc, argv);
-		LOGD << "Size of the entire app/game obj.: sizeof(game) == " << sizeof(game);
+		Szim::Engine engine(argc, argv); // args for engine init
+			LOGD << "Size of the engine obj.: sizeof(engine) == " << sizeof(engine);
+			LOGD << "Size of the app obj.: sizeof(OONApp_sfml) == " << sizeof(OONApp_sfml);
+		Main.exit_code = engine.run<OONApp_sfml>(argc, argv); // args for app init
+			//! Remember: Main.exit_code won't be set on exceptions!
 
-		Main.exit_code = game.run(); // exit_code won't be set on exceptions!
 
 		LOGI	<< "Profiling stats:\n"
 			<< "------------------------------------------------------\n"

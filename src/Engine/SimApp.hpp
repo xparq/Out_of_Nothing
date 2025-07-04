@@ -2,6 +2,9 @@
 #define _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
 #include "_build_cfg.h"
 
+#include "Engine/RuntimeContext.hpp"
+//#include "Engine.hpp"
+
 #include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
 #include "Backend.hpp"
 #include "SimAppConfig.hpp"
@@ -45,31 +48,26 @@ namespace Szim {
 class SimApp // Universal Sim. App Base ("Engine Controller")
 {
 //----------------------------------------------------------------------------
-// Config...
+// Config... See SimAppConfig!
 //----------------------------------------------------------------------------
-protected:
-	static constexpr auto DEFAULT_CFG_FILE = "default.cfg";
-
-	// See also: SimAppConfig
 
 //----------------------------------------------------------------------------
 // API...
 //----------------------------------------------------------------------------
 public:
 	//!!virtual... -> #348
-	static auto show_cmdline_help(const Args& args, const char* description = nullptr) -> void;
+	static void show_cmdline_help(const Args& args, const char* description = nullptr);
 
-	int run(); // Returns the intended exit code for the process (!0: error)
-	           // Note: "exit codes" may not be applicable in every execution model!
-	virtual void init(); // Call request_exit(exit_code) to mark it "aborted".
-	                     // No need to call the "upstream" init() from an override.
-	virtual void done(); // Optional cleanup; will not be called if init() was aborted.
-	                     // No need to call the "upstream" done() from an override.
-	virtual void poll_controls() {}
-	virtual bool perform_control_actions() { return false; } // false: no model changes
+	void internal_app_init();
+	void internal_app_cleanup();
 
+	// Overridables to be (re)implemented by the app:
+	virtual void init() {} // Call request_exit(exit_code) to schedule for aborting!
+	virtual void done() {} // Optional cleanup; will not be called if init() was aborted.
 	virtual void init_world() { world().init(*this); } //!!TODO: Called by the default init(), before the 1st update_world().
 	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
+	virtual void poll_controls() {}
+	virtual bool perform_control_actions() { return false; } // false means no model changes
 
 	unsigned fps_throttling(unsigned fps = unsigned(-1));
 		// Set or query the FPS limit (the default -1 means query)
@@ -77,6 +75,12 @@ public:
 
 	void fps_throttling(bool newstate);
 		// Enable/disable configured FPS limit
+
+	int run();
+		// Auto-inits (via calling init()), unless init(...) has been explicitly called
+		// already by the app.
+		// Returns the intended exit code for the process (!0: error)
+		// Note: "exit codes" may not be applicable in every execution model!
 
 	void request_exit(int exit_code = 0); // (The code set by the last request_exit(x) will win.)
 	bool terminated() const { return _terminated; }
@@ -230,7 +234,7 @@ protected:
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	SimApp(int argc, char** argv, View::ScreenView& main_view);
+	SimApp(RuntimeContext& runtime, int argc, char** argv, View::ScreenView& main_view);
 	virtual ~SimApp();
 
 	SimApp(const SimApp&) = delete;
@@ -238,11 +242,14 @@ public:
 //----------------------------------------------------------------------------
 // Data...
 //----------------------------------------------------------------------------
+public: //!!TODO: finish the migration to Engine/RuntimeContext!
+	RuntimeContext& runtime;
+
 protected:
 	Args args;
 
 public: // E.g. the renderer still needs these...
-	SimAppConfig cfg;
+	SimAppConfig& cfg;
 	Backend& backend;
 
 	//--------------------------------------------------------------------
@@ -250,7 +257,7 @@ public: // E.g. the renderer still needs these...
 	// The sim/app "content" has its own rendering, most likely its own UI too,
 	// but usually sharing the same (currently: SFML) window!
 protected:
-	sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
+	sfw::GUI& gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
 	              //!! -- e.g. via a unique_ptr, or just a plain manual PIMPL. (Plus a gui() accessor then?!)
 
 	//--------------------------------------------------------------------
