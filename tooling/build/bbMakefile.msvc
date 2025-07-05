@@ -355,6 +355,8 @@ _CL_dephack_procdep = @busybox awk -e 'BEGIN{print"$@:\\"}\
 #!!?? WTF: this worked directly from the cmd (FAR) commandline, but not here:
 #!!??_teehack2 = busybox grep -iF $(vroot_bs)\$(src_subdir) $@.dep.tmp
 
+#!! Can't remember now, but I guess I had to suppress the error reporting here for
+#!! the MSVC header dep. hackery to work...:
 .c.obj:
 	$(_cc_info)
 	-@$(CC) $(CFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)

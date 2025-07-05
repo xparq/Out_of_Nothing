@@ -311,19 +311,19 @@ _cc_exitcode = $(outdir)/.tool-exitcode.tmp
 
 .c.o:
 	$(_cc_info)
-	-@$(CC) $(CFLAGS) -o$@ $< $(_cc_depgen)
+	@$(CC) $(CFLAGS) -o$@ $< $(_cc_depgen)
 
 .cpp.o:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) -o$@ $< $(_cc_depgen)
+	@$(CXX) $(CPPFLAGS) -o$@ $< $(_cc_depgen)
 
 .ixx.ifc:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
+	@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
 
 .ixx.o:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
+	@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
 
 #-----------------------------------------------------------------------------
 # Custom rules...
