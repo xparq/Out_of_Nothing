@@ -2,6 +2,7 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON_sfml.hpp"
+#include "OON_UI.hpp"
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
@@ -144,7 +145,7 @@ LOGE << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_l
 			}
 #endif
 
-			poll_controls(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
+			get_control_inputs(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
 			updates_for_next_frame();
 
 			if (!cfg.headless) {
@@ -314,7 +315,7 @@ try {
 				//!! to use abstracted event types/codes for dispatching (below)!
 
 //!! It felt more uneven if done here (due to the too coarse thread granularity of Windows -- and/or my own botched threading logic)! :-o
-//!!			poll_controls(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
+//!!			get_control_inputs(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
 
 #ifndef _MSC_VER
 #pragma GCC diagnostic push

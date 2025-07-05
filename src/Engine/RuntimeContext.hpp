@@ -6,8 +6,10 @@
 #include "Engine/Backend.hpp"
 #include "Engine/Backend/adapter/SFML/_Backend.hpp" //!!... :-/ Use proper dispatching!
 #include "Engine/SessionManager.hpp"
-#include "sfw/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
-                      //!! (mostly?) client .cpps that use it should include it individually!)
+#include "Engine/UI.hpp" //!! REMOVE FROM HERE! (After hiding it behind a ref., those
+                         //!! (mostly?) client .cpps that use it should include it individually!
+                         //!! Yeah, but then who should create the gui instance (well: the backend-specific impl. ctor?),
+                         //!! and where should it live (well: in a unique_ptr's motherly embrace?)
 //!!#include "Engine/UI/HUD.hpp"
 #include "Engine/UI/Input.hpp"
 
@@ -19,8 +21,9 @@ using EngineConfig = SimAppConfig; //!! But it's still a mix of both app and eng
 static constexpr auto DEFAULT_CFG_FILE = "default.cfg";
 
 
-struct RuntimeContext
+class RuntimeContext
 {
+public:
 	Args args;
 	EngineConfig cfg;
 
@@ -34,13 +37,13 @@ struct RuntimeContext
 //protected:
 	sfw::GUI gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
 	              //!! -- e.g. via a unique_ptr, or just a plain manual PIMPL. (Plus a gui() accessor then?!)
+		      //!! See the comments above, at the UI #include!
 
 //!!?? Move this here too?
 //!!??	SessionManager session;
 
 
 	RuntimeContext(int argc, char** argv);
-
 	RuntimeContext(const RuntimeContext&) = delete;
 
 	// Let's have a supported way of casting back to Engine, if needed...

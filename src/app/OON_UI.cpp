@@ -1,10 +1,10 @@
-﻿#include "OON.hpp"
+﻿#include "OON_UI.hpp"
+#include "OON.hpp"
 
-#include "Engine/Backend/HCI.hpp"
-#include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
-                       //!! (And sooner or later it must be usable unrestricted anyway!
 #include "Engine/UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
                        //!! And we're already using keystate() here, too, shamelessly! ;) )
+#include "Engine/Backend/HCI.hpp"
+
 #include "Engine/diag/Error.hpp"
 //#include "Engine/diag/Log.hpp"
 //#include "sz/DBG.hh"
@@ -34,12 +34,13 @@ static auto ftos = [](auto* ptr_x) { return [ptr_x]() { static constexpr size_t 
 
 
 //----------------------------------------------------------------------------
-void OONApp::show_cmdline_help(const Args& args, const char* banner)
+bool OONApp::show_cmdline_help(const Args& args, const char* banner)
 {
 	banner = "\"Out of Nothing\" - Experimental N-body simulation toy\n";
 
 	SimApp::show_cmdline_help(args, banner);
 
+	//!! Evn this "custom options" part should be automated some day:
 	cout << R"(
   -C cfgfile
           Load configuration from 'cfgfile'. If not found, abort.
@@ -48,6 +49,8 @@ void OONApp::show_cmdline_help(const Args& args, const char* banner)
 
   ...lots more (yet to be documented here, sorry)!
 )";
+
+	return false;
 }
 
 

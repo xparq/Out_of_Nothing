@@ -2,13 +2,14 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON.hpp"
+#include "OON_UI.hpp"
 
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "Model/Emitter/SkyPrint.hpp"
 
 #include "Engine/Backend/HCI.hpp"
-#include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
-                       //!! (And sooner or later it must be usable unrestricted anyway!
+#include "Engine/UI.hpp" // scroll_locked() reads the control mode directly from the UI
+
 #include "Engine/UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
                        //!! And we're already using keystate() here, too, shamelessly! ;) )
 
@@ -25,6 +26,9 @@
 #include "Engine/diag/Log.hpp"
 
 
+namespace OON {
+
+
 using namespace Szim;
 using namespace Model;
 //using namespace Math;
@@ -32,7 +36,6 @@ using namespace UI;
 using namespace std;
 
 
-namespace OON {
 
 //----------------------------------------------------------------------------
 OONApp::OONApp(RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
@@ -48,8 +51,21 @@ OONApp::OONApp(RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& m
 	                              (float)main_window_height());
 }
 
+
 //----------------------------------------------------------------------------
-void OONApp::init() //override
+bool OONApp::init_cli() //override
+{
+	return true;
+}
+
+//----------------------------------------------------------------------------
+bool OONApp::done_cli() //override
+{
+	return true;
+}
+
+//----------------------------------------------------------------------------
+bool OONApp::init() //override
 /*!
     The data watcher HUD setup is tied directly to the model world state (incl. e.g. the
     player objects), so model init (init_world) MUST happen before UI init (ui_setup)!
@@ -127,7 +143,7 @@ LOGD << "Display.reset right after loading the avatar images:";
 	} catch(...) {
 		Error("Failed to process/apply some cmdline args!");
 		request_exit(-1);
-		return;
+		return false;
 	}
 
 	// Focus on Player #1:
@@ -165,19 +181,22 @@ LOGD << "Display.reset after the UI setup:";
 	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 
 	// Apply custom config adjustments/fixup...
-	sfw::set<GravityModeSelector>("Gravity mode", appcfg.gravity_mode);
-		[[maybe_unused]] auto readback = sfw::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
-		assert(gravity_mode == readback);
 	world().gravity_mode = appcfg.gravity_mode;
+	//!! Move to OON_UI.cpp:
+	sfw::set<GravityModeSelector>("Gravity mode", world().gravity_mode);
+		[[maybe_unused]] auto readback = sfw::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
+		assert(readback == world().gravity_mode);
 
 LOGD << __FUNCTION__ <<" finished.";
 
 //!!IPROF_SYNC_THREAD;
+
+	return true;
 } // init
 
 
 //----------------------------------------------------------------------------
-void OONApp::done() //override
+bool OONApp::done() //override
 {
 	LOGD << __FUNCTION__ <<": Put any custom 'onExit' tasks (like saving the last state) here!...\n";
 
@@ -186,6 +205,8 @@ void OONApp::done() //override
 	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
 		session.close();
 	}
+
+	return true;
 }
 
 void OONApp::init_world_hook() //override
@@ -283,7 +304,7 @@ void OONApp::remove_player(unsigned)
 
 
 //----------------------------------------------------------------------------
-void OONApp::poll_controls() //override
+void OONApp::get_control_inputs() //override
 {
 	controls.update(); // Refreshing polled states now, nothing else
 		//!! Should be moved to the event loop, but only after the
@@ -293,7 +314,7 @@ void OONApp::poll_controls() //override
 
 
 //----------------------------------------------------------------------------
-bool OONApp::perform_control_actions() //override
+bool OONApp::react_to_control_inputs()
 {
 	bool action = false;
 
@@ -397,9 +418,9 @@ void OONApp::pan_view_reset()
 	focused_entity_ndx = Entity::NONE; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
-void OONApp::pan_view(sfw::fVec2 delta)
+void OONApp::pan_view(float delta_x, float delta_y)
 {
-	oon_main_camera().pan_view({delta.x(), delta.y()}); // Mannually converting that vector coming from the UI
+	oon_main_camera().pan_view({delta_x, delta_y}); // Manually converting that vector coming from the UI
 
 //!!	Phys::Pos2 w_delta = oon_main_camera().view_to_world_pos({delta.x(), delta.y()});
 //!! Pretty sure it can't correctly convert a displacement, only an abs. pos:
@@ -411,8 +432,8 @@ void OONApp::pan_view(sfw::fVec2 delta)
 }
 
 //!! See #define VEC_IMPLICIT_NUM_CONV for getting rid of the expl. ctor syntax!
-void OONApp::pan_view_x(float delta)  { pan_view({delta, 0}); }
-void OONApp::pan_view_y(float delta)  { pan_view({0, delta}); }
+void OONApp::pan_view_x(float delta)  { pan_view(delta, 0); }
+void OONApp::pan_view_y(float delta)  { pan_view(0, delta); }
 
 void OONApp::center(EntityID entity_id)
 {
@@ -1036,7 +1057,7 @@ void OONApp::updates_for_next_frame()
 		//!!? in addition to the async. event_loop()!...
 		//!! This doesn't just do low-level controls, but "fires" gameplay-level actions!
 		//!! (Not any actual processing, just input translation... HOPEFULLY! :) )
-		perform_control_actions();
+		react_to_control_inputs();
 
 		//----------------------------
 		// Determine the size of the next model iteration time slice...

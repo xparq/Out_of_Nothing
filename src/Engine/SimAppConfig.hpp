@@ -9,8 +9,9 @@ class Args; // Enough to actually #include it in the .cpp
 
 namespace Szim {
 
-struct SimAppConfig : Config
+class SimAppConfig : public Config
 {
+public:
 /*!!
 	struct UI
 	{

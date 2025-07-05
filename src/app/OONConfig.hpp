@@ -3,14 +3,14 @@
 
 #include "Engine/Config.hpp"
 //#include "extern/Args.hpp"
-class Args; // Enough to actually #include it in the .cpp
+class Args; // Enough to #include it in the .cpp
 
 #include "sz/lang/.hh" // AUTO_CONST
 
 #include "Model/World.hpp"
 
 // Fw.-declare the System config (the app cfg. will have a reference to it):
-namespace Szim { struct SimAppConfig; }
+namespace Szim { class SimAppConfig; }
 
 struct OONConfig : Szim::Config
 {

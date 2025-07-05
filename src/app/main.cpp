@@ -11,10 +11,7 @@
 	using std::exception, std::runtime_error;
 
 
-// LAST_COMMIT_HASH is defined here:
-#include "commit_hash.inc" // The build proc. must put it somewhere on the INCLUDE path!
-
-/*!! TESTING ABORT:
+/*!! TESTING `ABORT`:
 void nested_abort()
 {
 	Abort("Explicit abort!"s + " let's see how a string"s + " temporary fares...");
@@ -50,41 +47,23 @@ int main(int argc, char* argv[])
 	auto log_level = log::letter_to_level(args("log-level")[0]); //! `args` dependency...
 	if (log_level) { log::LogMan::instance()->set_level(log_level); }
 
-	//!! Sad kludge util #348...:
-	if (args["?"] || args["h"] || args["help"]) {
-		//!!game.show_cmdline_help();
-		OONApp_sfml::show_cmdline_help(args);
-		return Main.exit_code;
-	} else if (args["V"]) {
-		cout //! This is not a logging feature, that's why it writes directly to stdout.
-			<< "Version: " << LAST_COMMIT_HASH
-//!! The build proc. should just send the VDIR tag in a macro! -> #254
-#ifdef DEBUG
-			<< "-DEBUG"
-#endif
-#ifdef SFML_STATIC
-			<< "-SFML_STATIC"
-#endif
-			<< '\n';
-		return Main.exit_code;
-	}
-
+	//
+	// Go, finally...
+	//
 	Main.exit_code = -1;
-
 	try {
 		Szim::Engine engine(argc, argv); // args for engine init
 			LOGD << "Size of the engine obj.: sizeof(engine) == " << sizeof(engine);
 			LOGD << "Size of the app obj.: sizeof(OONApp_sfml) == " << sizeof(OONApp_sfml);
 		Main.exit_code = engine.run<OONApp_sfml>(argc, argv); // args for app init
-			//! Remember: Main.exit_code won't be set on exceptions!
-
+			//! Remember: Main.exit_code won't be set on exceptions.
 
 		LOGI	<< "Profiling stats:\n"
 			<< "------------------------------------------------------\n"
 			<< "- Use Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n"
 			<< "------------------------------------------------------\n"
 		;
-/*!! TESTING ABORT():
+/*!! TESTING `ABORT`:
 if (argv) {
 	nested_abort();
 	//Bug("Oh, crap!");

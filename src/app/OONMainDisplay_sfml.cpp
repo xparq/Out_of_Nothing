@@ -10,6 +10,8 @@
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW(app) (((Szim::SFML_Backend&)((app).backend)).SFML_window())
 
+#include "Engine/UI.hpp"
+
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
 #include <SFML/Graphics/CircleShape.hpp>

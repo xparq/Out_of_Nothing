@@ -2,9 +2,36 @@
 
 #include "Engine/SimApp.hpp"
 
+#include "Engine/diag/Error.hpp"
+#include "Engine/diag/Log.hpp"
+
 
 namespace Szim {
 
+
+Engine::Engine(int argc, char** argv)
+// Note: not creating an app instance here, because the engine can have (run) more than 1 app during its lifetime actually.
+// Well, at least conceptually.
+	: RuntimeContext(argc, argv)
+{
+	Note("SimEngine initialized.");
+
+	//! Note: no compulsory __create_app here; we're doing lazy 2-stage init!
+}
+
+//--------------------------------------------------------------------
+Engine::~Engine()
+{
+	//!! Don't let ecxeptions leave the dtor, that'd be a gamble against a double-fault termination.
+	try {
+		shutdown();
+		//!! See notes at startup() in run()!
+		//!! Putting shutdown here despite startup() is not in the ctor, for the same reason
+		//!! the create/delete logic is also asymmetrical! (To support deferred/lazy init.)
+	} catch(...) {
+		Bug("Unhandled exception during Engine Shutdown!");
+	}
+}
 
 //--------------------------------------------------------------------
 void Engine::__delete_app_if_implicit()
@@ -59,7 +86,7 @@ void Engine::startup()
 	LOG << "<<< Engine/API initialized. >>>";
 }
 
-//--------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void Engine::shutdown()
 {
 	// Safeguard against multiple calls:
@@ -67,69 +94,146 @@ void Engine::shutdown()
 
 	LOG << "<<< Engine/API shutting down... >>>";
 
+	//!! Take care of properly terminating any App(s) still running...
+	//!!
+	//!! (Well, as the only way to run one is the single-threaded, blocking
+	//!! run(), which already takes care of closing apps anyway, this is
+	//!! not a thing here just yet...)
+	//!!
+	//!! There's also the dilemma from the app's perspective: if it wants
+	//!! to ensure cleanup by calling its own done its dtor, AND we call the same `done` from
+	//!! here before that (i.e. from run(), currently), then there's the
+	//!! burden on them to safeguard against a double delete. :-/
+	//!! We could just "promise" to always cleanup (which would be a soft
+	//!! lie anyway, for various hard breaks we can't handle), but that
+	//!! would probably distort the app cleanup logic somewhat. But that's
+	//!! probably OK, too: the app logic we define here should be in theory
+	//!! agnostic to C++ and RAII; and it wouldn't distort anything for an
+	//!! app e.g. in C... :)
+	//!! So, there's a warning now in SimApp, for the callbacks
+	//!!
+
 	__delete_app_if_implicit(); //!! Belongs to the narrower scope of the executive subsystem, but that doesn't exist yet...
 
 	LOG << "<<< Engine/API shutdown complete. >>>";
 }
 
-//--------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// App lifecycle and process execution orchestrator
+//
+// - The app can request "early" exit, which we query here via `terminated()` — it's a poor man's
+//   exception mechanism; so terminated() signals that the app doesn't want to proceed — either for
+//   an error or normal early exit.
+// - The app is implicitly initialized with a "happy exit code".
+// - The runner first attempts a batch run, which is optional: skipped if its CLI-init returns false.
+//   It can also request termination though.
+// - Then a normal run follows, unless terminated.
+// - All init/done pairs should be matched so that (only) *successful* inits are followed by their
+//   corresponding cleanup pair.
+//   (Note: we may not have created the app instance ourselves, so can't rely on RAII.)
+// - app_->exit_code() should tell whether the result (of a run) was a success or a failure (for reporting)
+// - All the important cases should have some reporting.
+//
+//!! For the lack of any better currently, auto-initializing the engine itself is also done here
+//!! (calling startup()). (Its counterpart, shutdown(), is called from the Engine dtor though.)
+//
 int Engine::__run()
 {
+	//--------------------------------------------------------------------
 	//!! Init the whole engine first...
 	//!! This is obviously not the correct place for it, esp. considering that run() should
 	//!! even become repeatable..., but at least it's not shoved into the default app init
 	//!! any more. :) The ctor would be too early, and offloading this to the user would be very lame.
 	startup();
 	//!! Note: its counterpart, shutdown(), is called by the destructor, though.
+	//--------------------------------------------------------------------
 
 	if (!app_) {
 		Bug("Nice try running nullptr as 'App'!...");
 		return SadFace;
 	}
 
-	// Implicit app pre-init for the app instance (what's left of SimApp::init()):
-	app_->internal_app_init();
-		//!!
-		//!! Handle errors! It currently doesn't signal any, but...
-		//!!
+	// Start with untainted optimism:
 
-//!! To support this "decorated" template init() in the apps the two run() signatures must be allowed
-//!! to be different
-//!!??NEW:	int exit_code = app_->init(std::forward<Args>(app_init_args)...);
-//!!TMP:
-	int exit_code = SadFace;
-	app_->init();
-//!!??		if (app_->terminated()) ...?
-	exit_code = app_->exit_code(); //!! init() should just return that
+		//!! Note: other legacy parts of the system might assume a happy init regardless
+		//!! of what __run() is doing, so as a random act of courtesy, let's verify that
+		//!! it's actually still the case even without us setting it here:
+		assert(app_->exit_code() == SmileyFace);
 
-	if (!app_->terminated() && exit_code == SmileyFace) { //!!?? Or... exit_code may be "dirty" without wanting to exit in the old SimApp design?
-		Note("Application initialized.");
-		LOG << "Engine: App initialized, starting main loop...";
+	app_->exit_code(SmileyFace);
 
+	// Implicit pre-init for the app instance:
+	if (app_->internal_app_init()) {
 
-//!!TMP:
-		exit_code = app_->SimApp::run(); //!!... Take over: move that logic to __run()!
+		// Do a CLI-driven batch run first...
+		//!! NOT the same as headless: CLI can still be interactive!
+		if (app_->init_cli()) {
 
-		// Report
-		if (exit_code == SmileyFace) {
-			Note("Application finished.");
-		} else {
-			Fatal("Application aborted.");
+			Note("Application initialized for CLI/batched operation.");
+			LOG << "Application initialized, starting CLI-automated batch loop...";
+
+//!!TMP: The loop itself should be in the Engine:
+			app_->SimApp::run_cli_batch();
+
+			// Report
+			if (app_->exit_code() == SmileyFace) {
+				if (!app_->terminated()) Note("App CLI batch run finished.");
+				else                     Note("App CLI batch run finished. Skipping normal startup was requested.");
+			} else {
+				if (!app_->terminated()) Error("App CLI batch run failed.");
+				else                     Error("App CLI batch run failed, aborting!");
+			}
+
+			// Cleanup
+			if (app_->done_cli()) {
+				Note("App cleanup after CLI batch run.");
+			} else {
+				Error("Error(s) during cleanup after CLI batch run!");
+			}
 		}
 
-		// App cleanup — regardless of happy or sad run (but not after a failed init)...
-		//! Note: we may not have created the app instance, so can't rely on RAII here!
-		app_->done(); //!!?? What about changing the exit code there? Would people (I) want to do that sometimes?
-		Note("Application cleaned up.");
+		// Normal run... (if not terminated() yet)
+		if (!app_->terminated()) {
 
-		// Cleanup internal app resoures, do "OnExit" tasks etc.
-		app_->internal_app_cleanup();
+			if (app_->init()) {
+
+				Note("Application initialized.");
+				LOG << "Application initialized, starting main event loop...";
+
+//!!TMP: The loop itself should be in the Engine:
+				app_->SimApp::run();
+
+				// Report
+				if (app_->exit_code() == SmileyFace) {
+					Note("Application finished.");
+				} else {
+					if (!app_->terminated()) Error("Application finished with non-zero exit code.");
+					else               Error("Application aborted.");
+				}
+
+				// Cleanup
+				if (app_->done()) {
+					Note("Application cleaned up.");
+				} else {
+					Error("Error(s) during application cleanup!");
+				}
+
+			} else {
+				Error("Application setup failed!");
+			}
+		}
+
+		// Cleanup internal app resoures
+		if (!app_->internal_app_cleanup()) {
+			Error("Error(s) during internal application cleanup!");
+		}
 
 	} else {
-		Fatal("Application setup failed.");
+		Error("Internal application process setup failed!");
 	}
 
-	return exit_code;
+	// Single-path exit:
+	return app_->exit_code();
 }
 
 

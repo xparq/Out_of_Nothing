@@ -2,11 +2,20 @@
 #define _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
 #include "_build_cfg.h"
 
-#include "Engine/RuntimeContext.hpp"
+//#include "Engine/RuntimeContext.hpp" //!! Try to avoid including it here; it's a heavy one!
 //#include "Engine.hpp"
 
+namespace Szim {
+	class RuntimeContext;
+	class SimAppConfig;
+	class Backend;
+}
+namespace sfw {
+	class GUI;
+}
+
 #include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
-#include "Backend.hpp"
+#include "Backend.hpp" // E.g. for convenience accessors of backend components
 #include "SimAppConfig.hpp"
 #include "SessionManager.hpp"
 #include "Time.hpp"
@@ -15,8 +24,8 @@
 
 //!!... The UI and IO etc. are gonna be tough to abstract...
 //!!namespace sfw { class GUI; }
-#include "sfw/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
-                      //!! (mostly?) client .cpps that use should include it individually!)
+//!!#include "sfw/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
+//!!                      //!! (mostly?) client .cpps that use should include it individually!)
 //!!#include "Engine/UI/HUD.hpp"
 #include "Engine/UI/Input.hpp"
 #include "Metamodel.hpp"
@@ -54,21 +63,46 @@ class SimApp // Universal Sim. App Base ("Engine Controller")
 //----------------------------------------------------------------------------
 // API...
 //----------------------------------------------------------------------------
+
 public:
-	//!!virtual... -> #348
-	static void show_cmdline_help(const Args& args, const char* description = nullptr);
+	// Callbacks to be (re)implemented by the app:
+	//! NOTE to App developers: *DO NOT* CALL THESE YOURSELF! The engine will orchestrate them.
 
-	void internal_app_init();
-	void internal_app_cleanup();
+	virtual bool show_cmdline_help(const Args& args, const char* description = nullptr); // false: exit the app, true: continue
 
-	// Overridables to be (re)implemented by the app:
-	virtual void init() {} // Call request_exit(exit_code) to schedule for aborting!
-	virtual void done() {} // Optional cleanup; will not be called if init() was aborted.
+	virtual bool init()     { return true; } // true: no errors, proceed; false: failure, abort (no run(), no done())
+	virtual bool done()     { return true; } // Optional,leanup; true: no errors (to report... not much else to do there!
+	virtual bool init_cli() { return true; } // Optional init for CLI-only (bac(h) mode (used for run_cli_batch);)
+	                                         // false: skip the CLI run — incl. the built-in "standard" cmdline processing for /? /V etc.!
+	virtual bool done_cli() { return true;}  // true: no errors (to report... not much else to do there!)
+
+
 	virtual void init_world() { world().init(*this); } //!!TODO: Called by the default init(), before the 1st update_world().
+	virtual void get_control_inputs() {} // The impl. should read inputs and update an (abstracted) controller state from those
+	                                     // (well, for its own opaque use, so it's kinda academic... ;) ).
+		//!! The passing of time should probably also be just another input! (It very much is an "event" in every system.)
+		//!! The advantage of defining it so is that it could simplify freezing time altogether;
+		//!! model changes could be skipped (note: time-agnostic control inputs should still trigger actions!),
+		//!! and an in-game time freeze could be decoupled from a slightly different, low-(engine-)level "hard pause";
+		//!! rendering could be optimized to only deal with "off-band" updates; and also: event recording
+		//!! would then automatically cover time logging for replay.
+		//!! The disadvantage is that the rather isolated, "pristine" time control system would need to come out
+		//!! from its current ivory tower and mingle...
+	virtual bool react_to_control_inputs() { return false; } // Calculate/queue actions — no exhaustive model changes here yet!
+		// true: actions taken, follow-up needed
+		// false: inputs ignored, follow-up not needed (may be used to optimize model updates)
+		//!! CURRENTLY UNUSED; NEVER CALLED BY THE ENGINE!
+		//!! The engine's main loop is not fine-grained (...rigid?) enough to (micro?)manage this yet(?).
+		//!! However, this looks like an idiom/pattern important/practical enough to codify...
 	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
-	virtual void poll_controls() {}
-	virtual bool perform_control_actions() { return false; } // false means no model changes
 
+	// These two are also callbacks (also from the Engine), but NOT to be reimplemented. ;)
+	// (They just setup/cleanup internal and pre-digested exported app-specific state, before/after
+	// the app-level init/done.)
+	bool internal_app_init(); // false: abort the app (don't proceed to init())
+	bool internal_app_cleanup(); // false: failed (-> reporting)
+
+	//!!MOVE TO THE ENGINE:
 	unsigned fps_throttling(unsigned fps = unsigned(-1));
 		// Set or query the FPS limit (the default -1 means query)
 		//!! std::optional couldn't help eliminate it altogether
@@ -76,6 +110,8 @@ public:
 	void fps_throttling(bool newstate);
 		// Enable/disable configured FPS limit
 
+	//!!MOVE TO THE ENGINE:
+	int run_cli_batch();
 	int run();
 		// Auto-inits (via calling init()), unless init(...) has been explicitly called
 		// already by the app.
@@ -85,8 +121,7 @@ public:
 	void request_exit(int exit_code = 0); // (The code set by the last request_exit(x) will win.)
 	bool terminated() const { return _terminated; }
 	int  exit_code() const { return _exit_code; } // The code set by the last request_exit(x), or 0
-	//!!TBD: Setting it directly without request_exit(x):
-	//int|void exit_code(int exit_code) { return _exit_code = exit_code; }
+	int  exit_code(int exit_code) { return _exit_code = exit_code; }
 
 	void pause(bool newstate = true);
 	auto paused() const { return time.paused; }
@@ -218,11 +253,14 @@ public:
 // Internals...
 //------------------------------------------------------------------------
 protected:
-	//!! Migrate the Engine-ish impl. parts here and remove the `abstractness`:
+	//!! Migrate the Engine-ish impl. parts and remove the `abstractness` of the ifc.:
 	virtual void event_loop() = 0;
 	virtual void update_thread_main_loop() = 0;
 	virtual void updates_for_next_frame() = 0;
-	virtual void onResize(unsigned /*width*/, unsigned /*height*/) {}
+
+	virtual void onResize(unsigned /*width*/, unsigned /*height*/) {} //!! WTF even is this? :)
+	                                                                  //!! I guess window-resize for the full-screen toggle...
+
 	//--------------------
 	// Rendering... (See also main_view()!)
 	virtual void draw() = 0;
@@ -232,6 +270,9 @@ protected:
 
 //----------------------------------------------------------------------------
 // C++ mechanics...
+//
+// - Note: the Engine tries to not impose/assume most of it, so anything C++
+//   specific is internal business of the app implementation.
 //----------------------------------------------------------------------------
 public:
 	SimApp(RuntimeContext& runtime, int argc, char** argv, View::ScreenView& main_view);

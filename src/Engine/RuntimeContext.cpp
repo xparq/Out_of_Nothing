@@ -47,7 +47,7 @@ RuntimeContext::RuntimeContext(int argc, char** argv)
 	) // cfg
 
 	// Bootstrap the backend...
-	, backend(SFML_Backend::use(cfg))
+	, backend(SFML_Backend::use(cfg)) // `use` returns a ref to a (static) singleton
 	// Init the GUI...
 	, gui(((SFML_Backend&)backend).SFML_window(),
 		{

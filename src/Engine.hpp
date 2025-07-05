@@ -1,15 +1,14 @@
 ﻿#pragma once
 
 // The App interface (SimApp base):
-//#include "Engine/SimApp.hpp"
 namespace Szim { class SimApp; };
+//#include "Engine/SimApp.hpp"
 
 // The Engine API exposed to the app:
 #include "Engine/RuntimeContext.hpp"
 
+//! For the templated implementations:
 #include "Engine/diag/Error.hpp"
-#include "Engine/diag/Log.hpp"
-
 #include <utility>
 #include <cassert>
 
@@ -59,30 +58,10 @@ public: //!!?? Maybe I can actually get away with the convention of no pre-/post
 
 public:
 	//--------------------------------------------------------------------
-	Engine(int argc, char** argv)
-	// Note: not creating an app instance here, because the engine can have (run) more than 1 app during its lifetime actually.
-	// Well, at least conceptually.
-		: RuntimeContext(argc, argv)
-	{
-		Note("SimEngine initialized.");
-
-		//! Note: no compulsory __create_app here; we're doing lazy 2-stage init!
-	}
-
-	//--------------------------------------------------------------------
-	~Engine()
-	{
-		//!! Don't let ecxeptions leave the dtor, that'd be a gamble against a double-fault termination.
-		try {
-			shutdown();
-			//!! See notes at startup() in run()!
-			//!! Putting shutdown here despite startup() is not in the ctor, for the same reason
-			//!! the create/delete logic is also asymmetrical! (To support deferred/lazy init.)
-		} catch(...) {
-			Bug("Unhandled exception during Engine Shutdown!");
-		}
-	}
-
+	Engine(int argc, char** argv);
+		// Not creating an app instance here, because the engine can have (run) more than 1 during its lifetime.
+		// (Well, at least that's the plan.) Also, we're doing a 2-stage lazy init anyway.
+	~Engine();
 
 	//--------------------------------------------------------------------
 	void startup();

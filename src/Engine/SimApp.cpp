@@ -14,8 +14,8 @@
 #include "sz/sys/fs.hh"
 	using sz::prefix_if_rel;
 
-#include <format>
-	using std::format;
+//#include <format>
+//	using std::format;
 #include <iostream>
 	using std::cout, std::endl; // For normal user-facing output
 #include <thread>
@@ -31,10 +31,14 @@
 #include "sz/lang/IGNORE.hh"
 
 
+// LAST_COMMIT_HASH is defined here:
+#include "commit_hash.inc" //! The build proc. is expected to put it on the INCLUDE path.
+
+
 namespace Szim {
 
 //============================================================================
-void SimApp::show_cmdline_help(const Args& args, const char* banner)
+bool SimApp::show_cmdline_help(const Args& args, const char* banner)
 {
 	std::string descr;
 
@@ -54,10 +58,11 @@ Options:
 )";
 
 	cout << banner << descr;
+	return false;
 }
 
 //----------------------------------------------------------------------------
-void SimApp::internal_app_init()
+bool SimApp::internal_app_init()
 //
 // Internal engine init, called from the ctor...
 //
@@ -68,13 +73,14 @@ void SimApp::internal_app_init()
 
 	// Guard against multiple calls (which could happen if *not* overridden: once from the ctor,
 	// and then again from run(), or if the app (main) calls it explicitly):
-	static auto done = false; if (done) return; else done = true; // The exit code may have already been set!
+	static auto done = false; if (done) return true; else done = true; // The exit code may have already been set!
 
-
+	//
 	// Apply the config...
+	//
 	// - Some args aren't yet (!!?? can't/shouldn't be?) handled by SimAppConfig itself.
 	// - Misc. fixup...
-
+	//
 
 	// Time control...
 	iterations.max(cfg.iteration_limit);
@@ -108,12 +114,41 @@ void SimApp::internal_app_init()
 
 
 	LOGD << "SimApp::internal_app_init finished.";
+	return true;
 }
 
 //----------------------------------------------------------------------------
-void SimApp::internal_app_cleanup()
+bool SimApp::internal_app_cleanup()
 {
 	LOGD << "SimApp::internal_app_cleanup...";
+	return true;
+}
+
+
+//----------------------------------------------------------------------------
+// Process the cmdline for "actionable" items...
+int SimApp::run_cli_batch()
+{
+	//!! But taking actual actions should be done *after* normal app init, though! :-o
+	if (args["?"] || args["h"] || args["help"]) {
+		if (!show_cmdline_help(args)) { //! false here means "agree to exit"!
+			request_exit(0);
+		}
+	} else if (args["V"]) {
+		cout //! This is not a logging feature, that's why it writes directly to stdout.
+			<< "Version: " << LAST_COMMIT_HASH
+//!! The build proc. should just send the VDIR tag in a macro! -> #254
+#ifdef DEBUG
+			<< "-DEBUG"
+#endif
+#ifdef SFML_STATIC
+			<< "-SFML_STATIC"
+#endif
+			<< '\n';
+		//request_exit(0);
+	}
+
+	return exit_code();
 }
 
 //----------------------------------------------------------------------------

@@ -32,24 +32,27 @@ friend class Model::World; //!! Later: Not the generic, but the app-specific par
 // Config/Setup...
 //----------------------------------------------------------------------------
 public:
-	static void show_cmdline_help(const Args& args, const char* banner = nullptr);
+	bool show_cmdline_help(const Args& args, const char* banner = nullptr) override; // false: exit afterwards
 
 protected:
-	void init() override;
-	void done() override;
+	bool init() override;
+	bool done() override;
+	bool init_cli() override;
+	bool done_cli() override;
 
 //----------------------------------------------------------------------------
 // Operations...
 //----------------------------------------------------------------------------
 public:
 	//--------------------------------------------------------------------
-	// Player actions...
+	void  get_control_inputs() override; // Callback from SimApp
 
-	void  poll_controls() override;
-	bool  perform_control_actions() override; // true if there have been some actions
+	//!! This might become a std. part of the interface
+	bool  react_to_control_inputs() override; //!! NOT ACTUALLY CALLED BY THE ENGINE YET! We just call it ourselves for now...
+		// true: actions taken, follow-up needed
+	        // false: inputs ignored, follow-up not needed
 
 	// OON gameplay actions...
-
 	virtual void spawn(EntityID parent = 0, unsigned n = 1);      //!! requires: 0 == player_entity_ndx()
 	void exhaust_burst(EntityID base_entity = 0, /* Math::Vector2f thrust_vector, */unsigned n = 20);
 	void chemtrail_burst(EntityID emitter = 0, unsigned n = 10);
@@ -70,7 +73,7 @@ public:
 	// View control
 	//
 	// NOTE: panning is camera movement in screen coordinates, auto-converted to world coords.
-	void pan_view(sfw::fVec2 delta);
+	void pan_view(float delta_x, float delta_y);
 	void pan_view_x(float delta);
 	void pan_view_y(float delta);
 	void pan_view_reset();
@@ -201,8 +204,6 @@ protected:
 	//!!} ui;
 	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
 	virtual UI::HUD& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
-	using GravityModeSelector = sfw::OptionsBox<Model::World::GravityMode>;
-
 
 	// Chores after loading a new model world:
 	void _on_snapshot_loaded(); // Updates the UI etc.

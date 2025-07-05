@@ -1,7 +1,5 @@
 #include "OON.hpp"
-
-#include "sfw/GUI.hpp" //!! Used to be in OONApp only, but since scroll_locked() requires it...
-                       //!! (And sooner or later it must be usable unrestricted anyway!
+#include "OON_UI.hpp" // GravityModeSelector
 
 //#include "Engine/diag/Error.hpp"
 //#include "Engine/diag/Log.hpp"
@@ -59,6 +57,9 @@ void OONApp::_on_snapshot_loaded()
 	using namespace sfw;
 
 	if (!cfg.headless) {
+
+		//!! Move these to OON_UI, and only call those here, instead of the direct UI manip.!
+
 		// Grav. mode:
 		//!! The grav. bias widget can only do +/-1000x, so no clean mapping from gravity_strength to that! :-/
 		gui.set<GravityModeSelector>("Gravity mode", world().gravity_mode);
