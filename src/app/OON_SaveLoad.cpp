@@ -56,7 +56,8 @@ void OONApp::_on_snapshot_loaded()
 	//
 	using namespace sfw;
 
-	if (!cfg.headless) {
+	if (!cfg.headless) { //!! This swouldn't be handled in this scattered manner... :-/
+	                     //!! (See also at the HCI/Window adapter, or the disabling of the main event loop...)
 
 		//!! Move these to OON_UI, and only call those here, instead of the direct UI manip.!
 

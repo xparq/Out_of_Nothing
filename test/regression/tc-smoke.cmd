@@ -29,7 +29,7 @@ set oon_use_exe=%1
 
 %SZ_PRJDIR%/tooling/diag/wtime %SZ_PRJDIR%/run-latest ^
 --headless ^
---cfg=test/default.cfg --snd=off ^
+--cfg=test/default.cfg ^
 --interact ^
 --friction=0.01 ^
 --zoom-adjust=0.2 ^

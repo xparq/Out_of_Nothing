@@ -236,7 +236,10 @@ DBGTRACE;
 		//! - The thread ctor would *copy* its params (by default), which would be kinda wonky for the entire app. ;)
 #endif
 
-	if (!cfg.headless) {
+	if (!cfg.headless) { //!! This needs a more systematic treatment than being scattered all across everywhere...
+	                     //!! E.g. the event queue shuld still be left running, to allow it to be fed with automated
+			     //!! fake events, and should be easy to non-interactively exit that way, too, in addition to
+			     //!! the current cycle count limiting cmdline option.
 		event_loop();
 	} else {
 		// Manually loop the updates if no threading:

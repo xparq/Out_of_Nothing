@@ -180,10 +180,6 @@ void Engine::startup()
 		},
 		false // Don't manage the window
 	);
-	if (syscfg->headless) { //!! Should have app-level control ("too"?)!
-		gui->disable();
-		_BootLOG_ "HEADLESS mode (with no HCI) activated.";
-	}
 
 	//
 	// Audio...
@@ -191,6 +187,23 @@ void Engine::startup()
 	_BootLOG_ "Initializing Audio...";
 	if (syscfg->start_muted) //!! Should have app-level control ("too"?)!
 		backend->audio.enabled(false);
+
+	//
+	// HEADLESS mode: disable the human interfaces (HCI)! (-> #271)
+	//
+	// Can't just skip the entire GUI/audio etc. init, because the app would need to be
+	// rewritten then at a million places, where it accesses those subsystems directly...
+	//
+	//!! The app should also have better control over this anyway. It does have at least
+	//!! `App/Base.cfg.headless` currently, and does things accordingly (like disabling the
+	//!! event loop), but the whole abstraction is weak and dangling; it's not reflected
+	//!! (communicated) clearly in the code at all.
+	//
+	if (syscfg->headless) {
+		gui->disable();
+		backend->audio.enabled(false);
+		_BootLOG_ "HEADLESS mode (with no HCI) activated.";
+	}
 
 
 	__engine_initialized_ = true;
