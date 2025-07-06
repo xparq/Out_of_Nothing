@@ -2,14 +2,18 @@
 
 // The App interface (SimApp base):
 namespace Szim { class SimApp; };
-//#include "Engine/SimApp.hpp"
+//#include "Engine/App.hpp"
 
-// The Engine API exposed to the app:
+// The Engine API exposed to the app
 #include "Engine/RuntimeContext.hpp"
 
+// Special-casing these to not be u.ptr like the others (it was too much annoyance for too little):
+#include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
+
+#include <memory> // unique_ptr
 //! For the templated implementations:
 #include "Engine/diag/Error.hpp"
-#include <utility>
+#include <utility> // forward
 #include <cassert>
 
 
@@ -18,8 +22,10 @@ namespace Szim {
 	constexpr inline int SmileyFace = 0;
 	constexpr inline int SadFace = -1;
 
-class Engine : public RuntimeContext
+class Engine //!!: public RuntimeContext
 {
+	bool    __engine_initialized_ = false; // Flipped to true in startup(), just for debugging/asserting...
+
 public: //!!?? Maybe I can actually get away with the convention of no pre-/postfix underscore in *public* member names (just like in classic structs)...?
 
 	SimApp* app_ = nullptr; // Not App* to a) enforce using the SimApp interface, and b) minimize knowledge about App even within this class!
@@ -28,15 +34,64 @@ public: //!!?? Maybe I can actually get away with the convention of no pre-/post
 	bool    app_implicitly_created_ = true;
 
 
+	// Services impl. Move these from this generic class to a shed in the shade!
+	//!!std::unique_ptr<Args> args;
+	//!! Just too much hassle to make this also a uniq.ptr:
+	Args args;
+	std::unique_ptr<EngineConfig> syscfg;
+	//!!std::unique_ptr<Backend> backend;
+	//!! Just too much hassle to make this also a uniq.ptr:
+	Backend* backend; // Static singleton from a factory (::use(...))...
+	                  //!! But can't be a ref, as it will be initialized later in startup(), not the ctor!
+	std::unique_ptr<sfw::GUI> gui;
+
+/*!! This is probably just a dream, without eventually needing to #include SimApp here...:
+	//--------------------------------------------------------------------
+	// Hybrid Comp.-time/Runtime polymorphic interface to App's init(...)
+	//
+	// - If init(...) matches <Args>, it is called.
+	// - If it doesn't, init() is called.
+	//   Since App is derived from SimApp, it's always available.
+	//   (And, of course, it can also be freely overridden.)
+	//
+	// Note: App is passed as a param, for ADT, rather than using the
+	//       internal app_ pointer, which is type-erased to SimApp.
+	//
+	template<typename App, typename... Args> requires
+		requires(App& app, Args&&... args) {
+			{ app.init(std::forward<Args>(args)...) };
+		}
+	auto __call_app_init(App& app, Args&&... args)\
+	{
+		return app.init(std::forward<Args>(args)...);
+	}
+	// Fallback to the classic virtual override in the app base:
+	template<typename App, typename... Args> requires
+		(!requires(App& app, Args&&... args) {
+			{ app.init(std::forward<Args>(args)...) };
+		})
+	auto __call_app_init(App& app, Args&&...)
+	{
+		return app.init();  // possibly virtual
+	}
+!!*/
 	//--------------------------------------------------------------------
 	// Apart from the run() API, this is (currently) the only place that need to know about the real App type,
 	// in order to construct it.
 	template<class App, typename... Args>
-	void __create_app_implicitly(Args&&... app_init_args) //!! Sorry about yet another level of templated forwarding cringe!...
+	void __create_app_implicitly(Args&&... app_init_args)
 	{
+		assert(__engine_initialized_);
 		assert(!app_);
 
-		app_ = new App(*this, std::forward<Args>(app_init_args)...);
+		app_ = new App(
+			RuntimeContext{
+				args, // regular member
+				*syscfg, // unique_ptr
+				*backend, // plain ptr
+				*gui  // unique_ptr
+			},
+			std::forward<Args>(app_init_args)...);
 
 		if (app_) {
 			app_implicitly_created_ = true;
@@ -58,7 +113,7 @@ public: //!!?? Maybe I can actually get away with the convention of no pre-/post
 
 public:
 	//--------------------------------------------------------------------
-	Engine(int argc, char** argv);
+	Engine(int argc, char** argv); // Just store the args for the actual init in startup()...
 		// Not creating an app instance here, because the engine can have (run) more than 1 during its lifetime.
 		// (Well, at least that's the plan.) Also, we're doing a 2-stage lazy init anyway.
 	~Engine();
@@ -72,10 +127,14 @@ public:
 	template<class App, typename... Args>
 	int run(App& app, Args&&... app_init_args)
 	{
+		startup(); // We may have just arrived to the engine for the first time!
+
 		//!!return __run(app, std::forward<Args>(app_init_args)...);
 		//!! Ahh, but it can't be templated, as __run needs to go into a separate TU!... :-/
 		//!! Fortunately, if we take an existing App, we can expect it to have been initialized already
-		//!! with its custom-args ctor, so __run() can just go aghead and call its uniform init()!
+		//!! with its custom-args ctor, so __run() can just go ahead and call its uniform init()!
+
+		//!! __call_app_init(app, std::forward<Args>(app_init_args))
 
 		return __run();
 	}
@@ -85,6 +144,8 @@ public:
 	template<class App, typename... Args>
 	int run(Args&&... app_init_args)
 	{
+		startup(); // We may have just arrived to the engine for the first time!
+
 		if (app_) { // Did I mention repeated app runs?... ;)
 		            // Note: not just assert(), as this is a serious moment in all of our lives,
 		            // and we have all the freedom here to stop and ponder also in NDEBUG.

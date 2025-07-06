@@ -2,17 +2,19 @@
 #define _LKLWSJHEWIOHFSDIUGWGHWRTW2245_
 #include "_build_cfg.h"
 
-//#include "Engine/RuntimeContext.hpp" //!! Try to avoid including it here; it's a heavy one!
-//#include "Engine.hpp"
+//#include "Engine.hpp" //!! Try to avoid including it here; it's a heavy one!
+#include "Engine/RuntimeContext.hpp"
 
 namespace Szim {
-	class RuntimeContext;
 	class SimAppConfig;
 	class Backend;
 }
-namespace sfw {
-	class GUI;
-}
+#include "Engine/UI-fw.hpp"
+	/*
+	namespace sfw {
+		class GUI;
+	}
+	*/
 
 #include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
 #include "Backend.hpp" // E.g. for convenience accessors of backend components
@@ -275,7 +277,7 @@ protected:
 //   specific is internal business of the app implementation.
 //----------------------------------------------------------------------------
 public:
-	SimApp(RuntimeContext& runtime, int argc, char** argv, View::ScreenView& main_view);
+	SimApp(const RuntimeContext& runtime, int argc, char** argv, View::ScreenView& main_view);
 	virtual ~SimApp();
 
 	SimApp(const SimApp&) = delete;
@@ -284,10 +286,10 @@ public:
 // Data...
 //----------------------------------------------------------------------------
 public: //!!TODO: finish the migration to Engine/RuntimeContext!
-	RuntimeContext& runtime;
+	RuntimeContext runtime;
 
 protected:
-	Args args;
+	Args& args;
 
 public: // E.g. the renderer still needs these...
 	SimAppConfig& cfg;

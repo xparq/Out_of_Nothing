@@ -1,3 +1,5 @@
+//!! MOVE THIS TO A "generic" or "foundations" space under the Engine! -> #632
+
 #ifndef _298745SLKWERKJUEIUYCUIUIE12346_
 #define _298745SLKWERKJUEIUYCUIUIE12346_
 
@@ -26,9 +28,9 @@ public:
 	//!! Support comfy cfg "tagging" (profile selection), at least by filename! (And then rename the cfg_path param to _tag or _uri or sg.)
 
 	// Calls select(), throws on error (if cfg_path is not empty, but couldn't be loaded)
-	Config(std::string_view cfg_path,  //!!?? = "" to allow default empty init with a later select()?
-	       Config* base = nullptr,     // Optional chained "base" cfg. instance for defaults
-	       std::string defaults = "",  // Last-ditch built-in defaults (as raw cfg. text)
+	Config(std::string_view cfg_path,    //!!?? = "" to allow default empty init with a later select()?
+	       const Config* base = nullptr, // Optional chained "base" cfg. instance for defaults
+	       std::string defaults = "",    // Last-ditch built-in defaults (as raw cfg. text)
 	       const Callback& post_load = [](auto&&...) {});
 
 	~Config();
@@ -45,21 +47,21 @@ public:
 	//--------------------------------------------------------------------
 	// Typed getters...
 	//--------------------------------------------------------------------
-	const char* get(std::string_view name, const char* def = "") noexcept; // 'name' can also be "section/name" //!!?? Only for this one, or is this just a misplaced comment?!
-	std::string get(std::string_view name, const std::string& def) noexcept { return get(name, def.c_str()); }
+	const char* get(std::string_view name, const char* def = "")   const noexcept; // 'name' can also be "section/name" //!!?? Only for this one, or is this just a misplaced comment?!
+	std::string get(std::string_view name, const std::string& def) const noexcept { return get(name, def.c_str()); }
 	//!! Jesuschrist (C++ again), get("...", "default") won't select the string version above,
 	//!! but rather some of the numbers below, without the const char* variant!... :-/
-	bool        get(std::string_view name, bool def) noexcept;
-	int         get(std::string_view name, int def) noexcept;
-	unsigned    get(std::string_view name, unsigned def) noexcept;
-	float       get(std::string_view name, float def) noexcept;
-	double      get(std::string_view name, double def) noexcept;
+	bool        get(std::string_view name, bool def)     const noexcept;
+	int         get(std::string_view name, int def)      const noexcept;
+	unsigned    get(std::string_view name, unsigned def) const noexcept;
+	float       get(std::string_view name, float def)    const noexcept;
+	double      get(std::string_view name, double def)   const noexcept;
 	//! Alas, only one of these can meaningfully omit the 2nd arg to not be ambiguous!
 
 	//--------------------------------------------------------------------
 	// Misc. queries...
 	//--------------------------------------------------------------------
-	std::string current() const noexcept; // empty() means using .defaults
+	std::string current()   const noexcept; // empty() means using .defaults
 	std::string base_path() const noexcept { return _cfg_base_path; }
 
 //----------------------------------------------------------------------------
@@ -83,7 +85,7 @@ public:
 private:
 	friend class Config_impl;
 	Config_impl* _impl;
-	Config* _base = nullptr;     // Optional chained fallback instance for queries
+	const Config* _base = nullptr;     // Optional chained fallback instance for queries
 
 	std::string _current_config; // path (string)
 	std::string _cfg_base_path; //!!TBD: append trailing (back)slash? BEWARE:

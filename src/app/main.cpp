@@ -58,6 +58,10 @@ int main(int argc, char* argv[])
 		Main.exit_code = engine.run<OONApp_sfml>(argc, argv); // args for app init
 			//! Remember: Main.exit_code won't be set on exceptions.
 
+		// Alternatively, if the (SimApp-derived) app is created outside the engine (e.g. here):
+		// MyApp app(engine.context());
+		// Main.exit_code = engine.run<OONApp_sfml>(app, argc, argv);
+
 		LOGI	<< "Profiling stats:\n"
 			<< "------------------------------------------------------\n"
 			<< "- Use Tracy (and build with `CFLAGS_=-DTRACY_ENABLE`)!\n"

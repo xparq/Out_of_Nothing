@@ -21,7 +21,7 @@ namespace Szim {
 using namespace std;
 
 //----------------------------------------------------------------------------
-Config::Config(std::string_view cfg_path, Config* base, std::string defaults, const Callback& post_load)
+Config::Config(std::string_view cfg_path, const Config* base, std::string defaults, const Callback& post_load)
 	: _base(base)
 	, defaults(defaults)
 {
@@ -71,11 +71,11 @@ std::string Config::current() const noexcept
 // Supported typed getters
 //----------------------------------------------------------------------------
 //!!...string   Config::get(string_view prop, const char* def) noexcept { return _impl->_get(prop, string(def)); }
-const char*   Config::get(string_view prop, const char* def) noexcept { return _impl->_get(prop, def); }
-bool     Config::get(string_view prop, bool def)        noexcept { return _impl->_get(prop, def); }
-int      Config::get(string_view prop, int def)         noexcept { return _impl->_get(prop, def); }
-unsigned Config::get(string_view prop, unsigned def)    noexcept { return _impl->_get(prop, def); }
-float    Config::get(string_view prop, float def)       noexcept { return _impl->_get(prop, def); }
-double   Config::get(string_view prop, double def)      noexcept { return _impl->_get(prop, def); }
+const char*   Config::get(string_view prop, const char* def) const noexcept { return _impl->_get(prop, def); }
+bool     Config::get(string_view prop, bool def)             const noexcept { return _impl->_get(prop, def); }
+int      Config::get(string_view prop, int def)              const noexcept { return _impl->_get(prop, def); }
+unsigned Config::get(string_view prop, unsigned def)         const noexcept { return _impl->_get(prop, def); }
+float    Config::get(string_view prop, float def)            const noexcept { return _impl->_get(prop, def); }
+double   Config::get(string_view prop, double def)           const noexcept { return _impl->_get(prop, def); }
 
 } // namespace Szim

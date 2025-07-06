@@ -1,4 +1,5 @@
-#include "SimAppConfig.hpp"
+#include "Engine/SimAppConfig.hpp"
+
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/sys/fs.hh"
 	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;

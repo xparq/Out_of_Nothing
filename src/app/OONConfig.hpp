@@ -72,7 +72,7 @@ struct OONConfig : Szim::Config
 	unsigned shield_burst_particles; // new particles/frame (normalized to 30FPS)
 
 	//----------------------------------------------------------------------------
-	OONConfig(Szim::SimAppConfig& syscfg, const Args& args);
+	OONConfig(const Szim::SimAppConfig& syscfg, const Args& args);
 	OONConfig(const OONConfig&) = delete; // Could actually be copied _now_, but I'll forget, and make mistakes...
 };
 

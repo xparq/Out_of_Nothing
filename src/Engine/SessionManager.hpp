@@ -64,11 +64,10 @@ public:
 	void set_save_as_filename(const std::string& fn);
 
 protected:
-	SimApp& app; //!! Generic (SimApp-level) "sysapp" (i.e. "process", rather,
-	             //!! as no access to "real" client app stuff from here (yet?...
-		     //!! as derived SessionManagers may have it; similarly specialized
-		     //!! like SimAppConfig, but also with a ref to the client app)
-		     //!! Not sure it's a good idea to go that way at all though...
+	SimApp& app; //!! No access to the real client app type from here (yet?...
+		     //!! as derived SessionManagers might have it; similarly specialized
+		     //!! like SimAppConfig, but also with a ref to the client app;
+		     //!! or perhaps even templated... Not sure it's a good idea though.
 		     //!! Probably much better to call overridden virtuals for things
 		     //!! like "build new default app state" for a new session etc.
 

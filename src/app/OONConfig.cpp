@@ -23,9 +23,9 @@ using namespace Szim;
 using namespace std;
 
 //----------------------------------------------------------------------------
-OONConfig::OONConfig(Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& args) :
+OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& args) :
 	Config(sz::prefix_if_rel(syscfg.base_path(), "OON.cfg"), &syscfg), // Also chain to syscfg!
-	syscfg(syscfg) //!! Just for convenience, as chaining already sets it as the '_base' ptr...
+	syscfg(syscfg) //!! Config has just chained to it, but its '_base' ptr is private! :-/
 {
 	// 1. Preset hardcoded baseline defaults...
 	// ...Well, just default them in one step with loading; see below!

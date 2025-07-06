@@ -76,7 +76,7 @@ namespace _internal {
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 //----------------------------------------------------------------------------
-OONApp_sfml::OONApp_sfml(RuntimeContext& runtime, int argc, char** argv)
+OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime, int argc, char** argv)
 	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
 	, OONApp(runtime, argc, argv, _oon_view._oon_main_view) //!! Ugh...
 #ifndef DISABLE_HUDS
@@ -114,6 +114,7 @@ OONApp_sfml::OONApp_sfml(RuntimeContext& runtime, int argc, char** argv)
 		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)})
 #endif
 {
+//std::cerr << "--- OONApp_sfml ctor" << std::endl;
 }
 
 //----------------------------------------------------------------------------

@@ -38,9 +38,9 @@ using namespace std;
 
 
 //----------------------------------------------------------------------------
-OONApp::OONApp(RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
+OONApp::OONApp(const RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
 	: SimApp(runtime, argc, argv, main_view)
-	, appcfg(cfg, args) //!! appcfg(SimApp::syscfg)
+	, appcfg(SimApp::runtime.syscfg, args)
 {
 //!! This shouldn't be needed, the engine should take care of it: #462!
 //!! And the view resize should also implicitly take care of any camera adjustments, too, so

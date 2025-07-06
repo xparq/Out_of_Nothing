@@ -1,6 +1,8 @@
-﻿#include "SimApp.hpp"
+﻿//!!OLD:
+#include "Engine/SimApp.hpp"
+//!!NEW: #include "Engine/App/Base.hpp"
 
-#include "View/ScreenView.hpp"
+#include "Engine/View/ScreenView.hpp"
 
 #include "sz/str.hh"
 //	using sz::to_bool
@@ -25,8 +27,8 @@
 //#include <stdexcept>
 //	using std::runtime_error;
 
-#include "diag/Error.hpp"
-#include "diag/Log.hpp"
+#include "Engine/diag/Error.hpp"
+#include "Engine/diag/Log.hpp"
 #include "sz/DBG.hh" // My old debug macros for DEBUG builds
 #include "sz/lang/IGNORE.hh"
 
@@ -38,29 +40,50 @@
 namespace Szim {
 
 //============================================================================
-bool SimApp::show_cmdline_help(const Args& args, const char* banner)
+//----------------------------------------------------------------------------
+// SimApp ctor.
+//
+// NOTE: Most init must be done in the member init list, because the `backend`
+//      member is polymorphic, and our only chance to set it to the proper type
+//      is there! And it requires prior init. of the config, too. Which requires
+//      `args` to be initialized as well. And then, if we are at it, I just put
+//      the GUI init there, too, for good measure...
+//      (The ctor still has work left to do, so its body is not empty though.)
+//
+SimApp::SimApp(const RuntimeContext& rt, int argc, char** argv, View::ScreenView& main_view)
+	: runtime(rt)
+	, args(rt.args)
+	, cfg(rt.syscfg) //!! <- .cfg is still the engine config, despite its old, confusing name!
+	, backend(rt.backend)
+	, gui(rt.gui)
+//!!TODO:
+	, _main_view(main_view)
+//!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(main_window())}
+	, session(*this/*!!, args("session")!!*/)
 {
-	std::string descr;
-
-	if (!banner) {
-		banner = "\"Intuition\" - Simulation engine and app. dev. framework\n";
-	}
-
-	descr = R"(
-Usage:)"; descr += args.exename(); descr += " [options...]\n";
-	descr += R"(
-Options:
-
-  -h | -? | --help
-  	Show this help.
-  -V
-  	Show version information.
-)";
-
-	cout << banner << descr;
-	return false;
+/*!!
+	// Relative paths will be rooted to the dir of 'cfgfile' by default,
+	// i.e. unless it's specifically set in the config
+	//!!Move to unilang:
+	cfg.select(cfgfile);
+	//!!auto basename = fs::path(cfgfile).filename().string();
+!!*/
 }
 
+//----------------------------------------------------------------------------
+SimApp::~SimApp()
+{
+  try { // Let's survive our last moments... :) (Albeit our internal done() is just about empty now...)
+	this->SimApp::done(); // Our own internal done() is called "secretly", even if overridden...
+	                      // (Note: the qualifier is only for emphasis; dtors don't dispatch virtuals.)
+  } catch (...) {
+	Bug("*REALLY UNEXPECTED* exception from SimApp::done()! :-o ");
+	//... throw; // <- Could be useful to see the fireworks in DEBUG mode,
+	             //    but can't compile without noexcept-violation warnings.
+  }
+}
+
+//============================================================================
 //----------------------------------------------------------------------------
 bool SimApp::internal_app_init()
 //
@@ -125,6 +148,30 @@ bool SimApp::internal_app_cleanup()
 }
 
 
+//============================================================================
+bool SimApp::show_cmdline_help(const Args& args, const char* banner)
+{
+	std::string descr;
+
+	if (!banner) {
+		banner = "\"Intuition\" - Simulation engine and app. dev. framework\n";
+	}
+
+	descr = R"(
+Usage:)"; descr += args.exename(); descr += " [options...]\n";
+	descr += R"(
+Options:
+
+  -h | -? | --help
+  	Show this help.
+  -V
+  	Show version information.
+)";
+
+	cout << banner << descr;
+	return false;
+}
+
 //----------------------------------------------------------------------------
 // Process the cmdline for "actionable" items...
 int SimApp::run_cli_batch()
@@ -151,6 +198,7 @@ int SimApp::run_cli_batch()
 	return exit_code();
 }
 
+//============================================================================
 //----------------------------------------------------------------------------
 int SimApp::run()
 {

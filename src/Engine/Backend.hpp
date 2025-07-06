@@ -32,6 +32,9 @@ public:
 	HCI&   hci;
 	Audio& audio;
 
+	template<typename T = Backend>
+	T& as() { return static_cast<T&>(*this); }
+
 protected:
 	//! This lame extra ctor is needed to init the member references, because
 	//! I think it can't be done directly by the derived class.

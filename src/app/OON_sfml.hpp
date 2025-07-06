@@ -47,7 +47,7 @@ protected:
 // C++ mechanics...
 //------------------------------------------------------------------------
 public:
-	OONApp_sfml(Szim::RuntimeContext& runtime, int argc, char** argv);
+	OONApp_sfml(const Szim::RuntimeContext& runtime, int argc, char** argv);
 
 //------------------------------------------------------------------------
 // Data / Internals...

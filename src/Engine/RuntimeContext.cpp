@@ -1,9 +1,13 @@
-﻿//!!
+﻿#if 0
+
+//!!
 //!! Only for the transition; stuff is still needed from there!
 //!!
 #include "Engine/SimApp.hpp"
 
 #include "Engine/RuntimeContext.hpp"
+
+#include "Engine/UI.hpp"
 
 #include "Engine/diag/Error.hpp"
 #include "Engine/diag/Log.hpp"
@@ -11,8 +15,7 @@
 
 namespace Szim {
 
-RuntimeContext::RuntimeContext(int argc, char** argv)
-
+RuntimeContext::RuntimeContext()
 	: args(argc, argv, {
 		// Long options with 1 param (only those with 1?) don't need to be defined.
 		// Short ones do, unfortunately (they're predicates by default, and don't have the '=' syntax to disambiguate when aren't):
@@ -48,16 +51,6 @@ RuntimeContext::RuntimeContext(int argc, char** argv)
 
 	// Bootstrap the backend...
 	, backend(SFML_Backend::use(cfg)) // `use` returns a ref to a (static) singleton
-	// Init the GUI...
-	, gui(((SFML_Backend&)backend).SFML_window(),
-		{
-			.basePath = cfg.asset_dir.c_str(), // Trailing / ensured by the cfg. fixup!
-			.textureFile = "gui/texture.png",
-			.bgColor = sfw::Color(cfg.default_bg_hexcolor),
-			.fontFile = cfg.default_font_file.c_str(),
-		},
-		false // Don't manage the window
-	)
 	//!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(main_window())}
 
 	//!! Adapt SessionManager to take a RuntimeContext:
@@ -67,3 +60,5 @@ RuntimeContext::RuntimeContext(int argc, char** argv)
 }
 
 } // namespace Szim
+
+#endif
