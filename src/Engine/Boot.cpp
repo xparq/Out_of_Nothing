@@ -57,7 +57,7 @@ Engine::Engine(int argc, char** argv)
 	// extra robustness safeguard, as "half RAII" (or RRID: "Resource Release Is Destruction"...)
 	//----------------------------------------------------------------------------------
 
-	Note("Engine instance created (to be initialized later).");
+	LOG << "Engine instance created (to be initialized later).";
 }
 
 //--------------------------------------------------------------------
@@ -88,31 +88,40 @@ void Engine::startup()
 		return;
 	}
 
-	LOG << "<<< Engine/API starting up... >>>";
+	Note("<<< Szim Engine starting up... >>>");
 
-	const char* _BootLog_Prefix_ = "Engine startup: ";
-#define _BootLOG_ LOG << _BootLog_Prefix_ <<
+//!! #641:
+#define BootLOG LOG << BootLOGPrefix_ << // The syntax is also intentionally different from the normal LOG, just to feel even more like a separate facility... :)
+	const char* BootLOGPrefix_ = "Engine startup: ";
 
 	//
-	// Logging first... (well, rather: "again"...)
+	// NOTE: `args` is (the only thing that's) been initialized by the ctor for us here.
 	//
-	// NOTE:
-	//    - The logger instance(s) has (have) already been through their own static init (with defaults)!
-	//      Now we just adjust what we can/need (from what we have: command line args, build options etc.).
-	//    - Args's (the only thing that's) been initialized by the ctor.)
+
+	//
+	// Logging first...
+	//
+	//!! ...albeit, we don't really know where to log, before reading the config!...
+	//
 	using namespace diag;
 	// Log level override, if requested (with --log-level=<letter>)
 	//! NOTE: WAY TOO LATE here for debugging the App ctor init chain (which has already been done)! :-/
 	auto log_level = log::letter_to_level(args("log-level")[0]);
-	if (log_level) { log::LogMan::instance()->set_level(log_level); }
-	//!! Open the file-backed Session Log:
-	//!!log::init(log_level, "Szim-debug.log");
-	_BootLOG_ "Logging (re)configured.";
+	log::LogMan::init({
+		.filter_level = log_level ? log_level : log::notice,
+		.target = "session.log",
+		.fopen_mode = "w+"
+	});
+	// This would still go through, even if the logger had already been initalized and our init() got ignored:
+	//if (log_level) { log::LogMan::set_level(log_level); }
+	BootLOG "Logging configured."; //!! Yeah, but this is not the boot logger! (#641)
+	                               //!! It's the one single combined everything-logger! :-/
+	                               //!! Also: check if the logging has indeed been up, not just assert it! :)
 
 	//
-	// Load & fixup the (global) engine config...
+	// Load & fixup the engine config...
 	//
-	_BootLOG_ "Loading system configuration...";
+	BootLOG "Loading system configuration...";
 	syscfg = std::make_unique<EngineConfig>(
 //!!	cfg = SimAppConfig(
 	/*
@@ -152,7 +161,7 @@ void Engine::startup()
 	//
 	// Bootstrap the backend...
 	//
-	_BootLOG_ "Initializing platform services...";
+	BootLOG "Initializing platform services...";
 	backend = &SFML_Backend::use(*syscfg); // `use` returns a ref to a (static) singleton
 
 	//!!Old app-spec. remnants, left here as reminders:
@@ -169,7 +178,7 @@ void Engine::startup()
 	//!! This is still entangled with user-level config defaults!
 	//!! Actually, even _syscfg itself_ is: e.g. asset_dir should only be a fallback if no app-specific one.
 	//!!
-	_BootLOG_ "Initializing the UI...";
+	BootLOG "Initializing the UI...";
 	gui = std::make_unique<sfw::GUI>(
 		backend->as<SFML_Backend>().SFML_window(),
 		sfw::Theme::Cfg{
@@ -184,7 +193,7 @@ void Engine::startup()
 	//
 	// Audio...
 	//
-	_BootLOG_ "Initializing Audio...";
+	BootLOG "Initializing Audio...";
 	if (syscfg->start_muted) //!! Should have app-level control ("too"?)!
 		backend->audio.enabled(false);
 
@@ -202,14 +211,14 @@ void Engine::startup()
 	if (syscfg->headless) {
 		gui->disable();
 		backend->audio.enabled(false);
-		_BootLOG_ "HEADLESS mode (with no HCI) activated.";
+		BootLOG "HEADLESS mode (with no HCI) activated.";
 	}
 
 
 	__engine_initialized_ = true;
-	LOG << "<<< Engine/API initialized. >>>";
+	Note("<<< Szim Engine initialized. >>>");
 
-#undef _BootLOG_
+#undef BootLOG
 }
 
 //----------------------------------------------------------------------------

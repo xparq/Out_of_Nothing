@@ -22,6 +22,27 @@ void nested_abort()
 int main(int argc, char* argv[])
 //============================================================================
 {
+	//!! If we want to log before the engine has been initialized,
+	//!! AND we want to have the same logging setup, THEN we must do
+	//!! the same init here ourselves, BEFORE the first logging attempt:
+	Args args(argc, argv);
+	using namespace Szim::diag;
+	auto log_level = log::letter_to_level(args("log-level")[0]);
+	log::LogMan::init({
+		.filter_level = log_level ? log_level : log::notice,
+		.target = "session.log",
+		.fopen_mode = "w+" // truncate
+	});
+	// Or...
+	// ...we can pre-configure the logger differently, and the engine will just
+	// have to live with that... ;)
+	//auto log_level = log::letter_to_level('N');
+	//if (log_level) { log::LogMan::set_level(log_level); } // This would default-init for console output!
+	//log::LogMan::init({.filter_level = log::notice, .target = "default.log"});
+	// Or...
+	// ...we can wait for the engine init with our first log message, and
+	// then optionally tune the logger (but can't fully reconfigure it).
+
 	struct Main_ {
 		int exit_code = 0;
 		// Only log levels up to "notice" are enabled by default (before main)!
@@ -37,21 +58,22 @@ int main(int argc, char* argv[])
 
 	} Main;
 
-	using namespace OON;
-	using namespace Szim::diag;
 
-	Args args(argc, argv); // Just for -h -V etc.
-
-	// Explicit manual log level adjustment... The same thing will also be done
-	// in SimApp::init, but that's too late for tracing the App ctor logic! :-/
-	auto log_level = log::letter_to_level(args("log-level")[0]); //! `args` dependency...
-	if (log_level) { log::LogMan::instance()->set_level(log_level); }
+	//using namespace Szim;
 
 	//
-	// Go, finally...
+	// Go...
 	//
 	Main.exit_code = -1;
 	try {
+/*
+		using namespace Szim::diag;
+		//!! Explicit manual pre-boot log level adjustment... The same thing will also be done
+		//!! in Engine::startup, but we're free to preset our own settings here!
+		auto log_level = log::letter_to_level('W');
+		if (log_level) { log::LogMan::set_level(log_level); }
+*/
+		using namespace OON;
 		Szim::Engine engine(argc, argv); // args for engine init
 			LOGD << "Size of the engine obj.: sizeof(engine) == " << sizeof(engine);
 			LOGD << "Size of the app obj.: sizeof(OONApp_sfml) == " << sizeof(OONApp_sfml);

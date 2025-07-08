@@ -35,7 +35,10 @@
 #define SZ_LOG_USE_DEFAULT_LEVEL info
 //#define SZ_NO_LOG_MACROS
 //#define SZ_LOG_DISABLE
+#define  SZ_LOG_REPLACE_IOSTREAM
 
+#define SZ_LOG_BUILD // Define this for its impl. parts to be precompiled, rather than being header-only!
+                     // See more in Log.cop!
 #include "extern/sz/diag/log.hh"
 
 // Imports...
