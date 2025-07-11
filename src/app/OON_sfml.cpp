@@ -6,7 +6,8 @@
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
-//!! transparent and/or automatic etc. (#294; finishing what I've started in SFW).
+//!! transparent and/or automatic etc. (#294; finishing what I've started in
+//!! MycoGUI).
 //!!
 //!! A side-note/reminder: the goal here (on the app level) is only separating
 //!! (most of?) the *sources* from direct backend dependencies ("write once"),
@@ -80,7 +81,7 @@ OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime, int argc, char** argv)
 	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
 	, OONApp(runtime, argc, argv, _oon_view._oon_main_view) //!! Ugh...
 #ifndef DISABLE_HUDS
-//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(sfw::Color(appcfg.get(cfgprop, def)).toInteger()))
+//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
 	, timing_hud(SFML_WINDOW(),{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
@@ -227,8 +228,8 @@ void OONApp_sfml::draw() // override
 
 /*LOGD	<< std::boolalpha
 	<< "wallpapr? "<<gui.hasWallpaper() << ", "
-	<< "clear bg? "<<sfw::Theme::clearBackground << ", "
-	<< hex << sfw::Theme::bgColor.toInteger();
+	<< "clear bg? "<<myco::Theme::clearBackground << ", "
+	<< hex << myco::Theme::bgColor.toInteger();
 */
         gui.render(); // Draw last, as a translucent overlay!
 //!! These are (will be...) also part of the GUI:
@@ -258,9 +259,13 @@ void OONApp_sfml::event_loop()
 	std::unique_lock noproc_lock{sync::Updating, std::defer_lock};
 
 try {
+
+	// Start the control panel unfocused:
+	gui.unfocus();
+
 	while (!terminated() && SFML_WINDOW().isOpen()) {
 
-		for (sfw::event::Input event; !terminated() && (event = gui.poll());) {
+		for (myco::event::Input event; !terminated() && (event = gui.poll());) {
 		// This inner loop is here to prevent event "jamming" (delays in
 		// event processing -- or even loss?) due to accumulating events
 		// coming faster than 1/frame for a long enough period to cause
@@ -311,7 +316,7 @@ try {
 			//!! game.inputs.push(event);
 			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
 
-			UI::update_keys_from_SFW(event); // Using the SFML adapter (via #include UI/adapter/SFML/...)
+			UI::update_keys_from_Myco(event); //! Using the SFML adapter (via UI/adapter/SFML/...)
 				//!! This should be generalized beyond keys, and should also make it possible
 				//!! to use abstracted event types/codes for dispatching (below)!
 
@@ -324,24 +329,41 @@ try {
 #endif
 
 			// Close req.?
-			if (event.type == sfw::event::WindowClosed ||
-			    event.type == sfw::event::KeyDown && event.get_if<sfw::event::KeyDown>()->code == SFML_KEY(Escape)) { //!!XLAT
-				request_exit();
-				// [fix-setactive-fail] -> DON'T: window.close();
-				//!!?? I forgot: how exactly is the window being closed on Esc?
-				//!!?? I *guess* by the sf::Window dtor, but why do I vaguely
-				//!!?? recall endless annoying problems with that from earlier?!
-				break;
+			if (event.type == myco::event::WindowClosed ||
+			    event.type == myco::event::KeyDown && event.get_if<myco::event::KeyDown>()->code == SFML_KEY(Escape)) { //!!XLAT
+
+				if (gui.focused()) {
+					gui.unfocus();
+					//!! FTR:
+					//!! A `break;` here would crash with a runtime_error caught at line 654 with the
+					//!! mysterious message "resource deadlock would occur", *AND* THEN ALSO A CRASH!... :-o
+					//!! (But that "extra" crash might be due to the shitty WinDbg failing to start a debug session.
+					//!! Not that it would be normal for it to be triggered at all to begin with, if the exception
+					//!! was already caught!... :-o )
+					//!! -> #sfw2/486
+				} else {
+					request_exit();
+					// [fix-setactive-fail] -> DON'T: window.close();
+					//!!?? I forgot: how exactly is the window being closed on Esc?
+					//!!?? I *guess* by the sf::Window dtor, but why do I vaguely
+					//!!?? recall endless annoying problems with that from earlier?!
+					break;
+				}
 			}
 
 			// If the GUI has the input focus, let it process the event
 			// -- except for some that really don't belong there:
 			if (gui.focused() &&
-				event.type != sfw::event::WindowFocused && // Yeah, so this is an entirely different "focus"! :-o
-				event.type != sfw::event::WindowUnfocused &&
-				event.type != sfw::event::MouseButtonDown
+			    (
+				event.type != myco::event::WindowFocused && // Yeah, so this is an entirely different "focus"! :-o
+				event.type != myco::event::WindowUnfocused &&
+				event.type != myco::event::MouseButtonDown
 				||
-				event.type == sfw::event::MouseButtonDown && gui.contains(gui.getMousePosition())) //!!gui.contains(event.MousePosition)
+				event.type == myco::event::MouseButtonDown && gui.hovered()
+				||
+				event.type == myco::event::KeyDown
+			    )
+			)
 			{
 				goto process_ui_event;
 			}
@@ -359,9 +381,9 @@ try {
 
 			switch (event.type) //!! See above: morph into using abstracted events!
 			{
-			case sfw::event::KeyDown:
+			case myco::event::KeyDown:
 			{
-				auto keycode = event.get_if<sfw::event::KeyDown>()->code;
+				auto keycode = event.get_if<myco::event::KeyDown>()->code;
 #ifdef DEBUG
 	if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started making things harder every day... :-/
 #endif
@@ -423,7 +445,7 @@ try {
 					break;
 
 				case SFML_KEY(F12): toggle_huds();
-					sfw::set<sfw::CheckBox>("Show HUDs", huds_active());
+					myco::set<myco::CheckBox>("Show HUDs", huds_active());
 					break;
 				case SFML_KEY(F11):
 					toggle_fullscreen();
@@ -437,13 +459,13 @@ try {
 				}
 				break;
 			}
-			case sfw::event::TextInput:
+			case myco::event::TextInput:
 			{
-				const auto* textinput = event.get_if<sfw::event::TextInput>();
+				const auto* textinput = event.get_if<myco::event::TextInput>();
 				if (textinput->codepoint > 127) break; // non-ASCII!
 				switch (static_cast<char>(textinput->codepoint)) {
 				case 'g':
-					sfw::call<GravityModeSelector>("Gravity mode",
+					myco::call<GravityModeSelector>("Gravity mode",
 						[](auto* gs) { gs->selectNext(); });
 					break;
 //				case 'f': world().friction -= 0.01f; break;
@@ -453,48 +475,48 @@ try {
 				case 'T': time.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
 				case 'm': toggle_muting();
-					sfw::set<sfw::CheckBox>("Audio: ", backend.audio.enabled);
+					myco::set<myco::CheckBox>("Audio: ", backend.audio.enabled);
 					break;
 				case 'M': toggle_music();
-					sfw::set<sfw::CheckBox>(" - Music: ", backend.audio.music_enabled);
+					myco::set<myco::CheckBox>(" - Music: ", backend.audio.music_enabled);
 					break;
 				case 'N': toggle_sound_fx();
-					sfw::set<sfw::CheckBox>(" - FX: ", backend.audio.fx_enabled);
+					myco::set<myco::CheckBox>(" - FX: ", backend.audio.fx_enabled);
 					break;
 //!! #543			case 'P': fps_throttling(!fps_throttling()); break;
 				case 'x': toggle_fixed_model_dt();
-					sfw::set<sfw::CheckBox>("Fixed model Δt", cfg.fixed_model_dt_enabled);
+					myco::set<myco::CheckBox>("Fixed model Δt", cfg.fixed_model_dt_enabled);
 					break;
 				case '?': toggle_help(); break; // See also F1!
 				}
 				break;
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
-			case sfw::event::MouseButtonPressed:
+			case myco::event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Button::Left) {
 					spawn(player_entity_ndx(), 100);
 				}
 				break;
 !!*/
 			}
-			case sfw::event::MouseWheel:
+			case myco::event::MouseWheel:
 			{
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...
-//sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
+//sf::Vector2f mouse = gui.mouse_position() + gui.getPosition();
 //LOGD << "-- mouse: " << mouse.x <<", "<< mouse.y;
-				if (gui.focused() || gui.contains(gui.getMousePosition()))
+				if (gui.focused() || gui.hovered())
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-				auto mousewheel = event.get_if<sfw::event::MouseWheel>();
+				auto mousewheel = event.get_if<myco::event::MouseWheel>();
 				view_control(mousewheel->delta); //! Apparently always 1 or -1...
 //oon_main_view().p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4;
 				break;
 			}
 
-			case sfw::event::MouseButtonDown:
+			case myco::event::MouseButtonDown:
 			{
-				const auto* mousepress = event.get_if<sfw::event::MouseButtonDown>();
-//sf::Vector2f mouse = gui.getMousePosition() + gui.getPosition();
+				const auto* mousepress = event.get_if<myco::event::MouseButtonDown>();
+//sf::Vector2f mouse = gui.mouse_position() + gui.getPosition();
 //LOGD << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y;
 
 //!!??auto vpos = oon_main_camera().screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o
@@ -503,7 +525,7 @@ try {
 
 				//!! As a quick workaround for #334, we just check the GUI rect here
 				//!! directly and pass the event if it belongs there...
-				if (gui.contains(gui.getMousePosition()))
+				if (gui.hovered())
 					goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
 				auto vpos = oon_main_camera().screen_to_view_coord(mousepress->position.x, mousepress->position.y);
@@ -544,15 +566,15 @@ LOGD << "Click: no obj.";
 				break;
 			}
 
-			case sfw::event::MouseMoved:
+			case myco::event::MouseMoved:
 			{
-				const auto* mousemove = event.get_if<sfw::event::MouseMoved>();
+				const auto* mousemove = event.get_if<myco::event::MouseMoved>();
 
-				if (gui.focused()) goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
+				if (gui.focused() || gui.hovered()) goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
 				auto vpos = oon_main_camera().screen_to_view_coord(mousemove->position.x, mousemove->position.y);
 
-				if (keystate(SHIFT) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+				if (keystate(SHIFT) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { //!! Direct SFML use!
 					// pan_to_focus(anything), essentially:
 					oon_main_camera().pan_view(oon_main_camera().focus_offset - vpos);
 					oon_main_camera().focus_offset = vpos;
@@ -569,12 +591,12 @@ LOGD << "Click: no obj.";
 				break;
 			}
 
-			case sfw::event::WindowUnfocused:
+			case myco::event::WindowUnfocused:
 				oon_main_view().dim();
 				reset_keys(); //!! Should be an engine-internal chore...
 				break;
 
-			case sfw::event::WindowFocused:
+			case myco::event::WindowFocused:
 				oon_main_view().undim();
 				reset_keys(); //!! Should be an engine-internal chore...
 				break;
@@ -604,13 +626,13 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 			//! Sleep some here, too (not just outside this inner loop, while
 			//! idling), counterintuitively *especially* while jamming, in order to
 			//! give the actual processing parts some unlocked time!...
-			sf::sleep(sf::milliseconds(5)); //!! Should be adaptive!
+			sf::sleep(sf::milliseconds(5)); //!! Should be adaptive! //!! DIRECT SFML USE
 		} // for - events in the queue
 
 		// The event queue has been emptied, so in this thread (of input processing)
 		// we're idling now (while updates are happening elsewhere), so:
 		//!! Should be adaptive!!
-		sf::sleep(sf::milliseconds(
+		sf::sleep(sf::milliseconds( //!! DIRECT SFML USE
 			paused() ? cfg.get("sim/timing/paused_sleep_time_per_cycle", 50) // #330
 			         : 10)); // SFML does (used to?) sleep the same amount for waitEvent
 			// NOTE: This is only relevant when threading!
@@ -619,7 +641,7 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 
 		if (paused() && ui_event_state == UIEventState::IDLE)
 		{
-			sf::sleep(sf::milliseconds(100)); // Sleep even more, if *really* idle! :)
+			sf::sleep(sf::milliseconds(100)); // Sleep even more, if *really* idle! :) //!! DIRECT SFML USE
 		}
 
 #endif			

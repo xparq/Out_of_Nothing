@@ -41,7 +41,7 @@ public:
 	// Engine-specific UI that the client app is also free to use
 	// The sim/app "content" has its own rendering, most likely its own UI too,
 	// but usually sharing the same (currently: SFML) window!
-	sfw::GUI&     gui;
+	myco::GUI&     gui;
 
 //	RuntimeContext(int argc, char** argv);
 //	RuntimeContext(const RuntimeContext&) = delete;

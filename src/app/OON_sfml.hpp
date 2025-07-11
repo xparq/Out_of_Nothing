@@ -3,7 +3,7 @@
 
 #include "OON.hpp"
 #include "OONMainDisplay_sfml.hpp"
-//!!Move to a proper polymorphic UI (e.g. sfw):
+//!!Move to a proper polymorphic UI (e.g. myco):
 #include "Engine/UI/hud_sfml.hpp"
 #include <utility> // std::unreachable
 

@@ -134,7 +134,7 @@ public:
 //----------------------------------------------------------------------------
 protected:
 public: //!! Kludge to spare another public API like resize(), as this is gonna
-        //!! become an SFW widget later anyway, with its API revamped!...
+        //!! become a Myco widget later anyway, with its API revamped!...
 	virtual void onResize(unsigned /*width*/, unsigned /*height*/) {}
 
 }; // class HUD

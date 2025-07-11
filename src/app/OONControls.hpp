@@ -8,6 +8,8 @@
 
 namespace OON {
 
+class OONApp;
+
 struct OONController : public Szim::VirtualController
 //!! All for polling only, no async triggers yet!
 //!! This also means that Toggle values make no sense
@@ -45,7 +47,10 @@ struct OONController : public Szim::VirtualController
 //!!...	LatchedToggle Pause;
 
 	void update() override; // Implemented in the backend-specific part of the app!
-//	OONController();
+
+	OONController(OONApp* app) : app_(app) {}
+private:
+	OONApp* app_;
 };
 
 } // namespace OON

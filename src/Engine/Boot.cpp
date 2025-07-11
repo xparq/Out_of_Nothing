@@ -179,12 +179,12 @@ void Engine::startup()
 	//!! Actually, even _syscfg itself_ is: e.g. asset_dir should only be a fallback if no app-specific one.
 	//!!
 	BootLOG "Initializing the UI...";
-	gui = std::make_unique<sfw::GUI>(
+	gui = std::make_unique<myco::GUI>(
 		backend->as<SFML_Backend>().SFML_window(),
-		sfw::Theme::Cfg{
+		myco::Theme::Cfg{
 			.basePath = syscfg->asset_dir.c_str(), // Trailing / ensured by the cfg. fixup!
 			.textureFile = "gui/texture.png",
-			.bgColor = sfw::Color(syscfg->default_bg_hexcolor),
+			.bgColor = myco::Color(syscfg->default_bg_hexcolor),
 			.fontFile = syscfg->default_font_file.c_str(),
 		},
 		false // Don't manage the window

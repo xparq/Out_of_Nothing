@@ -43,7 +43,7 @@ public: //!!?? Maybe I can actually get away with the convention of no pre-/post
 	//!! Just too much hassle to make this also a uniq.ptr:
 	Backend* backend; // Static singleton from a factory (::use(...))...
 	                  //!! But can't be a ref, as it will be initialized later in startup(), not the ctor!
-	std::unique_ptr<sfw::GUI> gui;
+	std::unique_ptr<myco::GUI> gui;
 
 /*!! This is probably just a dream, without eventually needing to #include SimApp here...:
 	//--------------------------------------------------------------------

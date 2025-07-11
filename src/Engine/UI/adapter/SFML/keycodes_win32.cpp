@@ -16,7 +16,7 @@
 
 namespace UI {
 
-void update_keys_from_SFW(const sfw::event::Input& sfw_event)
+void update_keys_from_Myco(const myco::event::Input& myco_event)
 {
 	//!!?? How to do these with SFML?
 	_kbd_state[VKEY::NUMPAD_ENTER]  = (unsigned)GetKeyState(VK_RETURN) & 0xff80;
@@ -25,11 +25,11 @@ void update_keys_from_SFW(const sfw::event::Input& sfw_event)
 	_kbd_state[VKEY::NUMPAD_0]      = (unsigned)GetKeyState(VK_NUMPAD0) & 0xff80;
 	_kbd_state[VKEY::NUMPAD_DOT]    = (unsigned)GetKeyState(VK_DECIMAL) & 0xff80;
 
-	switch (sfw_event.type)
+	switch (myco_event.type)
 	{
-	case sfw::event::KeyUp:
+	case myco::event::KeyUp:
 	{
-		unsigned keycode = sfw_event.get_if<sfw::event::KeyUp>()->code;
+		unsigned keycode = myco_event.get_if<myco::event::KeyUp>()->code;
 		if (keycode != unsigned(sf::Keyboard::Key::Unknown)) {
 			_kbd_state[_keycode_from_SFML(keycode % (unsigned)VKEY::__SIZE__)] = false;
 		} else {
@@ -41,9 +41,9 @@ void update_keys_from_SFW(const sfw::event::Input& sfw_event)
 		}
 		break;
 	}
-	case sfw::event::KeyDown:
+	case myco::event::KeyDown:
 	{
-		unsigned keycode = sfw_event.get_if<sfw::event::KeyDown>()->code;
+		unsigned keycode = myco_event.get_if<myco::event::KeyDown>()->code;
 		if (keycode != unsigned(sf::Keyboard::Key::Unknown)) {
 			_kbd_state[_keycode_from_SFML(keycode % (unsigned)VKEY::__SIZE__)] = true;
 		} else {

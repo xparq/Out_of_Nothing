@@ -20,7 +20,7 @@
  Short of a "dialog data exchange" (batched-read/update) mechanism (e.g. in the
  GUI itself), we just bite the bullet and include the full GUI here (in its "lying"
  euphemized, wishful-thinking Engine/UI.hpp form, not as the good-old, honest, blunt
- sfw/GUI.hpp...), and continue to support the legacy direct widget access as before.
+ myco/GUI.hpp...), and continue to support the legacy direct widget access as before.
  (Note: as long as there's direct widget access in each TU *that also uses the
  abstract UI* (which seems to be the case generally), there's no gain e.g. in
  compilation speed by removing the GUI #include from here anyway...)
@@ -33,13 +33,13 @@ TODO:
 
 #pragma once
 
-#include "Engine/UI.hpp"   // Basically sfw/GUI.hpp!
+#include "Engine/UI.hpp"   // Basically myco/GUI.hpp!
 #include "Model/World.hpp" // This one is not so heavy.
 
 namespace UI { class HUD; } //!!...
 
 namespace OON {
 
-	using GravityModeSelector = sfw::OptionsBox<Model::World::GravityMode>;
+	using GravityModeSelector = myco::OptionsBox<Model::World::GravityMode>;
 
 }

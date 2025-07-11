@@ -65,12 +65,13 @@ void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).acti
 void OONApp::ui_setup()
 {
 	auto& app = *this; //!! Remnant from an aborted attempt to make this _UI_::setup(SimApp& app)...
-	using namespace sfw;
+	using namespace myco;
 
-	// The SFW GUI is used as a translucent overlay, so an alpha-enabled bgColor
+	// If the GUI is used as a translucent overlay, an alpha-enabled bgColor
 	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
-	Theme::click.textColor = sfw::Color("#ee9"); //!!("input".textColor!) YUCK!! Also "click" for LABELS?!?!
+	// Button label and caption color:
+	Theme::styling_profile_ref(myco::style::Tactile).textColor = myco::Color("#ee9"); //!!YUCK!!
 	auto gui_main_hbox = gui.add(new HBox);
 
 	// General/performance controls...
@@ -87,7 +88,7 @@ void OONApp::ui_setup()
 	// UI/View controls...
 	auto	view_form = gui_main_hbox->add(new Form);
 		view_form->add("Show HUDs", new CheckBox([&](auto*){ app.toggle_huds(); }, app.huds_active()));
-		    gui.recall("Show HUDs")->setTooltip("Press [?] to toggle the Help panel");
+		    gui.recall("Show HUDs")->set_tooltip("Press [?] to toggle the Help panel");
 		view_form->add("Grid lines", new CheckBox([&](auto* w){ app.oon_main_camera().cfg.gridlines = w->get(); },
 		                                          app.oon_main_camera().cfg.gridlines));
 		view_form->add("Pan follows object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
@@ -119,15 +120,15 @@ void OONApp::ui_setup()
 			g_select->setCallback([&](auto* w){ app.world().gravity_mode = w->get(); });
 		phys_form->add("Gravity mode", g_select)
 			->set(app.world().gravity_mode);
-		phys_form->add(" - bias", new sfw::Slider({.length=80, .range={-3.0, 3.0}, .step=0}))
+		phys_form->add(" - bias", new myco::Slider({.length=80, .range={-3.0, 3.0}, .step=0}))
 			->setCallback([&](auto* w){ app.world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
 				* Math::power(10.f, w->get()); })
 			->set(0);
 #ifndef DISABLE_FULL_INTERACTION_LOOP
-		phys_form->add("Full int. loop", new sfw::CheckBox([&](auto* w){ app.world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
+		phys_form->add("Full int. loop", new myco::CheckBox([&](auto* w){ app.world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
 				app.world().loop_mode == World::LoopMode::Full));
 #endif
-		phys_form->add("Friction", new sfw::Slider({.length=80, .range={-1.0, 1.0}, .step=0}))
+		phys_form->add("Friction", new myco::Slider({.length=80, .range={-1.0, 1.0}, .step=0}))
 			->setCallback([&](auto* w){ app.world().friction = w->get(); })
 			->set(app.world().friction);
 
@@ -138,7 +139,7 @@ void OONApp::ui_setup()
 		saveload_form->add("File", new TextBox);
 		auto	saveload_buttons = saveload_form->add("", new HBox);
 			saveload_buttons->add(new Button("Save"))
-				->setTextColor(sf::Color::Black)->setColor(sfw::Color("#f002"))
+				->setTextColor(sf::Color::Black)->setColor(myco::Color("#f002"))
 				->setCallback([&]{
 					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
@@ -150,7 +151,7 @@ void OONApp::ui_setup()
 					}
 				});
 			saveload_buttons->add(new Button("Load"))
-				->setTextColor(sf::Color::Black)->setColor(sfw::Color("#0f02"))
+				->setTextColor(sf::Color::Black)->setColor(myco::Color("#0f02"))
 				->setCallback([&]{
 					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
@@ -165,8 +166,8 @@ void OONApp::ui_setup()
 	// Only position after built, so it has its size:
 	//!! This is also done in onResize(), but that can't be invoked on init (#462) until #515, so...:
 	gui.setPosition(4, app.main_window_height() - gui.getSize().y() - 4);
-		//!! For that 4 above: sfw is still too lame for styling margins/padding... :-/
-		//!! Also, negative coords. aren't special in SFW, so this just goes off-screen: gui.setPosition({100, -200});
+		//!! For that 4 above: mycoGUI is still too lame for styling margins/padding... :-/
+		//!! Also, negative coords. aren't special in myco, so this just goes off-screen: gui.setPosition({100, -200});
 
 #ifndef DISABLE_HUDS
 	ui_setup_HUDs();
@@ -202,7 +203,7 @@ void OONApp::ui_setup_HUDs()
 
 	//------------------------------------------------------------------------
 	// Debug
-#ifdef DEBUG
+//#ifdef DEBUG
 	auto& debug_hud = ui_gebi(Debug);
 
 //!!Should be Rejected compile-time (with a static_assert):
@@ -214,8 +215,8 @@ void OONApp::ui_setup_HUDs()
 //!!shouldn't compile:	debug_hud << "DBG>" << debug;
 	debug_hud << "\nHŐTŰRŐ lótúró [αβ°C]" << "\n";
 	debug_hud << "\n"
-		<< "test fn->string: " << hud_test_callback_string << "\n"
-		<< "test fn->ccptr: " << hud_test_callback_ccptr << "\n"
+//		<< "test fn->string: " << hud_test_callback_string << "\n"
+//		<< "test fn->ccptr: " << hud_test_callback_ccptr << "\n"
 		<< "test λ->ccptr: " << []{ return "autoconv to string?..."; } << "\n"
 //!!NOPE:	<< "test λ->int: " << []{ return 0xebba; } << "\n"
 //!!NOPE:	<< "test λ->float: " << []{ return 12.345; } << "\n"
@@ -225,6 +226,9 @@ void OONApp::ui_setup_HUDs()
 		<< "test val. float: " << 12.345f << "\n"
 		<< "test val. double: " << 1e300 << "\n"
 //!!NOT YET:	<< "test val. bool: " << true << "\n"
+
+		<< "UI focused? " << [&]{ return this->gui.focused() ? "YES" : "no"; }
+
 	<< "\n";
 
 /*	debug_hud
@@ -237,7 +241,7 @@ void OONApp::ui_setup_HUDs()
 		<< "\nNUM LOCK" << (bool*)&_kbd_state[NUM_LOCK]);
 	;
 */
-#endif
+//#endif
 }
 
 

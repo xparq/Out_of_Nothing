@@ -8,7 +8,7 @@
 #include "Engine/UI/Input.hpp"
 #include "SFML/Window/Event.hpp"
 
-#include "sfw/Event.hpp"
+#include "myco/Event.hpp"
 
 namespace UI {
 
@@ -60,7 +60,7 @@ void update_keys_from_SFML(const sf::Event& sfml_event);
 //!! Note: ideally, other UI backends would just need their own overloads on their specific event type.
 
 //!! TMP. UNTIL xparq/sfw2#460:
-void update_keys_from_SFW(const sfw::event::Input& sfw_event);
+void update_keys_from_Myco(const myco::event::Input& myco_event);
 
 } // namespace UI
 

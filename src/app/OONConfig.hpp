@@ -52,7 +52,7 @@ struct OONConfig : Szim::Config
 	// UX
 	bool        start_fullscreen;
 	std::string default_font_file;
-	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (sfw hex color string) + name!
+	std::string default_bg_hexcolor; //!! Should be a less arcane "type" (myco hex color string) + name!
 	std::string hud_font_file;
 	unsigned    hud_line_height;
 	unsigned    hud_line_spacing;

@@ -1,9 +1,9 @@
 #include "hud_sfml.hpp"
 
-#include "sfw/geometry/Rectangle.hpp"
-#include "sfw/math/Vector.hpp"
-#include "sfw/gfx/element/FilledRect.hpp"
-#include "sfw/gfx/Color.hpp"
+#include "myco/geometry/Rectangle.hpp"
+#include "myco/math/Vector.hpp"
+#include "myco/gfx/element/FilledRect.hpp"
+#include "myco/gfx/Color.hpp"
 
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -61,8 +61,8 @@ void HUD_SFML::renderstate_append_line(const string& str)
 			(float)_panel_left + DEFAULT_PADDING,
 			(float)_panel_top  + DEFAULT_PADDING + (renderstate_line_count()-1) * cfg.line_height});
 
-	sfw::geometry::fRect linerect = line.size();
-	sfw::fVec2 size(linerect.left() * 2 + linerect.width(), linerect.top() + linerect.height());
+	myco::geometry::fRect linerect = line.size();
+	myco::fVec2 size(linerect.left() * 2 + linerect.width(), linerect.top() + linerect.height());
 	if (linerect.width() + 2 * DEFAULT_PADDING > _panel_width)
 		_panel_width = (unsigned) linerect.width() + 2 * DEFAULT_PADDING;
 
@@ -76,7 +76,7 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 	if (!active()) return;
 
     // SFML3 has got some clipping support now! Check/use it!
-   // Use in general for every SFW widget! And DELETE THE CRUFT BELOW!
+   // Use it in general for every Myco widget! And DELETE THE CRUFT BELOW!
   //https://en.sfml-dev.org/forums/index.php?topic=25552.0
  //
 //!!Why the offset?!
@@ -99,22 +99,22 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 	}
 
 	// OK, finally draw something...
-	sfw::gfx::FilledRect rect;
-	rect.size = sfw::fVec2{_panel_width, renderstate_line_count() * cfg.line_height + 2 * DEFAULT_PADDING}; //!! 0 padding for now
-	rect.position = sfw::fVec2{_panel_left, _panel_top};
+	myco::gfx::FilledRect rect;
+	rect.size = myco::fVec2{_panel_width, renderstate_line_count() * cfg.line_height + 2 * DEFAULT_PADDING}; //!! 0 padding for now
+	rect.position = myco::fVec2{_panel_left, _panel_top};
 	rect.colorFill = cfg.bgcolor;
 
 	// Add a fine border...
 	// - This is still not bullet-proof, but the best way I could conjure up that automatically looks nice:
-	float amp = 255.f / std::max(sfw::gfx::Color(cfg.bgcolor).r(), std::max(sfw::gfx::Color(cfg.bgcolor).g(), sfw::gfx::Color(cfg.bgcolor).b()));
-	rect.colorBorder = sfw::gfx::Color(
-		uint8_t(sfw::gfx::Color(cfg.bgcolor).r() * amp),
-		uint8_t(sfw::gfx::Color(cfg.bgcolor).g() * amp),
-		uint8_t(sfw::gfx::Color(cfg.bgcolor).b() * amp),
-		uint8_t(sfw::gfx::Color(cfg.bgcolor).a())
+	float amp = 255.f / std::max(myco::gfx::Color(cfg.bgcolor).r(), std::max(myco::gfx::Color(cfg.bgcolor).g(), myco::gfx::Color(cfg.bgcolor).b()));
+	rect.colorBorder = myco::gfx::Color(
+		uint8_t(myco::gfx::Color(cfg.bgcolor).r() * amp),
+		uint8_t(myco::gfx::Color(cfg.bgcolor).g() * amp),
+		uint8_t(myco::gfx::Color(cfg.bgcolor).b() * amp),
+		uint8_t(myco::gfx::Color(cfg.bgcolor).a())
 	); // + sf::Color(cfg.fgcolor).a) / 2
 
-	rect.draw(sfw::gfx::RenderContext(window));
+	rect.draw(myco::gfx::RenderContext(window));
 
 	for (auto& text : lines) {
 		window.draw(text);

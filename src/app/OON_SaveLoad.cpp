@@ -54,7 +54,7 @@ void OONApp::_on_snapshot_loaded()
 	//
 	// Sync the UI to reflect the new model state...
 	//
-	using namespace sfw;
+	using namespace myco;
 
 	if (!cfg.headless) { //!! This swouldn't be handled in this scattered manner... :-/
 	                     //!! (See also at the HCI/Window adapter, or the disabling of the main event loop...)
@@ -68,7 +68,7 @@ void OONApp::_on_snapshot_loaded()
 		// Drag:
 		gui.set<Slider>("Friction", world().friction);
 			//!! The stepping may be inconsistent with the loaded value though! :-o
-			//!! I think sfw::Slider will just round it...
+			//!! I think myco::Slider will just round it...
 
 		//!!
 		//!! ...

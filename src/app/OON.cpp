@@ -41,6 +41,7 @@ using namespace std;
 OONApp::OONApp(const RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
 	: SimApp(runtime, argc, argv, main_view)
 	, appcfg(SimApp::runtime.syscfg, args)
+	, controls(this)
 {
 //!! This shouldn't be needed, the engine should take care of it: #462!
 //!! And the view resize should also implicitly take care of any camera adjustments, too, so
@@ -183,8 +184,8 @@ LOGD << "Display.reset after the UI setup:";
 	// Apply custom config adjustments/fixup...
 	world().gravity_mode = appcfg.gravity_mode;
 	//!! Move to OON_UI.cpp:
-	sfw::set<GravityModeSelector>("Gravity mode", world().gravity_mode);
-		[[maybe_unused]] auto readback = sfw::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
+	myco::set<GravityModeSelector>("Gravity mode", world().gravity_mode);
+		[[maybe_unused]] auto readback = myco::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
 		assert(readback == world().gravity_mode);
 
 LOGD << __FUNCTION__ <<" finished.";
@@ -540,7 +541,7 @@ cerr << "R-viewsize: " << oon_main_camera().zoom * plm->r
 bool OONApp::scroll_locked()
 {
 	return controls.PanLock || controls.PanFollow
-		|| sfw::get<sfw::CheckBox>("  - forced follow", false);
+		|| myco::get<myco::CheckBox>("  - forced follow", false);
 		//!!?? Should this GUI poll actually be in controller.update()?!...
 		//!!?? Kinda depends on the intent of that UI element: input emu., or
 		//!!?? "high-level control" <-- but then this should make some actual sense! :)
@@ -1155,10 +1156,10 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 		}
 	}
 	// Update the focus lock indicator:
-	sfw::set<sfw::CheckBox>("Pan follows object", _focus_locked_);
+	myco::set<myco::CheckBox>("Pan follows object", _focus_locked_);
 
 	// Update the FPS indicator bar:
-	sfw::set<sfw::ProgressBar>("FPS", 1/(float)avg_frame_delay);
+	myco::set<myco::ProgressBar>("FPS", 1/(float)avg_frame_delay);
 
 
 	view_control(); // Manual view adjustments

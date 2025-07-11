@@ -10,11 +10,6 @@ namespace Szim {
 	class Backend;
 }
 #include "Engine/UI-fw.hpp"
-	/*
-	namespace sfw {
-		class GUI;
-	}
-	*/
 
 #include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
 #include "Backend.hpp" // E.g. for convenience accessors of backend components
@@ -25,9 +20,8 @@ namespace Szim {
 #include "Player.hpp" // Fw-decl. is not enough for vector<Player>: namespace Szim { class Player; }
 
 //!!... The UI and IO etc. are gonna be tough to abstract...
-//!!namespace sfw { class GUI; }
-//!!#include "sfw/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
-//!!                      //!! (mostly?) client .cpps that use should include it individually!)
+//!!#include "myco/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
+//!!                       //!! (mostly client) TUs that use it should include it individually!)
 //!!#include "Engine/UI/HUD.hpp"
 #include "Engine/UI/Input.hpp"
 #include "Metamodel.hpp"
@@ -299,8 +293,8 @@ public: // E.g. the renderer still needs these...
 	// Engine-specific UI that the client app is also free to use
 	// The sim/app "content" has its own rendering, most likely its own UI too,
 	// but usually sharing the same (currently: SFML) window!
-protected:
-	sfw::GUI& gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
+//protected: <- OONController needs `gui` to skip key polling if the UI has the focus...
+	myco::GUI& gui; //!! Forward-declare only, and the backend-specific impl. ctor should create it... somehow... :)
 	              //!! -- e.g. via a unique_ptr, or just a plain manual PIMPL. (Plus a gui() accessor then?!)
 
 	//--------------------------------------------------------------------

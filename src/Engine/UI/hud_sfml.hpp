@@ -4,10 +4,10 @@
 #include "hud.hpp"
 #include "Engine/Config.hpp" //!! Move to szlib (#398)
 
-#include "sfw/gfx/element/Font.hpp"
-#include "sfw/gfx/element/Text.hpp"
+#include "myco/gfx/element/Font.hpp"
+#include "myco/gfx/element/Text.hpp"
 
-//!!#include "sfw/gfx/Render.hpp"
+//!!#include "myco/gfx/Render.hpp"
 namespace sf { class RenderWindow; }
 
 #include <vector>
@@ -24,7 +24,7 @@ public:
 	void renderstate_clear() { lines.clear(); }
 	void renderstate_append_line(const std::string& str);
 	auto renderstate_line_count() const { return lines.size(); }
-//!!	void draw(sfw::gfx::RenderContext& ctx);
+//!!	void draw(myco::gfx::RenderContext& ctx);
 	void draw(sf::RenderWindow& window);
 
 	virtual void onResize(unsigned width, unsigned height) override;
@@ -36,8 +36,8 @@ protected:
 	Config cfg;
 
 	std::string _font_file;
-	std::vector<sfw::gfx::Text> lines;
-	sfw::gfx::Font font;
+	std::vector<myco::gfx::Text> lines;
+	myco::gfx::Font font;
 
 	int      _panel_left; // calc. by _setup()
 	int      _panel_top;  // calc. by _setup()

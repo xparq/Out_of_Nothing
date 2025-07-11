@@ -9,8 +9,8 @@
 
 //!!TBD: These are not direct SFML deps., only they themselves depend on it...
 //!!??   How to deal with this cleanly?
-//!!#include "sfw/GUI.hpp"     //!! Not yet at its appropriate location!
-//!!#include "Engine/UI/hud_sfml.hpp" //!! Not yet at its appropriate location! (Should be in sfw!)
+//!!#include "myco/GUI.hpp"     //!! Not yet at its appropriate location!
+//!!#include "Engine/UI/hud_sfml.hpp" //!! Not yet at its appropriate location! (Should be in Myco!)
 
 //!!Which subsystem should this go to, if any?
 //!!#include <SFML/System/Sleep.hpp>
@@ -24,7 +24,7 @@ struct SFML_Backend_Props // -> base-from-member C++ idiom
 	SFML_Audio sfml_audio;
 
 //!!... Back in SimApp.hpp, directly for now:
-//!!	sfw::GUI& gui; //!! like a sore thumb...
+//!!	myco::GUI& gui; //!! like a sore thumb...
 
 	SFML_Backend_Props(SimAppConfig& syscfg);
 };
