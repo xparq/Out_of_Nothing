@@ -1,9 +1,9 @@
 #include "hud_sfml.hpp"
 
-#include "myco/geometry/Rectangle.hpp"
-#include "myco/math/Vector.hpp"
+#include "myco/abstract/geometry/Rectangle.hpp"
+#include "myco/abstract/math/Vector.hpp"
 #include "myco/gfx/element/FilledRect.hpp"
-#include "myco/gfx/Color.hpp"
+#include "myco/style/Color.hpp"
 
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -102,12 +102,12 @@ void HUD_SFML::draw(sf::RenderWindow& window)
 	myco::gfx::FilledRect rect;
 	rect.size = myco::fVec2{_panel_width, renderstate_line_count() * cfg.line_height + 2 * DEFAULT_PADDING}; //!! 0 padding for now
 	rect.position = myco::fVec2{_panel_left, _panel_top};
-	rect.colorFill = cfg.bgcolor;
+	rect.fillColor = cfg.bgcolor;
 
 	// Add a fine border...
 	// - This is still not bullet-proof, but the best way I could conjure up that automatically looks nice:
 	float amp = 255.f / std::max(myco::gfx::Color(cfg.bgcolor).r(), std::max(myco::gfx::Color(cfg.bgcolor).g(), myco::gfx::Color(cfg.bgcolor).b()));
-	rect.colorBorder = myco::gfx::Color(
+	rect.borderColor = myco::gfx::Color(
 		uint8_t(myco::gfx::Color(cfg.bgcolor).r() * amp),
 		uint8_t(myco::gfx::Color(cfg.bgcolor).g() * amp),
 		uint8_t(myco::gfx::Color(cfg.bgcolor).b() * amp),

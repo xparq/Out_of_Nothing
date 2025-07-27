@@ -265,6 +265,14 @@ try {
 
 	while (!terminated() && SFML_WINDOW().isOpen()) {
 
+		// We could set up our own input poller directly using SAL::event::Source,
+		// but since we already have a UI handy, doing the same, we can just get
+		// the inputs from that. It will also already filter out the useless
+		// MouseMovedRaw spam messages for us.
+		//
+		// Just make sure not to disable the control panel (a.k.a. `gui`)! :)
+		// (Hiding (e.g. not drawing) it is fine.)
+		//
 		for (myco::event::Input event; !terminated() && (event = gui.poll());) {
 		// This inner loop is here to prevent event "jamming" (delays in
 		// event processing -- or even loss?) due to accumulating events
@@ -603,7 +611,7 @@ LOGD << "Click: no obj.";
 
 			default:
 process_ui_event:		// The GUI should be given a chance before this `switch`, but... -> #334: it can't swallow events!
-				gui.process(event);
+				gui.dispatch(event);
 				//!! Also, it's kinda inconsistent with this `IDLE` state assumption below!...
 				//!! (Hopefully it's not even used nowadays at all though...)
 				ui_event_state = UIEventState::IDLE;

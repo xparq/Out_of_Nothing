@@ -8,7 +8,7 @@
 #include "Engine/UI/Input.hpp"
 #include "SFML/Window/Event.hpp"
 
-#include "myco/Event.hpp"
+#include "myco/sys/Event.hpp"
 
 namespace UI {
 

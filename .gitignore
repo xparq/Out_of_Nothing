@@ -25,15 +25,18 @@ gcm.cache
 
 !tooling/*.exe
 tooling/edit/vscodium/user-data-dir
-!tooling/edit/vscodium/user-data-dir/User
+# Yeah, this does nothing for Git... Just leaving here as a reminder.
+# I just force-added these files:
 !tooling/edit/vscodium/user-data-dir/User/settings.json
 !tooling/edit/vscodium/user-data-dir/User/keybindings.json
 !tooling/edit/vscodium/user-data-dir/User/extensions.json
 !tooling/edit/vscodium/user-data-dir/User/snippets
+# Too much legacy gunk currently, so keep them ignored:
 *.code-workspace
 *.vscode
 
 **/sound/music/*
+# Ditto (as with the VSCode junk): not the way to "ignore, except these..." with Git:
 !**/sound/music/README.*
 !**/sound/music/default.ogg
 
@@ -51,9 +54,9 @@ cache/
 *.autosav*
 
 extern/*
-!extern/sfw/asset/
-!extern/sfw/include/
-!extern/sfw/lib/
-extern/sfw/lib/*-d.lib
+!extern/myco/asset/
+!extern/myco/include/
+!extern/myco/lib/
+extern/myco/lib/*-d.lib
 
 !extern/sz/

@@ -99,9 +99,8 @@ void OONApp::ui_setup()
 	// Audio...
 	auto left_vbox = gui_main_hbox->add(new VBox);
 		auto	volrect = left_vbox->add(new Form, "VolForm");
-			volrect->add("Volume", new Slider({.length=70, /*.orientation=Vertical*/})) //!! not needed: , "volume slider")
-			->setCallback([&](auto* w){ app.backend.audio.volume(w->get()); })
-			->update(75); // %
+			volrect->add("Volume", new Slider({.length=70/*, .orientation=Vertical*/, .preset=75})) // %
+			->setCallback([&](auto* w){ app.backend.audio.volume(w->get()); });
 		auto	audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
 			audio_onoff->add("Audio: ", new CheckBox([&](auto*){ app.backend.audio.toggle_audio(); },  app.backend.audio.enabled));
 			audio_onoff->add(" - Music: ", new CheckBox([&](auto*){ app.backend.audio.toggle_music(); }, app.backend.audio.music_enabled));
@@ -120,7 +119,7 @@ void OONApp::ui_setup()
 			g_select->setCallback([&](auto* w){ app.world().gravity_mode = w->get(); });
 		phys_form->add("Gravity mode", g_select)
 			->set(app.world().gravity_mode);
-		phys_form->add(" - bias", new myco::Slider({.length=80, .range={-3.0, 3.0}, .step=0}))
+		phys_form->add(" - bias", new myco::Slider({.length=80, .range={-3.0, 3.0}, .step=0, .preset=0}))
 			->setCallback([&](auto* w){ app.world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
 				* Math::power(10.f, w->get()); })
 			->set(0);
@@ -128,7 +127,7 @@ void OONApp::ui_setup()
 		phys_form->add("Full int. loop", new myco::CheckBox([&](auto* w){ app.world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
 				app.world().loop_mode == World::LoopMode::Full));
 #endif
-		phys_form->add("Friction", new myco::Slider({.length=80, .range={-1.0, 1.0}, .step=0}))
+		phys_form->add("Friction", new myco::Slider({.length=80, .range={-1.0, 1.0}, .step=0, .preset=0}))
 			->setCallback([&](auto* w){ app.world().friction = w->get(); })
 			->set(app.world().friction);
 
@@ -136,12 +135,12 @@ void OONApp::ui_setup()
 
 	// Save/load...
 	auto	saveload_form = gui_main_hbox->add(new Form);
-		saveload_form->add("File", new TextBox);
+		saveload_form->add("File", new TextField);
 		auto	saveload_buttons = saveload_form->add("", new HBox);
 			saveload_buttons->add(new Button("Save"))
 				->setTextColor(sf::Color::Black)->setColor(myco::Color("#f002"))
 				->setCallback([&]{
-					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
+					if (auto* fname_widget = (TextField*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
 						bool compress = app.cfg.save_compressed;
 						if (auto* compress_widget = (CheckBox*)gui.recall("Compress"); compress_widget)
@@ -153,7 +152,7 @@ void OONApp::ui_setup()
 			saveload_buttons->add(new Button("Load"))
 				->setTextColor(sf::Color::Black)->setColor(myco::Color("#0f02"))
 				->setCallback([&]{
-					if (auto* fname_widget = (TextBox*)gui.recall("File"); fname_widget) {
+					if (auto* fname_widget = (TextField*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
 						app.load_snapshot(fname.empty() ? "UNTITLED.save" : fname.c_str());
 					}
