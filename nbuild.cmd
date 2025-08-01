@@ -10,7 +10,11 @@ call %~dp0tooling/_setenv.cmd
 
 :: #557:
 echo.
-echo - WARNING: This build procedure doesn't support header dependency tracking!
+echo ****** WARNING:
+echo - This build procedure doesn't support header dependency tracking!
+echo - It also FAILS on source trees that have the same source filename
+echo   across multiple dirs!
+echo ***************
 echo.
 
 
