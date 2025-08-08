@@ -4,7 +4,7 @@
 
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/sys/fs.hh"
-	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
+	using sz::fs::dirname, sz::fs::endslash_fixup, sz::fs::prefix_by_intent;
 #include "sz/str.hh"
 //	using sz::to_bool
 #include <string>
@@ -24,7 +24,7 @@ using namespace std;
 
 //----------------------------------------------------------------------------
 OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& args) :
-	Config(sz::prefix_if_rel(syscfg.base_path(), "OON.cfg"), &syscfg), // Also chain to syscfg!
+	Config(sz::fs::prefix_by_intent(syscfg.base_path(), "OON.cfg"), &syscfg), // Also chain to syscfg!
 	syscfg(syscfg) //!! Config has just chained to it, but its '_base' ptr is private! :-/
 {
 	// 1. Preset hardcoded baseline defaults...
@@ -42,7 +42,7 @@ OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Ar
 	//!!
 	//!!BTW: WITH get() THERE'S NO WAY TO GET VALUES WITHOUT ALWAYS SUPPLYING THE DEFAULTS, TOO! :-/
 
-	// "" is the current dir (e.g. sz::getcwd())
+	// "" is the current dir (e.g. sz::fs::getcwd())
 
 	// Relative to engine_state_dir (unless absolute paths):
 
@@ -91,7 +91,7 @@ OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Ar
 	//!! Decide & consolidate whether to go with normalized abs. paths, or keep them as-is,
 	//!! and rely on the CWD (which might need some explicit care)!
 
-	background_music = sz::prefix_if_rel(syscfg.asset_dir, background_music);
+	background_music = sz::fs::prefix_by_intent(syscfg.asset_dir, background_music);
 
 	LOG << "Current config: " << (current().empty() ? "built-in defaults(!)" : current());
 	LOG << "- cfg. base_path: " << base_path();

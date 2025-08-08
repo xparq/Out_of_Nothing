@@ -40,6 +40,6 @@ namespace UI { class HUD; } //!!...
 
 namespace OON {
 
-	using GravityModeSelector = myco::OptionsBox<Model::World::GravityMode>;
+	using GravityModeSelector = myco::Options<Model::World::GravityMode>;
 
 }

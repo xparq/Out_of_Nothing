@@ -9,7 +9,7 @@
 //#include <string_view>
 //	using std::string_view;
 #include "sz/sys/fs.hh"
-	using sz::prefix_if_rel;
+	using sz::fs::prefix_by_intent;
 #include <fstream>
 	using std::ofstream, std::ifstream, std::ios;
 #include <cerrno>
@@ -36,7 +36,7 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 	//!!could be derived from... What I do see, OTOH, is the hassle in the App class
 	//!!chain to actually deal with saving/loading all the meta/supplementary state...
 
-	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
+	string fname = sz::fs::prefix_by_intent(cfg.session_dir, unsanitized_filename);
 
 	auto print_error = [&fname](string alt_msg = "<unset>") {
 		string msg;
@@ -101,7 +101,7 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 //----------------------------------------------------------------------------
 bool SimApp::load_snapshot(const char* unsanitized_filename)
 {
-	string fname = sz::prefix_if_rel(cfg.session_dir, unsanitized_filename);
+	string fname = sz::fs::prefix_by_intent(cfg.session_dir, unsanitized_filename);
 
 //	auto print_error = [&fname](string alt_msg = "<unset>") {
 //		if (alt_msg != "<unset>") cerr << alt_msg << (alt_msg.empty() ? "":"\n"); // Allow "" for no custom msg!

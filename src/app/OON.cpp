@@ -178,7 +178,7 @@ LOGD << "Display.reset after the UI setup:";
 	snd_shield	= backend.audio.add_sound(string(cfg.asset_dir + "sound/shield1.flac").c_str());
 
 	backend.audio.play_music(cfg.background_music.c_str());
-	//backend.audio.play_music(sz::prefix_if_rel(asset_dir, "music/extra sonic layer.ogg"));
+	//backend.audio.play_music(sz::fs::prefix_by_intent(asset_dir, "music/extra sonic layer.ogg"));
 	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 
 	// Apply custom config adjustments/fixup...

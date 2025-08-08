@@ -2,7 +2,7 @@
 
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/sys/fs.hh"
-	using sz::dirname, sz::endslash_fixup, sz::prefix_if_rel;
+	using sz::fs::dirname, sz::fs::endslash_fixup, sz::fs::prefix_by_intent;
 #include "sz/str.hh"
 //	using sz::to_bool
 
@@ -42,7 +42,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	quick_snapshot_filename_pattern = DEFAULT_SNAPSHOT_FILE_PATTERN;
 	save_compressed = true;
 
-	exe_dir = sz::dirname(args.argv[0]);  //!! See #368, and right below:
+	exe_dir = sz::fs::dirname(args.argv[0]);  //!! See #368, and right below:
 	cfg_dir = base_path(); //!! But...: #368 - infer from the exe dir, in Config already!...
 
 	headless = false;
@@ -59,7 +59,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	//!!BTW: WITH get() THERE'S NO WAY TO GET VALUES WITHOUT ALWAYS SUPPLYING THE DEFAULTS, TOO! :-/
 	window_title      = get("appearance/window_title", window_title); //!! not really a cfg option...
 
-	// "" is the current dir (e.g. sz::getcwd())
+	// "" is the current dir (e.g. sz::fs::getcwd())
 
 	asset_dir       = get("asset_dir", "asset/");
 	engine_state_dir = get("engine_state_dir", "state");
@@ -161,18 +161,18 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	//!! and rely on the CWD (which might need some explicit care)!
 
 	//!! The base dirs must end with a slash currently...:
-	sz::endslash_fixup(&engine_state_dir);
-	sz::endslash_fixup(&asset_dir);
-	sz::endslash_fixup(&user_dir);
+	sz::fs::endslash_fixup(&engine_state_dir);
+	sz::fs::endslash_fixup(&asset_dir);
+	sz::fs::endslash_fixup(&user_dir);
 
-	log_dir     = sz::prefix_if_rel(engine_state_dir, log_dir);
-	session_dir = sz::prefix_if_rel(user_dir, session_dir);
-	model_dir   = sz::prefix_if_rel(user_dir, model_dir);
+	log_dir     = sz::fs::prefix_by_intent(engine_state_dir, log_dir);
+	session_dir = sz::fs::prefix_by_intent(user_dir, session_dir);
+	model_dir   = sz::fs::prefix_by_intent(user_dir, model_dir);
 
 	if (iteration_limit == 0) iteration_limit = (decltype(iteration_limit))-1; // -1 is what's internally used for no limit
 	if (args["exit-on-finish"]) exit_on_finish = (args("exit-on-finish") != "off");
 	if (args["exit_on_finish"]) exit_on_finish = (args("exit_on_finish") != "off"); //!! Sigh, the dup...
-	background_music = sz::prefix_if_rel(asset_dir, background_music);
+	background_music = sz::fs::prefix_by_intent(asset_dir, background_music);
 
 	window_title += " ("; window_title += args.exename();
 #ifdef DEBUG
@@ -181,7 +181,7 @@ SimAppConfig::SimAppConfig(const std::string& cfg_path, const Args& args, std::s
 	window_title += ")";
 
 
-LOGD << "current dir: " << sz::getcwd();
+LOGD << "current dir: " << sz::fs::getcwd();
 LOGD << "SimApp config: ";
 LOGD << " - exe dir: "     << exe_dir; //!! Feels off here, in a config... Why did I put this here (instead of SimApp::)?
 LOGD << " - cfg. profile: " << (current().empty() ? "built-in defaults(!)" : current());

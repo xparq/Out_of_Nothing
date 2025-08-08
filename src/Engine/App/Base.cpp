@@ -14,7 +14,7 @@
 //#include <string_view>
 //	using std::string_view;
 #include "sz/sys/fs.hh"
-	using sz::prefix_if_rel;
+	using sz::fs::prefix_by_intent;
 
 //#include <format>
 //	using std::format;

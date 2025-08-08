@@ -138,7 +138,7 @@ void OONApp::ui_setup()
 		saveload_form->add("File", new TextField);
 		auto	saveload_buttons = saveload_form->add("", new HBox);
 			saveload_buttons->add(new Button("Save"))
-				->setTextColor(sf::Color::Black)->setColor(myco::Color("#f002"))
+				->set_text_color(sf::Color::Black)->set_color(myco::Color("#f002"))
 				->setCallback([&]{
 					if (auto* fname_widget = (TextField*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
@@ -150,7 +150,7 @@ void OONApp::ui_setup()
 					}
 				});
 			saveload_buttons->add(new Button("Load"))
-				->setTextColor(sf::Color::Black)->setColor(myco::Color("#0f02"))
+				->set_text_color(sf::Color::Black)->set_color(myco::Color("#0f02"))
 				->setCallback([&]{
 					if (auto* fname_widget = (TextField*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
@@ -164,7 +164,7 @@ void OONApp::ui_setup()
 
 	// Only position after built, so it has its size:
 	//!! This is also done in onResize(), but that can't be invoked on init (#462) until #515, so...:
-	gui.setPosition(4, app.main_window_height() - gui.getSize().y() - 4);
+	gui.set_position(4, app.main_window_height() - gui.size().y() - 4);
 		//!! For that 4 above: mycoGUI is still too lame for styling margins/padding... :-/
 		//!! Also, negative coords. aren't special in myco, so this just goes off-screen: gui.setPosition({100, -200});
 
@@ -448,7 +448,7 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 	ui_gebi(HelpPanel)  .onResize(width, height);
 	ui_gebi(Debug)      .onResize(width, height);
 #endif
-	gui.setPosition(4, main_window_height() - gui.getSize().y() - 4);
+	gui.set_position(4, main_window_height() - gui.size().y() - 4);
 }
 
 } // namespace OON

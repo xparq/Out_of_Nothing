@@ -47,7 +47,7 @@ bool Config::select(std::string_view cfg_path, bool can_throw, const Callback& p
 	if (_impl->_load(cfg_path))
 	{ // Success...
 		_current_config = cfg_path;
-		_cfg_base_path = sz::dirname(cfg_path);
+		_cfg_base_path = sz::fs::dirname(cfg_path);
 
 		// Call the user callback (NOOP by default)
 		post_load(*this);

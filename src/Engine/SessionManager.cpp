@@ -47,7 +47,7 @@ void SessionManager::set_save_as_filename(const string& fn)
      save_snapshot() will do the prefixing! (Which likely needs to change later!)
 
 	active_session.save_as_filename =
-		sz::prefix_if_rel(app.cfg.session_dir, fn);
+		sz::fs::prefix_by_intent(app.cfg.session_dir, fn);
 		//!! This manual dir prefixing will need to be normalized...
 		//!! See notes in open()!
 !!*/
@@ -83,7 +83,7 @@ void SessionManager::open(const string& session_name/* = ""*/)
 	//!! Use the same prefixing logic as the Config etc.
 	//!! -- JUST NOT THIS WAY, BUT VIA A SYSTEM-LEVEL RES. MGR.!
 	active_session.filename =
-		sz::prefix_if_rel(app.cfg.session_dir, active_session_name);
+		sz::fs::prefix_by_intent(app.cfg.session_dir, active_session_name);
 		//!! This manual dir prefixing will need to be normalized,
 		//!! i.e. synced with snapshot_filename(), by both that and
 		//!! this calling the same unified asset/resource filename

@@ -30,12 +30,12 @@ auto split(std::string_view name)
 //!! (But with a less flamboyant implementation then, perhaps. ;) )
 {
 	struct { std::string section, prop; } result;
-	// "Abuse" sz::dirname()/basename() to extract the (hierarchical) section name, if any:
-	result.section = sz::dirname(name);
+	// "Abuse" sz::fs::dirname()/basename() to extract the (hierarchical) section name, if any:
+	result.section = sz::fs::dirname(name);
 	// If section name == name, then no section:
 	if (result.section == name) result.section = "";
 	// The propertry name is the tail-end:
-	result.prop = sz::basename(name);
+	result.prop = sz::fs::basename(name);
 //DBG "cfg get: section: " << result.section;
 //DBG "cfg get: param: " << result.prop;
 	return result;

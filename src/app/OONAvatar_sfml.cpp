@@ -26,7 +26,7 @@ bool Avatar_sfml::load(const char* prefix_path_arg) /*!!override!!*/
 	auto prefix = prefix_path_arg && *prefix_path_arg
 	            ? prefix_path_arg : prefix_path;
 
-	auto path = sz::prefix_if_rel(prefix, image_path);
+	auto path = sz::fs::prefix_by_intent(prefix, image_path);
 	if (!image.loadFromFile(path)) {
 		Error("Failed to load image \"" + path + "\"!");
 		return false;
