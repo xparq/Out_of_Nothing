@@ -79,8 +79,8 @@ SFML_linkmode=$(SFML)
 
 _sflibdir=$(SFML_ROOT)/lib
 #!!_sfml_libs__static = libsfml-graphics-s.a libsfml-window-s.a libsfml-system-s.a libsfml-audio-s.a
-_sfml_libs__static = -static -lsfml-main-s -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lsfml-audio-s \
-	extern/sfml/mingw/lib/libsfml-main-s.a \
+_sfml_libs__static = -static -lsfml-main -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lsfml-audio-s \
+	extern/sfml/mingw/lib/libsfml-main.a \
 	extern/sfml/mingw/lib/libsfml-graphics-s.a \
 	extern/sfml/mingw/lib/libsfml-window-s.a \
 	extern/sfml/mingw/lib/libsfml-system-s.a \

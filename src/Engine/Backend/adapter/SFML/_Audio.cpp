@@ -71,7 +71,7 @@ bool SFML_Audio::play_music(const char* filename)
 		Error("Failed to load music: "s + filename);
 		return false;
 	}
-	_music.setLoop(true);
+	_music.setLooping(true);
 
 	if (enabled && music_enabled) {
 		_music.play();
@@ -212,7 +212,7 @@ short SFML_Audio::play_sound(size_t buffer_ndx, PlayReq options)
 //cerr << "DBG> play_sound: setting channel #"<<channel_ndx<<" to buffer #"<<buffer_ndx<<" for playing\n";
 	channel.priority = options.effective_priority();
 	channel.setVolume(_master_volume);
-	channel.setLoop(options.loop);
+	channel.setLooping(options.loop);
 //!!No (need for?) explicit resampling for SFML:
 //!!	channel.setSesampleRate(options.loop);
 	channel.play();
