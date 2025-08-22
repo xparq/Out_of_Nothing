@@ -33,8 +33,8 @@ namespace Szim {
 namespace Szim::View { class ScreenView; }
 
 #include "sz/lang/.hh" // IGNORE, ON/OFF, AUTO_CONST, OUT
-#include "sz/stat/counter.hh"
-#include "sz/stat/rolling_average.hh"
+#include "sz/stats/counter.hh"
+#include "sz/stats/rolling_average.hh"
 
 //!!GCC still doesn't like modules:
 //!!import Storage;
@@ -312,13 +312,13 @@ protected:
 	// Time control...
 
 	Time::Control time;
-	sz::CappedCounter<Szim::Time::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
+	sz::stats::CappedCounter<Szim::Time::CycleCount> iterations; // number of model update cycles (from the start of the main (run) loop, or load; !!TBD)
 		// 1 calendar year = 3,784,320,000 cycles at 120 fps, so even 32 bits are quite enough!
 		// But for longer runs (on persistent-world servers), or for higher resolutions, let's go 64...
-	sz::Counter<int> timestepping; // # of scheduled steps to advance/retrace, while in halt (paused) mode
+	sz::stats::Counter<int> timestepping; // # of scheduled steps to advance/retrace, while in halt (paused) mode
 	//!!??Move to the Metrics system and resuse it from there:
-	sz::SmoothRollingAverage<0.991f, 1/30.f> avg_frame_delay;
-//	sz::RollingAverage<30> avg_frame_delay;
+	sz::stats::SmoothRollingAverage<0.991f, 1/30.f> avg_frame_delay;
+//	sz::stats::RollingAverage<30> avg_frame_delay;
 
 	//--------------------------------------------------------------------
 	// Workflow control...
