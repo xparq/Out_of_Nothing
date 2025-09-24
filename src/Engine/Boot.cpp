@@ -187,7 +187,7 @@ void Engine::startup()
 			.bgColor = myco::Color(syscfg->default_bg_hexcolor),
 			.fontFile = syscfg->default_font_file.c_str(),
 		},
-		false // Don't manage the window
+		myco::GUI::WindowMode::Guest // Don't manage the window
 	);
 
 	//

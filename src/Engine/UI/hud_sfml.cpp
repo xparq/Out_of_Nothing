@@ -61,7 +61,7 @@ void HUD_SFML::renderstate_append_line(const string& str)
 			(float)_panel_left + DEFAULT_PADDING,
 			(float)_panel_top  + DEFAULT_PADDING + (renderstate_line_count()-1) * cfg.line_height});
 
-	myco::geometry::fRect linerect = line.size();
+	myco::fRect linerect = line.size();
 	myco::fVec2 size(linerect.left() * 2 + linerect.width(), linerect.top() + linerect.height());
 	if (linerect.width() + 2 * DEFAULT_PADDING > _panel_width)
 		_panel_width = (unsigned) linerect.width() + 2 * DEFAULT_PADDING;

@@ -273,7 +273,7 @@ try {
 		// Just make sure not to disable the control panel (a.k.a. `gui`)! :)
 		// (Hiding (e.g. not drawing) it is fine.)
 		//
-		for (myco::event::Input event; !terminated() && (event = gui.poll());) {
+		for (myco::event::Input event; !terminated() && (event = gui.poll(false));) {
 		// This inner loop is here to prevent event "jamming" (delays in
 		// event processing -- or even loss?) due to accumulating events
 		// coming faster than 1/frame for a long enough period to cause

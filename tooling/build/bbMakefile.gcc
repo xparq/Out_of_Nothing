@@ -11,6 +11,9 @@ TOOLCHAIN = mingw
 SFML_ROOT := extern/sfml/$(TOOLCHAIN)
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#!! Set to nothing if VERBOSE...:
+MUTE = @
+
 #--- BUILD MODE DEFAULTS -----------------------------------------------------
 DEBUG = 0
 CRT = dll
@@ -58,8 +61,11 @@ testdir = $(SZ_TEST_SUBDIR)
 #!! So, well, sigh... (or add a manaully updated list...):
 objs_using_modules = $(objs)
 
-#!!EXT_LIB_SFW = extern/sfw/lib/msvc/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_lib_tag).lib
-EXT_LIB_SFW = extern/sfw/lib/mingw/libsfw$(buildmode_sfml_linkmode_lib_tag).a 
+
+#debug:; @echo lib_suffix_crt_linkmode_with_debug: $(lib_suffix_crt_linkmode_with_debug)
+#!!?? No support for SFML mode switching yet, tho?...:
+EXT_LIB_SFW = extern/sfw/lib/mingw/libsfw$(buildmode_sfml_linkmode_lib_tag)$(lib_suffix_crt_linkmode_with_debug).a
+
 EXT_LIB_ZSTD = extern/zstd/mingw/libzstd.a
 #!!! ALERT !!! For gcc, order matters! And it must be this counterintuitive one: SFW *before* SFML! :-o
 EXT_LIBS =\
@@ -106,13 +112,23 @@ sfml_and_deps_libs = $(_sfml_and_deps_libs__$(SFML_linkmode))
 #------
 # Keep these -... not /... because they're used for (lib) file tagging, too! :)
 
-#_cflags_crt_linkmode__static :=
-#_cflags_crt_linkmode__dll    :=
-#cflags_crt_linkmode := $(_cflags_crt_linkmode__$(CRT))
-#
-#_cflags_crt_linkmode_with_debug__0 = $(cflags_crt_linkmode)
-#_cflags_crt_linkmode_with_debug__1 = $(cflags_crt_linkmode)d
-cflags_crt_linkmode_with_debug = $(_cflags_crt_linkmode_with_debug__$(DEBUG))
+#!! No support yet:
+#!!_cflags_crt_linkmode__static :=
+#!!_cflags_crt_linkmode__dll    :=
+#!!cflags_crt_linkmode := $(_cflags_crt_linkmode__$(CRT))
+#!!
+#!!_cflags_crt_linkmode_with_debug__0 = $(cflags_crt_linkmode)
+#!!_cflags_crt_linkmode_with_debug__1 = $(cflags_crt_linkmode)-d
+#!!cflags_crt_linkmode_with_debug = $(_cflags_crt_linkmode_with_debug__$(DEBUG))
+
+#!! No support yet:
+#!!_lib_suffix_crt_linkmode__static :=
+#!!_lib_suffix_crt_linkmode__dll    :=
+lib_suffix_crt_linkmode := $(_lib_suffix_crt_linkmode__$(CRT))
+
+_lib_suffix_crt_linkmode_with_debug__0 = $(lib_suffix_crt_linkmode)
+_lib_suffix_crt_linkmode_with_debug__1 = $(lib_suffix_crt_linkmode)-d
+lib_suffix_crt_linkmode_with_debug = $(_lib_suffix_crt_linkmode_with_debug__$(DEBUG))
 
 #----------------------
 # DEBUG/RELEASE mode
@@ -311,19 +327,19 @@ _cc_exitcode = $(outdir)/.tool-exitcode.tmp
 
 .c.o:
 	$(_cc_info)
-	@$(CC) $(CFLAGS) -o$@ $< $(_cc_depgen)
+	$(MUTE)$(CC) $(CFLAGS) -o$@ $< $(_cc_depgen)
 
 .cpp.o:
 	$(_cc_info)
-	@$(CXX) $(CPPFLAGS) -o$@ $< $(_cc_depgen)
+	$(MUTE)$(CXX) $(CPPFLAGS) -o$@ $< $(_cc_depgen)
 
 .ixx.ifc:
 	$(_cc_info)
-	@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
+	$(MUTE)$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
 
 .ixx.o:
 	$(_cc_info)
-	@$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
+	$(MUTE)$(CXX) $(CPPFLAGS) -x c++-system-header iostream -x c++ -o$@ $< $(_cc_depgen)
 
 #-----------------------------------------------------------------------------
 # Custom rules...
