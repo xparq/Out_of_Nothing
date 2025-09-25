@@ -1,8 +1,8 @@
-﻿//!!OLD:
+﻿//!! NEW: #include "Engine/App/Base.hpp"
+//!! LEGACY:
 #include "Engine/SimApp.hpp"
-//!!NEW: #include "Engine/App/Base.hpp"
-
 #include "Engine/View/ScreenView.hpp"
+#include "Engine/UI.hpp" // Let toggle_fullscreen() send the news to the UI!
 
 #include "sz/str.hh"
 //	using sz::to_bool
@@ -456,7 +456,14 @@ void SimApp::toggle_fullscreen()
 	// Refresh engine state:
 	main_view().resize(width, height);
 
-	// Notify the client:
+	// Notify the UI (the client app might set up a UI callback if interested in this directly):
+	using namespace myco::event;
+	gui.dispatch(
+		Event<WindowResized>(WindowChange{ .size = {width, height} })
+	);
+
+	//!! LEGACY:
+	// Notify the client app directly:
 	onResize(width, height);
 }
 

@@ -9,7 +9,6 @@ namespace Szim {
 	class SimAppConfig;
 	class Backend;
 }
-#include "Engine/UI-fw.hpp"
 
 #include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
 #include "Backend.hpp" // E.g. for convenience accessors of backend components
@@ -22,8 +21,9 @@ namespace Szim {
 //!!... The UI and IO etc. are gonna be tough to abstract...
 //!!#include "myco/GUI.hpp"//!! REMOVE FROM HERE! (After hiding it behind a ref., those
 //!!                       //!! (mostly client) TUs that use it should include it individually!)
-//!!#include "Engine/UI/HUD.hpp"
+#include "Engine/UI-fw.hpp"
 #include "Engine/UI/Input.hpp"
+
 #include "Metamodel.hpp"
 	//!!C++: *Sigh...*
 	using EntityID = Model::EntityID;

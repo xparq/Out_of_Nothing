@@ -50,10 +50,6 @@
 //# define DISABLE_AUDIO
 #endif
 
-#ifndef DISABLE_HUDS
-//# define DISABLE_HUDS
-#endif
-
 #ifndef DISABLE_FULL_INTERACTION_LOOP
 //# define DISABLE_FULL_INTERACTION_LOOP
 #endif

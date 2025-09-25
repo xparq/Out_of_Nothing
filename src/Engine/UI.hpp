@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-//!!...
+//!! This umbrella header is way too heavy-handed here:
 #include "myco/GUI.hpp"
 
 //!!...

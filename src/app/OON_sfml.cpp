@@ -79,43 +79,73 @@ namespace _internal {
 OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime, int argc, char** argv)
 	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
 	, OONApp(runtime, argc, argv, _oon_view._oon_main_view) //!! Ugh...
-#ifndef DISABLE_HUDS
-//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
-	// NOTE: .cfg is ready to use now!
-	, timing_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/timing_left", -250), .panel_top = appcfg.get("appearance/HUD/timing_top", 10),
-		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUDStream::DEFAULT_TEXT_COLOR),
-		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUDStream::DEFAULT_BACKGROUND_COLOR)})
-	, world_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 314),
-		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
-		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)})
-	, view_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 420),
-		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
-		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)})
-	, object_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 526),
-		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
-		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)})
-	, help_hud( { .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/help_left", 10), .panel_top = appcfg.get("appearance/HUD/help_top", 10),
-		.fgcolor = appcfg.get("appearance/HUD/help_fg", 0x40d040ffu),
-		.bgcolor = appcfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)})
-	, debug_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/debug_left", -250), .panel_top = appcfg.get("appearance/HUD/debug_top", -350),
-		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
-		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)})
-#endif
 {
 //std::cerr << "--- OONApp_sfml ctor" << std::endl;
 }
+
+
+//----------------------------------------------------------------------------
+UI::HUDStream& OONApp_sfml::ui_gebi(HUD_ID which) //override
+{
+//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
+	// NOTE: .cfg is ready to use now!
+
+	static auto* timing_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/timing_left", -250), .panel_top = appcfg.get("appearance/HUD/timing_top", 10),
+		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUDStream::DEFAULT_TEXT_COLOR),
+		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUDStream::DEFAULT_BACKGROUND_COLOR)
+	}));
+	static auto* world_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 314),
+		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)
+	}));
+	static auto* view_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 420),
+		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)
+	}));
+	static auto* object_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 526),
+		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
+		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)
+	}));
+	static auto* help_hud = gui.overlay.add(new UI::HUDStream(
+	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/help_left", 10), .panel_top = appcfg.get("appearance/HUD/help_top", 10),
+		.fgcolor = appcfg.get("appearance/HUD/help_fg", 0x40d040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)
+	}));	
+	static auto* debug_hud = gui.overlay.add(new UI::HUDStream(
+	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/debug_left", -250), .panel_top = appcfg.get("appearance/HUD/debug_top", -350),
+		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)
+	}));
+
+	switch (which) {
+	case TimingStats: return *timing_hud;
+	case WorldData:   return *world_hud;
+	case ViewData:    return *view_hud;
+	case ObjMonitor:  return *object_hud;
+	case HelpPanel:   return *help_hud;
+	case Debug:       return *debug_hud;
+	default: std::unreachable(); // c++23 only; and this will be c++999: [[unreachable]]
+		//return help_hud; // Dummy, to shut up some pre-c++23 compiler warnings
+	}
+}
+
+
 
 //----------------------------------------------------------------------------
 void OONApp_sfml::update_thread_main_loop()
@@ -212,42 +242,6 @@ LOGE << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.o
 #ifndef DISABLE_THREADS
 	}
 #endif
-}
-
-//----------------------------------------------------------------------------
-void OONApp_sfml::draw() // override
-//!!?? Is there a nice, exact criteria by which UI rendering can be distinguished from model rendering?
-{
-//#ifdef DEBUG
-	if (!controls.ShowOrbits) // -> #225
-//#endif
-		SFML_WINDOW().clear();
-
-	oon_main_view().draw(); //!! Change it to draw(surface)!
-
-/*LOGD	<< std::boolalpha
-	<< "wallpapr? "<<gui.hasWallpaper() << ", "
-	<< "clear bg? "<<myco::Theme::clearBackground << ", "
-	<< hex << myco::Theme::bgColor.toInteger();
-*/
-        gui.render(); // Draw last, as a translucent overlay!
-//!! These are (will be...) also part of the GUI:
-#ifndef DISABLE_HUDS
-	if (_ui_show_huds) {
-		auto& target = SFML_WINDOW(); //!! gui.window();
-		myco::gfx::RenderContext ctx{ target };
-		timing_hud.draw(ctx);
-		world_hud.draw(ctx);
-		view_hud.draw(ctx);
-		object_hud.draw(ctx);
-		debug_hud.draw(ctx);
-		if (help_hud.active())
-			help_hud.draw(ctx); //!!?? This active()-chk is redundant: HUD::draw() does the same. TBD: who's boss?
-		                            //!!?? "Activity" means more than just drawing, so... (Or actually both should control it?)
-	}
-#endif
-
-	SFML_WINDOW().display();
 }
 
 
@@ -610,7 +604,7 @@ LOGD << "Click: no obj.";
 				break;
 
 			default:
-process_ui_event:		// The GUI should be given a chance before this `switch`, but... -> #334: it can't swallow events!
+process_ui_event:		// The GUI should be given a chance *before* this entire `switch`, but... -> #334: it can't swallow events!
 				gui.dispatch(event);
 				//!! Also, it's kinda inconsistent with this `IDLE` state assumption below!...
 				//!! (Hopefully it's not even used nowadays at all though...)
@@ -668,6 +662,51 @@ process_ui_event:		// The GUI should be given a chance before this `switch`, but
 	Error("UNKNOWN EXCEPTION!");
 	return;
 }
+} // event_loop()
+
+//----------------------------------------------------------------------------
+void OONApp_sfml::draw() // override
+//!!?? Is there a nice, exact criteria by which UI rendering can be distinguished from model rendering?
+{
+	// Draw the model first...
+
+//#ifdef DEBUG
+	if (!controls.ShowOrbits) // -> #225
+//#endif
+		SFML_WINDOW().clear();
+
+	oon_main_view().draw(); //!! Change it to draw(surface)!
+
+/*LOGD	<< std::boolalpha
+	<< "wallpapr? "<<gui.hasWallpaper() << ", "
+	<< "clear bg? "<<myco::Theme::clearBackground << ", "
+	<< hex << myco::Theme::bgColor.toInteger();
+*/
+
+	// Draw the UI last, as an overlay...
+
+	// Embarrassing way to turn all (but the Help) HUDs on/off, after #644:
+	ui_gebi(TimingStats).active(_ui_show_huds);
+	ui_gebi(WorldData).active(_ui_show_huds);
+	ui_gebi(ViewData).active(_ui_show_huds);
+	ui_gebi(ObjMonitor).active(_ui_show_huds);
+#ifdef DEBUG
+	ui_gebi(Debug).active(_ui_show_huds);
+#else
+	ui_gebi(Debug).active(false);
+#endif
+/*!! OLD:
+	if (ui_gebi(HelpPanel).active())  //!!?? This active()-chk is redundant: HUD::draw() does the same. TBD: who's boss?
+	    ui_gebi(HelpPanel).draw(ctx); //!!?? "Activity" means more than just drawing, so... (Or actually both should control it?)
+!!*/
+	//!! A "meh, good enough" approximation of the old "help on/off" logic (which
+	//!! remembered its `active` state regardless of the global _ui_show_huds flag):
+	ui_gebi(HelpPanel).active(_ui_show_huds && ui_gebi(HelpPanel).active());
+
+	gui.render();
+
+	// Commit...
+	SFML_WINDOW().display();
 }
 
 

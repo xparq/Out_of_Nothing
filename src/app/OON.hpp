@@ -110,15 +110,10 @@ public:
 	void toggle_muting();
 	void toggle_music();
 	void toggle_sound_fx();
-#ifndef DISABLE_HUDS
+
 	void toggle_huds();
 	bool huds_active();
 	void toggle_help();
-#else
-	auto toggle_huds()  {}
-	auto huds_active()  { return false; }
-	auto toggle_help()  {}
-#endif
 
 	//--------------------------------------------------------------------
 	// "Internal ops.", rather than "user actions" (well, some still are, e.g. for testing)

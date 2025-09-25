@@ -50,30 +50,12 @@ public:
 	OONApp_sfml(const Szim::RuntimeContext& runtime, int argc, char** argv);
 
 //------------------------------------------------------------------------
-// Data / Internals...
+// Internals...
 //------------------------------------------------------------------------
 protected:
 
-#ifndef DISABLE_HUDS
-//!!	UI::HUD& ...;
-	UI::HUDStream timing_hud;
-	UI::HUDStream world_hud;
-	UI::HUDStream view_hud;
-	UI::HUDStream object_hud;
-	UI::HUDStream help_hud;
-	UI::HUDStream debug_hud;
+	UI::HUDStream& ui_gebi(HUD_ID which) override;
 
-	UI::HUDStream& ui_gebi(HUD_ID which) override { switch (which) {
-		case TimingStats: return timing_hud;
-		case WorldData:   return world_hud;
-		case ViewData:    return view_hud;
-		case ObjMonitor:  return object_hud;
-		case HelpPanel:   return help_hud;
-		case Debug:       return debug_hud;
-		default: std::unreachable(); // c++23 only; and this will be c++999: [[unreachable]]
-			//return help_hud; // Dummy, to shut up some pre-c++23 compiler warnings
-	}}
-#endif
 }; // class OONApp_sfml
 
 } // namespace OON

@@ -261,7 +261,7 @@ LOGI << "Creating two small moons by default...";
 
 
 //----------------------------------------------------------------------------
-// (Unrelated to onResize(), but... where else would be better to put these...)
+// (Unrelated to onResize(), but... where else would it be better to put these?!...)
 void OONApp::resize_shapes(float factor) //override
 {
 	oon_main_view().resize_objects(factor);

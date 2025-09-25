@@ -52,11 +52,9 @@ bool OONApp::show_cmdline_help(const Args& args, const char* banner)
 
 
 //----------------------------------------------------------------------------
-#ifndef DISABLE_HUDS
 void OONApp::toggle_huds()  { _ui_show_huds = !_ui_show_huds; }
 bool OONApp::huds_active()  { return _ui_show_huds; }
 void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }
-#endif
 
 //----------------------------------------------------------------------------
 void OONApp::ui_setup()
@@ -165,12 +163,9 @@ void OONApp::ui_setup()
 		//!! For that 4 above: mycoGUI is still too lame for styling margins/padding... :-/
 		//!! Also, negative coords. aren't special in myco, so this just goes off-screen: gui.setPosition({100, -200});
 
-#ifndef DISABLE_HUDS
 	ui_setup_HUDs();
-#endif
 }
 
-#ifndef DISABLE_HUDS
 void OONApp::ui_setup_HUDs()
 {
 	//!!??
@@ -429,23 +424,27 @@ void OONApp::ui_setup_HUD_Help(/*!!, mode/config...!!*/)
 //cerr << help_hud;
 }
 
-#endif // DISABLE_HUDS
-
 
 //----------------------------------------------------------------------------
 void OONApp::onResize(unsigned width, unsigned height) //override
-//!!Sink this into the UI!
+// This is called on fullscreen/windowd transition, too.
+//!!
+//!!Sink this into the UI! (Currently it belongs to Engine/App/Base.)
+//!!
 {
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
-#ifndef DISABLE_HUDS
-	ui_gebi(TimingStats).onResized(width, height);
-	ui_gebi(WorldData)  .onResized(width, height);
-	ui_gebi(ViewData)   .onResized(width, height);
-	ui_gebi(ObjMonitor) .onResized(width, height);
-	ui_gebi(HelpPanel)  .onResized(width, height);
-	ui_gebi(Debug)      .onResized(width, height);
-#endif
+
+	//!!
+	//!! gui.onResized(width, height);
+	//!!
+	//!! mycoGUI doesn't yet have a concept of being resized externally, so calling
+	//!! gui.onResized(), albeit possible, wouldn't do much. (As of 0.45, it would
+	//!! just resize its wallpaper.)
+	//
+	// So, this is just for repositioning the control panel to keep it snapped to the bottom edge:
 	gui.set_position(4, main_window_height() - gui.extent().y() - 4);
+		//!! Make is a feature of the UI to take care of this, e.g. in response to a
+		//!! WindowResized event (sent from SimApp::toggle_fullscreen() in Base.cpp)!
 }
 
 } // namespace OON

@@ -13,10 +13,9 @@ class HUDStream : public myco::HUDStream
 public:
 	using myco::HUDStream::HUDStream;
 
-	//!! Non-virt. adapters (public access bridges, etc.) until the HUDs
+	//!! Non-virt. adapter (public access bridge, etc.) until the HUDs
 	//!! get properly managed by the UI, instead of manually in OONApp!...
 	void draw(const myco::gfx::RenderContext& ctx) const { myco::HUDStream::draw(ctx); }
-	void onResized(unsigned width, unsigned height)      { myco::HUDStream::onResized((float)width, (float)height); }
 };
 
 }; // namespace UI
