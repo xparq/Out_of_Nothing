@@ -2,17 +2,13 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON.hpp"
-#include "OON_UI.hpp"
+#include "OON_UI-impl.hpp" // Note: scroll_locked() reads the control mode directly from the UI!
 
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "Model/Emitter/SkyPrint.hpp"
 
 #include "Engine/Backend/HCI.hpp"
-#include "Engine/UI.hpp" // scroll_locked() reads the control mode directly from the UI
-
-#include "Engine/UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
-                       //!! And we're already using keystate() here, too, shamelessly! ;) )
-
+ 
 #include "sz/math/sign.hh"
 
 #include <cstdlib>

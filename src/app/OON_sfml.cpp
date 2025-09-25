@@ -17,7 +17,6 @@
 #include "Engine/Backend/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
-#define SFML_HUD(x) (((UI::HUD_SFML&)backend).SFML_window())
 #define SFML_KEY(KeyName) unsigned(sf::Keyboard::Key::KeyName) //!!XLAT
 
 
@@ -83,32 +82,32 @@ OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime, int argc, char** argv)
 #ifndef DISABLE_HUDS
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
-	, timing_hud(SFML_WINDOW(),{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
+	, timing_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/timing_left", -250), .panel_top = appcfg.get("appearance/HUD/timing_top", 10),
-		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUD::DEFAULT_TEXT_COLOR),
-		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUD::DEFAULT_BACKGROUND_COLOR)})
-	, world_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUDStream::DEFAULT_TEXT_COLOR),
+		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUDStream::DEFAULT_BACKGROUND_COLOR)})
+	, world_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 314),
 		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)})
-	, view_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+	, view_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 420),
 		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)})
-	, object_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+	, object_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 526),
 		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
 		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)})
-	, help_hud( SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+	, help_hud( { .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/help_left", 10), .panel_top = appcfg.get("appearance/HUD/help_top", 10),
 		.fgcolor = appcfg.get("appearance/HUD/help_fg", 0x40d040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)})
-	, debug_hud(SFML_WINDOW(), { .font_file = cfg.asset_dir + appcfg.hud_font_file,
+	, debug_hud({ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
 		.panel_left = appcfg.get("appearance/HUD/debug_left", -250), .panel_top = appcfg.get("appearance/HUD/debug_top", -350),
 		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
@@ -235,15 +234,16 @@ void OONApp_sfml::draw() // override
 //!! These are (will be...) also part of the GUI:
 #ifndef DISABLE_HUDS
 	if (_ui_show_huds) {
-		auto& target = SFML_WINDOW();
-		timing_hud.draw(target);
-		world_hud.draw(target);
-		view_hud.draw(target);
-		object_hud.draw(target);
-		debug_hud.draw(target);
+		auto& target = SFML_WINDOW(); //!! gui.window();
+		myco::gfx::RenderContext ctx{ target };
+		timing_hud.draw(ctx);
+		world_hud.draw(ctx);
+		view_hud.draw(ctx);
+		object_hud.draw(ctx);
+		debug_hud.draw(ctx);
 		if (help_hud.active())
-			help_hud.draw(target); //!! This active-chk is redundant: HUD::draw() does the same. TBD: who's boss?
-		                                      //!! "Activity" means more than just drawing, so... (Or actually both should control it?)
+			help_hud.draw(ctx); //!!?? This active()-chk is redundant: HUD::draw() does the same. TBD: who's boss?
+		                            //!!?? "Activity" means more than just drawing, so... (Or actually both should control it?)
 	}
 #endif
 

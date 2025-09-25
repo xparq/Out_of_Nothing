@@ -7,7 +7,7 @@
 
 #include "Engine/SimApp.hpp"
 
-namespace UI { class HUD; } //!!...
+namespace UI { class HUDStream; }
 
 #include <cassert>
 
@@ -203,7 +203,7 @@ protected:
 		void ui_setup_HUD_ObjMonitor();
 	//!!} ui;
 	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
-	virtual UI::HUD& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
+	virtual UI::HUDStream& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
 
 	// Chores after loading a new model world:
 	void _on_snapshot_loaded(); // Updates the UI etc.

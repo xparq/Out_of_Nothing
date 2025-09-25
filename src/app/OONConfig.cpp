@@ -16,7 +16,8 @@
 
 //!! This is an outlier for now: its own config should be reconciled with this,
 //!! which in turn should be split from the Engine cfg... -> #272!
-#include "Engine/UI/hud.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
+//!!#include "Engine/UI/HUD.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
+//!! SEE ALSO IN Engine/App/Config.cpp!... :-o
 
 
 using namespace Szim;
@@ -51,8 +52,10 @@ OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Ar
 	default_bg_hexcolor = get("appearance/colors/default_bg", "#30107080");
 	default_font_file   = get("appearance/default_font_file", "gui/font/default.font");
 	hud_font_file       = get("appearance/HUD/font_file", default_font_file);
-	hud_line_height     = get("appearance/HUD/line_height", UI::HUD::DEFAULT_LINE_HEIGHT);
-	hud_line_spacing    = get("appearance/HUD/line_spacing", UI::HUD::DEFAULT_LINE_SPACING);
+
+	//!! SEE ALSO IN Engine/App/Config.cpp!... :-o
+	hud_line_height     = get("appearance/HUD/line_height", 17); //!!UI::HUD::DEFAULT_LINE_HEIGHT);
+	hud_line_spacing    = get("appearance/HUD/line_spacing", 4); //!!UI::HUD::DEFAULT_LINE_SPACING);
 
 	player_thrust_force       = get("sim/player_thrust_force", 1e35f); // N (kg*m/s^2)
 

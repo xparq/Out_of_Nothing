@@ -1,8 +1,5 @@
-﻿#include "OON_UI.hpp"
+﻿#include "OON_UI-impl.hpp"
 #include "OON.hpp"
-
-#include "Engine/UI/hud.hpp"  //!! <-- And also this would be integrated there, too, eventually.
-                       //!! And we're already using keystate() here, too, shamelessly! ;) )
 #include "Engine/Backend/HCI.hpp"
 
 #include "Engine/diag/Error.hpp"
@@ -441,12 +438,12 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 {
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
 #ifndef DISABLE_HUDS
-	ui_gebi(TimingStats).onResize(width, height);
-	ui_gebi(WorldData)  .onResize(width, height);
-	ui_gebi(ViewData)   .onResize(width, height);
-	ui_gebi(ObjMonitor) .onResize(width, height);
-	ui_gebi(HelpPanel)  .onResize(width, height);
-	ui_gebi(Debug)      .onResize(width, height);
+	ui_gebi(TimingStats).onResized(width, height);
+	ui_gebi(WorldData)  .onResized(width, height);
+	ui_gebi(ViewData)   .onResized(width, height);
+	ui_gebi(ObjMonitor) .onResized(width, height);
+	ui_gebi(HelpPanel)  .onResized(width, height);
+	ui_gebi(Debug)      .onResized(width, height);
 #endif
 	gui.set_position(4, main_window_height() - gui.extent().y() - 4);
 }

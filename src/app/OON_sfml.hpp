@@ -3,8 +3,8 @@
 
 #include "OON.hpp"
 #include "OONMainDisplay_sfml.hpp"
-//!!Move to a proper polymorphic UI (e.g. myco):
-#include "Engine/UI/hud_sfml.hpp"
+#include "Engine/UI/HUDStream.hpp"
+
 #include <utility> // std::unreachable
 
 namespace OON {
@@ -56,14 +56,14 @@ protected:
 
 #ifndef DISABLE_HUDS
 //!!	UI::HUD& ...;
-	UI::HUD_SFML timing_hud;
-	UI::HUD_SFML world_hud;
-	UI::HUD_SFML view_hud;
-	UI::HUD_SFML object_hud;
-	UI::HUD_SFML help_hud;
-	UI::HUD_SFML debug_hud;
+	UI::HUDStream timing_hud;
+	UI::HUDStream world_hud;
+	UI::HUDStream view_hud;
+	UI::HUDStream object_hud;
+	UI::HUDStream help_hud;
+	UI::HUDStream debug_hud;
 
-	UI::HUD& ui_gebi(HUD_ID which) override { switch (which) {
+	UI::HUDStream& ui_gebi(HUD_ID which) override { switch (which) {
 		case TimingStats: return timing_hud;
 		case WorldData:   return world_hud;
 		case ViewData:    return view_hud;

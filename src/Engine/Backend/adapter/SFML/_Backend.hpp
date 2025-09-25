@@ -7,10 +7,8 @@
 #include "_HCI.hpp" // sf::Window, events etc.
 #include "_Audio.hpp"
 
-//!!TBD: These are not direct SFML deps., only they themselves depend on it...
-//!!??   How to deal with this cleanly?
+//!!TBD: This is not a direct SFML dep., just that itself depends on it...
 //!!#include "myco/GUI.hpp"     //!! Not yet at its appropriate location!
-//!!#include "Engine/UI/hud_sfml.hpp" //!! Not yet at its appropriate location! (Should be in Myco!)
 
 //!!Which subsystem should this go to, if any?
 //!!#include <SFML/System/Sleep.hpp>

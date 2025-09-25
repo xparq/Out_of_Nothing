@@ -36,8 +36,6 @@ TODO:
 #include "Engine/UI.hpp"   // Basically myco/GUI.hpp!
 #include "Model/World.hpp" // This one is not so heavy.
 
-namespace UI { class HUD; } //!!...
-
 namespace OON {
 
 	using GravityModeSelector = myco::Options<Model::World::GravityMode>;
