@@ -75,14 +75,19 @@ ZoneScoped;
 void World::init(Szim::SimApp& app)
 {
 	app.init_world_hook();
+	//!! See e.g. OONApp::init() in OON.cpp, and init_world() in SimApp.hpp why this
+	//!! convoluted inverted control, instead of the engine just calling the app's
+	//!! init_world()!... (E.g. no virtual dispatch in the legacy init, etc...)
 }
 
 void World::update(float dt, SimApp& app)
-//!! Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
+// The updates are deterministic currently (but random effects may be added later).
 {
-	update_before_interactions(dt, app);
-	update_pairwise_interactions(dt, app);
-	update_after_interactions(dt, app);
+	//!! pre_update_hook(); // Per-tick model housekeeping before updating
+	update_intrinsic(dt, app); // Advance entity states independently (O(n), can be parallel)
+	update_pairwise(dt, app);  // Let them talk... (O(n²), probably (inherently?) sequential!)
+	update_global(dt, app);    // Apply global effects (O(n), can be parallel)
+	//!! post_update_hook(); // // Housekeeping after the update — i.e. before drawing!
 }
 
 //----------------------------------------------------------------------------
@@ -96,7 +101,7 @@ void World::update(float dt, SimApp& app)
 
 
 //----------------------------------------------------------------------------
-void World::update_before_interactions(float dt, Szim::SimApp& app [[maybe_unused]])
+void World::update_intrinsic(float dt, Szim::SimApp& app [[maybe_unused]])
 {
 ZoneScoped;
 
@@ -183,7 +188,7 @@ if (_AUTOGENIC_UPDATE_SKIP_COUNT_ && --skipping_n_interactions) {
 }
 
 //----------------------------------------------------------------------------
-void World::update_pairwise_interactions(float dt, Szim::SimApp& app)
+void World::update_pairwise(float dt, Szim::SimApp& app)
 {
 // Now do the interaction matrix:
 //!!
@@ -413,7 +418,7 @@ dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 }
 
 //----------------------------------------------------------------------------
-void World::update_after_interactions(float dt, Szim::SimApp& app)
+void World::update_global(float dt, Szim::SimApp& app)
 {
 	// All-inclusive postprocessing loop for friction [but why here? test what diff it makes if done in the pre-interact. loop],
 	// and actually updating the positions finally
