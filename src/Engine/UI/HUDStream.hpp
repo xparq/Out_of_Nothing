@@ -3,19 +3,19 @@
 
 //!!?? #include "Engine/Config.hpp" //!! Move to szlib (#398)
 
-#include "myco/widget/HUDStream.hpp"
+#include "myco/widget/StreamBox.hpp"
 
 namespace UI {
 
 //----------------------------------------------------------------------------
-class HUDStream : public myco::HUDStream
+class HUDStream : public myco::StreamBox
 {
 public:
-	using myco::HUDStream::HUDStream;
+	using myco::StreamBox::StreamBox; // Take the ctors...
 
 	//!! Non-virt. adapter (public access bridge, etc.) until the HUDs
 	//!! get properly managed by the UI, instead of manually in OONApp!...
-	void draw(const myco::gfx::RenderContext& ctx) const { myco::HUDStream::draw(ctx); }
+	void draw(const myco::gfx::RenderContext& ctx) const { myco::StreamBox::draw(ctx); }
 };
 
 }; // namespace UI
