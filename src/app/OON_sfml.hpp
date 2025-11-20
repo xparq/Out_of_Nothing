@@ -3,7 +3,7 @@
 
 #include "OON.hpp"
 #include "OONMainDisplay_sfml.hpp"
-#include "Engine/UI/HUDStream.hpp"
+#include "Szim/UI/HUDStream.hpp"
 
 #include <utility> // std::unreachable
 

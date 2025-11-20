@@ -1,9 +1,9 @@
 #include "OONControls.hpp"
 
 #include "OON.hpp" // OONApp.gui (App/Base would be enough, if it was declared as SimApp*, but OONApp is more future-proof.)
-#include "Engine/UI.hpp"
+#include "Szim/UI.hpp"
 
-#include "Engine/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
+#include "Szim/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 
 
 /*!!

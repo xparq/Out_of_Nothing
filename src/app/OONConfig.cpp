@@ -1,6 +1,6 @@
 #include "OONConfig.hpp"
 
-#include "Engine/SimAppConfig.hpp"
+#include "Szim/SimAppConfig.hpp"
 
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/sys/fs.hh"
@@ -10,14 +10,14 @@
 #include <string>
 #include <string_view>
 
-#include "Engine/diag/Error.hpp"
-#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Error.hpp"
+#include "Szim/diag/Log.hpp"
 
 
 //!! This is an outlier for now: its own config should be reconciled with this,
 //!! which in turn should be split from the Engine cfg... -> #272!
-//!!#include "Engine/UI/HUD.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
-//!! SEE ALSO IN Engine/App/Config.cpp!... :-o
+//!!#include "Szim/UI/HUD.hpp" // HUD::DEFAULT_LINE_HEIGHT, HUD::DEFAULT_LINE_SPACING
+//!! SEE ALSO IN Szim/App/Config.cpp!... :-o
 
 
 using namespace Szim;
@@ -53,7 +53,7 @@ OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Ar
 	default_font_file   = get("appearance/default_font_file", "gui/font/default.font");
 	hud_font_file       = get("appearance/HUD/font_file", default_font_file);
 
-	//!! SEE ALSO IN Engine/App/Config.cpp!... :-o
+	//!! SEE ALSO IN Szim/App/Config.cpp!... :-o
 	hud_line_height     = get("appearance/HUD/line_height", 17); //!!UI::HUD::DEFAULT_LINE_HEIGHT);
 	hud_line_spacing    = get("appearance/HUD/line_spacing", 4); //!!UI::HUD::DEFAULT_LINE_SPACING);
 

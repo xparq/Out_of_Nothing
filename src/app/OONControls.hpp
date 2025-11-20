@@ -4,7 +4,7 @@
 #include "sz/toggle.hh"
 #include <cstdint>
 
-#include "Engine/HCI/VirtualController.hpp"
+#include "Szim/HCI/VirtualController.hpp"
 
 namespace OON {
 

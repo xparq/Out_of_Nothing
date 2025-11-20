@@ -2,7 +2,7 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 #include "extern/Tracy/public/TracyClient.cpp"
 
-#include "Engine.hpp"
+#include "Szim/Core.hpp"
 #include "OON_sfml.hpp"
 
 #include <iostream> // For normal user-facing output

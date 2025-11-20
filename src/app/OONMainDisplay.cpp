@@ -1,7 +1,7 @@
 #include "OONMainDisplay.hpp"
 #include "OONConfig.hpp"
 
-#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Log.hpp"
 
 using namespace Szim::View;
 

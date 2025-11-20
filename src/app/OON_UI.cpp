@@ -1,10 +1,10 @@
 ﻿#include "OON_UI-impl.hpp"
 #include "OON.hpp"
-#include "Engine/Backend/HCI.hpp"
+#include "Szim/Backend/HCI.hpp"
 
-#include "Engine/diag/Error.hpp"
-//#include "Engine/diag/Log.hpp"
-//#include "sz/DBG.hh"
+#include "Szim/diag/Error.hpp"
+//#include "Szim/diag/Log.hpp"
+#include "sz/DBG.hh"
 
 using namespace Szim;
 using namespace Model;
@@ -37,7 +37,7 @@ bool OONApp::show_cmdline_help(const Args& args, const char* banner)
 
 	SimApp::show_cmdline_help(args, banner);
 
-	//!! Evn this "custom options" part should be automated some day:
+	//!! Even this "custom options" part should be automated some day:
 	cout << R"(
   -C cfgfile
           Load configuration from 'cfgfile'. If not found, abort.
@@ -74,17 +74,25 @@ void OONApp::ui_setup()
 		perf_form->add("FPS", new ProgressBar({.length=60, .range={0, 120}, .clamp=false}));
 		perf_form->add("- limit", new Slider({.length=60, .range={0, 120}, .step=30}))
 			->set(app.fps_throttling())
-			->setCallback([&](auto* w){ app.fps_throttling((unsigned)w->get()); });
+			->setCallback([&](auto* self){ app.fps_throttling((unsigned)self->get()); });
 		perf_form->add("Fixed model Δt", new CheckBox(
 			[&](auto*){ app.toggle_fixed_model_dt(); }, app.cfg.fixed_model_dt_enabled));
+
+		perf_form->add("Full-matrix loop", new myco::CheckBox(
+			[&app](auto* self){
+				app.world().loop_mode = self->get()
+					? World::LoopMode::Full_Matrix : World::LoopMode::Half_Matrix;
+			},
+			app.world().loop_mode == World::LoopMode::Full_Matrix)
+		);
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
 	// UI/View controls...
 	auto	view_form = gui_main_hbox->add(new Form);
-		view_form->add("Show HUDs", new CheckBox([&](auto*){ app.toggle_huds(); }, app.huds_active()));
+		view_form->add("Show HUDs", new CheckBox([&]{ app.toggle_huds(); }, app.huds_active()));
 		    gui.recall("Show HUDs")->set_tooltip("Press [?] to toggle the Help panel");
-		view_form->add("Grid lines", new CheckBox([&](auto* w){ app.oon_main_camera().cfg.gridlines = w->get(); },
+		view_form->add("Grid lines", new CheckBox([&](auto* self){ app.oon_main_camera().cfg.gridlines = self->get(); },
 		                                          app.oon_main_camera().cfg.gridlines));
 		view_form->add("Pan follows object", new CheckBox)->disable(); // Will be updated by the ctrl. loop!
 		view_form->add("  - forced follow", new CheckBox); // Will be polled by the control loop!
@@ -95,36 +103,40 @@ void OONApp::ui_setup()
 	auto left_vbox = gui_main_hbox->add(new VBox);
 		auto	volrect = left_vbox->add(new Form, "VolForm");
 			volrect->add("Volume", new Slider({.length=70/*, .orientation=Vertical*/, .preset=75})) // %
-			->setCallback([&](auto* w){ app.backend.audio.volume(w->get()); });
+			->setCallback([&app](auto* self){ app.backend.audio.volume(self->get()); });
 		auto	audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
-			audio_onoff->add("Audio: ", new CheckBox([&](auto*){ app.backend.audio.toggle_audio(); },  app.backend.audio.enabled));
-			audio_onoff->add(" - Music: ", new CheckBox([&](auto*){ app.backend.audio.toggle_music(); }, app.backend.audio.music_enabled));
-			audio_onoff->add(" - FX: ", new CheckBox([&](auto*){ app.backend.audio.toggle_sounds(); }, app.backend.audio.fx_enabled));
+			audio_onoff->add("Audio: ",    new CheckBox([&app]{ app.backend.audio.toggle_audio();  }, app.backend.audio.enabled));
+			audio_onoff->add(" - Music: ", new CheckBox([&app]{ app.backend.audio.toggle_music();  }, app.backend.audio.music_enabled));
+			audio_onoff->add(" - FX: ",    new CheckBox([&app]{ app.backend.audio.toggle_sounds(); }, app.backend.audio.fx_enabled));
 
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
 
-	// Physics - exp. tweaks...
+	// Physics tweaks...
 	auto	phys_form = gui_main_hbox->add(new Form);
-		auto g_select = new GravityModeSelector();
-			g_select->add("Off",          World::GravityMode::Off);
-			g_select->add("Hyperbolic",   World::GravityMode::Hyperbolic);
-			g_select->add("Realistic",    World::GravityMode::Realistic);
-			g_select->add("Experimental", World::GravityMode::Experimental);
-			g_select->set(World::GravityMode::Default);
-			g_select->setCallback([&](auto* w){ app.world().gravity_mode = w->get(); });
-		phys_form->add("Gravity mode", g_select)
-			->set(app.world().gravity_mode);
+		phys_form->add("Gravity mode", new GravityModeSelector)
+				->add("Off",          World::GravityMode::Off)
+				->add("Hyperbolic",   World::GravityMode::Hyperbolic)
+				->add("Realistic",    World::GravityMode::Realistic)
+				->add("Experimental", World::GravityMode::Experimental)
+			->setCallback([&](auto* self){ app.world().props.gravity_mode = self->get(); })
+			->set(app.world().props.gravity_mode)
+		;
 		phys_form->add(" - bias", new myco::Slider({.length=80, .range={-3.0, 3.0}, .step=0, .preset=0}))
-			->setCallback([&](auto* w){ app.world().gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
-				* Math::power(10.f, w->get()); })
+			->setCallback([&app](auto* self){ app.world().props.gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
+				* Math::power(10.f, self->get()); })
 			->set(0);
-#ifndef DISABLE_FULL_INTERACTION_LOOP
-		phys_form->add("Full int. loop", new myco::CheckBox([&](auto* w){ app.world().loop_mode = w->get() ? World::LoopMode::Full : World::LoopMode::Half; },
-				app.world().loop_mode == World::LoopMode::Full));
-#endif
+		phys_form->add(" - close-up repulsion", new myco::Slider({.length=80, .range={0, 50}}))
+			->setCallback([&app](auto* self){ app.world().props.repulsion_stiffness = self->get() * 0.00000000001; }) //!!...
+			->set(app.world().props.repulsion_stiffness / 0.00000000001);
+		phys_form->add("Collision mode", new CollisionModeSelector)
+				->add("Ignore",        World::CollisionMode::Off)
+				->add("Glide through", World::CollisionMode::Glide_Through)
+			->setCallback([&](auto* self){ app.world().props.collision_mode = self->get(); })
+			->set(app.world().props.collision_mode)
+		;
 		phys_form->add("Friction", new myco::Slider({.length=80, .range={-1.0, 1.0}, .step=0, .preset=0}))
-			->setCallback([&](auto* w){ app.world().friction = w->get(); })
-			->set(app.world().friction);
+			->setCallback([&app](auto* self){ app.world().props.friction = self->get(); })
+			->set(app.world().props.friction);
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
@@ -157,7 +169,12 @@ void OONApp::ui_setup()
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
-	// Only position after built, so it has its size:
+	// Only position after setup, so it has a size...
+	//!! Also, deferred reflow mode (which is the default) needs an explicit reflow to get the `extent` below!... :-/
+	gui.reflow();
+	//!!gui.cfg.render_cache_enabled = true; //!!?? Does this even work here?! :)
+		//!! Not for the HUDs: they're not shown (cached overlays are not yet supported!),
+		//!! only the control panel is (being inside the "managed" area of the UI)...
 	//!! This is also done in onResize(), but that can't be invoked on init (#462) until #515, so...:
 	gui.set_position(4, app.main_window_height() - gui.extent().y() - 4);
 		//!! For that 4 above: mycoGUI is still too lame for styling margins/padding... :-/
@@ -241,10 +258,11 @@ void OONApp::ui_setup_HUD_World(/*!!, mode/config...!!*/)
 {
 	ui_gebi(WorldData)
 		<< "# of objs.: " << [this](){ return to_string(entity_count()); }
-		<< "\nEntity interactions: " << &const_world()._interact_all
-		<< "\nGravity mode: " << [this](){ return to_string((unsigned)const_world().gravity_mode); }
-		<< "\n  - strength: " << &const_world().gravity
-		<< "\nDrag: " << ftos(&this->const_world().friction)
+		<< "\nEntity interactions: " << &const_world().props.interact_n2n
+		<< "\nGravity mode: " << [this](){ return to_string((unsigned)const_world().props.gravity_mode); }
+		<< "\n  - strength: " << &const_world().props.gravity
+		<< "\n  - repulsion: " << &const_world().props.repulsion_stiffness
+		<< "\nDrag: " << ftos(&this->const_world().props.friction)
 		<< "\n"
 	;
 }
@@ -347,7 +365,7 @@ void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
 		<< "\n"
 //		<< "\n  R: " << ftos(&this->player_entity().r) //!!#29: &(world().CFG_GLOBE_RADIUS) // OK now, probably since c365c899
 		<< "\n  lifetime: " << [&]{ return no_obj() ? ""s :
-		                       obj().lifetime == Entity::Unlimited ? "(infinite)" : to_string(obj().lifetime); }
+		                       obj().lifetime == Entity::Unlimited ? "infinite" : to_string(obj().lifetime); }
 		<< "\n  R: " << [&]{ return no_obj() ? ""s : to_string(obj().r); }
 		<< "\n  T: " << [&]{ return no_obj() ? ""s : to_string(obj().T); }
 //		<< "\n  M: " << ftos(&this->player_entity().mass)
@@ -429,7 +447,7 @@ void OONApp::ui_setup_HUD_Help(/*!!, mode/config...!!*/)
 void OONApp::onResize(unsigned width, unsigned height) //override
 // This is called on fullscreen/windowd transition, too.
 //!!
-//!!Sink this into the UI! (Currently it belongs to Engine/App/Base.)
+//!!Sink this into the UI! (Currently it belongs to Szim/App/Base.)
 //!!
 {
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable

@@ -5,7 +5,7 @@
 #include "OONControls.hpp"
 #include "OONMainDisplay.hpp"
 
-#include "Engine/SimApp.hpp"
+#include "Szim/SimApp.hpp"
 
 namespace UI { class HUDStream; }
 
@@ -104,8 +104,8 @@ public:
 	//--------------------------------------------------------------------
 	// "Meta" controls (not gameplay/player, but admin/user actions)...
 
-	void interact_all(bool state = true)  { world()._interact_all = state; }
-	void toggle_interact_all()  { interact_all(!const_world()._interact_all); }
+	void set_interact_n2n(bool state = true)  { world().props.interact_n2n = state; }
+	void toggle_interact_n2n()  { set_interact_n2n(!const_world().props.interact_n2n); }
 
 	void toggle_muting();
 	void toggle_music();

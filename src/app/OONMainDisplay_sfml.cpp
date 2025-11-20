@@ -1,16 +1,16 @@
 #include "OONMainDisplay_sfml.hpp"
 
 //!! Keep it as tight as possible:
-//#include "Engine/SimApp.hpp"
+//#include "Szim/SimApp.hpp"
 #include "OON.hpp" // for focused_entity_ndx (and, not yet, but...: app.appcfg)
 //#include "OON_sfml.hpp"
 
 //!! This "backend tunneling" is so sad this way"... See notes in OON_sfml.cpp!
-#include "Engine/Backend/_adapter_switcher.hpp"
+#include "Szim/Backend/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW(app) (((Szim::SFML_Backend&)((app).backend)).SFML_window())
 
-#include "Engine/UI.hpp"
+#include "Szim/UI.hpp"
 
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
@@ -21,7 +21,7 @@
 #include <cmath> // sin //!! Seriously, replace with a fast table lookup!
 #include <cassert>
 
-#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Log.hpp"
 
 
 namespace OON {

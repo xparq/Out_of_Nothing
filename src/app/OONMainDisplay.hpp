@@ -1,8 +1,8 @@
 ﻿#ifndef _S89U4589YU7845037845DN68945Y68756VM87HY56TRIJ_
 #define _S89U4589YU7845037845DN68945Y68756VM87HY56TRIJ_
 
-#include "Engine/View/ScreenView.hpp"
-#include "Engine/View/OrthoZoomCamera.hpp"
+#include "Szim/View/ScreenView.hpp"
+#include "Szim/View/OrthoZoomCamera.hpp"
 
 //!#include "Model/Entity.hpp"
 namespace Model { struct Entity; }

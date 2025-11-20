@@ -3,8 +3,8 @@
 #include <string_view>
 	using std::string_view;
 
-#include "Engine/diag/Error.hpp"
-//#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Error.hpp"
+//#include "Szim/diag/Log.hpp"
 
 namespace OON {
 

@@ -191,7 +191,7 @@ SH   := busybox sh
 CFLAGS   = $(cflags_crt_linkmode_with_debug) $(cflags_debug)
 #!! Incomplatible with /RTCs if DEBUG, so moved back to the debug dispatching:
 #!!CFLAGS  += /O2
-CFLAGS  += -I$(objdir)
+CFLAGS  += -I$(objdir) -I$(objdir)/engine
 # Add a -I also for including the commit hash file:
 CFLAGS  += -I$(outdir)
 # Add a -I also for 'extern' (perhaps redundantly, as the env should have it, but it's so generic):
@@ -207,7 +207,7 @@ LINKFLAGS  += $(linkflags_debug) $(LINKFLAGS_)
 
 
 #-----------------------------------------------------------------------------
-# BUILD "ENGINE"
+# THE BUILD "ENGINE"...
 #-----------------------------------------------------------------------------
 
 # Preparations...

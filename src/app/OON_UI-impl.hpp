@@ -1,2 +1,2 @@
-﻿#include "OON_UI.hpp" // Includes Engine/UI.hpp
-#include "Engine/UI/HUDStream.hpp"
+﻿#include "OON_UI.hpp" // Includes Szim/UI.hpp
+#include "Szim/UI/HUDStream.hpp"

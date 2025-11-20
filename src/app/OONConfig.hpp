@@ -1,7 +1,7 @@
 #ifndef _8PA37GTB7NX73945Y6B2V6C7X245Y45_
 #define _8PA37GTB7NX73945Y6B2V6C7X245Y45_
 
-#include "Engine/Config.hpp"
+#include "Szim/Config.hpp"
 //#include "extern/Args.hpp"
 class Args; // Enough to #include it in the .cpp
 

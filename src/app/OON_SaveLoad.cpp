@@ -1,8 +1,8 @@
 #include "OON.hpp"
 #include "OON_UI.hpp" // GravityModeSelector
 
-//#include "Engine/diag/Error.hpp"
-//#include "Engine/diag/Log.hpp"
+//#include "Szim/diag/Error.hpp"
+//#include "Szim/diag/Log.hpp"
 #include <cassert>
 
 namespace OON {
@@ -63,10 +63,10 @@ void OONApp::_on_snapshot_loaded()
 
 		// Grav. mode:
 		//!! The grav. bias widget can only do +/-1000x, so no clean mapping from gravity_strength to that! :-/
-		gui.set<GravityModeSelector>("Gravity mode", world().gravity_mode);
+		gui.set<GravityModeSelector>("Gravity mode", world().props.gravity_mode);
 
 		// Drag:
-		gui.set<Slider>("Friction", world().friction);
+		gui.set<Slider>("Friction", world().props.friction);
 			//!! The stepping may be inconsistent with the loaded value though! :-o
 			//!! I think myco::Slider will just round it...
 

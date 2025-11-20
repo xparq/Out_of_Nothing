@@ -7,7 +7,7 @@
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "Model/Emitter/SkyPrint.hpp"
 
-#include "Engine/Backend/HCI.hpp"
+#include "Szim/Backend/HCI.hpp"
  
 #include "sz/math/sign.hh"
 
@@ -18,8 +18,8 @@
 #include <cassert>
 #include "sz/DBG.hh"
 
-#include "Engine/diag/Error.hpp"
-#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Error.hpp"
+#include "Szim/diag/Log.hpp"
 
 
 namespace OON {
@@ -178,11 +178,11 @@ LOGD << "Display.reset after the UI setup:";
 	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
 
 	// Apply custom config adjustments/fixup...
-	world().gravity_mode = appcfg.gravity_mode;
+	world().props.gravity_mode = appcfg.gravity_mode;
 	//!! Move to OON_UI.cpp:
-	myco::set<GravityModeSelector>("Gravity mode", world().gravity_mode);
+	myco::set<GravityModeSelector>("Gravity mode", world().props.gravity_mode);
 		[[maybe_unused]] auto readback = myco::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
-		assert(readback == world().gravity_mode);
+		assert(readback == world().props.gravity_mode);
 
 LOGD << __FUNCTION__ <<" finished.";
 
@@ -234,7 +234,7 @@ LOGI << "Adding player #1...";
 	try { // <- Absolutely required, as sto...() are very throw-happy.
 		// Doing the ones that can't fail first, so an excpt. won't skip them:
 		if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
-			interact_all();
+			set_interact_n2n();
 		}; if (args["bodies"]) {
 			auto n = stoi(args("bodies"));
 			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
@@ -250,7 +250,7 @@ LOGI << "Creating two small moons by default...";
 			            .color = 0x3060ff, .mass = 3e24f});
 		}; if (args["friction"]) {
 			float f = stof(args("friction"));
-			world().friction = f;
+			world().props.friction = f;
 		};
 	} catch(...) {
 		Error("Failed to process/apply some cmdline args!");
@@ -682,7 +682,7 @@ void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* 
 
 //----------------------------------------------------------------------------
 bool OONApp::touch_hook(World* w, Entity* obj1, Entity* obj2)
-{w;
+{IGNORE w;
 	if (obj1->is_player() || obj2->is_player()) {
 		backend.audio.play_sound(snd_clack);
 	}

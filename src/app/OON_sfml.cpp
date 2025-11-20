@@ -14,7 +14,7 @@
 //!! not the entire compilation process.
 //!!
 //!! This is so sad, still...:
-#include "Engine/Backend/_adapter_switcher.hpp"
+#include "Szim/Backend/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
 #define SFML_KEY(KeyName) unsigned(sf::Keyboard::Key::KeyName) //!!XLAT
@@ -23,7 +23,7 @@
 //!!GCC still doesn't like modules:
 //!!import Storage; //!! Just a dummy (reminder, smoke test etc.) for now!
 
-#include "Engine/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
+#include "Szim/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Context.hpp>
@@ -40,8 +40,8 @@
 	using std::to_chars;
 #include <cassert>
 
-#include "Engine/diag/Error.hpp"
-#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Error.hpp"
+#include "Szim/diag/Log.hpp"
 
 using namespace Szim;
 using namespace Model;
@@ -100,7 +100,7 @@ UI::HUDStream& OONApp_sfml::ui_gebi(HUD_ID which) //override
 	static auto* world_hud = gui.overlay.add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 314),
+		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 290),
 		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)
 	}));
@@ -394,7 +394,7 @@ try {
 				case SFML_KEY(Enter): time_step(1); break;
 				case SFML_KEY(Backspace): time_step(-1); break;
 
-				case SFML_KEY(Tab): toggle_interact_all(); break;
+				case SFML_KEY(Tab): toggle_interact_n2n(); break;
 
 				case SFML_KEY(Insert): spawn(player_entity_ndx(),
 						keystate(SHIFT) ? 100 : keystate(CTRL) ? 10 : 1); break;
@@ -470,8 +470,8 @@ try {
 					myco::call<GravityModeSelector>("Gravity mode",
 						[](auto* gs) { gs->selectNext(); });
 					break;
-//				case 'f': world().friction -= 0.01f; break;
-//				case 'F': world().friction += 0.01f; break;
+//				case 'f': world().props.friction -= 0.01f; break;
+//				case 'F': world().props.friction += 0.01f; break;
 				case 'r': time.reversed = !time.reversed; break;
 				case 't': time.scale *= 2.0f; break;
 				case 'T': time.scale /= 2.0f; break;

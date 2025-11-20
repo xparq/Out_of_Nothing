@@ -46,7 +46,7 @@ and pieces of it may still be OBSOLETE!]
 
 	Also see the supported conditional compilation options in
 
-		Engine/_build_cfg.h
+		Szim/_build_cfg.h
 
 	and change them preferably via command line options to the build script.
 
