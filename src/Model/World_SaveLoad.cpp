@@ -5,10 +5,10 @@
 
 //!! Shrink even this dependency: don't include the entire fucking SimApp,
 //!! only its modelling-related services that are actually used:
-//#include "Engine/SimApp.hpp"
+//#include "Szim/SimApp.hpp"
 
-#include "Engine/diag/Error.hpp"
-#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Error.hpp"
+#include "Szim/diag/Log.hpp"
 
 #include "extern/semver.hpp"
 #include "extern/flatbuffers/flexbuffers.h" // Schemaless self-descriptive format
@@ -48,12 +48,12 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	out << "MODEL_VERSION = " << saved_version << '\n';
 
-	out << "drag = " << friction << '\n';
-	out << "interactions = " << _interact_all << '\n';
+	out << "drag = " << props.friction << '\n';
+	out << "interactions = " << props.interact_n2n << '\n';
 	if (saved_version >= semver::version("0.1.0"))
-		{ out << "gravity_mode = " << (unsigned)gravity_mode << '\n'; }
+		{ out << "gravity_mode = " << (unsigned)props.gravity_mode << '\n'; }
 	if (saved_version >= semver::version("0.1.2"))
-		{ out << "gravity_strength = " << gravity << '\n'; }
+		{ out << "gravity_strength = " << props.gravity << '\n'; }
 
 //!!This should go to session files, along with other app-level data (like view scale etc.)!
 //!!	if (saved_version >= semver::version("0.1.3"))
@@ -83,28 +83,28 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 //!!}
 /*static*/ bool World::load(std::istream& in, World* result)
 {
-	map<string, string> props;
+	map<string, string> new_props;
 
 	try {
 		// Read the global world properties...
 		for (string name, eq, val; in && !in.bad()
 			&& (in >> name >> eq >> std::quoted(val)) && eq == "=";) {
-			props[name] = val;
+			new_props[name] = val;
 		}
-		LOGD << "LOADED metadata & World params: "; for (auto& [n, v] : props) LOGD << " - " << n << ": " << v;
+		LOGD << "LOADED metadata & World params: "; for (auto& [n, v] : new_props) LOGD << " - " << n << ": " << v;
 	} catch (...) {
 		Error("Failed to read world data!");
 		return false;
 	}
 
 	const semver::version runtime_version(Model::VERSION);
-	const semver::version loaded_version(props["MODEL_VERSION"]);
+	const semver::version loaded_version(new_props["MODEL_VERSION"]);
 
 	//!! Verify a prev. save assuming a locked state, so the world hasn't changed since.
 	//!! This might be a very stupid idea actually...
 	//!!?? [Future me:] WTF did I even mean by this above?!?!
 	if (loaded_version > runtime_version) {
-		Error("Unsupported snapshot version:" + props["MODEL_VERSION"]);
+		Error("Unsupported snapshot version:" + new_props["MODEL_VERSION"]);
 		return false;
 	}
 	if (loaded_version != runtime_version) {
@@ -113,7 +113,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	}
 
 	/*
-	if (stoul(props["interactions"]) > 1) {
+	if (stoul(new_props["interactions"]) > 1) {
 		Error("Inconsistent snapshot data! (`interactions` is not bool?!)");
 		return false;
 	}*/
@@ -130,15 +130,15 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 
 	unsigned _prop_ndx_ = 0;
 	try { // stof & friends are throw-happy
-		++_prop_ndx_; w_new.friction = stof(props["drag"]);
-		++_prop_ndx_; w_new._interact_all = stof(props["interactions"]);
+		++_prop_ndx_; w_new.props.friction     = stof(new_props["drag"]);
+		++_prop_ndx_; w_new.props.interact_n2n = stof(new_props["interactions"]);
 		if (loaded_version >= semver::version("0.1.0"))
-			{ ++_prop_ndx_; w_new.gravity_mode = (GravityMode)stoul(props["gravity_mode"]);
-LOGD << "World::load: gravity_mode = " << (unsigned)w_new.gravity_mode;
+			{ ++_prop_ndx_; w_new.props.gravity_mode = (GravityMode)stoul(new_props["gravity_mode"]);
+LOGD << "World::load: gravity_mode = " << (unsigned)w_new.props.gravity_mode;
 			}
 		if (loaded_version >= semver::version("0.1.2")) // G was saved incorrectly (cast to unsigned) in 0.1.1; ignore that
-			{ ++_prop_ndx_; w_new.gravity = stof(props["gravity_strength"]);
-//LOGD << "gravity strength after load: " << w_new.gravity;
+			{ ++_prop_ndx_; w_new.props.gravity = stof(new_props["gravity_strength"]);
+//LOGD << "gravity strength after load: " << w_new.props.gravity;
 			}
 	} catch (...) {
 		Error("Invalid (type of) property #" + to_string(_prop_ndx_) + " in the loaded snapshot.");
@@ -146,7 +146,7 @@ LOGD << "World::load: gravity_mode = " << (unsigned)w_new.gravity_mode;
 	}
 
 	// Load the objects, too...
-	size_t obj_count = stoi(props["objects"].c_str()); //!! stoi may throw!!!
+	size_t obj_count = stoi(new_props["objects"].c_str()); //!! stoi may throw!!!
 	w_new.bodies.reserve(obj_count);
 //LOGD << obj_count << " ~ " << w_new.bodies.size();
 	for (size_t n = 0; in && !in.bad() && n < obj_count; ++n) {

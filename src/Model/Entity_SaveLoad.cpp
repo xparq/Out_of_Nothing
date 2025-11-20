@@ -13,8 +13,8 @@
 //	using std::byte; //!!No use: ofstream can't write() bytes! :-o Congratulations, C++!... :-/
 #include <cassert>
 
-#include "Engine/diag/Error.hpp"
-//#include "Engine/diag/Log.hpp"
+#include "Szim/diag/Error.hpp"
+//#include "Szim/diag/Log.hpp"
 
 namespace Model {
 

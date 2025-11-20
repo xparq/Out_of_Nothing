@@ -2,10 +2,10 @@
 #define _DM04785YTB0872ND45076Y20745Y68CN74_
 
 
-#include "Engine/Metamodel.hpp"
+#include "Szim/Metamodel.hpp"
 #include "Physics.hpp"
 #include "Thruster.hpp"
-#include "Engine/Config.hpp"
+#include "Szim/Config.hpp"
 
 #include <iosfwd> // for save/load
 

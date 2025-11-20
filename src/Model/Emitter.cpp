@@ -1,6 +1,6 @@
 #include "Emitter.hpp"
 
-#include "Engine/SimApp.hpp"
+#include "Szim/SimApp.hpp"
 
 
 namespace Model {

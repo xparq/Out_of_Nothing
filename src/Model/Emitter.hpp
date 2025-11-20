@@ -1,9 +1,9 @@
 #ifndef _MSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG_
 #define _MSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG_
 
-#include "Engine/Metamodel.hpp"
+#include "Szim/Metamodel.hpp"
 //#include "Model/Entity.hpp" //!! Not really needed yet (also includes loads of crap.)
-#include "Model/Physics.hpp" //!! Model should be split into Engine/ generic & app/ (or ext/!) specific one!
+#include "Model/Physics.hpp" //!! Model should be split into Szim/ generic & app/ (or ext/!) specific one!
 
 namespace Szim { class SimApp; }
 
