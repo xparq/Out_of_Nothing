@@ -36,7 +36,7 @@ TODO:
 
 #include "Szim/UI.hpp"   // Basically myco/GUI.hpp!
 
-#include "Model/World.hpp" // This one is not so heavy.
+#include "app/Model/World.hpp" // This one is not so heavy.
 namespace OON
 {
 	using GravityModeSelector   = myco::Options<Model::World::GravityMode>;

@@ -4,8 +4,8 @@
 #include "Szim/View/ScreenView.hpp"
 #include "Szim/View/OrthoZoomCamera.hpp"
 
-//!#include "Model/Entity.hpp"
-namespace Model { struct Entity; }
+#include "Szim/Meta/Model.hpp"
+namespace OON::Model { struct Entity; } // #include "app/Model/Entity.hpp"
 
 #include <cstdint>
 
@@ -56,10 +56,10 @@ public:
 
 	// -------------------------------------------------------------------
 	// Pure virtuals for the actual drawing impl...
-	virtual void create_cached_shape(const Model::Entity& body, Model::EntityID entity_ndx) = 0;
-	virtual void delete_cached_shape(Model::EntityID entity_ndx) = 0;
+	virtual void create_cached_shape(const Model::Entity& body, Szim::Model::EntityID entity_ndx) = 0;
+	virtual void delete_cached_shape(Szim::Model::EntityID entity_ndx) = 0;
 	virtual void resize_objects(float factor) = 0;
-	virtual void resize_object(Model::EntityID ndx, float factor) = 0;
+	virtual void resize_object(Szim::Model::EntityID ndx, float factor) = 0;
 
 	//!! Sigh... Move this to the UI already:
 	virtual void draw_banner(const char* text) = 0;

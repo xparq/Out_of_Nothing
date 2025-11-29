@@ -3,7 +3,7 @@
 
 #include "Camera.hpp"
 
-//#include "Model/Math/Vector2.hpp"
+//#include "Szim/Math/Vector2.hpp"
 
 #include <cassert>
 

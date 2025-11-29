@@ -1,9 +1,7 @@
 #include "OONMainDisplay_sfml.hpp"
 
 //!! Keep it as tight as possible:
-//#include "Szim/SimApp.hpp"
-#include "OON.hpp" // for focused_entity_ndx (and, not yet, but...: app.appcfg)
-//#include "OON_sfml.hpp"
+#include "OON.hpp" // Just for app.focused_entity_ndx :-/ (Later, maybe: app.appcfg)
 
 //!! This "backend tunneling" is so sad this way"... See notes in OON_sfml.cpp!
 #include "Szim/Backend/_adapter_switcher.hpp"
@@ -25,6 +23,8 @@
 
 
 namespace OON {
+
+	using EntityID = Szim::Model::EntityID; //!! Or: #include "vocab.hpp"
 
 const Avatar_sfml& OONMainDisplay_sfml::avatar(size_t ndx) const
 {
@@ -86,7 +86,7 @@ LOGD << "------------------ DISPLAY RESET ---------------------";
 
 
 //----------------------------------------------------------------------------
-void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, Model::EntityID entity_ndx) //override
+void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, EntityID entity_ndx) //override
 {
 	auto& game = app();
 
@@ -116,7 +116,7 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, Model::
 }
 
 //----------------------------------------------------------------------------
-void OONMainDisplay_sfml::delete_cached_shape(Model::EntityID entity_ndx) //override
+void OONMainDisplay_sfml::delete_cached_shape(EntityID entity_ndx) //override
 {
 	assert(entity_ndx != Model::Entity::NONE);
 	// Requires that the body has already been deleted from the world:

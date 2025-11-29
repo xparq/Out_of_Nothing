@@ -24,11 +24,10 @@ namespace Szim {
 #include "Szim/UI-fw.hpp"
 #include "Szim/UI/Input.hpp"
 
-#include "Metamodel.hpp"
-	//!!C++: *Sigh...*
-	using EntityID = Model::EntityID;
-	using PlayerID = Model::PlayerID;
-#include "Model/World.hpp" //!! The generic Model parts should move to Metamodel, and the specifics should be included from the (specific) app!
+#include "Szim/Meta/Model.hpp"
+#include "app/Model/World.hpp" //!!...
+#include "app/Model/Entity.hpp" //!!...
+
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
 
@@ -49,6 +48,17 @@ namespace Szim::View { class ScreenView; }
 
 namespace Szim {
 
+	//!! Oof...:
+	namespace Model {
+		using World    = OON::Model::World;
+		using Entity   = OON::Model::Entity;
+	}
+
+	//!! *Sigh...* — cf. with OON's app/model/vocab.hpp, for example! :-/
+	using EntityID = Model::EntityID;
+	using PlayerID = Model::PlayerID;
+
+
 //============================================================================
 class SimApp // Universal Sim. App Base ("Engine Controller")
 {
@@ -61,6 +71,10 @@ class SimApp // Universal Sim. App Base ("Engine Controller")
 //----------------------------------------------------------------------------
 
 public:
+	//!! Double oof!...:
+	using Entity   = Model::Entity; //!! Should only be known in the template layer!
+
+
 	// Callbacks to be (re)implemented by the app:
 	//! NOTE to App developers: *DO NOT* CALL THESE YOURSELF! The engine will orchestrate them.
 

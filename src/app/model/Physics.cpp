@@ -15,7 +15,7 @@
 ??!!*/
 
 
-namespace Model {
+namespace OON::Model {
 
 #if 0
 using namespace Math;
@@ -93,4 +93,4 @@ float Physics::BV_to_T_and_RGB(float bv, uint32_t* p_color/* = nullptr*/) // BV:
 }
 #endif
 
-}; // namespace
+}; // namespace OON::Model

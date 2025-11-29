@@ -3,7 +3,7 @@
 
 #include "Emitter.hpp"
 
-namespace Model {
+namespace OON::Model {
 
 struct Thruster //!! : public Entity //!! Not only not ready for that, but it's even the other way around: Entity #includes Thruster currently!... :-o
 {
@@ -19,6 +19,6 @@ struct Thruster //!! : public Entity //!! Not only not ready for that, but it's 
 	float thrust_level() const { return _thrust_level; }
 };
 
-} // namespace Model
+} // namespace OON::Model
 
 #endif // _3895UY9G8HJ6987VN9836457NF48567459B8GV7UUBTNBRGJLKH_

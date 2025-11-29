@@ -3,7 +3,7 @@
 #include "Szim/SimApp.hpp"
 
 
-namespace Model {
+namespace OON::Model {
 
 Emitter::Emitter(const Config& emitter_cfg, Szim::SimApp& app)
 	:
@@ -90,4 +90,4 @@ void Emitter::emit_particles(EntityID emitter_id, unsigned n, Phys::Pos2 nozzles
 	}
 } // emit_particles
 
-} // namespace Model
+} // namespace OON::Model

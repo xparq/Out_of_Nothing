@@ -1,5 +1,6 @@
 ﻿#include "OON_UI-impl.hpp"
 #include "OON.hpp"
+
 #include "Szim/Backend/HCI.hpp"
 
 #include "Szim/diag/Error.hpp"
@@ -7,9 +8,9 @@
 #include "sz/DBG.hh"
 
 using namespace Szim;
-using namespace Model;
-using namespace Math;
-using namespace UI;
+using namespace OON::Model;
+//using namespace Szim::Math;
+using namespace /*!!Szim::!!*/UI;
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -122,7 +123,7 @@ void OONApp::ui_setup()
 			->set(app.world().props.gravity_mode)
 		;
 		phys_form->add(" - bias", new myco::Slider({.length=80, .range={-3.0, 3.0}, .step=0, .preset=0}))
-			->setCallback([&app](auto* self){ app.world().props.gravity = Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
+			->setCallback([&app](auto* self){ app.world().props.gravity = Model::Phys::G //!! <- NO! Either use the original base val, or just modify the current .gravity!
 				* Math::power(10.f, self->get()); })
 			->set(0);
 		phys_form->add(" - close-up repulsion", new myco::Slider({.length=80, .range={0, 50}}))

@@ -5,7 +5,7 @@
 #include "OON_UI-impl.hpp" // Note: scroll_locked() reads the control mode directly from the UI!
 
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
-#include "Model/Emitter/SkyPrint.hpp"
+#include "app/Model/Emitter/SkyPrint.hpp"
 
 #include "Szim/Backend/HCI.hpp"
  
@@ -24,8 +24,7 @@
 
 namespace OON {
 
-
-using namespace Szim;
+using VirtualController = Szim::VirtualController;
 using namespace Model;
 //using namespace Math;
 using namespace UI;
@@ -34,7 +33,7 @@ using namespace std;
 
 
 //----------------------------------------------------------------------------
-OONApp::OONApp(const RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
+OONApp::OONApp(const Szim::RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
 	: SimApp(runtime, argc, argv, main_view)
 	, appcfg(SimApp::runtime.syscfg, args)
 	, controls(this)
@@ -71,6 +70,8 @@ bool OONApp::init() //override
 ZoneScoped;
 
 LOGD << __FUNCTION__ <<" started...";
+
+	using namespace Szim;
 
 	// Images...
 	//!!
@@ -274,7 +275,7 @@ void OONApp::resize_shape(size_t ndx, float factor) //override
 
 
 //----------------------------------------------------------------------------
-unsigned OONApp::add_player(Entity&& obj, Avatar& avatar, VirtualController& ctrlr) //override
+unsigned OONApp::add_player(Entity&& obj, Szim::Avatar& avatar, VirtualController& ctrlr) //override
 {
 	// These are the player modelling differences from other objects:
 	obj.add_thrusters();
@@ -313,6 +314,8 @@ void OONApp::get_control_inputs() //override
 //----------------------------------------------------------------------------
 bool OONApp::react_to_control_inputs()
 {
+	using namespace Szim;
+
 	bool action = false;
 
 	// Thruster plumes
@@ -1021,6 +1024,8 @@ void OONApp::time_step(int steps)
 void OONApp::updates_for_next_frame()
 // Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
 {
+	using namespace Szim;
+
 	//!! I guess this should come before processing the controls, so
 	//!! the controls & their follow-up updates are not split across
 	//!! time frames -- but I'm not sure if that's actually important!...

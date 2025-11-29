@@ -1,9 +1,14 @@
 ﻿#ifndef _FNVNB807K8CD893IO3OIEWOIXMO9822894567B_
 #define _FNVNB807K8CD893IO3OIEWOIXMO9822894567B_
 
-#include "Szim/Metamodel.hpp"
 //!! Legacy kludge until the relevant generic Physics parts (Pos) are migrated to the Engine(/Metamodel):
-#include "Model/Physics.hpp"
+#include "app/Model/Physics.hpp"
+//!!#include "Szim/Meta/Model.hpp"
+	//!! Not used yet; the *app-specific* physics is used directly instead! :-o :-/
+	//!! The camera should be split into a generic part, and another (typed/templated)
+	//!! one, parametrized by the same app types as the rest of the Model abstractions!
+	//!! And then the virtuals should be templates too, using the actual pos. type!
+
 
 namespace Szim::View {
 
@@ -21,7 +26,7 @@ class Camera
 {
 public:
 	using ViewPos  = Math::V2f; // Screen space (so always 2D)! The rebased (possibly 3D) "view space" for the view frustum (projection) IS NOT YET MODELLED AT ALL!
-	using WorldPos = Model::Phys::Pos2;
+	using WorldPos = OON::Model::Phys::Pos2; //!! Oof... :-/
 
 	virtual void look_at(WorldPos world_pos) = 0;
 	// Panning is actual camera movement, not just scrolling the projected view plane
@@ -30,8 +35,9 @@ public:
 	virtual ViewPos  world_to_view_coord(WorldPos wpos) const = 0;
 	virtual WorldPos view_to_world_coord(ViewPos vpos) const = 0;
 
-//!! Don't try to add this yet again! ;) The camera is always "centered"; it only makes sense to (re)orient it to something!
-//!! And the point {0,0} is not a special "something" at all.
+//!! Don't try to add this yet again! ;) The camera is always centered *in its own view*;
+//!! it only makes sense to (re)orient it to something. OTOH, the WorldPos {0,0} is not a
+//!! special thing to look at, either.
 //!!	virtual void center() = 0;
 
 	virtual float scale() const { return 1; }

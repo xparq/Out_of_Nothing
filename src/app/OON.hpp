@@ -1,6 +1,8 @@
 #ifndef _OSE8975BQ7C785C639406C824X782C6YNB5_
 #define _OSE8975BQ7C785C639406C824X782C6YNB5_
 
+#include "vocab.hpp"
+
 #include "OONConfig.hpp"
 #include "OONControls.hpp"
 #include "OONMainDisplay.hpp"

@@ -1,7 +1,7 @@
 // Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
-#include "Model/World.hpp"
+#include "app/Model/World.hpp"
 
 //!! Shrink even this dependency: don't include the entire fucking SimApp,
 //!! only its modelling-related services that are actually used:
@@ -29,7 +29,7 @@
 	using std::move;
 
 
-namespace Model {
+namespace OON::Model {
 
 using namespace std;
 using namespace Szim;
@@ -510,4 +510,4 @@ void World::_copy(World const& source)
 	}
 }
 
-} // namespace Model
+} // namespace OON::Model

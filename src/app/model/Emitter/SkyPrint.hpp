@@ -21,7 +21,7 @@ TODO:
 #ifndef _CN87BG78G3GB7878FBCY3N7B47Y358TYDJK78478B45_
 #define _CN87BG78G3GB7878FBCY3N7B47Y358TYDJK78478B45_
 
-#include "Model/Emitter.hpp"
+#include "app/Model/Emitter.hpp"
 
 #include "sz/lang/.hh" // AUTO_CONST
 
@@ -31,7 +31,7 @@ TODO:
 
 //#include <iostream> //!!DEBUG
 
-namespace Model {
+namespace OON::Model {
 
 #include "_testfont_7x10.h"
 
@@ -147,6 +147,6 @@ public:
 	}
 };
 
-} // namespace Model
+} // namespace OON::Model
 
 #endif // _CN87BG78G3GB7878FBCY3N7B47Y358TYDJK78478B45_

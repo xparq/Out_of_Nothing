@@ -299,7 +299,7 @@ bool SimApp::toggle_fixed_model_dt()
       Model::World& SimApp::world()       { return _world; }
 const Model::World& SimApp::world() const { return _world; }
 const Model::World& SimApp::const_world() { return _world; }
-void SimApp::set_world(Model::World const& w) { _world = w; }
+      void          SimApp::set_world(OON::Model::World const& w) { _world = w; } //!! Oof!... :-/
 
 
 //----------------------------------------------------------------------------

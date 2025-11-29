@@ -1,7 +1,7 @@
 // Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
 //!!#include "extern/Tracy/public/tracy/Tracy.hpp"
 
-#include "Model/World.hpp"
+#include "app/Model/World.hpp"
 
 //!! Shrink even this dependency: don't include the entire fucking SimApp,
 //!! only its modelling-related services that are actually used:
@@ -30,10 +30,9 @@
 //#include "extern/iprof/iprof.hpp"
 
 
-namespace Model {
+namespace OON::Model {
 
 using namespace std;
-using namespace Szim;
 using namespace Math;
 
 //----------------------------------------------------------------------------
@@ -166,4 +165,4 @@ LOGD << "World::load: gravity_mode = " << (unsigned)w_new.props.gravity_mode;
 	return true;
 } // load
 
-} // namespace Model
+} // namespace OON::Model

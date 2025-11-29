@@ -3,12 +3,12 @@
 
 #include "Cfg.hpp" // Model::BasicNumberType
 
-#include "Math.hpp"
-#include "Math/Vector2.hpp"
+#include "Szim/Math.hpp"
+#include "Szim/Math/Vector2.hpp"
 
 #include <cstdint> // uint32_t for colors... --> Physics/Color.hpp!!
 
-namespace Model {
+namespace OON::Model {
 
 // Make sure the configured basic number type is used by each client of the model physics:
 template <typename NumT> class Physics;
@@ -78,11 +78,14 @@ private:
 	static constexpr auto T_BV_MAX = Temperature(200000);
 };
 
-} // namespace Model
+} // namespace OON::Model
+
+
+// - - - - - - - - - - - - - - - - - -✂  CUT ✂- - - - - - - - - - - - - - - - - -
 
 
 // Inl. impl...
-namespace Model {
+namespace OON::Model {
 
 template <typename NumType> NumType Physics<NumType>::T_to_BV(Temperature T) //!! just faking something simple
 {
@@ -139,6 +142,6 @@ template <typename NumType> NumType Physics<NumType>::T_to_RGB_and_BV(Temperatur
 }
 
 
-} // namespace Model
+} // namespace OON::Model
 
 #endif // _Y8GVVY7TC880X820KS272475BTBT7V_

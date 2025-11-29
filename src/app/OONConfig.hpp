@@ -2,15 +2,18 @@
 #define _8PA37GTB7NX73945Y6B2V6C7X245Y45_
 
 #include "Szim/Config.hpp"
+
 //#include "extern/Args.hpp"
 class Args; // Enough to #include it in the .cpp
 
 #include "sz/lang/.hh" // AUTO_CONST
 
-#include "Model/World.hpp"
+#include "app/Model/World.hpp"
 
 // Fw.-declare the System config (the app cfg. will have a reference to it):
 namespace Szim { class SimAppConfig; }
+
+namespace OON {
 
 struct OONConfig : Szim::Config
 {
@@ -75,5 +78,7 @@ struct OONConfig : Szim::Config
 	OONConfig(const Szim::SimAppConfig& syscfg, const Args& args);
 	OONConfig(const OONConfig&) = delete; // Could actually be copied _now_, but I'll forget, and make mistakes...
 };
+
+} // namespace OON
 
 #endif // _8PA37GTB7NX73945Y6B2V6C7X245Y45_

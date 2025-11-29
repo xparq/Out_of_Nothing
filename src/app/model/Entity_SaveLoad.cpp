@@ -16,7 +16,7 @@
 #include "Szim/diag/Error.hpp"
 //#include "Szim/diag/Log.hpp"
 
-namespace Model {
+namespace OON::Model {
 
 //static constexpr char BSIG[] = {'O','B','0','1'};
 //----------------------------------------------------------------------------
@@ -76,4 +76,4 @@ bool Entity::save(std::ostream& out)
 	return true;
 } // load
 
-} // namespace Model
+} // namespace OON::Model

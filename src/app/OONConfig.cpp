@@ -20,6 +20,8 @@
 //!! SEE ALSO IN Szim/App/Config.cpp!... :-o
 
 
+namespace OON {
+
 using namespace Szim;
 using namespace std;
 
@@ -100,3 +102,5 @@ OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Ar
 	LOG << "- cfg. base_path: " << base_path();
 //!!cerr << "DBG> cfg_dir: " << appcfg_dir << '\n';
 }
+
+} // namespace OON

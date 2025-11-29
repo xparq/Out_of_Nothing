@@ -4,7 +4,7 @@
 //	using std::cerr, std::endl;
 
 
-namespace Model {
+namespace OON::Model {
 
 //!!?? Put an EventSubscriber* pointer here to the global OON_* instance to help propagating events?!
 //!!   ...That would require an EventSubscriber interface first, also then actually used by OON. ;)
@@ -25,4 +25,4 @@ void Entity::on_event(Event e, ...)
 	r *= 0.1f; //!!Just to see if it works at all!...
 }
 
-} // namespace Model
+} // namespace OON::Model

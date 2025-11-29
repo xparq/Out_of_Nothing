@@ -1,10 +1,9 @@
 #ifndef _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_
 #define _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_
 
-#include "Szim/Metamodel.hpp"
+#include "app/model/vocab.hpp"
 #include "Physics.hpp"
 #include "Entity.hpp"
-#include "Szim/Config.hpp"
 
 #include <memory>     // shared_ptr
 #include <vector>
@@ -15,7 +14,7 @@
 
 namespace Szim { class SimApp; } //! Sigh, must predeclare it here, outside the namespace...
 
-namespace Model {
+namespace OON::Model {
 
 
 // World coordinate system (Right-handed, like OpenGL's):
@@ -145,6 +144,6 @@ public:
 }; // class World
 
 
-} // namespace Model
+} // namespace OON::Model
 
 #endif // _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_

@@ -2,15 +2,14 @@
 #define _DM04785YTB0872ND45076Y20745Y68CN74_
 
 
-#include "Szim/Metamodel.hpp"
+#include "app/model/vocab.hpp"
 #include "Physics.hpp"
 #include "Thruster.hpp"
-#include "Szim/Config.hpp"
 
 #include <iosfwd> // for save/load
 
 
-namespace Model {
+namespace OON::Model {
 
 	//--------------------------------------------------------------------
 	struct Entity //!! : public Serializable //! No: this would kill the C++ designated init syntax! :-/
@@ -21,8 +20,8 @@ namespace Model {
 
 		// Placeholder/sentinel ID for "no entity":
 		//!! Clean this hackfest up (see them also in Metamodel.hpp!):
-		constexpr static EntityID NONE = NO_ENTITY;
-		constexpr static auto     Unlimited = Model::UNLIMITED;
+		constexpr static EntityID NONE      = Szim::Model::NO_ENTITY;
+		constexpr static auto     Unlimited = Szim::Model::UNLIMITED;
 
 		//!!ObjConfig cfg; // basically the obj. type
 
@@ -84,7 +83,7 @@ namespace Model {
 	};
 
 
-} // namespace Model
+} // namespace OON::Model
 
 
 #endif // _DM04785YTB0872ND45076Y20745Y68CN74_
