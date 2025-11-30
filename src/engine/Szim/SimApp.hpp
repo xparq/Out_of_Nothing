@@ -25,8 +25,9 @@ namespace Szim {
 #include "Szim/UI/Input.hpp"
 
 #include "Szim/Meta/Model.hpp"
-#include "app/Model/World.hpp" //!!...
-#include "app/Model/Entity.hpp" //!!...
+
+#include "app/Model/World.hpp"  //!! Oof... Grep for any leftover "OON", too!
+#include "app/Model/Entity.hpp" //!! Oof... Grep for any leftover "OON", too!
 
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
@@ -38,8 +39,9 @@ namespace Szim::View { class ScreenView; }
 //!!GCC still doesn't like modules:
 //!!import Storage;
 
-#include <atomic>
-#include <format> // vformat
+#include <memory> // unique_ptr
+#include <format> // vformat <- !!DITCH IT! Heavy, can throw, and the entire templated
+                  // (header-based!) filename construction is just a temp. "clever" shortcut...
 #include <string>
 #include <string_view>
 #include <vector>
@@ -48,13 +50,6 @@ namespace Szim::View { class ScreenView; }
 
 namespace Szim {
 
-	//!! Oof...:
-	namespace Model {
-		using World    = OON::Model::World;
-		using Entity   = OON::Model::Entity;
-	}
-
-	//!! *Sigh...* — cf. with OON's app/model/vocab.hpp, for example! :-/
 	using EntityID = Model::EntityID;
 	using PlayerID = Model::PlayerID;
 
@@ -71,10 +66,6 @@ class SimApp // Universal Sim. App Base ("Engine Controller")
 //----------------------------------------------------------------------------
 
 public:
-	//!! Double oof!...:
-	using Entity   = Model::Entity; //!! Should only be known in the template layer!
-
-
 	// Callbacks to be (re)implemented by the app:
 	//! NOTE to App developers: *DO NOT* CALL THESE YOURSELF! The engine will orchestrate them.
 
@@ -146,10 +137,14 @@ public:
 	float session_time() const { return time.real_session_time; }
 	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
 
-	      Model::World& world();
-	const Model::World& world() const;
-	const Model::World& const_world(); // Explicit const World& of non-const SimApp (to spare a cast)
-	void set_world(const Model::World&);
+//!!	virtual std::unique_ptr<OON::Model::World> create_world() = 0;
+	virtual std::unique_ptr<OON::Model::World> create_world() { return std::make_unique<OON::Model::World>(); }
+	      OON::Model::World& world();
+	const OON::Model::World& world() const;
+	const OON::Model::World& const_world(); // Explicit const World& of non-const SimApp (to spare a cast)
+	void set_world(OON::Model::World*);
+	void set_world(std::unique_ptr<OON::Model::World>&); //! swap (move)
+
 
 	// Visualizing, rendering...
 	//!! Tentative! This "main_view" name is just a placeholder/reminder
@@ -173,19 +168,17 @@ public:
 
 	// Entities...
 
-	using Entity = Model::Entity;
-
 	size_t entity_count() const { return world().bodies.size(); }
 //!! ADD DEBUG-MODE BOUNDS-CHECKING FOR THESE!
 	// Thread-safe, slower access:
-	      Entity& entity(EntityID index)       { return *world().bodies[index]; }
-	const Entity& entity(EntityID index) const { return *world().bodies[index]; }
-	const Entity& const_entity(EntityID index) { return *world().bodies[index]; }
+	      OON::Model::Entity& entity(EntityID index)       { return *world().bodies[index]; }
+	const OON::Model::Entity& entity(EntityID index) const { return *world().bodies[index]; }
+	const OON::Model::Entity& const_entity(EntityID index) { return *world().bodies[index]; }
 	//!! This might be misguided, but keeping it as a reminder...
 	// Unprotected, faster access (when already locked):
-	      Entity& _entity(EntityID index)       { return *_world.bodies[index]; }
-	const Entity& _entity(EntityID index) const { return *_world.bodies[index]; }
-	const Entity& _const_entity(EntityID index) { return *_world.bodies[index]; }
+	      OON::Model::Entity& _entity(EntityID index)       { return *world_->bodies[index]; }
+	const OON::Model::Entity& _entity(EntityID index) const { return *world_->bodies[index]; }
+	const OON::Model::Entity& _const_entity(EntityID index) { return *world_->bodies[index]; }
 
 //!!	bool entity_at(model::Math::Vector2f world_pos, EntityID* entity_id OUT) const;
 //!!	bool entity_at(model::Math::Vector3f world_pos, EntityID* entity_id OUT) const;
@@ -193,8 +186,8 @@ public:
 	virtual bool entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const;
 	virtual bool check_if_entity_is_at_viewpos(EntityID entity_id, float x, float y) const;
 
-	virtual EntityID add_entity(Entity&& temp);     // Move from temporary/template obj.
-	virtual EntityID add_entity(const Entity& src); // Copy from obj.
+	virtual EntityID add_entity(OON::Model::Entity&& temp);     // Move from temporary/template obj.
+	virtual EntityID add_entity(const OON::Model::Entity& src); // Copy from obj.
 	virtual void remove_entity(EntityID ndx);
 
 /*!!
@@ -206,7 +199,7 @@ public:
 
 //!!	PlayerID add_player(Player&& tempp); // Calls a virtual hook to let the app finish it...
 	virtual PlayerID add_player(
-		Entity&& model,
+		OON::Model::Entity&& model,
 		Avatar& avatar,
 		VirtualController& controls
 	) = 0; //!! Ugh... Refine! (Can't really be done nicely in C++, though.)
@@ -228,8 +221,8 @@ public:
 		assert(ndx < entity_count());
 		return ndx;
 	}
-	       Entity& player_entity(PlayerID p = 1)       { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
-	 const Entity& player_entity(PlayerID p = 1) const { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+	       OON::Model::Entity& player_entity(PlayerID p = 1)       { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
+	 const OON::Model::Entity& player_entity(PlayerID p = 1) const { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 
 	float player_idle_time(  PlayerID player_id = 1) const; // No input for so many seconds (0: busy; gated by cfg.player_idle_threshold)
 	bool  player_idle(       PlayerID player_id = 1) const { return player_idle_time(player_id) > 0; }
@@ -240,19 +233,19 @@ public:
 
 	virtual void init_world_hook() {} // Called by world.init().
 	/*
-	virtual bool collide_hook(World* w, Entity* obj1, Entity* obj2)
+	virtual bool collide_hook(World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2)
 	{w, obj1, obj2;
 		return false;
 	}
 	*/
-	virtual bool collide_hook(Model::World* w, Entity* obj1, Entity* obj2, double distance);
-	virtual bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2);
+	virtual bool collide_hook(OON::Model::World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2, double distance);
+	virtual bool touch_hook(OON::Model::World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2);
 
 	// High-level, abstract (not as in "generic", but "app-level") hook for n-body interactions:
 	// `event` represents the physical property/condition that made it think these might interact.
 	//!!NOTE: This will change to the objects themselves being notified (not the game "superclass")!
-	virtual void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...);
-	virtual void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...);
+	virtual void undirected_interaction_hook(OON::Model::World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2, float dt, double distance, ...);
+	virtual void directed_interaction_hook(OON::Model::World* w, OON::Model::Entity* source, OON::Model::Entity* target, float dt, double distance, ...);
 
 
 	//----------------------------------------------------------------------------
@@ -318,7 +311,7 @@ public: // E.g. the renderer still needs these...
 	// Abstract (Generic) Model World & View state...
 
 private: // <- Forcing the use of accessors
-	Model::World _world; // See the *world() accessors!
+	std::unique_ptr<OON::Model::World> world_; // See the *world() accessors!
 
 	View::ScreenView& _main_view;
 

@@ -47,7 +47,7 @@ bool SimApp::save_snapshot(const char* unsanitized_filename, SaveOpt flags)
 		if (msg != "") Error(msg);
 	};
 
-	Model::World snapshot = world();
+	OON::Model::World snapshot = world(); //!! Oof...
 	//!! OK, now we could start a low-priority background thread to actually save the snapshot...
 
 	//!! Note: perror("") may just print "No error" (for errno == 0) even if the stream is in failure mode! :-/
@@ -121,7 +121,9 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 	//!! to load a world state into a buffer first, and then
 	//!! copy it over the live instance when ready...
 
-	Model::World snapshot; // The input buffer
+	//!! Oof... :-/
+	std::unique_ptr<OON::Model::World> snapshot // The input buffer
+		= create_world();
 
 #ifndef DISABLE_SNAPSHOT_COMPRESSION
 	ifstream file(fname, ios::binary);
@@ -156,7 +158,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 
 	if (!in || in.bad()) { print_error(); return false; }
 
-	if (!Model::World::load(in, &snapshot)) {
+	if (!OON::Model::World::load(in, snapshot.get())) {
 		print_error(); return false;
 	}
 	assert(in && !in.bad());
@@ -169,7 +171,7 @@ bool SimApp::load_snapshot(const char* unsanitized_filename)
 	//!!Redesign this proc. so that such customizations can be handled by a descendant's save_...() override:
 	//!!in >> BUILD_ID...
 
-	if (!Model::World::load(in, &snapshot)) {
+	if (!OON::Model::World::load(in, snapshot)) {
 		print_error(); return false;
 	}
 	assert(in && !in.bad());

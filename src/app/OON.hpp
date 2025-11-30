@@ -7,7 +7,11 @@
 #include "OONControls.hpp"
 #include "OONMainDisplay.hpp"
 
-#include "Szim/SimApp.hpp"
+// The model type(s) — needed to feed the app-engine bridge template layer...
+//!! (Alas, this also forces including the entire math+physics API too... :-/ )
+#include "model/World.hpp"
+
+#include "Szim/App.hpp"
 
 namespace UI { class HUDStream; }
 
@@ -18,9 +22,14 @@ namespace OON {
 class OONMainDisplay;
 
 //============================================================================
+struct OONTraits //!! Use a concept!
+{
+	using WorldT  = Model::World;
+	using EntityT = Model::Entity;
+};
 
 //----------------------------------------------------------------------------
-class OONApp : public Szim::SimApp
+class OONApp : public Szim::App<OONTraits>
 //!
 //! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
 //!	and "pure" code! :-/

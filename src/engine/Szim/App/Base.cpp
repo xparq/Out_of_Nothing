@@ -39,6 +39,10 @@
 
 namespace Szim {
 
+	//!! Double oof!...:
+	using Entity   = OON::Model::Entity;
+
+
 //============================================================================
 //----------------------------------------------------------------------------
 // SimApp ctor.
@@ -56,7 +60,9 @@ SimApp::SimApp(const RuntimeContext& rt, int argc, char** argv, View::ScreenView
 	, cfg(rt.syscfg) //!! <- .cfg is still the engine config, despite its old, confusing name!
 	, backend(rt.backend)
 	, gui(rt.gui)
-//!!TODO:
+	, world_(create_world()) //!!<- OON legacy!! (Also, calling a method, let alone a virtual, is grossly wrong here!...)
+	                         //!! Only create a dummy stub world here; the base will replace it with the type!
+//!!TODO: [Future me: TODO WHAT?!...]
 	, _main_view(main_view)
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(main_window())}
 	, session(*this/*!!, args("session")!!*/)
@@ -296,10 +302,15 @@ bool SimApp::toggle_fixed_model_dt()
 //!! on threading (etc.) mechanics there feels like a terrible idea!)
 //!! While update() and load() are called currently from a locked section of the
 //!! event loop anyway, it's a crime to rely on just that!
-      Model::World& SimApp::world()       { return _world; }
-const Model::World& SimApp::world() const { return _world; }
-const Model::World& SimApp::const_world() { return _world; }
-      void          SimApp::set_world(OON::Model::World const& w) { _world = w; } //!! Oof!... :-/
+
+//!!
+//!!OON:: legacy!! Oof!... :-/
+//!!
+      OON::Model::World& SimApp::world()       { return *world_; }
+const OON::Model::World& SimApp::world() const { return *world_; }
+const OON::Model::World& SimApp::const_world() { return *world_; }
+      void          SimApp::set_world(OON::Model::World* w) { world_.reset(w); }
+      void          SimApp::set_world(std::unique_ptr<OON::Model::World>& w) { world_.swap(w); }
 
 
 //----------------------------------------------------------------------------
@@ -413,22 +424,22 @@ bool SimApp::entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const 
 
 
 //----------------------------------------------------------------------------
-void SimApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...)
+void SimApp::undirected_interaction_hook(OON::Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...)
 {IGNORE w, obj1, obj2, dt, distance;
 }
 
-void SimApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...)
+void SimApp::directed_interaction_hook(OON::Model::World* w, Entity* source, Entity* target, float dt, double distance, ...)
 {w, source, target, dt, distance;
 }
 
-bool SimApp::collide_hook(Model::World* w, Entity* obj1, Entity* obj2, double distance)
+bool SimApp::collide_hook(OON::Model::World* w, Entity* obj1, Entity* obj2, double distance)
 {w, obj1, obj2, distance;
 	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
 	//!!...body->p -= ds...;
 	return false;
 }
 
-bool SimApp::touch_hook(Model::World* w, Entity* obj1, Entity* obj2)
+bool SimApp::touch_hook(OON::Model::World* w, Entity* obj1, Entity* obj2)
 {w, obj1, obj2;
 	return false;
 }

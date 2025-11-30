@@ -27,14 +27,13 @@ namespace OON {
 using VirtualController = Szim::VirtualController;
 using namespace Model;
 //using namespace Math;
-using namespace UI;
+using namespace /*!!Szim::!!*/UI;
 using namespace std;
-
 
 
 //----------------------------------------------------------------------------
 OONApp::OONApp(const Szim::RuntimeContext& runtime, int argc, char** argv, OONMainDisplay& main_view)
-	: SimApp(runtime, argc, argv, main_view)
+	: App(runtime, argc, argv, main_view)
 	, appcfg(SimApp::runtime.syscfg, args)
 	, controls(this)
 {

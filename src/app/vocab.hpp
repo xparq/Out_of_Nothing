@@ -8,6 +8,8 @@ namespace OON
 	using EntityID = Model::EntityID;
 	using PlayerID = Model::PlayerID;
 
+	using Entity   = Model::Entity;
+
 //	using BasicNumberType = Model::BasicNumberType;
 //	using DeltaT   = Model::TimeSpan;
 

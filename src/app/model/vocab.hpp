@@ -14,6 +14,8 @@ namespace OON::Model
 	using DeltaT   = Szim::Model::TimeSpan;
 
 	using Event    = Szim::Model::Event;
+
+	struct Entity; //!! Instead of including model/Entity.hpp up-front...
 }
 
 
