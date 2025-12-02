@@ -1,5 +1,5 @@
-﻿#ifndef _SKDJ03946H1D81DB67ZBV6435_
-#define _SKDJ03946H1D81DB67ZBV6435_
+﻿#ifndef _SSDFGM986YSKDJ03946H1D81DB67ZBV6435_
+#define _SSDFGM986YSKDJ03946H1D81DB67ZBV6435_
 
 /*
 	The use of the word "session" is NOT limited to the saved state itself,
@@ -12,30 +12,15 @@
 	mainly for analysis or entertainment (e.g. playback) purposes.)
 */
 
-#include <string>
+#include "Core/SessionManager.hpp"
+#include "Szim/diag/Error.hpp"
+#include "Szim/diag/Log.hpp"
 
 namespace Szim {
 
-class SessionManager;
 //----------------------------------------------------------------------------
-class Session //!!?? Could perhaps even be an inner class of SessionManager
-{
-friend class SessionManager;
-	std::string filename;         // Load(ed) from this, and also save to this by default
-	std::string save_as_filename; // Save to this instead, if not empty
-	bool autosave = true;         // Save this session on close (otherwise S. Mgr. should ask)
-
-public:
-	bool save();
-	bool load();
-
-	Session(/*!!const string& path = ""!!*/); // create()
-	Session(const Session&) = delete;
-};
-
-class SimApp;
-//----------------------------------------------------------------------------
-class SessionManager
+template <class App>
+class SessionWrapper
 //!!
 //!! Should mature to take over some of the raw 'run' logic, so that this
 //!! could call the app's init/done virtuals, instead of SimApp directly!
@@ -47,34 +32,40 @@ class SessionManager
 //!! #274: Support multiple live sessions, switching between them to select the active one!
 //!!
 {
+	Core::SessionManager& session_;
+
 public:
-	SessionManager(SimApp& app/*!!, const std::string& name!!*/);
-	~SessionManager(); // (Just for diagnostics yet)
+	SessionWrapper(Core::SessionManager& session)
+		: session_(session)
+	{}
 
-	SessionManager(const SessionManager&) = delete;
+	App& app() { return static_cast<App&>(session_.app_); }
 
-	void create(const std::string& name);      // Start new (unnamed, if name == "")
-	void open(const std::string& name);        // Start existing or new (-> create unnamed, if name == "")
-	void save();                               // Save (ask for or generate name, if unnamed)
-	void save_as(const std::string& name);     // Save (ask for or generate valid name, if name == "")
-	void close();                              // Close, possibly saving
+	// Start existing or new (-> create unnamed, if name == "")
+	void open(const std::string& session_name/* = ""*/)
+	{
+		if (!session_.open_preps(session_name)) return;
 
-	//!! Short of a general-purpose property manager...:
-	void set_autosave(bool state);
-	void set_save_as_filename(const std::string& fn);
+		if (!app().load_snapshot(session_.active_session.filename.c_str())) {
+			Error("Failed to load session (from " + session_.active_session.filename +")!");
+			//!!??... create(name)
+		}
+	}
 
-protected:
-	SimApp& app; //!! No access to the real client app type from here (yet?...
-		     //!! as derived SessionManagers might have it; similarly specialized
-		     //!! like SimAppConfig, but also with a ref to the client app;
-		     //!! or perhaps even templated... Not sure it's a good idea though.
-		     //!! Probably much better to call overridden virtuals for things
-		     //!! like "build new default app state" for a new session etc.
+	//!!void save();                               // Save (ask for or generate name, if unnamed)
+	//!!void save_as(const std::string& name);     // Save (ask for or generate valid name, if name == "")
 
-	std::string active_session_name; //!! Should be a key to the active session in the session list!
-	Session active_session;          //!! Should only be a ref to the active session in that list!
+	// Close, possibly saving
+	void close()
+	{
+		if (!session_.close_preps()) return;
+
+		if (!app().save_snapshot(session_.active_session.save_as_filename.c_str())) {
+			Error("Failed to save session state (to " + session_.active_session.save_as_filename + ")!");
+		}
+	}
 };
 
 } // namespace Szim
 
-#endif // _SKDJ03946H1D81DB67ZBV6435_
+#endif // _SSDFGM986YSKDJ03946H1D81DB67ZBV6435_

@@ -3,6 +3,8 @@
 
 #include "app/Model/vocab.hpp"
 
+//!!#include "app/OONMainDisplay_sfml.hpp"
+
 namespace OON
 {
 	using EntityID = Model::EntityID;

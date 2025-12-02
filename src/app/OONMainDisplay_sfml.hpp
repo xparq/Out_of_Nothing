@@ -3,7 +3,7 @@
 
 #include "OONMainDisplay.hpp"
 
-#include "OONAvatar_sfml.hpp" // for focused_entity_ndx (and, not yet, but...: app.appcfg)
+#include "OONAvatar_sfml.hpp"
 
 // For the cached SFML shapes:
 //#include <SFML/Graphics/Transformable.hpp>
@@ -40,6 +40,8 @@ public:
 	void reset(const Config* recfg = nullptr) override; // Resets things to the last cfg if null.
 //	void reset(Config&& recfg) override;
 //	void resize(unsigned width, unsigned height) override;
+
+	size_t shape_count() const override { return shapes_to_change.size(); }
 
 
 	// -------------------------------------------------------------------
@@ -88,7 +90,9 @@ protected:
 	// -------------------------------------------------------------------
 	// Data...
 	// -------------------------------------------------------------------
-private:
+//!! JUST FOR DEBUG:
+public:
+//!!private:
 	// Two lists ("views") for the same set of shapes, typed differently for
 	// convenience, in order to:
 	// - iterate for updates, and
@@ -98,7 +102,7 @@ private:
 	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw;
 	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change;
 
-	std::vector< std::unique_ptr<Avatar_sfml> > _avatars;
+	std::vector< std::unique_ptr<Avatar_sfml> > avatars_;
 
 }; // class OONMainDisplay_sfml
 

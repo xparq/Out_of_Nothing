@@ -36,7 +36,7 @@ using namespace std;
 using namespace Math;
 
 //----------------------------------------------------------------------------
-bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nullptr*/)
+bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nullptr*/) const
 {
 //!! For reg. testing:
 //!!	version = "0.0.1";

@@ -2,6 +2,7 @@
 #define _OSE8975BQ7C785C639406C824X782C6YNB5_
 
 #include "vocab.hpp"
+//!!#include "OONAppTraits.hpp"
 
 #include "OONConfig.hpp"
 #include "OONControls.hpp"
@@ -22,14 +23,15 @@ namespace OON {
 class OONMainDisplay;
 
 //============================================================================
-struct OONTraits //!! Use a concept!
-{
-	using WorldT  = Model::World;
-	using EntityT = Model::Entity;
-};
+	struct AppConfig
+	{
+		using WorldT    = OON::Model::World;
+		using EntityT   = OON::Model::Entity; //!!?? Move it back to the World? C++ will sabotage that sooner or later...
+//!!		using MainViewT = //!!... :-/ OON::OONMainDisplay_sfml;
+	};
 
 //----------------------------------------------------------------------------
-class OONApp : public Szim::App<OONTraits>
+class OONApp : public Szim::App<OON::AppConfig>
 //!
 //! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
 //!	and "pure" code! :-/
@@ -37,7 +39,7 @@ class OONApp : public Szim::App<OONTraits>
 //!	template< class AppSysImpl > // CRTP for backend-specifics
 //!	class OONApp : public Szim::SimApp
 {
-friend class Model::World; //!! Later: Not the generic, but the app-specific part only!
+friend class OON::Model::World;
 
 //----------------------------------------------------------------------------
 // Config/Setup...
@@ -142,9 +144,6 @@ public:
 	) override;
 	void     remove_player(PlayerID ndx) override;
 
-protected:
-	bool _ctrl_update_thrusters(); // true if any engine is firing
-
 	//------------------------------------------------------------------------
 	// Op. implementations/overrides...
 	void updates_for_next_frame() override;
@@ -157,23 +156,17 @@ protected:
 	void resize_shapes(float /*factor*/) override;
 
 	void time_step(int steps) override;
-	bool load_snapshot(const char* fname) override; // Needs to reset the rendering cache!
-	//bool save_snapshot(const char* fname) override; // Nothing special to do for this one.
+
+protected:
+	bool _ctrl_update_thrusters(); // true if any engine is firing
 
 	//------------------------------------------------------------------------
-	// Model callback implementations...
-	//!! Move these out of the direct app code to an app-level custom model class set!
-	//!! And then the model callback mechanism could be simplified to not doing it in
-	//!! the core abstract Model at all, but in the custom layer, only when needed.
+protected:
+	// Callback impl...
 	void init_world_hook() override;
-	void undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...) override;
-	void directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...) override;
-	bool touch_hook(Model::World* w, Entity* obj1, Entity* obj2) override;
-
-	//------------------------------------------------------------------------
-	// Other callback impl. (overrides)...
 	void pause_hook(bool newstate) override;
 	void onResize(unsigned width, unsigned height) override;
+	void on_snapshot_loaded() override; // Needs to reset the rendering cache!
 
 //----------------------------------------------------------------------------
 // C++ mechanics...

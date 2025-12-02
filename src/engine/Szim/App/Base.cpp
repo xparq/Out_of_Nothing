@@ -39,10 +39,6 @@
 
 namespace Szim {
 
-	//!! Double oof!...:
-	using Entity   = OON::Model::Entity;
-
-
 //============================================================================
 //----------------------------------------------------------------------------
 // SimApp ctor.
@@ -60,10 +56,9 @@ SimApp::SimApp(const RuntimeContext& rt, int argc, char** argv, View::ScreenView
 	, cfg(rt.syscfg) //!! <- .cfg is still the engine config, despite its old, confusing name!
 	, backend(rt.backend)
 	, gui(rt.gui)
-	, world_(create_world()) //!!<- OON legacy!! (Also, calling a method, let alone a virtual, is grossly wrong here!...)
-	                         //!! Only create a dummy stub world here; the base will replace it with the type!
+//	, world_(...) // App<> will create it!
 //!!TODO: [Future me: TODO WHAT?!...]
-	, _main_view(main_view)
+	, main_view_(main_view)
 //!!	, renderer{View/*!!Not really?...*/::Renderer_SFML::create(main_window())}
 	, session(*this/*!!, args("session")!!*/)
 {
@@ -82,6 +77,8 @@ SimApp::~SimApp()
   try { // Let's survive our last moments... :) (Albeit our internal done() is just about empty now...)
 	this->SimApp::done(); // Our own internal done() is called "secretly", even if overridden...
 	                      // (Note: the qualifier is only for emphasis; dtors don't dispatch virtuals.)
+
+	if (world_) delete world_; //!!Move this to done(), I guess!
   } catch (...) {
 	Bug("*REALLY UNEXPECTED* exception from SimApp::done()! :-o ");
 	//... throw; // <- Could be useful to see the fireworks in DEBUG mode,
@@ -303,72 +300,12 @@ bool SimApp::toggle_fixed_model_dt()
 //!! While update() and load() are called currently from a locked section of the
 //!! event loop anyway, it's a crime to rely on just that!
 
-//!!
-//!!OON:: legacy!! Oof!... :-/
-//!!
-      OON::Model::World& SimApp::world()       { return *world_; }
-const OON::Model::World& SimApp::world() const { return *world_; }
-const OON::Model::World& SimApp::const_world() { return *world_; }
-      void          SimApp::set_world(OON::Model::World* w) { world_.reset(w); }
-      void          SimApp::set_world(std::unique_ptr<OON::Model::World>& w) { world_.swap(w); }
-
-
-//----------------------------------------------------------------------------
-EntityID SimApp::add_entity(Entity&& temp)
-{
-	return world().add_body(std::forward<decltype(temp)>(temp)); //!!?? That forward is redundant here?
-}
-
-EntityID SimApp::add_entity(const Entity& src)
-{
-	return world().add_body(src);
-}
-
-void SimApp::remove_entity(EntityID id)
-{
-	world().remove_body(id);
-}
-
-
-//----------------------------------------------------------------------------
-bool SimApp::quick_save_snapshot(unsigned slot_id) // starting from 1, not 0!
-{
-/*
-	using namespace MEMDB;
-	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
-
-	auto slot = slot_id - 1; //! internally they are 0-based tho...
-	decltype(saved_slots) slot_bit = 1 << slot;
-	if (saved_slots & slot_bit) {
-		cerr << "- WARNING: Overwriting previously saved state at slot #" << slot_id << "!...\n";
-	}
-
-	world_snapshots[slot] = world(); // :)
-	saved_slots |= slot_bit;
-*/
-	return save_snapshot(
-		snapshot_filename(slot_id, cfg.quick_snapshot_filename_pattern.c_str()).c_str());
-}
-
-//----------------------------------------------------------------------------
-bool SimApp::quick_load_snapshot(unsigned slot_id) // starting from 1, not 0!
-{
-/*
-	using namespace MEMDB;
-	assert(slot_id > 0 && slot_id <= MAX_WORLD_SNAPSHOTS); //!!should become a runtime "filename OK" check
-
-	auto slot = slot_id - 1; //! internally they are 0-based tho...
-	decltype(saved_slots) slot_bit = 1 << slot;
-	if (! (saved_slots & slot_bit)) {
-		cerr << "- WARNING: No saved state at slot #" << slot_id << " yet!\n";
-		return false;
-	}
-	set_world(world_snapshots[slot]);
-	cerr << "World state loaded from slot " << slot_id << ".\n";
-*/
-	return load_snapshot(
-		snapshot_filename(slot_id, cfg.quick_snapshot_filename_pattern.c_str()).c_str());
-}
+void SimApp::set_world(Model::Core::World*&& wptr) { assert(wptr); world_ = wptr; }
+/*!!
+      Model::Core::World& SimApp::__world()       { return *static_cast<      Model::Core::World*>(world_); }
+const Model::Core::World& SimApp::__world() const { return *static_cast<const Model::Core::World*>(world_); }
+const Model::Core::World& SimApp::__const_world() { return *static_cast<const Model::Core::World*>(world_); }
+!!*/
 
 
 //----------------------------------------------------------------------------
@@ -391,30 +328,11 @@ float SimApp::player_idle_time(unsigned player_id) const
 
 
 //----------------------------------------------------------------------------
-bool SimApp::check_if_entity_is_at_viewpos(EntityID id, float x, float y) const // virtual
-{
-	const auto& e = entity(id);
-	//!! Check if view pos is cached first! (But that lookup could be even more expensive... MEASURE!)
-	//!! Actually, in OONApp_sfml it is -- make this "tunnelable"!...
-	const auto& camera = main_view().camera();
-	auto ep = camera.world_to_view_coord(e.p);
-	//!! ... = e.bounding_box();
-	auto box_R = e.r * camera.scale(); //!! Not a terribly robust method to get that size...
-	auto distance = Math::mag2(ep.x - x, ep.y - y); //!! Sigh... #327
-//DBG "---> ...checking click at ("<<x<<", "<<y<<") against entity #"<<i<<" at ("<<ep.x<<", "<<ep.y<<")...";
-
-	if (distance <= box_R) {
-//DBG "- FOUND entity #" << i;
-		return true;
-	} else  return false;
-}
-
-//----------------------------------------------------------------------------
-bool SimApp::entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const // virtual
+bool SimApp::entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const
 {
 	//!! Assert that EntityID is size_t, or implement proper iteration!...:
 	for (size_t i = entity_count(); i-- != 0;) { //!! Poor man's Z-order... Override for less hamfisted ways!
-		if (check_if_entity_is_at_viewpos(i, x, y)) {
+		if (is_entity_at_viewpos(i, x, y)) {
 			*entity_id = i;
 			return true;
 		}
@@ -422,40 +340,6 @@ bool SimApp::entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const 
 	return false;
 }
 
-
-//----------------------------------------------------------------------------
-void SimApp::undirected_interaction_hook(OON::Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...)
-{IGNORE w, obj1, obj2, dt, distance;
-}
-
-void SimApp::directed_interaction_hook(OON::Model::World* w, Entity* source, Entity* target, float dt, double distance, ...)
-{w, source, target, dt, distance;
-}
-
-bool SimApp::collide_hook(OON::Model::World* w, Entity* obj1, Entity* obj2, double distance)
-{w, obj1, obj2, distance;
-	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
-	//!!...body->p -= ds...;
-	return false;
-}
-
-bool SimApp::touch_hook(OON::Model::World* w, Entity* obj1, Entity* obj2)
-{w, obj1, obj2;
-	return false;
-}
-
-/*!!UPDATE/DELETE/MOVE NOTE:
-// High-level, abstract (not as in "generic", but "app-level") hook for n-body interactions:
-//!!The model should also pass the physical property/condition ("event type") that made it think these may interact!
-//!!A self-documenting alternative would be calling a matching function for each known such event,
-//!!but that might be prohibitively expensive in that tight loop, especiall if most callbacks would
-//!!just do nothing.
-//!!NOTE: This will anyway change to the objects themselves being notified (not the game "superclass")!
-void SimApp::interaction_hook(Model::World* w, Model::World::Event event, Entity* obj1, Entity* obj2, ...)
-{w, event, obj1, obj2;
-	//!!?? body->interact(other_body) and then also, per Newton, other_body->interact(body)?!
-}
-!!*/
 
 //----------------------------------------------------------------------------
 void SimApp::toggle_fullscreen()

@@ -44,6 +44,8 @@ public:
 	                           //!! EITHER SHOULDN'T EXIST OR SHOULDN'T BE PURE!
 	                           //!! If kept: also needs a ctor with SimApp&!
 
+
+	virtual size_t shape_count() const = 0;
 	virtual void reset(const Config* recfg = nullptr); // Resets things to the last cfg if null.
 	virtual void reset(Config&& recfg);
 	virtual void resize(unsigned width, unsigned height);

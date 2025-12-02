@@ -1,29 +1,34 @@
 ﻿#include "SessionManager.hpp"
-#include "SimApp.hpp"
+#include "Szim/SimApp.hpp"
+
+#include "Szim/diag/Error.hpp"
+#include "Szim/diag/Log.hpp"
+#include "sz/diag/DBG.hh"
+
 #include "sz/sys/fs.hh"
 
 #include <string>
 #include <cassert>
 
-#include "Szim/diag/Error.hpp"
-#include "Szim/diag/Log.hpp"
 
-using namespace Szim;
+namespace Szim {
+namespace Core {
+
 using namespace std;
 
 
 //============================================================================
 //----------------------------------------------------------------------------
-Session::Session(/*!!const string& path = ""!!*/)
+SessionState::SessionState(/*!!const string& path = ""!!*/)
 {
 }
 
 
 //============================================================================
 //----------------------------------------------------------------------------
-SessionManager::SessionManager(SimApp& app) :
-	app(app)
-//	active_session{.filename = ...} // Leave the active session empty for now!
+SessionManager::SessionManager(SimApp& app)
+	: app_(app)
+//	, active_session{.filename = ...} // Leave the active session empty for now!
 {
 	LOGI << "+++ SessionManager started.";
 }
@@ -62,7 +67,7 @@ LOGD << "New sessions are not yet \"created\"! They just happen!... :)";
 }
 
 //----------------------------------------------------------------------------
-void SessionManager::open(const string& session_name/* = ""*/)
+bool SessionManager::open_preps(const string& session_name/* = ""*/)
 {
 	LOGD << "Session Open...";
 
@@ -76,7 +81,7 @@ void SessionManager::open(const string& session_name/* = ""*/)
 	if (active_session_name.empty()) {
 		create("");
 		LOGD << "...as new session!\n";
-		return;
+		return false;
 	}
 /*!! DISABLED FOR #555 (Double-prefixed session paths...)
      load_snapshot() will do the prefixing! (Which likely needs to change later!)
@@ -93,18 +98,18 @@ void SessionManager::open(const string& session_name/* = ""*/)
 
 	LOGD << "...from session file: " << active_session.filename << '\n';
 
-	if (!app.load_snapshot(active_session.filename.c_str())) {
-		Error("Failed to load session (from " + active_session.filename +")!");
-		//!!??... create(name)
-	}
+	return true;
 }
 
 //----------------------------------------------------------------------------
-void SessionManager::close()
+bool SessionManager::close_preps()
 {
 	LOGD << "Session Close...";
 
-	if (active_session.autosave) {
+	if (!active_session.autosave) {
+		//!! LOG_LINE_END //cerr << '\n';
+		return false;
+	} else {
 
 		/*!!?? if (name.empty()) {
 
@@ -138,10 +143,9 @@ void SessionManager::close()
 
 		LOGD << "...with autosave to \"" << save_as << "\"";
 
-		if (!app.save_snapshot(save_as.c_str())) {
-			Error("Failed to save session state (to " + save_as + ")!");
-		}
-	} else {
-		//!! LOG_LINE_END //cerr << '\n';
+		return true;
 	}
 }
+
+} // namespace Core
+} // namespace Szim

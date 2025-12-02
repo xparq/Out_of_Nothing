@@ -1,7 +1,9 @@
 #ifndef _O9090N7B8C12345607N772V8456N720C45Y69780W5B76980YH_
 #define _O9090N7B8C12345607N772V8456N720C45Y69780W5B76980YH_
 
-#include "app/Model/Entity.hpp"
+#include "Szim/Model/Entity.hpp"
+#include "Szim/Avatar.hpp"
+
 
 namespace Szim { //!! It's a PITA not seeing Model here, too! :-/
 

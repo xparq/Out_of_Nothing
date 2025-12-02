@@ -1,0 +1,37 @@
+// Place your key bindings in this file to override the defaultsauto[]
+[
+	{
+		"key": "ctrl+shift+o",
+		"command": "-workbench.action.gotoSymbol"
+	},
+	{
+		"key": "ctrl+shift+o",
+		"command": "workbench.action.output.toggleOutput",
+		"when": "workbench.panel.output.active"
+	},
+	{
+		"key": "ctrl+shift+u",
+		"command": "-workbench.action.output.toggleOutput",
+		"when": "workbench.panel.output.active"
+	},
+	{
+		"key": "ctrl+shift+u",
+		"command": "editor.action.transformToUppercase"
+	},
+	{
+		"key": "shift+alt+q",
+		"command": "editor.action.insertSnippet",
+		"when": "editorTextFocus",
+		"args": { "snippet": "\\($0\\)" }
+	},
+	{	"key": "ctrl+down",
+		"command": "runCommands",
+		"args": { "commands": [ "scrollLineDown", "cursorDown" ]};
+                "when": "textInputFocus"
+	},
+	{	"key": "ctrl+up",
+		"command": "runCommands",
+		"args": { "commands": [ "scrollLineUp", "cursorUp", ]},
+                "when": "textInputFocus"
+	},
+]

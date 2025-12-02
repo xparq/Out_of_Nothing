@@ -40,9 +40,17 @@ set oon_use_exe=%1
 --session=%reference_startstate% ^
 --session-save-as=%new_endstate% ^
 --no-save-compressed ^
+--log-level=D
 
 
 ::busybox diff -b %SZ_RUN_DIR%\RESULT.save %SZ_RUN_DIR%\%baseline_version%-RESULT.ref && echo OK, SAME!
+
+:: The report below weridly only prints `-(` when run from my MinGW CLI shell!... :-o
+:: UPDATE: Umm... Watch this...:
+::PATH=!666999666!
+:: Umm... Er... Well, that wasn't the fix actually (shielding off echo.exe); this was:
+setlocal disabledelayedexpansion
+
 fc /b %new_endstate% %reference_endstate% > nul
 if errorlevel 1 (
 	echo !!! THE RESULTS DIFFER !!! :-(

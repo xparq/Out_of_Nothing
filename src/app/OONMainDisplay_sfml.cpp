@@ -1,7 +1,6 @@
 #include "OONMainDisplay_sfml.hpp"
 
-//!! Keep it as tight as possible:
-#include "OON.hpp" // Just for app.focused_entity_ndx :-/ (Later, maybe: app.appcfg)
+#include "OON.hpp" // focused_entity_ndx, OONApp casts (Later, maybe: app.appcfg)
 
 //!! This "backend tunneling" is so sad this way"... See notes in OON_sfml.cpp!
 #include "Szim/Backend/_adapter_switcher.hpp"
@@ -9,6 +8,9 @@
 #define SFML_WINDOW(app) (((Szim::SFML_Backend&)((app).backend)).SFML_window())
 
 #include "Szim/UI.hpp"
+
+#include "Szim/diag/Log.hpp"
+#include "sz/diag/DBG.hh"
 
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
@@ -19,8 +21,6 @@
 #include <cmath> // sin //!! Seriously, replace with a fast table lookup!
 #include <cassert>
 
-#include "Szim/diag/Log.hpp"
-
 
 namespace OON {
 
@@ -28,13 +28,13 @@ namespace OON {
 
 const Avatar_sfml& OONMainDisplay_sfml::avatar(size_t ndx) const
 {
-//!!	assert(_avatars.size());
-if (!_avatars.size()) { static Avatar_sfml dummy({});
+//!!	assert(avatars_.size());
+if (!avatars_.size()) { static Avatar_sfml dummy({});
 LOGN <<"- Hey, avatar loading must happen before other View ops.!";
 return dummy; }
 
-	return *_avatars[ndx > _avatars.size() - 1
-	                     ? _avatars.size() - 1 : ndx];
+	return *avatars_[ndx > avatars_.size() - 1
+	                     ? avatars_.size() - 1 : ndx];
 }
 
 
@@ -62,26 +62,41 @@ LOGD << "------------------ DISPLAY RESET ---------------------";
 
 	resize(_cfg.width, _cfg.height);
 
-	const auto& c_simapp = app();
+	const auto& simapp = app();
 
 	// Load avatars -- !!TESTING ONLY!!
-	Avatar_sfml::prefix_path = c_simapp.cfg.asset_dir.c_str(); // Can be set per instance, too.
-	for (const auto& a : c_simapp.avatars) {
-		_avatars.emplace_back(std::make_unique<Avatar_sfml>(a));
+	Avatar_sfml::prefix_path = simapp.cfg.asset_dir.c_str(); // Can be set per instance, too.
+	for (const auto& a : simapp.avatars) {
+		avatars_.emplace_back(std::make_unique<Avatar_sfml>(a));
 // OR:
-//		_avatars.emplace_back(std::make_unique<Avatar_sfml>(
-//			a, Avatar_sfml::PRELOAD, c_simapp.cfg.asset_dir.c_str()
+//		avatars_.emplace_back(std::make_unique<Avatar_sfml>(
+//			a, Avatar_sfml::PRELOAD, simapp.cfg.asset_dir.c_str()
 //		));
 	}
 
 	// Recreate the shapes...
+
 	shapes_to_change.clear();
 	shapes_to_draw.clear();
 
+/*
+DBG "----- Counts BEFORE creating the new set of shapes:";
+DBG_(simapp.entity_count());
+DBG_(shapes_to_change.size());
+DBG_(shapes_to_draw.size());
+DBG_(shape_count());
+*/
 	//!! Assert size_t is_same EntityID, or implement proper iteration!...:
-	for (EntityID n = 0; n < c_simapp.world().bodies.size(); ++n) {
-		create_cached_shape(*(c_simapp.world().bodies[n]), n); // * for smart_ptr
+	for (EntityID n = 0; n < simapp.entity_count(); ++n) {
+		create_cached_shape(oon_app().entity(n), n);
 	}
+/*
+DBG "----- Counts AFTER creating the set of shapes:";
+DBG_(simapp.entity_count());
+DBG_(shapes_to_change.size());
+DBG_(shapes_to_draw.size());
+DBG_(shape_count());
+*/
 }
 
 
@@ -91,12 +106,13 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, EntityI
 	auto& game = app();
 
 	// There must be objects actually added already:
-	assert(game.const_world().bodies.size() > 0);
+	assert(game.entity_count() > 0);
 
 //!!?? WTF is this handling of -1 ("NONE"?) here:
 	//!!Can only "append" for now, so ndx must refer to the last element...
-	if (entity_ndx == (size_t)-1) entity_ndx = game.const_world().bodies.size() - 1;
-//	assert(entity_ndx == game.world().bodies.size() - 1);
+	if (entity_ndx == (size_t)-1) entity_ndx = game.entity_count() - 1;
+	//!! This has been too strict tho, AFAICR (and it's not the right approach anyway):
+	//!!assert(entity_ndx == game.entity_count() - 1);
 
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
@@ -119,12 +135,14 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, EntityI
 void OONMainDisplay_sfml::delete_cached_shape(EntityID entity_ndx) //override
 {
 	assert(entity_ndx != Model::Entity::NONE);
-	// Requires that the body has already been deleted from the world:
+
+	//!!FIX: OBSOLETE ASSUMPTION:
+	// Requires that the player entity has already been deleted from the world:
 	[[maybe_unused]] auto& game = app();
 	assert(game.entity_count() == shapes_to_draw.size() - 1);
-	assert(game.entity_count() == shapes_to_change.size() -1);
-	// Some runtime check, too:
-	if (entity_ndx < shapes_to_draw.size() && entity_ndx < shapes_to_change.size()) {
+	assert(game.entity_count() == shape_count() - 1);
+	// Some runtime checking, too:
+	if (entity_ndx < shapes_to_draw.size() && entity_ndx < shape_count()) {
 		shapes_to_draw.erase(shapes_to_draw.begin() + entity_ndx);
 		shapes_to_change.erase(shapes_to_change.begin() + entity_ndx);
 	}
@@ -154,17 +172,20 @@ void OONMainDisplay_sfml::resize_object(EntityID ndx, float factor) //override
 void OONMainDisplay_sfml::render_scene()
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	//!! Shape indexes must be the same as the corresponding entity indexes ("ID"s...)!
-	//!! Also, assert size_t is_same EntityID, or implement proper iteration!...
-	for (size_t i = 0; i < shapes_to_change.size(); ++i) {
-		auto& body = app().world().bodies[i];
+	// Shape indexes must be the same as the corresponding entity indexes ("ID"s...)!
+	// - This can only check the number of them, but at least that:
+	assert(shape_count() == shapes_to_change.size());
+	assert(shape_count() <= app().entity_count());
+	//!! Also, static_assert size_t is_same EntityID, or implement proper iteration!...
+	for (size_t i = 0; i < shape_count(); ++i) {
+		auto& body = oon_app().entity(i);
 
 		//!!Sigh, this will break as soon as not just circles would be there...
 		auto shape = dynamic_pointer_cast<sf::Shape>(shapes_to_change[i]);
 
 		// Set color (!!AND CURRENTLY: ALSO TEXTURE!!) to the avatar bg. for those that have an avatar!
-		if (i != app().player_entity_ndx()) { //!! Currently only, also: "the", player has avatar...
-			shape->setFillColor(sf::Color((body->color << 8) | p_alpha));
+		if (i != oon_app().player_entity_ndx()) { //!! Currently only, also: "the", player has avatar...
+			shape->setFillColor(sf::Color((body.color << 8) | p_alpha));
 		} else {
 			shape->setFillColor(sf::Color(avatar(oon_app().focused_entity_ndx).tint_RGBA));
 			shape->setTexture(&(          avatar(oon_app().focused_entity_ndx).image));
@@ -176,11 +197,11 @@ void OONMainDisplay_sfml::render_scene()
 		//!! related to the camera view, but would obviously be best if they were identical!...
 
 	// a)
-		auto vpos = app().main_view().camera().world_to_view_coord(body->p); //!!?? No longer needed: ... - V2f(body->r, -body->r)); //!! Rely on the objects' own origin offset!
+		auto vpos = app().main_view().camera().world_to_view_coord(body.p); //!!?? No longer needed: ... - V2f(body.r, -body.r)); //!! Rely on the objects' own origin offset!
 			                                                             //!! Mind the inverted camera & model y, too!
 	// b)
 	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
-	//	auto vpos = oon_camera.world_to_view_coord(body->p); //!!?? No longer needed: ... - Math::Vector2f(body->r, -body->r)); //!! Rely on the objects' own origin offset instead!
+	//	auto vpos = oon_camera.world_to_view_coord(body.p); //!!?? No longer needed: ... - Math::Vector2f(body.r, -body.r)); //!! Rely on the objects' own origin offset instead!
 	//	                                                     //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
@@ -188,8 +209,8 @@ void OONMainDisplay_sfml::render_scene()
 		trshape.setPosition(sf::Vector2f{ vpos.x + float(app().main_window_width()/2),
 			                         -vpos.y + float(app().main_window_height()/2)}); //!! "Standardize" on the view's centered origin instead!
 
-//LOGD << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body->p.x) * oon_camera.scale() + oon_camera.offset.x
-//			       << ", y = " << oon_camera.cfg.height/2 + (body->p.y) * oon_camera.scale() + oon_camera.offset.y;
+//LOGD << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body.p.x) * oon_camera.scale() + oon_camera.offset.x
+//			       << ", y = " << oon_camera.cfg.height/2 + (body.p.y) * oon_camera.scale() + oon_camera.offset.y;
 	}
 }
 
@@ -232,7 +253,7 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	// Player halo...
 	// - But only if the real size is too small! See the `if` later below...
 	const auto player_ndx = app().player_entity_ndx();
-	const auto& player_body = app().player_entity();
+	const auto& player_body = oon_app().player_entity();
 
 	//!! May not remain a circle forever:
 	auto& player_shape = (sf::CircleShape&) *(shapes_to_change[player_ndx]);
@@ -248,7 +269,7 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 		float r = 20 + sin_phase * A/2; // r -= sin_phase * A/2; // Compensate when only pulsating the outline thickness.
 		auto halo = sf::CircleShape(r);
 		halo.setOutlineThickness(2); // (sin_phase * 2)
-		halo.setOutlineColor(sf::Color(unsigned((app().entity(player_ndx).color << 8)
+		halo.setOutlineColor(sf::Color(unsigned((oon_app().entity(player_ndx).color << 8)
 		                                        | alpha)));
 		halo.setFillColor(sf::Color(0)); // sf::Color(0x66663333)
 		halo.setOrigin({r, r});

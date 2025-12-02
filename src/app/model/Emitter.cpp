@@ -1,7 +1,7 @@
 #include "Emitter.hpp"
 
-#include "Szim/SimApp.hpp"
-
+//!!#include "Szim/SimApp.hpp"
+#include "app/OON.hpp" //!! :-(
 
 namespace OON::Model {
 
@@ -15,14 +15,16 @@ Emitter::Emitter(const Config& emitter_cfg, Szim::SimApp& app)
 //----------------------------------------------------------------------------
 //!! - Move to SimApp!
 //!! - Decouple from the entity() query: pass it the object, not the index!
-//!!   (Only that `resize_shape(emitter_ndx, emitter.r/emitter_old_r);` uses it;
-//!!   it could be done by callers, or even be a follow-up callback, if necessary.)
-//!!   OTOH: Passing the ID is supposedly the canonical method of passing entity refs. around!
-//!! - It still calls add_entity() (so still can't be a free function (or class)),
+//!!   (Only `resize_shape(emitter_ndx, ...)` uses it! But that step could
+//!!   be done by callers, or even be a follow-up callback, if necessary.)
+//!!   OTOH: Passing the ID is the canonical way of passing entity refs. around!
+//!! - It still calls add_entity(), so can't be a free function,
 //!!   but that really could be a callback then...
 void Emitter::emit_particles(EntityID emitter_id, unsigned n, Phys::Pos2 nozzles[])
 {
-	auto& emitter = app.entity(emitter_id); // Not const: will deplete!
+	auto& oon_app = static_cast<OONApp&>(app); //!! :-(
+
+	auto& emitter = oon_app.entity(emitter_id); // Not const: will deplete!
 		//!! Also take care of other threads possibly deleting the emitter later on! :-o
 
 //if (!cfg.create_mass) cerr <<"DBG> emitter.mass BEFORE burst: "<< emitter.mass <<'\n';
@@ -59,7 +61,7 @@ void Emitter::emit_particles(EntityID emitter_id, unsigned n, Phys::Pos2 nozzles
 		                          //!!...Jesus, these "hamfixted" pseudo Δt "factors"...
 		if (nozzles) p += nozzles[i] * emitter.r; // Scale to its "bounding sphere"...
 
-		[[maybe_unused]] auto pndx = app.add_entity({ //!! Refact. to only use World::add_body directly!
+		[[maybe_unused]] auto pndx = oon_app.add_entity({ //!! Refact. to only use World::add_body directly!
 			.lifetime = cfg.particle_lifetime,
 			.density = cfg.particle_density,
 			.p = p,
@@ -85,7 +87,7 @@ void Emitter::emit_particles(EntityID emitter_id, unsigned n, Phys::Pos2 nozzles
 //cerr <<"DBG> emitter.r before recalc: "<< emitter.r <<'\n';
 		emitter.recalc();
 //cerr <<"DBG> emitter.r after recalc: "<< emitter.r <<'\n';
-		app.resize_shape(emitter_id, float(emitter.r/emitter_old_r));
+		oon_app.resize_shape(emitter_id, float(emitter.r/emitter_old_r));
 //cerr <<"DBG> emitter.mass AFTER burst: "<< emitter.mass <<'\n';
 	}
 } // emit_particles

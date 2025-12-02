@@ -3,7 +3,7 @@
 
 //!! Legacy kludge until the relevant generic Physics parts (Pos) are migrated to the Engine(/Metamodel):
 #include "app/Model/Physics.hpp"
-//!!#include "Szim/Meta/Model.hpp"
+//!!#include "Szim/Model/Meta.hpp"
 	//!! Not used yet; the *app-specific* physics is used directly instead! :-o :-/
 	//!! The camera should be split into a generic part, and another (typed/templated)
 	//!! one, parametrized by the same app types as the rest of the Model abstractions!

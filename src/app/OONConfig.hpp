@@ -63,7 +63,7 @@ struct OONConfig : Szim::Config
 	std::string background_music; //!!?? Awkward... App stuff that needs convenient engine support. How exactly?
 
 	// Sim.
-	Model::World::GravityMode gravity_mode;
+	Model::GravityMode gravity_mode;
 	unsigned chemtrail_burst_particles;
 	unsigned exhaust_burst_particles;
 	float    exhaust_v_factor;

@@ -3,7 +3,7 @@
 
 namespace OON::Model {
 
-	using BasicNumberType = double;
+	using BasicNumberType = float;
 
 }
 

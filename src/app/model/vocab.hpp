@@ -2,7 +2,7 @@
 #define _MWMV4HU8VM97CCF2M4Y6879YMMMMMMMMMMCM45YNVB7986_
 
 
-#include "Szim/Meta/Model.hpp"
+#include "Szim/Model/Meta.hpp"
 #include "app/Model/Cfg.hpp"
 
 namespace OON::Model

@@ -85,7 +85,7 @@ LOGD << "Loading config from " << fname;
 			_db.cfg.LOAD_FROM_STRING = false;
 			result = _db.load(fname.c_str());
 LOGD << "- load() result: " << result;
-LOGD << "- testing cfg read: asset_dir == " << _get("asset_dir", "WTF?!");
+//LOGD << "- testing cfg read: asset_dir == " << _get("asset_dir", "WTF?!");
 		}
 		if (!result) {
 	/*

@@ -17,6 +17,7 @@ build.*/
 *.ifc
 *.pdb
 *.ilk
+*.rdi
 *.exp
 *.exe
 gcm.cache

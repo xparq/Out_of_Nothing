@@ -81,10 +81,11 @@ void OONApp::ui_setup()
 
 		perf_form->add("Full-matrix loop", new myco::CheckBox(
 			[&app](auto* self){
-				app.world().loop_mode = self->get()
-					? World::LoopMode::Full_Matrix : World::LoopMode::Half_Matrix;
+				app.world().set_loop_mode(
+					self->get() ? World::LoopMode::Full_Matrix : World::LoopMode::Half_Matrix
+				);
 			},
-			app.world().loop_mode == World::LoopMode::Full_Matrix)
+			app.world().loop_mode() == World::LoopMode::Full_Matrix)
 		);
 
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
@@ -115,10 +116,10 @@ void OONApp::ui_setup()
 	// Physics tweaks...
 	auto	phys_form = gui_main_hbox->add(new Form);
 		phys_form->add("Gravity mode", new GravityModeSelector)
-				->add("Off",          World::GravityMode::Off)
-				->add("Hyperbolic",   World::GravityMode::Hyperbolic)
-				->add("Realistic",    World::GravityMode::Realistic)
-				->add("Experimental", World::GravityMode::Experimental)
+				->add("Off",          GravityMode::Off)
+				->add("Hyperbolic",   GravityMode::Hyperbolic)
+				->add("Realistic",    GravityMode::Realistic)
+				->add("Experimental", GravityMode::Experimental)
 			->setCallback([&](auto* self){ app.world().props.gravity_mode = self->get(); })
 			->set(app.world().props.gravity_mode)
 		;
@@ -130,8 +131,8 @@ void OONApp::ui_setup()
 			->setCallback([&app](auto* self){ app.world().props.repulsion_stiffness = self->get() * 0.00000000001; }) //!!...
 			->set(app.world().props.repulsion_stiffness / 0.00000000001);
 		phys_form->add("Collision mode", new CollisionModeSelector)
-				->add("Ignore",        World::CollisionMode::Off)
-				->add("Glide through", World::CollisionMode::Glide_Through)
+				->add("Ignore",        CollisionMode::Off)
+				->add("Glide through", CollisionMode::Glide_Through)
 			->setCallback([&](auto* self){ app.world().props.collision_mode = self->get(); })
 			->set(app.world().props.collision_mode)
 		;

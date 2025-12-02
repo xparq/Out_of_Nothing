@@ -39,6 +39,6 @@ TODO:
 #include "app/Model/World.hpp" // This one is not so heavy.
 namespace OON
 {
-	using GravityModeSelector   = myco::Options<Model::World::GravityMode>;
-	using CollisionModeSelector = myco::Options<Model::World::CollisionMode>;
+	using GravityModeSelector   = myco::Options<Model::GravityMode>;
+	using CollisionModeSelector = myco::Options<Model::CollisionMode>;
 }

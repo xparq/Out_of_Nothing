@@ -26,7 +26,6 @@ namespace OON {
 
 using VirtualController = Szim::VirtualController;
 using namespace Model;
-//using namespace Math;
 using namespace /*!!Szim::!!*/UI;
 using namespace std;
 
@@ -112,11 +111,11 @@ LOGD << "Display.reset right after loading the avatar images:";
 	//!!
 	// Restore or start session (currently just loading a snapshot...) if requested (i.e. --session=name)...
 	if (args["session"]) { // If empty, a new unnamed session will be started; see also at done()!
-		session.open(args("session")); // So, a previously autosaved unnamed session state will NOT be loaded implicitly!
+		session_manager.open(args("session")); // So, a previously autosaved unnamed session state will NOT be loaded implicitly!
 	} else {
 		//!! Here should be a "load default initial world state" thing...
 		//!!
-		//!! session.create(); // call back to the app to build default state
+		//!! session_manager.create(); // call back to the app to build default state
 		//!!
 		//!! Or even just this would be fine:
 		//!! load_snapshot(DEFAULT);
@@ -155,7 +154,7 @@ LOGD << "Display.reset right after loading the avatar images:";
 	//!! (And this is a pretty arbitrary place for that, too! :-o :-/ )
 	//!! ALSO: if there was a session load, it has already called it, so there
 	//!! are double debug outputs for it...
-LOGD << "Display.reset after the UI setup:";
+LOGD << "Display.reset after UI setup:";
 	oon_main_view().reset();
 
 	// Audio...
@@ -181,7 +180,7 @@ LOGD << "Display.reset after the UI setup:";
 	world().props.gravity_mode = appcfg.gravity_mode;
 	//!! Move to OON_UI.cpp:
 	myco::set<GravityModeSelector>("Gravity mode", world().props.gravity_mode);
-		[[maybe_unused]] auto readback = myco::get<GravityModeSelector>("Gravity mode", World::GravityMode::Default);
+		[[maybe_unused]] auto readback = myco::get<GravityModeSelector>("Gravity mode", OON::GravityMode::Default);
 		assert(readback == world().props.gravity_mode);
 
 LOGD << __FUNCTION__ <<" finished.";
@@ -200,14 +199,14 @@ bool OONApp::done() //override
 	//!! MOVE THE SESSION LOGIC TO SimApp:
 	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
 	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
-		session.close();
+		session_manager.close();
 	}
 
 	return true;
 }
 
 void OONApp::init_world_hook() //override
-{_
+{
 	auto& w = world(); //!! Using the default-constr'd (so basically undefined!)
 	                   //!! model world implicitly created by SimApp!... :-o
 
@@ -653,57 +652,10 @@ void OONApp::toggle_sound_fx() { backend.audio.toggle_sounds(); }
 
 
 //----------------------------------------------------------------------------
-void OONApp::undirected_interaction_hook(Model::World* w, Entity* obj1, Entity* obj2, float dt, double distance, ...) //override
-{w, obj1, obj2, dt, distance;
-}
-
-void OONApp::directed_interaction_hook(Model::World* w, Entity* source, Entity* target, float dt, double distance, ...) //override
-{w, source, target, dt, distance;
-//	if (!obj1->is_player())
-//		obj1->color += 0x3363c3;
-
-#if 0//!!
-	auto dx = source->p.x - target->p.x,
-	     dy = source->p.y - target->p.y;
-//	auto distance = Math::mag2(dx, dy);
-	float G_per_DD = w->gravity / (distance * distance);
-
-	float a_target = G_per_DD * source->mass;
-	Vector2f dv_target = Vector2f{dx * a_target, dy * a_target} * dt; //!! Fake "vectorization"!...
-	//!! Or perhaps: Vector2f dv_target(dx / distance * g, dy / distance * g) * dt;
-	target->v += dv_target;
-
-//!!/*!! Alternatively, this would normally be done in its own separate loop cycle, but that's 10-12% SLOWER! :-o
-	float a_source = -G_per_DD * target->mass;
-	Vector2f dv_source = Vector2f{dx * a_source, dy * a_source} * dt; //!! Fake "vectorization"!...
-	//!! Or perhaps: Vector2f dv_source(dx / distance * g, dy / distance * g) * dt;
-	source->v += dv_source;
-//!!*/
-#endif//!!
-}
-
-//----------------------------------------------------------------------------
-bool OONApp::touch_hook(World* w, Entity* obj1, Entity* obj2)
-{IGNORE w;
-	if (obj1->is_player() || obj2->is_player()) {
-		backend.audio.play_sound(snd_clack);
-	}
-
-	obj1->T += 100;
-	obj2->T += 100;
-
-	obj1->recalc();
-	obj2->recalc();
-
-	return false; //!!Not yet used!
-}
-
-
-//----------------------------------------------------------------------------
 EntityID OONApp::add_entity(Entity&& temp) //override
 // Add new entity (moved) from a temporary template obj.
 {
-	auto ndx = SimApp::add_entity(temp);
+	auto ndx = App::add_entity(temp);
 	// Pre-cache shapes for rendering... (!! May be pointless, but this is just what I started with...)
 	oon_main_view().create_cached_shape(entity(ndx), ndx); // temp is dead now... ()
 	return ndx;
@@ -713,7 +665,7 @@ EntityID OONApp::add_entity(Entity&& temp) //override
 //----------------------------------------------------------------------------
 void OONApp::remove_entity(EntityID ndx) //override
 {
-	SimApp::remove_entity(ndx);
+	App::remove_entity(ndx);
 
 	//-------------------------
 	// Adjust references...

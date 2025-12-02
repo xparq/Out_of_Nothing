@@ -8,6 +8,7 @@
 namespace OON {
 
 //----------------------------------------------------------------------------
+#if 0 //!! OLD:
 bool OONApp::load_snapshot(const char* fname) //override
 {
 	// This should load the model back, but can't rebuild the rendering state:
@@ -33,7 +34,7 @@ bool OONApp::load_snapshot(const char* fname) //override
 // The engine has already written that:
 //cerr << "Game state restored from \"" << fname << "\".\n";
 
-	_on_snapshot_loaded();
+	on_snapshot_loaded();
 		//!! (SimApp::load_snapshot could just have a callback directly, instead of
 		//!! this current polymorphic setup -- but I expect loading the app state
 		//!! to become more than just a pure model loading, and then a virtual
@@ -41,9 +42,10 @@ bool OONApp::load_snapshot(const char* fname) //override
 
 	return true;
 }
+#endif //!! OLD
 
 //----------------------------------------------------------------------------
-void OONApp::_on_snapshot_loaded()
+void OONApp::on_snapshot_loaded() //override
 //
 // Follow-up changes to make sure the app is consistent with what has just been loaded...
 //
@@ -56,7 +58,7 @@ void OONApp::_on_snapshot_loaded()
 	//
 	using namespace myco;
 
-	if (!cfg.headless) { //!! This swouldn't be handled in this scattered manner... :-/
+	if (!cfg.headless) { //!! This shouldn't be handled in this scattered manner... :-/
 	                     //!! (See also at the HCI/Window adapter, or the disabling of the main event loop...)
 
 		//!! Move these to OON_UI, and only call those here, instead of the direct UI manip.!
@@ -77,7 +79,10 @@ void OONApp::_on_snapshot_loaded()
 
 	oon_main_view().reset(); //!! Technically this doesn't belong to the UI currently.
 	                         //!! Kinda considered part of the model, but with some
-	                         //!! diegetic UI features (like the grid lines)!
+	                         //!! diegetic UI features (like grid lines)!
+
+	//LOGD << " !! !! !! Fresh entity count after load: " << entity_count();
+	//LOGD << " !! !! !! Render-shape count after post-load display reset: " << main_view().shape_count();
 }
 
 } // namespace OON

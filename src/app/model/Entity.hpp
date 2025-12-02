@@ -6,22 +6,25 @@
 #include "Physics.hpp"
 #include "Thruster.hpp"
 
+#include "Szim/Entity.hpp" // Szim::Entity<Cfg>
+
 #include <iosfwd> // for save/load
 
 
 namespace OON::Model {
 
-	//--------------------------------------------------------------------
-	struct Entity //!! : public Serializable //! No: this would kill the C++ designated init syntax! :-/
+//============================================================================
+	struct EntityConfig
+	{
+
+	};
+
+	struct Entity : public Szim::Model::Entity<EntityConfig>
+		//!! : public Serializable //! No: this would kill the C++ designated init syntax! :-/
 	                                       //! Also old-school; template-/concept-based approaches are superior.
 	                                       //! Keep it trivially_copyable (not POD: they can't have ctors!) for easy loading!
 	{
 		using NumType = Phys::NumType;
-
-		// Placeholder/sentinel ID for "no entity":
-		//!! Clean this hackfest up (see them also in Metamodel.hpp!):
-		constexpr static EntityID NONE      = Szim::Model::NO_ENTITY;
-		constexpr static auto     Unlimited = Szim::Model::UNLIMITED;
 
 		//!!ObjConfig cfg; // basically the obj. type
 

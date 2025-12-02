@@ -37,7 +37,7 @@ using namespace Math;
 
 
 //============================================================================
-/*static*/ const World::Properties World::Default_Props =
+/*static*/ const Properties Properties::defaults =
 {
 	.friction       = 0.03f, //!!Take its default from the cfg instead!
 	.gravity_mode   = GravityMode::Default,
@@ -49,12 +49,6 @@ using namespace Math;
 
 
 //============================================================================
-World::World()
-	: props(Default_Props)
-	, loop_mode(LoopMode::Default)
-{
-}
-
 //----------------------------------------------------------------------------
 EntityID World::add_body(Entity const& obj)
 {
@@ -83,24 +77,14 @@ ZoneScoped;
 
 
 //============================================================================
-void World::init(Szim::SimApp& app)
+void World::init()
 {
 	app.init_world_hook();
 	//!! See e.g. OONApp::init() in OON.cpp, and init_world() in SimApp.hpp why this
 	//!! convoluted inverted control, instead of the engine just calling the app's
 	//!! init_world()!... (E.g. no virtual dispatch in the legacy init, etc...)
-}
 
-void World::update(float dt, SimApp& app)
-// The updates are deterministic currently (but random effects may be added later).
-{
-//!!?? LOGE << app.world().props.repulsion_stiffness;
-
-	//!! pre_update_hook(); // Per-tick model housekeeping before updating
-	update_intrinsic(dt, app); // Advance entity states independently (O(n), can be parallel)
-	update_pairwise(dt, app);  // Let them talk... (O(n²), probably (inherently?) sequential!)
-	update_global(dt, app);    // Apply global effects (O(n), can be parallel)
-	//!! post_update_hook(); // // Housekeeping after the update — i.e. before drawing!
+	LOGN << "Custom world initialized.";
 }
 
 //----------------------------------------------------------------------------
@@ -114,7 +98,7 @@ void World::update(float dt, SimApp& app)
 
 
 //----------------------------------------------------------------------------
-void World::update_intrinsic(float dt, Szim::SimApp& app [[maybe_unused]])
+void World::update_intrinsic(DeltaT dt)
 //----------------------------------------------------------------------------
 {
 ZoneScoped;
@@ -143,7 +127,7 @@ static int skipping_n_interactions = _PAIRWISE_UPDATE_SKIP_COUNT_;
 
 		// Lifecycle mgmt... -- mark and skip decaying objects:
 		if (body->can_expire()) {
-			body->lifetime -= dt;
+			body->lifetime -= static_cast<decltype(body->lifetime)>(dt);
 			if (body->lifetime <= 0) {
 				body->terminate(); // Set to a well-defined state that's easy to check later!
 				body->on_event(Event::Terminated);
@@ -203,7 +187,7 @@ if (_INTRINSIC_UPDATE_SKIP_COUNT_ && --skipping_n_interactions) {
 
 
 //----------------------------------------------------------------------------
-void World::update_pairwise(float dt, Szim::SimApp& app)
+void World::update_pairwise(DeltaT dt)
 //----------------------------------------------------------------------------
 {
 // Now do the interaction matrix:
@@ -262,7 +246,7 @@ for (size_t source_obj_ndx = 0;
 	//                     The "interaction filter" (e.g. collision check) will only be called
 	//                     once per pair.
 	//
-	for (size_t target_obj_ndx = loop_mode == LoopMode::Full_Matrix ? 0 : source_obj_ndx + 1;
+	for (size_t target_obj_ndx = loop_mode() == LoopMode::Full_Matrix ? 0 : source_obj_ndx + 1;
 	            target_obj_ndx < obj_cnt;
 	          ++target_obj_ndx)
 	{
@@ -329,7 +313,7 @@ for (size_t source_obj_ndx = 0;
 			static constexpr float EPS_COLLISION = CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
 			if (abs(distance - (target->r + source->r)) < EPS_COLLISION ) {
 //cerr << "Touch!\n";
-				if (!app.touch_hook(this, target, source)) {
+				if (!/*app.*/touch_hook(this, target, source)) {
 					;
 				}
 			} else {
@@ -338,7 +322,7 @@ for (size_t source_obj_ndx = 0;
 
 			// Note: calling the hook before processing the collision!
 			// If the listener returns false, it didn't process it, so we should.
-			if (!app.collide_hook(this, target, source, distance)) {
+			if (!/*app.*/collide_hook(this, target, source, distance)) {
 
 				//!! Handle this in a hook:
 				//target->v = {0, 0}; // - or bounce, or stick to the other body and take its v, or any other sort of interaction...
@@ -369,7 +353,7 @@ for (size_t source_obj_ndx = 0;
 			//!!app.directed_interaction_hook(this, source, target, dt, distance);
 				//!! Wow, this fn. call costs an FPS drop from ~175 to ~165 with 500 objs.! :-/
 
-			if (loop_mode == LoopMode::Full_Matrix) { // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
+			if (loop_mode() == LoopMode::Full_Matrix) { // #65... Separate cycles for the two halves of the interaction is 10-12% SLOWER! :-o
 
 				if (!target->superpower.gravity_immunity) {
 					//!! Note: doing it branchless, i.e. multiplying with the bool flag (as 0 or 1)
@@ -398,7 +382,7 @@ for (size_t source_obj_ndx = 0;
 		!!*/
 				}
 
-			} else { // loop_mode == Half (-> #65)
+			} else { // loop_mode() == Half (-> #65)
 //!! TESTING:
 //props.repulsion_stiffness = 0.00000001; // Too strong
 //props.repulsion_stiffness = 0.000000001; // Viable (but a bit strong)
@@ -453,7 +437,7 @@ dt = last_dt; // Restore "real dt" for calculations outside the "skip cheat"!
 
 
 //----------------------------------------------------------------------------
-void World::update_global(float dt, Szim::SimApp& app)
+void World::update_global(DeltaT dt)
 //----------------------------------------------------------------------------
 {
 	// All-inclusive postprocessing loop for friction [but why here? test what diff it makes if done in the pre-interact. loop],
@@ -479,22 +463,23 @@ if(((OONApp&)app).controls.ShowDebug) {
 
 //----------------------------------------------------------------------------
 //!! Seen a 147 -> 131 FPS drop by moving these to the .cpp! :-o
-bool World::is_colliding([[maybe_unused]] const Entity* obj1, [[maybe_unused]] const Entity* obj2) const
+bool World::is_colliding([[maybe_unused]] const Szim::Model::Core::Entity* obj1, [[maybe_unused]] const Szim::Model::Core::Entity* obj2) const
 //!! Should take the body shape into account.
 {
 	//auto distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
 	return false;
 }
 
-bool World::is_colliding(const Entity* obj1, const Entity* obj2, Phys::Length distance) const
+bool World::is_colliding(const Szim::Model::Core::Entity* obj1, const Szim::Model::Core::Entity* obj2, Phys::Length distance) const
 // Only for circles yet!
 {
 	return props.collision_mode == CollisionMode::Off
 		? false //!! #526: make the resulting "explosive decay" a feature!
-		: distance <= obj1->r + obj2->r;
+		: distance <= static_cast<const OON::Model::Entity*>(obj1)->r +
+		              static_cast<const OON::Model::Entity*>(obj2)->r;
 }
 
-
+/*!!
 //----------------------------------------------------------------------------
 void World::_copy(World const& source)
 {
@@ -506,8 +491,60 @@ void World::_copy(World const& source)
 		bodies.clear();
 		for (const auto& b : source.bodies) { add_body(*b); }
 
-		loop_mode = source.loop_mode;
+		loop_mode_ = source.loop_mode_;
 	}
 }
+!!*/
+
+//----------------------------------------------------------------------------
+void World::undirected_interaction_hook(Szim::Model::Core::World* w, Szim::Model::Core::Entity* obj1, Szim::Model::Core::Entity* obj2, float dt, double distance, ...) //override
+{w, obj1, obj2, dt, distance;
+}
+
+void World::directed_interaction_hook(Szim::Model::Core::World* w, Szim::Model::Core::Entity* source, Szim::Model::Core::Entity* target, float dt, double distance, ...) //override
+{w, source, target, dt, distance;
+//	if (!obj1->is_player())
+//		obj1->color += 0x3363c3;
+
+#if 0//!!
+	auto dx = source->p.x - target->p.x,
+	     dy = source->p.y - target->p.y;
+//	auto distance = Math::mag2(dx, dy);
+	float G_per_DD = w->gravity / (distance * distance);
+
+	float a_target = G_per_DD * source->mass;
+	Vector2f dv_target = Vector2f{dx * a_target, dy * a_target} * dt; //!! Fake "vectorization"!...
+	//!! Or perhaps: Vector2f dv_target(dx / distance * g, dy / distance * g) * dt;
+	target->v += dv_target;
+
+//!!/*!! Alternatively, this would normally be done in its own separate loop cycle, but that's 10-12% SLOWER! :-o
+	float a_source = -G_per_DD * target->mass;
+	Vector2f dv_source = Vector2f{dx * a_source, dy * a_source} * dt; //!! Fake "vectorization"!...
+	//!! Or perhaps: Vector2f dv_source(dx / distance * g, dy / distance * g) * dt;
+	source->v += dv_source;
+//!!*/
+#endif//!!
+}
+
+//----------------------------------------------------------------------------
+bool World::touch_hook(Szim::Model::Core::World* __w, Szim::Model::Core::Entity* __obj1, Szim::Model::Core::Entity* __obj2)
+{IGNORE __w;
+	auto obj1 = static_cast<OON::Model::Entity*>(__obj1);
+	auto obj2 = static_cast<OON::Model::Entity*>(__obj2);
+
+	if (obj1->is_player() || obj2->is_player()) {
+		app.backend.audio.play_sound(static_cast<OONApp&>(app).snd_clack);
+	}
+
+	obj1->T += 100;
+	obj2->T += 100;
+
+	obj1->recalc();
+	obj2->recalc();
+
+	return false; //!!Not yet used!
+}
+
+
 
 } // namespace OON::Model

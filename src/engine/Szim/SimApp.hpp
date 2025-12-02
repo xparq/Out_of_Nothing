@@ -13,7 +13,7 @@ namespace Szim {
 #include "extern/Args.hpp" //!!?? move to sz:: or absorb directly by Szim?
 #include "Backend.hpp" // E.g. for convenience accessors of backend components
 #include "SimAppConfig.hpp"
-#include "SessionManager.hpp"
+#include "Core/SessionManager.hpp"
 #include "Time.hpp"
 #include "Avatar.hpp" // Fw-decl. is not enough for vector<Avatar>: namespace Szim { class Avatar; }
 #include "Player.hpp" // Fw-decl. is not enough for vector<Player>: namespace Szim { class Player; }
@@ -24,10 +24,8 @@ namespace Szim {
 #include "Szim/UI-fw.hpp"
 #include "Szim/UI/Input.hpp"
 
-#include "Szim/Meta/Model.hpp"
-
-#include "app/Model/World.hpp"  //!! Oof... Grep for any leftover "OON", too!
-#include "app/Model/Entity.hpp" //!! Oof... Grep for any leftover "OON", too!
+#include "Szim/Model/Meta.hpp"
+#include "Szim/Model/World.hpp" //!! Could be fw-declared, if some inline impls. moved to the .cpp!
 
 //#include "View/ScreenView.hpp"
 namespace Szim::View { class ScreenView; }
@@ -39,7 +37,8 @@ namespace Szim::View { class ScreenView; }
 //!!GCC still doesn't like modules:
 //!!import Storage;
 
-#include <memory> // unique_ptr
+#include <atomic>
+//#include <memory> // unique_ptr
 #include <format> // vformat <- !!DITCH IT! Heavy, can throw, and the entire templated
                   // (header-based!) filename construction is just a temp. "clever" shortcut...
 #include <string>
@@ -78,7 +77,7 @@ public:
 	virtual bool done_cli() { return true;}  // true: no errors (to report... not much else to do there!)
 
 
-	virtual void init_world() { world().init(*this); } //!!TODO: Called by the default init(), before the 1st update_world().
+	virtual void init_world() { __world().init(); } //!!TODO: Called by the default init(), before the 1st update_world().
 	virtual void get_control_inputs() {} // The impl. should read inputs and update an (abstracted) controller state from those
 	                                     // (well, for its own opaque use, so it's kinda academic... ;) ).
 		//!! The passing of time should probably also be just another input! (It very much is an "event" in every system.)
@@ -95,7 +94,7 @@ public:
 		//!! CURRENTLY UNUSED; NEVER CALLED BY THE ENGINE!
 		//!! The engine's main loop is not fine-grained (...rigid?) enough to (micro?)manage this yet(?).
 		//!! However, this looks like an idiom/pattern important/practical enough to codify...
-	virtual void update_world(Time::Seconds Δt) { world().update(Δt, *this); }
+	virtual void update_world(Time::Seconds Δt) { __world().update(Δt); }
 
 	// These two are also callbacks (also from the Engine), but NOT to be reimplemented. ;)
 	// (They just setup/cleanup internal and pre-digested exported app-specific state, before/after
@@ -137,27 +136,30 @@ public:
 	float session_time() const { return time.real_session_time; }
 	virtual void time_step(int /*steps*/) {} // Negative means stepping backward!
 
-//!!	virtual std::unique_ptr<OON::Model::World> create_world() = 0;
-	virtual std::unique_ptr<OON::Model::World> create_world() { return std::make_unique<OON::Model::World>(); }
-	      OON::Model::World& world();
-	const OON::Model::World& world() const;
-	const OON::Model::World& const_world(); // Explicit const World& of non-const SimApp (to spare a cast)
-	void set_world(OON::Model::World*);
-	void set_world(std::unique_ptr<OON::Model::World>&); //! swap (move)
+	virtual Model::Core::World* create_world() = 0; //! Overrides should downcast the retval!
+	void set_world(Model::Core::World*&& wptr); // Takes ownership from a ptr rvalue.
+
+	      Model::Core::World& __world()       { return * /*!!static_cast<      Model::Core::World*>!!*/(world_); }
+	const Model::Core::World& __world() const { return * /*!!static_cast<const Model::Core::World*>!!*/(world_); }
+	const Model::Core::World& __const_world() { return * /*!!static_cast<const Model::Core::World*>!!*/(world_); }
 
 
 	// Visualizing, rendering...
 	//!! Tentative! This "main_view" name is just a placeholder/reminder
 	//!! that there can be any kinds of (multiple) views!
-	      View::ScreenView& main_view()       { return _main_view; }
-	const View::ScreenView& main_view() const { return _main_view; }
+	      View::ScreenView& main_view()       { return main_view_; }
+	const View::ScreenView& main_view() const { return main_view_; }
 
 	// Session save/load...
 	enum SaveOpt { UseDefaults = -1, Raw = 0, Compress = 1 };
-	virtual bool save_snapshot(const char* filename, SaveOpt flags = UseDefaults);
-	virtual bool load_snapshot(const char* filename);
-	bool quick_save_snapshot(unsigned slot = 1); // 1 <= slot <= MAX_WORLD_SNAPSHOTS
-	bool quick_load_snapshot(unsigned slot = 1); // See cfg.quick_snapshot_filename_pattern!
+//!! Moved to App<>:
+//!!	virtual bool save_snapshot(const char* filename, SaveOpt flags = UseDefaults);
+//!!	        bool load_snapshot(const char* filename, Model::Core::World*);
+
+	// Hooks:
+	virtual void on_snapshot_loaded() {}
+	virtual void on_snapshot_saved () {}
+
 	template <typename... X> // This must be a template to support custom patterns + args:
 	std::string snapshot_filename(size_t slot_ndx = 1,
 		std::string_view pattern = SimAppConfig::DEFAULT_SNAPSHOT_FILE_PATTERN,
@@ -168,27 +170,21 @@ public:
 
 	// Entities...
 
-	size_t entity_count() const { return world().bodies.size(); }
+	size_t entity_count() const { return __world().entity_count(); }
+
 //!! ADD DEBUG-MODE BOUNDS-CHECKING FOR THESE!
-	// Thread-safe, slower access:
-	      OON::Model::Entity& entity(EntityID index)       { return *world().bodies[index]; }
-	const OON::Model::Entity& entity(EntityID index) const { return *world().bodies[index]; }
-	const OON::Model::Entity& const_entity(EntityID index) { return *world().bodies[index]; }
-	//!! This might be misguided, but keeping it as a reminder...
-	// Unprotected, faster access (when already locked):
-	      OON::Model::Entity& _entity(EntityID index)       { return *world_->bodies[index]; }
-	const OON::Model::Entity& _entity(EntityID index) const { return *world_->bodies[index]; }
-	const OON::Model::Entity& _const_entity(EntityID index) { return *world_->bodies[index]; }
 
 //!!	bool entity_at(model::Math::Vector2f world_pos, EntityID* entity_id OUT) const;
 //!!	bool entity_at(model::Math::Vector3f world_pos, EntityID* entity_id OUT) const;
 //!!	bool entity_at_viewpos(View::Vector2f view_pos, EntityID* entity_id OUT) const;
-	virtual bool entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const;
-	virtual bool check_if_entity_is_at_viewpos(EntityID entity_id, float x, float y) const;
+	bool entity_at_viewpos(float x, float y, EntityID* entity_id OUT) const;
+	virtual bool is_entity_at_viewpos(EntityID entity_id, float x, float y) const = 0;
 
+	/*!!OLD:
 	virtual EntityID add_entity(OON::Model::Entity&& temp);     // Move from temporary/template obj.
 	virtual EntityID add_entity(const OON::Model::Entity& src); // Copy from obj.
 	virtual void remove_entity(EntityID ndx);
+	!!*/
 
 /*!!
 	using EntityTransform = void(*)(Entity&);
@@ -196,14 +192,6 @@ public:
 	virtual void transform_entity(EntityTransform f) {}
 	virtual void transform_entity(EntityTransform_ByIndex f) {}
 !!*/
-
-//!!	PlayerID add_player(Player&& tempp); // Calls a virtual hook to let the app finish it...
-	virtual PlayerID add_player(
-		OON::Model::Entity&& model,
-		Avatar& avatar,
-		VirtualController& controls
-	) = 0; //!! Ugh... Refine! (Can't really be done nicely in C++, though.)
-	virtual void   remove_player(PlayerID player_id) = 0; //!this should then be virtual, too (like destructors)
 
 	auto number_of_players() const { return players.size(); }
 
@@ -221,8 +209,6 @@ public:
 		assert(ndx < entity_count());
 		return ndx;
 	}
-	       OON::Model::Entity& player_entity(PlayerID p = 1)       { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
-	 const OON::Model::Entity& player_entity(PlayerID p = 1) const { assert(entity_count() > player_entity_ndx(p)); return entity(player_entity_ndx(p)); }
 
 	float player_idle_time(  PlayerID player_id = 1) const; // No input for so many seconds (0: busy; gated by cfg.player_idle_threshold)
 	bool  player_idle(       PlayerID player_id = 1) const { return player_idle_time(player_id) > 0; }
@@ -232,21 +218,6 @@ public:
 	// Model event hooks (callbacks)
 
 	virtual void init_world_hook() {} // Called by world.init().
-	/*
-	virtual bool collide_hook(World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2)
-	{w, obj1, obj2;
-		return false;
-	}
-	*/
-	virtual bool collide_hook(OON::Model::World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2, double distance);
-	virtual bool touch_hook(OON::Model::World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2);
-
-	// High-level, abstract (not as in "generic", but "app-level") hook for n-body interactions:
-	// `event` represents the physical property/condition that made it think these might interact.
-	//!!NOTE: This will change to the objects themselves being notified (not the game "superclass")!
-	virtual void undirected_interaction_hook(OON::Model::World* w, OON::Model::Entity* obj1, OON::Model::Entity* obj2, float dt, double distance, ...);
-	virtual void directed_interaction_hook(OON::Model::World* w, OON::Model::Entity* source, OON::Model::Entity* target, float dt, double distance, ...);
-
 
 	//----------------------------------------------------------------------------
 	//Misc convenience helpers
@@ -284,7 +255,9 @@ public:
 	SimApp(const RuntimeContext& runtime, int argc, char** argv, View::ScreenView& main_view);
 	virtual ~SimApp();
 
+	// No copy (e.g. for the raw World ptr)!
 	SimApp(const SimApp&) = delete;
+	SimApp& operator=(const SimApp&) = delete;
 
 //----------------------------------------------------------------------------
 // Data...
@@ -310,13 +283,13 @@ public: // E.g. the renderer still needs these...
 	//--------------------------------------------------------------------
 	// Abstract (Generic) Model World & View state...
 
-private: // <- Forcing the use of accessors
-	std::unique_ptr<OON::Model::World> world_; // See the *world() accessors!
-
-	View::ScreenView& _main_view;
-
 protected:
-	SessionManager session;
+	Model::Core::World* world_ = nullptr; // See the __world() accessors!
+	                      // (I'm fucking done with unique_ptr, BTW... Also, the C-like scripting API may thank me for that.)
+
+	View::ScreenView& main_view_;
+
+	Core::SessionManager session;
 
 	//--------------------------------------------------------------------
 	// Time control...
@@ -336,7 +309,7 @@ protected:
 	bool _terminated = false;
 	int  _exit_code = 0;
 	enum UIEventState { IDLE, BUSY, EVENT_READY };
-	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // https://stackoverflow.com/a/23063862/1479945
+	std::atomic<UIEventState> ui_event_state{ UIEventState::BUSY }; // Atomic enums: https://stackoverflow.com/a/23063862/1479945
 
 	//--------------------------------------------------------------------
 	// Player support...

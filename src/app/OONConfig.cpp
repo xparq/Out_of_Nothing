@@ -33,7 +33,7 @@ OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Ar
 	// 1. Preset hardcoded baseline defaults...
 	// ...Well, just default them in one step with loading; see below!
 	quick_snapshot_filename_pattern = DEFAULT_SNAPSHOT_FILE_PATTERN;
-	gravity_mode = Model::World::GravityMode::Default;
+	gravity_mode = Model::GravityMode::Default;
 
 	// 2. Override from the config...
 
@@ -81,13 +81,13 @@ OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Ar
 //!! configuration/layout/mode, where the client retains its own main()!
 
 	if (args("g-mode") == "R") {
-		gravity_mode = Model::World::GravityMode::Realistic;
+		gravity_mode = Model::GravityMode::Realistic;
 		Note("Gravity mode will be set to: "s + "Realistic");
 	} else if (args("g-mode") == "H") {
-		gravity_mode = Model::World::GravityMode::Hyperbolic;
+		gravity_mode = Model::GravityMode::Hyperbolic;
 		Note("Gravity mode will be set to: "s + "Hyperbolic");
 	} else if (args("g-mode") == "0") {
-		gravity_mode = Model::World::GravityMode::Off;
+		gravity_mode = Model::GravityMode::Off;
 		Note("Gravity will be turned off.");
 	}
 

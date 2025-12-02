@@ -2,6 +2,13 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 #include "extern/Tracy/public/TracyClient.cpp"
 
+// RADDebugger instrumentation for MSVC (doesn't compile with MinGW!):
+#ifdef _MSC_VER
+# define RADDBG_MARKUP_IMPLEMENTATION 1
+# include "extern/raddbg_markup.h"
+#endif
+
+
 #include "Szim/Core.hpp"
 #include "OON_sfml.hpp"
 

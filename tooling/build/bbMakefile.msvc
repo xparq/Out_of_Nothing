@@ -181,7 +181,8 @@ sfml_libs := $(sfml_libs:%.lib=%$(sfml_lib_debug_suffix).lib)
 CL   := cl /nologo
 CC   := $(CL) -c
 CXX  := $(CL) -c /EHsc
-LINK := link.exe /nologo
+LINK := link /nologo
+#LINK := radlink /nologo
 SH   := busybox sh
 
 
@@ -264,7 +265,9 @@ $(exedir)::; @$(_mkdir)
 collect_sources:
 	@echo Syncing the build cache...
 #	This (cp -u) only copies newer files (confirmed with -uia):
-	@cp -ufa '$(src_subdir)' '$(vroot)'
+#	Also, the cp on Windows I happen to have around can't seem to properly
+#	handle not only symlinks, but dir junctions either! :-o :-/
+	@cp -vufa '$(src_subdir)' '$(vroot)'
 #	As cp can only add and overwrite but not delete existing files,
 #	the cached tree must be deleted from time to time to remove cruft!
 	@touch "$(vroot)/.cached_src_age"

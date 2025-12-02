@@ -17,6 +17,8 @@
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
+#define _ENGINE_NAME_TAG_ "Szim Engine/API"
+
 #include "Core.hpp"
 
 // For the actual subsystems...
@@ -88,11 +90,11 @@ void Engine::startup()
 		return;
 	}
 
-	Note("<<< Szim Engine starting up... >>>");
+	Note("<<< " _ENGINE_NAME_TAG_ " starting up... >>>");
 
 //!! #641:
 #define BootLOG LOG << BootLOGPrefix_ << // The syntax is also intentionally different from the normal LOG, just to feel even more like a separate facility... :)
-	const char* BootLOGPrefix_ = "Engine startup: ";
+	const char* BootLOGPrefix_ = "Engine core [startup]: ";
 
 	//
 	// NOTE: `args` is (the only thing that's) been initialized by the ctor for us here.
@@ -216,7 +218,7 @@ void Engine::startup()
 
 
 	__engine_initialized_ = true;
-	Note("<<< Szim Engine initialized. >>>");
+	Note("<<< " _ENGINE_NAME_TAG_ " initialized. >>>");
 
 #undef BootLOG
 }
@@ -229,7 +231,7 @@ void Engine::shutdown()
 
 	assert(__engine_initialized_);
 
-	LOG << "<<< Engine/API shutting down... >>>";
+	LOG << "<<< " _ENGINE_NAME_TAG_ " shutting down... >>>";
 
 	//!! Take care of properly terminating any App(s) still running...
 	//!!
@@ -252,7 +254,7 @@ void Engine::shutdown()
 
 	__delete_app_if_implicit(); //!! Belongs to the narrower scope of the executive subsystem, but that doesn't exist yet...
 
-	LOG << "<<< Engine/API shutdown complete. >>>";
+	LOG << "<<< " _ENGINE_NAME_TAG_ " shutdown finished. >>>";
 }
 
 
