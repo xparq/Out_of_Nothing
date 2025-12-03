@@ -4,7 +4,6 @@
 //!! Math is both not even needed for the metamodel itself (yet?), and also
 //!! may not ONLY needed for modeling, so...
 //!!#include "Szim/Math.hpp"
-//!!#include "Szim/Math/Vector2.hpp"
 
 #include <cstdint> // size_t; but use a type from the WorldConfig instead!
 

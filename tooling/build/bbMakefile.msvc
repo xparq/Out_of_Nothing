@@ -181,7 +181,7 @@ sfml_libs := $(sfml_libs:%.lib=%$(sfml_lib_debug_suffix).lib)
 CL   := cl /nologo
 CC   := $(CL) -c
 CXX  := $(CL) -c /EHsc
-LINK := link /nologo
+LINK := link.exe /nologo #! Just `link` conflicts with the BusyBox builtin!
 #LINK := radlink /nologo
 SH   := busybox sh
 

@@ -1,13 +1,14 @@
 ﻿#ifndef _FNVNB807K8CD893IO3OIEWOIXMO9822894567B_
 #define _FNVNB807K8CD893IO3OIEWOIXMO9822894567B_
 
-//!! Legacy kludge until the relevant generic Physics parts (Pos) are migrated to the Engine(/Metamodel):
-#include "app/Model/Physics.hpp"
 //!!#include "Szim/Model/Meta.hpp"
-	//!! Not used yet; the *app-specific* physics is used directly instead! :-o :-/
 	//!! The camera should be split into a generic part, and another (typed/templated)
 	//!! one, parametrized by the same app types as the rest of the Model abstractions!
 	//!! And then the virtuals should be templates too, using the actual pos. type!
+	//!! But then again... That would totally preclude using it in polymorphic contexts... :-/
+
+//!! Fixing it to hardcoded 2D for now...:
+#include "Szim/Math/Vector2.hpp"
 
 
 namespace Szim::View {
@@ -26,7 +27,7 @@ class Camera
 {
 public:
 	using ViewPos  = Math::V2f; // Screen space (so always 2D)! The rebased (possibly 3D) "view space" for the view frustum (projection) IS NOT YET MODELLED AT ALL!
-	using WorldPos = OON::Model::Phys::Pos2; //!! Oof... :-/
+	using WorldPos = Math::V2d; //!! Fixing to 2D for now, and also double (to be agnostic about float/double models, at marginal cost)
 
 	virtual void look_at(WorldPos world_pos) = 0;
 	// Panning is actual camera movement, not just scrolling the projected view plane
