@@ -1,5 +1,5 @@
 ﻿Music:
-	Mine
+	Using my own.
 	LICENSE: Public Domain
 
 Sound effects:

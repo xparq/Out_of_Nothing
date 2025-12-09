@@ -1,8 +1,8 @@
 {
     "workbench.colorTheme": "Default Dark+",
     "files.autoSave": "onWindowChange",
-    "interactiveWindow.promptToSaveOnClose": true
-"editor.fontSize": 12,
+    "interactiveWindow.promptToSaveOnClose": true,
+    "editor.fontSize": 12,
     "editor.fontFamily": "Consolas, 'Source Code Pro Regular', 'Courier New', 'Fira Code Light', monospace",
     "diffEditor.wordWrap": "off",
     "security.workspace.trust.untrustedFiles": "open",

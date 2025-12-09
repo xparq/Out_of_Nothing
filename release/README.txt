@@ -1,1 +1,1 @@
-﻿It's mostly a manual process yet!
+﻿It's a manual process yet!

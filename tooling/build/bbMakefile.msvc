@@ -4,9 +4,20 @@
 #!	 (BB's pdpmake doesn't support abs. paths for targets! :-o )
 #!
 
+ifndef VERBOSE
+VERBOSE = 0
+endif
+
+# Set "VERBOSE=1" on the command line to disable muting.
+_MUTE__VERBOSE__0 = @
+_MUTE__VERBOSE__1 =
+MUTE = $(_MUTE__VERBOSE__$(VERBOSE))
+
+
 #--- BUILD MODE DEFAULTS -----------------------------------------------------
 DEBUG = 0
 CRT = static
+O2N_LINKMODE = static
 # Note: CRT=dll is required when using the pre-built SFML libs!
 SFML = static
 
@@ -48,14 +59,32 @@ CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
 #!! So, well, sigh... (or add a manaully updated list...):
 objs_using_modules = $(objs)
 
+
+EXT_O2N_ROOT = extern/O2N
+
 EXT_LIBROOT_SFML = $(SFML_ROOT)/lib
-EXT_LIBROOT_SFW  = extern/sfw/lib/msvc
-EXT_LIBROOT_ZSTD = extern/zstd/msvc
+EXT_LIBROOT_O2N  = $(EXT_O2N_ROOT)/lib/msvc
+EXT_LIBROOT_SFW  = $(EXT_O2N_ROOT)/extern/mycoui/lib/msvc
+EXT_LIBROOT_ZSTD = $(EXT_O2N_ROOT)/extern/zstd/msvc
+
+CFLAGS_EXT_INCLUDES += -I$(EXT_O2N_ROOT)/include -I$(EXT_O2N_ROOT)/extern -I$(EXT_O2N_ROOT) \
+	-I$(EXT_O2N_ROOT)/extern/mycoui/include
+
+
+
+_o2n_debug_file_tag__0 =
+_o2n_debug_file_tag__1 = -d
+_o2n_linkmode_file_tag__dll =
+_o2n_linkmode_file_tag__static = -s
+o2n_file_tag = $(buildmode_file_tag)$(_o2n_linkmode_file_tag__$(O2N_LINKMODE))$(_o2n_debug_file_tag__$(DEBUG))
+#dump:; echo "$(O2N_LINKMODE) - > $(o2n_file_tag)"
+
 #! CAREFUL! These are also used as direct dependencies of the .exe, so
-#!          do not add those that can't be located by the make tool itself!
+#!          do not add those that can't be located by make itself!
 #!          (Otherwise it would try to build them too... E.g. user32.lib)
 EXT_LIB_DEPS =\
-	$(EXT_LIBROOT_SFW)/sfw$(cflags_crt_linkmode_with_debug)$(buildmode_sfml_linkmode_lib_tag).lib \
+	$(EXT_LIBROOT_O2N)/o2n$(o2n_file_tag).lib \
+	$(EXT_LIBROOT_SFW)/sfw$(o2n_file_tag).lib \
 	$(EXT_LIBROOT_ZSTD)/zstd$(cflags_crt_linkmode).lib \
 # (Comments must be last...)
 #	$(EXT_LIBS_SFML) <- Each individual lib abspathed to calm down `make`!...
@@ -196,14 +225,14 @@ CFLAGS  += -I$(objdir) -I$(objdir)/engine
 # Add a -I also for including the commit hash file:
 CFLAGS  += -I$(outdir)
 # Add a -I also for 'extern' (perhaps redundantly, as the env should have it, but it's so generic):
-CFLAGS  += -Iextern
+CFLAGS  += -Iextern $(CFLAGS_EXT_INCLUDES)
 CFLAGS  += /W4
 CFLAGS  += $(CFLAGS_)
 CPPFLAGS   = $(CFLAGS) /std:c++latest /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/
 CPPFLAGS  += /utf-8 /Zc:preprocessor
 CPPFLAGS  += $(cflags_sfml_linkmode)
 CPPFLAGS  += $(CPPFLAGS_)
-LINKFLAGS   = $(linkflags_debug)
+LINKFLAGS   = $(linkflags_debug) $(LINKFLAGS_EXT_LIBS)
 LINKFLAGS  += $(linkflags_debug) $(LINKFLAGS_)
 
 
@@ -262,12 +291,16 @@ $(objdir)::; @$(_mkdir)
 $(ifcdir)::; @$(_mkdir)
 $(exedir)::; @$(_mkdir)
 
+_cp_VERBOSE__1 = v
+_cp_VERBOSE__0 =
+cp_VERBOSE = $(_cp__VERBOSE__$(VERBOSE))
+
 collect_sources:
 	@echo Syncing the build cache...
 #	This (cp -u) only copies newer files (confirmed with -uia):
 #	Also, the cp on Windows I happen to have around can't seem to properly
 #	handle not only symlinks, but dir junctions either! :-o :-/
-	@cp -vufa '$(src_subdir)' '$(vroot)'
+	$(MUTE)cp -$(cp_VERBOSE)ufa '$(src_subdir)' '$(vroot)'
 #	As cp can only add and overwrite but not delete existing files,
 #	the cached tree must be deleted from time to time to remove cruft!
 	@touch "$(vroot)/.cached_src_age"
@@ -303,11 +336,12 @@ $(objs_using_modules): $(CPP_MODULE_IFCS)
 #!!	@echo LINK $?
 #!!	$(LINK) $(LINKFLAGS) /libpath:$(objdir) $(objs) $(EXT_LIBS) /out:$@
 $(exe): $(objs) $(EXT_LIB_DEPS)
-	$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) /out:$@
+	@echo "Linking $@..."
+	$(MUTE)$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) /out:$@
 
 
 smoke_test:
-	if [ -z "${GITHUB_ACTION}" ]; then $(testdir)/regression/tc-smoke `basename $(exe)`; fi
+	$(MUTE)if [ -z "${GITHUB_ACTION}" ]; then $(testdir)/regression/tc-smoke.cmd `basename $(exe)`; fi
 
 
 #-----------------------------------------------------------------------------
@@ -362,30 +396,30 @@ _CL_dephack_procdep = @busybox awk -e 'BEGIN{print"$@:\\"}\
 #!! the MSVC header dep. hackery to work...:
 .c.obj:
 	$(_cc_info)
-	-@$(CC) $(CFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-$(MUTE)$(CC) $(CFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
-	@mv $(objdir)/$(@F) -t $(@D)
+	$(MUTE)mv $(objdir)/$(@F) -t $(@D)
 
 .cpp.obj:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-$(MUTE)$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
-	@mv $(objdir)/$(@F) -t $(@D)
+	$(MUTE)mv $(objdir)/$(@F) -t $(@D)
 
 .ixx.ifc:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-$(MUTE)$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
 
 .ixx.obj:
 	$(_cc_info)
-	-@$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
+	-$(MUTE)$(CXX) $(CPPFLAGS) /Fo$(objdir)/ $< $(_CL_dephack)
 		$(_CL_dephack_errhandler)
 	$(_CL_dephack_procdep)
-	@mv $(objdir)/$(@F) -t $(@D)
+	$(MUTE)mv $(objdir)/$(@F) -t $(@D)
 
 #-----------------------------------------------------------------------------
 # Custom rules...
