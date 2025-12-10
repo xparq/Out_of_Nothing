@@ -51,7 +51,7 @@ testdir = $(SZ_TEST_SUBDIR)
 #!! Kludge until I find out the correct way to support C++ modules...
 #!!Use != ls -b or something *.ifc!
 #!!CPP_MODULE_IFCS = $(ifcdir)/*.ifc
-CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
+#!!CPP_MODULE_IFCS = $(ifcdir)/Storage.ifc
 #!! Also, any module change will trigger full rebuild, coz no sane way
 #!! to auto-track actual deps yet (even less than headers)! :-/
 #!! (E.g. https://stackoverflow.com/questions/69190433/auto-generate-dependencies-for-modules,

@@ -11,7 +11,8 @@
 #include "Szim/diag/Log.hpp"
 
 #include "extern/semver.hpp"
-#include "extern/flatbuffers/flexbuffers.h" // Schemaless self-descriptive format
+//!!NOT YET:
+//!!#include "extern/flatbuffers/flexbuffers.h" // Schemaless self-descriptive format
 
 #include <cassert>
 #include <fstream>
@@ -43,7 +44,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	semver::version saved_version(version ? version : Model::VERSION);
 
 	//!! Dummy compilation smoke test only yet:
-	flexbuffers::Builder fbb;
+//!!NOT YET:	flexbuffers::Builder fbb;
 
 	out << "MODEL_VERSION = " << saved_version << '\n';
 

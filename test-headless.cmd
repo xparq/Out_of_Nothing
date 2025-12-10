@@ -19,6 +19,6 @@ goto :eof
 
 :ok
 echo Launching: "%SZ_RUN_DIR%\%latest_exe%"
-echo   --cfg=test/default.cfg --version --snd=off --bodies=500 --fps-limit=0 --zoom-adjust=0.1 %*
+echo   --cfg=test/default.cfg --version --headless --snd=off --bodies=500 --fps-limit=0 --zoom-adjust=0.1 %*
                 "%SZ_RUN_DIR%\%latest_exe%" ^
-       --cfg=test/default.cfg --version --snd=off --bodies=500 --fps-limit=0 --zoom-adjust=0.1 %*
+       --cfg=test/default.cfg --version --headless --snd=off --bodies=500 --fps-limit=0 --zoom-adjust=0.1 %*
