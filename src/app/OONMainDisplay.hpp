@@ -9,6 +9,9 @@ namespace OON::Model { struct Entity; } // #include "app/Model/Entity.hpp"
 
 #include <cstdint>
 
+//!! Would only be needed for app() nicely not returning OONApp, just SzimApp,
+//!! BUT...: WE KNOW NEITHER of them here (i.e. their inh. chain), so can't upcast _app!... :-/
+//!!namespace Szim { class SimApp; }
 
 namespace OON {
 
@@ -40,16 +43,16 @@ public:
 
 	OONMainDisplay(OONViewConfig/*& to avoid slicing; but disallow temp.? No. Slicing's OK here.*/ cfg, OONApp& app);
 
-	Szim::SimApp& app() override { return (Szim::SimApp&) _app; }
-
-	auto& oon_app() const { return (const OON::OONApp&) _app; }
+//!!	Szim::SimApp&   app() const /*!!??override??!!*/ { return _app; } //!! See the comment at the includes why this doesn't work (compile)!...
+	const auto&     app() const { return static_cast<const  OON::OONApp&>(_app); }
+	const auto& oon_app() const { return static_cast<const  OON::OONApp&>(app()); }
 
 	// -------------------------------------------------------------------
 	// App-specific features...
 	// -------------------------------------------------------------------
 
-	const auto& oon_camera() const { return (const MainCameraType&) camera(); }
 	      auto& oon_camera()       { return (      MainCameraType&) camera(); }
+	const auto& oon_camera() const { return (const MainCameraType&) camera(); }
 
 	void dim()   { p_alpha = ALPHA_INACTIVE; }
 	void undim() { p_alpha = ALPHA_ACTIVE; }
@@ -62,7 +65,7 @@ public:
 	virtual void resize_object(Szim::Model::EntityID ndx, float factor) = 0;
 
 	//!! Sigh... Move this to the UI already:
-	virtual void draw_banner(const char* text) = 0;
+	virtual void draw_banner(const char* text) const = 0;
 
 	// -------------------------------------------------------------------
 	// Data...

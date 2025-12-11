@@ -12,15 +12,20 @@ namespace OON {
 //============================================================================
 
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-//! Sigh... This C++ hack is so sad... :-/
+//! Sigh... This is a sad C++ "base-from-member" hack to allow constructing
+//! the main view before the app base (OONApp), to pass it to its ctor (which
+//! in turns passes it along to the engine's app base (SimApp))... :-/
+//! (Note listing FUCpp_ViewHack before OONApp in the decl. of OONApp_sfml.
+//! And the nested double structs were used for explicit scoping/quarantining
+//! that hitchhiking member, and possibly making room for other similar ones.)
 class OONApp_sfml;
 namespace _internal {
-	struct FUCpp_ViewHack {
-		struct _oon_view_container {
-			OONMainDisplay_sfml _oon_main_view;
-			_oon_view_container(OONApp_sfml& app);
-		} _oon_view;
-		FUCpp_ViewHack(OONApp_sfml& app);
+	struct  FUCpp_ViewHack {
+	        FUCpp_ViewHack(OONApp_sfml& app);
+		struct  _bfm_container_{
+		        _bfm_container_(OONApp_sfml& app);
+		        OONMainDisplay_sfml _oon_main_view;
+		} _bfm_;
 	};
 }
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -41,7 +46,7 @@ protected:
 	//!! DeSFMLize parts most of these & move to OONApp:
 	void event_loop() override; // Uses the SFML Event stuff + sf::Window
 	void update_thread_main_loop() override; // Uses sf::Window, sf::sleep
-	void draw() override; // Uses sf::Window
+	void draw() const override; // Uses sf::Window
 
 //------------------------------------------------------------------------
 // C++ mechanics...
@@ -54,7 +59,7 @@ public:
 //------------------------------------------------------------------------
 protected:
 
-	UI::HUDStream& ui_gebi(HUD_ID which) override;
+	UI::HUDStream& ui_gebi(HUD_ID which) const override;
 
 }; // class OONApp_sfml
 

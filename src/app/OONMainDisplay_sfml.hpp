@@ -48,7 +48,7 @@ public:
 	// Rendering...
 	// -------------------------------------------------------------------
 
-	void draw() override;
+	void draw() const override;
 
 
 	// -------------------------------------------------------------------
@@ -62,21 +62,22 @@ public:
 	void resize_object(Szim::Model::EntityID ndx, float factor) override;
 
 	//!! Move it to the UI, FFS:
-	void draw_banner(const char* text) override;
+	void draw_banner(const char* text) const override;
 
 
 	// -------------------------------------------------------------------
 	// Internals...
 	// -------------------------------------------------------------------
 protected:
-	void render_scene(); //!!?? render_scene(some target or context or options?)
+	void render_scene() const; //!!override
+		//!!?? render_scene(some target or context or options?)
 
 	//! Templates (by the auto arg), so must be in the header!
-	void transform_object(Szim::Model::EntityID ndx, const auto& op) {
+	void transform_object(Szim::Model::EntityID ndx, const auto& op) const {
 		auto& trshape = dynamic_cast<sf::Transformable&>(shapes_to_change[ndx]);
 		op(trshape);
 	}
-	void transform_objects(const auto& op) // c++20 auto lambda ref (but why the `const` required by MSVC?); https://stackoverflow.com/a/67718838/1479945
+	void transform_objects(const auto& op) const // c++20 auto lambda ref (but why the `const` required by MSVC?); https://stackoverflow.com/a/67718838/1479945
 	// op = [](Transformable& shape);
 	{
 		for (auto& shape : shapes_to_change) {
@@ -99,8 +100,8 @@ public:
 	// - iterate for drawing.
 	// (The common ancestor sf::Shape would be way too restritive alone, and
 	// the two lists may also diverge in the future.)
-	std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw;
-	std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change;
+	mutable std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw;
+	mutable std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change;
 
 	std::vector< std::unique_ptr<Avatar_sfml> > avatars_;
 

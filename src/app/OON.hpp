@@ -45,7 +45,7 @@ friend class OON::Model::World;
 // Config/Setup...
 //----------------------------------------------------------------------------
 public:
-	bool show_cmdline_help(const Args& args, const char* banner = nullptr) override; // false: exit afterwards
+	bool show_cmdline_help(const Args& args, const char* banner = nullptr) override; // false: request exit
 
 protected:
 	bool init() override;
@@ -190,7 +190,7 @@ protected:
 		enum HUD_ID { HelpPanel, TimingStats, WorldData, ViewData, ObjMonitor, Debug };
 		bool _ui_show_huds = true;
 
-		void ui_setup(/*!! ??const?? OONApp& app!!*/); //!! See also _sync_to_model_state!
+		void ui_setup(); //!! See also _sync_to_model_state!
 		// Update the UI after bulk model changes:
 		//!!void _sync_to_model_state(const SimApp& app/*!!, ...what (optionally, for optimization)...!!*/);
 
@@ -202,7 +202,7 @@ protected:
 		void ui_setup_HUD_ObjMonitor();
 	//!!} ui;
 	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
-	virtual UI::HUDStream& ui_gebi(HUD_ID which) = 0; // get_element_by_id(...)
+	virtual UI::HUDStream& ui_gebi(HUD_ID which) const = 0; // get_element_by_id(...)
 
 	// Chores after loading a new model world:
 	void _on_snapshot_loaded(); // Updates the UI etc.

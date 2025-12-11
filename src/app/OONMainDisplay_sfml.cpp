@@ -169,7 +169,7 @@ void OONMainDisplay_sfml::resize_object(EntityID ndx, float factor) //override
 
 //----------------------------------------------------------------------------
 //!! Just directly moved from the legacy renderer for now:
-void OONMainDisplay_sfml::render_scene()
+void OONMainDisplay_sfml::render_scene() const //!!override
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
 	// Shape indexes must be the same as the corresponding entity indexes ("ID"s...)!
@@ -197,12 +197,12 @@ void OONMainDisplay_sfml::render_scene()
 		//!! related to the camera view, but would obviously be best if they were identical!...
 
 	// a)
-		auto vpos = app().main_view().camera().world_to_view_coord(body.p); //!!?? No longer needed: ... - V2f(body.r, -body.r)); //!! Rely on the objects' own origin offset!
-			                                                             //!! Mind the inverted camera & model y, too!
+		auto vpos = oon_camera().world_to_view_coord(body.p); //!!?? No longer needed: ... - V2f(body.r, -body.r)); //!! Rely on the objects' own origin offset!
+		                                                      //!! Mind the inverted camera & model y, too!
 	// b)
 	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
 	//	auto vpos = oon_camera.world_to_view_coord(body.p); //!!?? No longer needed: ... - Math::Vector2f(body.r, -body.r)); //!! Rely on the objects' own origin offset instead!
-	//	                                                     //!! Mind the inverted camera & model y, too!
+	//	                                                    //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
 		//!! -> #221, #445
@@ -212,10 +212,10 @@ void OONMainDisplay_sfml::render_scene()
 //LOGD << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body.p.x) * oon_camera.scale() + oon_camera.offset.x
 //			       << ", y = " << oon_camera.cfg.height/2 + (body.p.y) * oon_camera.scale() + oon_camera.offset.y;
 	}
-}
+} // render_scene
 
 
-void OONMainDisplay_sfml::draw() // override
+void OONMainDisplay_sfml::draw() const // override
 {
 	render_scene(); //!!?? Is this worth keeping separated from draw()?
 	                //!!?? Probably, for occlusion etc. not relevant for any non-model frippery!
@@ -294,14 +294,14 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	if (app().paused()) {
 		draw_banner("PAUSED");
 	}
-}
+} // draw
 
 
 //----------------------------------------------------------------------------
 //!!MOVE TO UI::Widget::Notice!
-void OONMainDisplay_sfml::draw_banner(const char* text) // override
+void OONMainDisplay_sfml::draw_banner(const char* text) const // override
 {
-	auto& game = app();
+	const auto& game = app();
 
 	if (!myco::Theme::loadFont(game.cfg.asset_dir + game.cfg.default_font_file)) {
 		//! SFML does print errors to the console.

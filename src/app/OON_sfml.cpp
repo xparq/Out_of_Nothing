@@ -62,8 +62,8 @@ namespace OON {
 
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 namespace _internal {
-	FUCpp_ViewHack::FUCpp_ViewHack(OONApp_sfml& app) : _oon_view(app) {}
-	FUCpp_ViewHack::_oon_view_container::_oon_view_container(OONApp_sfml& app)
+	FUCpp_ViewHack::FUCpp_ViewHack(OONApp_sfml& app) : _bfm_(app) {}
+	FUCpp_ViewHack::_bfm_container_::_bfm_container_(OONApp_sfml& app)
 	//!!WAS:	: oon_main_camera({.width  = (float)backend.hci.window().width,  //!!WAS: Szim::SimAppConfig::VIEWPORT_WIDTH, //!! Would (should!) be reset later from "real data" from the backend anyway...
 	//!!WAS:	                   .height = (float)backend.hci.window().height, //!!WAS: Szim::SimAppConfig::VIEWPORT_HEIGHT,
 	//!!WAS:	, _oon_main_view({.width = Szim::SimAppConfig::VIEWPORT_WIDTH,
@@ -78,14 +78,14 @@ namespace _internal {
 //----------------------------------------------------------------------------
 OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime, int argc, char** argv)
 	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
-	, OONApp(runtime, argc, argv, _oon_view._oon_main_view) //!! Ugh...
+	, OONApp(runtime, argc, argv, _bfm_._oon_main_view) //!! Ugh...
 {
 //std::cerr << "--- OONApp_sfml ctor" << std::endl;
 }
 
 
 //----------------------------------------------------------------------------
-UI::HUDStream& OONApp_sfml::ui_gebi(HUD_ID which) //override
+UI::HUDStream& OONApp_sfml::ui_gebi(HUD_ID which) const //override
 {
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
@@ -140,7 +140,7 @@ UI::HUDStream& OONApp_sfml::ui_gebi(HUD_ID which) //override
 	case ObjMonitor:  return *object_hud;
 	case HelpPanel:   return *help_hud;
 	case Debug:       return *debug_hud;
-	default: std::unreachable(); // c++23 only; and this will be c++999: [[unreachable]]
+	default: std::unreachable(); //!! c++23 only; and this will be c++never: [[unreachable]]
 		//return help_hud; // Dummy, to shut up some pre-c++23 compiler warnings
 	}
 }
@@ -665,7 +665,7 @@ process_ui_event:		// The GUI should be given a chance *before* this entire `swi
 } // event_loop()
 
 //----------------------------------------------------------------------------
-void OONApp_sfml::draw() // override
+void OONApp_sfml::draw() const // override
 //!!?? Is there a nice, exact criteria by which UI rendering can be distinguished from model rendering?
 {
 	// Draw the model first...
