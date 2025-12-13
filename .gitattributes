@@ -1,4 +1,28 @@
-﻿*	text=auto
-*.sh	text eol=lf
-*.cmd	text eol=crlf
-*.txt	text eol=crlf
+* -text
+
+#*Makefile* text eol=lf
+#*.json text eol=lf
+#*.cfg  text eol=lf
+
+#*.md  text=auto
+#*.txt text=auto
+#*.cmd text eol=crlf
+
+*.exe binary
+*.lib binary
+*.a   binary
+*.dll binary
+*.so  binary
+
+*.ttf binary
+*.fnt binary
+
+*.jpg binary
+*.png binary
+*.gif binary
+*.tiff binary
+*.ico binary
+
+*.ogg binary
+*.mp3 binary
+*.wav binary
