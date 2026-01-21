@@ -59,8 +59,6 @@ public:
 //------------------------------------------------------------------------
 protected:
 
-	UI::HUDStream& ui_gebi(HUD_ID which) const override;
-
 }; // class OONApp_sfml
 
 } // namespace OON

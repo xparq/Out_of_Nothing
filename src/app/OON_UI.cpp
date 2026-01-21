@@ -53,6 +53,68 @@ bool OONApp::show_cmdline_help(const Args& args, const char* banner)
 
 
 //----------------------------------------------------------------------------
+UI::HUDStream& OONApp::ui_gebi(HUD_ID which) const
+{
+//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
+	// NOTE: .cfg is ready to use now!
+
+	static auto* timing_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/timing_left", -250), .panel_top = appcfg.get("appearance/HUD/timing_top", 10),
+		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUDStream::DEFAULT_TEXT_COLOR),
+		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUDStream::DEFAULT_BACKGROUND_COLOR)
+	}));
+	static auto* world_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 290),
+		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)
+	}));
+	static auto* view_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 420),
+		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)
+	}));
+	static auto* object_hud = gui.overlay.add(new UI::HUDStream(
+	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 526),
+		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
+		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)
+	}));
+	static auto* help_hud = gui.overlay.add(new UI::HUDStream(
+	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/help_left", 10), .panel_top = appcfg.get("appearance/HUD/help_top", 10),
+		.fgcolor = appcfg.get("appearance/HUD/help_fg", 0x40d040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)
+	}));
+	static auto* debug_hud = gui.overlay.add(new UI::HUDStream(
+	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
+		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
+		.panel_left = appcfg.get("appearance/HUD/debug_left", -350), .panel_top = appcfg.get("appearance/HUD/debug_top", -350),
+		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
+		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)
+	}));
+
+	switch (which) {
+	case TimingStats: return *timing_hud;
+	case WorldData:   return *world_hud;
+	case ViewData:    return *view_hud;
+	case ObjMonitor:  return *object_hud;
+	case HelpPanel:   return *help_hud;
+	case Debug:       return *debug_hud;
+	default: std::unreachable(); //!! c++23 only; and this will be c++never: [[unreachable]]
+		//return help_hud; // Dummy, to shut up some pre-c++23 compiler warnings
+	}
+}
+
+
+//----------------------------------------------------------------------------
 void OONApp::toggle_huds()  { _ui_show_huds = !_ui_show_huds; }
 bool OONApp::huds_active()  { return _ui_show_huds; }
 void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }

@@ -64,10 +64,10 @@ public:
 	//! fine to just store this directly in the objects.
 
 	constexpr     static Mass mass_from_radius_and_density(Length r, Density d)
-	                               { return Mass(Math::FOUR_THIRD_PI<NumType>)* r*r*r * d; }
+	                               { return Mass(2 * Math::TWO_THIRD_PI<NumType>) * r*r*r * d; }
 	/*constexpr*/ static Length radius_from_mass_and_density(Mass m, Density d)
-	                               { return Length(Math::power(m/d/NumType(Math::FOUR_THIRD_PI<NumType>), NumType(1)/NumType(3))); } //!! cmath's pow() is not constepxr! :-o
-//!!Should be this, but test:          { return Length(Math::power(m/d/Math::FOUR_THIRD_PI<NumType>, NumType(1)/NumType(3))); } //!! cmath's pow() is not constepxr! :-o
+	                               { return Length(Math::power( m / d / (2 * NumType(Math::TWO_THIRD_PI<NumType>)), NumType(1)/NumType(3)) ); } //!! cmath's pow() is not constepxr! :-o
+//!!Should be this, but test:          { return Length(Math::power( m / d / (2 *         Math::TWO_THIRD_PI<NumType>), NumType(1)/NumType(3)) ); } //!! cmath's pow() is not constepxr! :-o
 
 	// Temp. -> color conversion
 	// OK, but now just this quick-and-dirty impromptu hack, instead of all the above... ;)
@@ -92,17 +92,17 @@ template <typename NumType> NumType Physics<NumType>::T_to_BV(Temperature T) //!
 	// "Hot stars have temperatures around 60,000 K while cold stars have temperatures around 3,000 K"
 	// But the hottest is around 200000 K, so...
 	// Let's just calibrate for a 3000 - 200000 K range.
-	// Mmm, even tho we aren't even dealing with stars, BTW!... :)
+	// (Mmm..., even tho we aren't even dealing with stars to begin with... ;) )
 	// OK, so here's the deal:
-	// - out-of-range T would result in a fake BV that
+	// - out-of-range T should result in a fake BV that
 	// - the BV->RGB converter would notice, and not touch the input color!
-	// This would allow nice random-color balloons to float around, until getting hot...
-	// The fake value will be MyNaN.
+	// This would allow nice random-color balloons to float around, until getting hot.
+	// The fake value will be NaN.
 //	constexpr NumType T_BV_MIN = 3000;
 //	constexpr NumType T_BV_MAX = 200000;
 //cerr << "T->BV: T = " << T << ", BV = " << -0.4f + 2.4f * T / T_MAX << "\n";
 	return T < T_BV_MIN || T > T_BV_MAX
-			? Math::MyNaN<NumType>
+			? Math::unset<NumType>()
 			: NumType(-0.4) + NumType(2.4) * // normal BV range is 2.4
 				T / T_BV_MAX;
 }
@@ -113,9 +113,9 @@ template <typename NumType> NumType Physics<NumType>::T_to_RGB_and_BV(Temperatur
 //! store this directly in the objects.
 {
 	NumType r = 0, g = 0, b = 0;
-	NumType bv = Math::MyNaN<NumType>;
+	NumType bv = Math::unset<NumType>();
 	if (T < T_BV_MIN)
-		return Math::MyNaN<NumType>;
+		return Math::unset<NumType>();
 	if (T > T_BV_MAX) {
 		r = b = g = 0; // #138: "black holes" ;)
 	} else {

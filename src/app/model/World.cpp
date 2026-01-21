@@ -16,8 +16,9 @@
 #include "app/OON.hpp"
 	using namespace OON;
 
+#include <Szim/Math.hpp> // sqrt, pow, abs, distance2, mag2, ...
+
 #include <cassert>
-#include <cmath> // sqrt, pow?
 //!!NOT YET! Too cumbersome for the trivial alternative.
 //!!#include <optional>
 //!!	using std::optional, std::nullopt;
@@ -311,13 +312,13 @@ for (size_t source_obj_ndx = 0;
 			// so that the calc. can take into consideration the relative speed!
 //!!			auto rel_dv = distance2(target->v.x, target->v.y, source->v.x, source->v.y);
 			static constexpr float EPS_COLLISION = CFG_GLOBE_RADIUS/10; //!! experimental guesstimate (was: 100000); should depend on the relative speed!
-			if (abs(distance - (target->r + source->r)) < EPS_COLLISION ) {
+			if (Math::abs(distance - (target->r + source->r)) < EPS_COLLISION ) {
 //cerr << "Touch!\n";
 				if (!/*app.*/touch_hook(this, target, source)) {
 					;
 				}
 			} else {
-//cerr << " - Collided, but NO TOUCH. d = " << distance << ", delta = "<<abs(distance - (target->r + source->r)) << " (epsilon = "<<EPS_COLLISION<<")\n";
+//cerr << " - Collided, but NO TOUCH. d = " << distance << ", delta = "<<Math::abs(distance - (target->r + source->r)) << " (epsilon = "<<EPS_COLLISION<<")\n";
 			}
 
 			// Note: calling the hook before processing the collision!

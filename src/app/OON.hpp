@@ -202,7 +202,8 @@ protected:
 		void ui_setup_HUD_ObjMonitor();
 	//!!} ui;
 	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
-	virtual UI::HUDStream& ui_gebi(HUD_ID which) const = 0; // get_element_by_id(...)
+	UI::HUDStream& ui_gebi(HUD_ID which) const; // get_element_by_id(...)
+	//!!OLD: virtual UI::HUDStream& ui_gebi(HUD_ID which) const = 0;
 
 	// Chores after loading a new model world:
 	void _on_snapshot_loaded(); // Updates the UI etc.

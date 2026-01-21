@@ -56,30 +56,31 @@ namespace OON::Model {
 		//!! (which would basically be a flexible type system).
 		//!!
 		//!!BTW, thrust should be axial anyway, so these 4 should be just 2:
-		//!!ALSO: REPLACE WITH A GENERIC (dynamically built) Structure COMPONENT + ("OPTONAL") TYPE INFO!
-		//!!      ("OPTIONAL" 'coz the structure itself *IS* the type info, it's just cumbersome to work with!)
-		Thruster thrust_up    { Math::MyNaN<NumType> }; // Gets repalced by "real" numbers for objects with actually functioning thrusters.
-		Thruster thrust_down  { Math::MyNaN<NumType> };
-		Thruster thrust_left  { Math::MyNaN<NumType> };
-		Thruster thrust_right { Math::MyNaN<NumType> };
+		Thruster thrust_up    { Math::unset<NumType>() }; // Will get repalced by "real" numbers for objects with actually functioning thrusters.
+		Thruster thrust_down  { Math::unset<NumType>() };
+		Thruster thrust_left  { Math::unset<NumType>() };
+		Thruster thrust_right { Math::unset<NumType>() };
+		//!!ALSO: REPLACE THIS HARDCODED COMPONENT WITH A GENERIC (dynamically built)
+		//!! `Structure` COMPONENT + ("OPTONAL") TYPE INFO!
+		//!! ("OPTIONAL" 'coz the structure itself *IS* the type info, it's just cumbersome to work with.)
 
 		//! Alas, can't do this with designated inits: Entity() : mass(powf(r, 3) * density) {} :-(
 		//! So... (see e.g. add_body()):
 		void recalc();
 		bool can_expire() const noexcept { return lifetime > 0; }
-		void terminate()  noexcept { lifetime = 0; } // Currently the best fit...
+		void terminate()        noexcept { lifetime = 0; } // Currently the best fit...
 		bool terminated() const noexcept { return lifetime == 0; }
-		void on_event(Event e, ...); //! Alas, can't be virtual: that would kill the C++ init. list syntax! :-o :-/
+		void on_event(Event e, ...); //! Alas, can't be virtual: that would kill the C++ desig. init. syntax (among other things)! :-(
 
 		// Ops.:
-		bool has_thruster() { return thrust_up.thrust_level() != Math::MyNaN<float>; } //!! Ugh!... :-o :)
-		void add_thrusters() { // Umm...: ;)
+		bool has_thruster() const noexcept { return !Math::is_unset(thrust_up.thrust_level()); }
+		void add_thrusters() noexcept { // Umm...: ;)
 			thrust_up.thrust_level(0);
 			thrust_down.thrust_level(0);
 			thrust_left.thrust_level(0);
 			thrust_right.thrust_level(0);
 		}
-		bool is_player() { return has_thruster(); } //!! ;)
+		bool is_player() const noexcept { return has_thruster(); } //!! ;)
 
 		bool        save(std::ostream&);
 		static bool load(std::istream&, Entity* result = nullptr); // Verifies only (comparing to *this) if null

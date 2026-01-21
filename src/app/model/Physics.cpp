@@ -17,7 +17,8 @@
 
 namespace OON::Model {
 
-#if 0
+#if 0 // Still in the header!
+
 using namespace Math;
 
 static constexpr float T_BV_MIN = 15000;
@@ -30,9 +31,9 @@ float Physics::T_to_RGB_and_BV(float T, uint32_t* p_color/* = nullptr*/) // BV: 
 //! store this directly in the objects.
 {
 	float r = 0.f, g = 0.f, b = 0.f;
-	float bv = MyNaN;
+	float bv = NaN;
 	if (T < T_BV_MIN)
-		return MyNaN;
+		return NaN;
 	if (T > T_BV_MAX) {
 		r = b = g = 0.0f; // #138: "black holes" ;)
 	} else {
@@ -91,6 +92,7 @@ float Physics::BV_to_T_and_RGB(float bv, uint32_t* p_color/* = nullptr*/) // BV:
 	}
 	return t;
 }
-#endif
+
+#endif // 0
 
 }; // namespace OON::Model
