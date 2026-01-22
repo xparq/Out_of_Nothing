@@ -61,3 +61,10 @@ extern/*
 extern/myco/lib/*-d.lib
 
 !extern/sz/
+
+study
+	# Can't really decide what to do about this...
+	# "Later commits will delete junk and Git's GC will take care of it" is the wrong idea:
+	# random junk can way too easily slip in here, and even if committed out later, the blobs
+	# will NEVER be cleaned up, unless manually removing all commits & other refs meticulously...
+	# So, just use `add -f` to explicitly preserve important/nice bits!
