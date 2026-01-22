@@ -1,17 +1,29 @@
-#:
+#!! Some change in PDPMake (https://github.com/rmyorston/pdpmake/commits/master/)
+#!! has made BusyBox-w32 1.38 no longer trigger header-dependencies recorded in
+#!! existing .dep files! (No rebuild at all...) The bundled BB 1.37 still builds
+#!! fine, but probably only due to some mistake hiding in this makefile that 1.38
+#!! has fixed (in the last ~2 years)!
+
+#!
 #! NOTE: The MAKE process must be run in the project (root) dir,
 #!       because everything is assumed to be relative to that!
 #!	 (BB's pdpmake doesn't support abs. paths for targets! :-o )
 #!
 
+#!! Not needed/used yet actually (with the bundled Busybox 1.37);
+#!! all the targets have relative paths. Weirdly though, $(exe) has
+#!! a dir prefix, and `target_name` should be needed even for dirs
+#!! (as it enables '/' in targets), but it was never an issue IRL. :-o
+#!!.PRAGMA: windows target_name
+
 ifndef VERBOSE
-VERBOSE = 0
+VERBOSE := 0
 endif
 
-# Set "VERBOSE=1" on the command line to disable muting.
-_MUTE__VERBOSE__0 = @
-_MUTE__VERBOSE__1 =
-MUTE = $(_MUTE__VERBOSE__$(VERBOSE))
+# Set "VERBOSE=1" on the command-line to disable muting!
+_MUTE__VERBOSE__0 := @
+_MUTE__VERBOSE__1 :=
+MUTE := $(_MUTE__VERBOSE__$(VERBOSE))
 
 
 #--- BUILD MODE DEFAULTS -----------------------------------------------------
@@ -60,16 +72,15 @@ testdir = $(SZ_TEST_SUBDIR)
 objs_using_modules = $(objs)
 
 
-EXT_O2N_ROOT = extern/O2N
+EXT_O2N_ROOT := extern/O2N
 
-EXT_LIBROOT_SFML = $(SFML_ROOT)/lib
-EXT_LIBROOT_O2N  = $(EXT_O2N_ROOT)/lib/msvc
-EXT_LIBROOT_SFW  = $(EXT_O2N_ROOT)/extern/mycoui/lib/msvc
-EXT_LIBROOT_ZSTD = $(EXT_O2N_ROOT)/extern/zstd/msvc
+EXT_LIBROOT_SFML := $(SFML_ROOT)/lib
+EXT_LIBROOT_O2N  := $(EXT_O2N_ROOT)/lib/msvc
+EXT_LIBROOT_SFW  := $(EXT_O2N_ROOT)/extern/mycoui/lib/msvc
+EXT_LIBROOT_ZSTD := $(EXT_O2N_ROOT)/extern/zstd/msvc
 
-CFLAGS_EXT_INCLUDES += -I$(EXT_O2N_ROOT)/include -I$(EXT_O2N_ROOT)/extern -I$(EXT_O2N_ROOT) \
+CFLAGS_EXT_INCLUDES += -I$(EXT_O2N_ROOT)/include -I$(EXT_O2N_ROOT)/extern -I$(EXT_O2N_ROOT)\
 	-I$(EXT_O2N_ROOT)/extern/mycoui/include
-
 
 
 _o2n_debug_file_tag__0 =
@@ -224,7 +235,7 @@ CFLAGS   = $(cflags_crt_linkmode_with_debug) $(cflags_debug)
 CFLAGS  += -I$(objdir) -I$(objdir)/engine
 # Add a -I also for including the commit hash file:
 CFLAGS  += -I$(outdir)
-# Add a -I also for 'extern' (perhaps redundantly, as the env should have it, but it's so generic):
+# Add a -I also for 'extern', and any manually configured external packages elsewhere:
 CFLAGS  += -Iextern $(CFLAGS_EXT_INCLUDES)
 CFLAGS  += /W4
 CFLAGS  += $(CFLAGS_)

@@ -4,6 +4,18 @@
 #!	 (BB's pdpmake doesn't support abs. paths for targets! :-o )
 #!
 
+
+ifndef VERBOSE
+VERBOSE := 0
+endif
+
+# Set "VERBOSE=1" on the command-line to disable muting!
+_MUTE__VERBOSE__0 := @
+_MUTE__VERBOSE__1 :=
+MUTE := $(_MUTE__VERBOSE__$(VERBOSE))
+
+
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! Only gcc for now:
 TOOLCHAIN = mingw
@@ -11,8 +23,50 @@ TOOLCHAIN = mingw
 SFML_ROOT := extern/sfml/$(TOOLCHAIN)
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#!! Set to nothing if VERBOSE...:
-MUTE = @
+
+EXT_O2N_ROOT := extern/O2N
+
+EXT_LIBROOT_SFML := $(SFML_ROOT)/lib
+EXT_LIBROOT_O2N  := $(EXT_O2N_ROOT)/lib/msvc
+EXT_LIBROOT_SFW  := $(EXT_O2N_ROOT)/extern/mycoui/lib/msvc
+EXT_LIBROOT_ZSTD := $(EXT_O2N_ROOT)/extern/zstd/msvc
+
+CFLAGS_EXT_INCLUDES += -I$(EXT_O2N_ROOT)/include -I$(EXT_O2N_ROOT)/extern -I$(EXT_O2N_ROOT)\
+	-I$(EXT_O2N_ROOT)/extern/mycoui/include
+
+_o2n_debug_file_tag__0 =
+_o2n_debug_file_tag__1 = -d
+_o2n_linkmode_file_tag__dll =
+_o2n_linkmode_file_tag__static = -s
+o2n_file_tag = $(buildmode_file_tag)$(_o2n_linkmode_file_tag__$(O2N_LINKMODE))$(_o2n_debug_file_tag__$(DEBUG))
+#dump:; echo "$(O2N_LINKMODE) - > $(o2n_file_tag)"
+
+#! CAREFUL! These are also used as direct dependencies of the .exe, so
+#!          do not add those that can't be located by make itself!
+#!          (Otherwise it would try to build them too... E.g. user32.lib)
+EXT_LIB_DEPS =\
+	$(EXT_LIBROOT_O2N)/libo2n$(o2n_file_tag).a \
+	$(EXT_LIBROOT_SFW)/libsfw$(o2n_file_tag).a \
+	$(EXT_LIBROOT_ZSTD)/libzstd$(cflags_crt_linkmode).a \
+# (Comments must be last...)
+#	$(EXT_LIBS_SFML) <- Each individual lib abspathed to calm down `make`!...
+#	extern/toml++/toml$(cflags_crt_linkmode).lib \
+
+# The SFML libs are added here -- not to EXT_LIB_DEPS --, as dependencies,
+# as they're not full paths, so `make` would freak out that they don't exist...
+# (NOTE: LINK.exe finds them via the LIB env var.)
+EXT_LIBS =\
+	$(EXT_LIB_DEPS) \
+	$(sfml_and_deps_libs) \
+#!! Only in the MSVC makefile:
+#!!	user32.lib\
+#!!	ws2_32.lib dbghelp.lib
+# (Comments must be last...)
+#	user32.lib <- only needed with SFML=dll, strangely! -o
+
+#dump:; echo EXT_LIB_DEPS: $(EXT_LIB_DEPS)
+#dump:; echo EXT_LIBS: $(EXT_LIBS)
+
 
 #--- BUILD MODE DEFAULTS -----------------------------------------------------
 DEBUG = 0
@@ -199,10 +253,11 @@ SH   := busybox sh
 CFLAGS   = -c $(cflags_crt_linkmode_with_debug) $(cflags_debug)
 # C[PLUS]_INCLUDE_PATH is expected to have been setup already!
 # Add a -I also for including the commit hash file:
-CFLAGS  += -I$(objdir) -I$(objdir)/engine -I$(outdir)
-
-# Add a -I also for 'extern' (perhaps redundantly, as the env should have it, but it's so generic):
-CFLAGS  += -Iextern
+CFLAGS  += -I$(objdir) -I$(objdir)/engine
+# Add a -I also for including the commit hash file:
+CFLAGS  += -I$(outdir)
+# Add a -I also for 'extern', and any manually configured external packages elsewhere:
+CFLAGS  += -Iextern $(CFLAGS_EXT_INCLUDES)
 CFLAGS  += -Wall
 # -pedantic -Wall -Wextra -Wshadow -Wwrite-strings
 CFLAGS  += -MMD
@@ -211,7 +266,7 @@ CPPFLAGS   = $(CFLAGS) -std=c++23 # -fmodules-ts
 #			 /ifcOutput $(ifcdir)/ /ifcSearchDir $(ifcdir)/
 CPPFLAGS  += $(cflags_sfml_linkmode)
 CPPFLAGS  += $(CPPFLAGS_)
-LINKFLAGS   = $(linkflags_debug)
+LINKFLAGS   = $(linkflags_debug) $(LINKFLAGS_EXT_LIBS)
 LINKFLAGS  += $(linkflags_debug) $(LINKFLAGS_)
 LINKFLAGS_ := -static -L$(SFML_ROOT)/lib
 
@@ -303,17 +358,19 @@ cpp_modules:: $(CPP_MODULE_IFCS) $(objs_of_modules)
 #!!??$(objs_using_modules) $(objs_of_modules): $(CPP_MODULE_IFCS)
 $(objs_using_modules): $(CPP_MODULE_IFCS)
 
+
 # Strip the ugly paths from each object
 #!! Alas, can't be done without my path-inference hack to pdpmake:
 #!!$(exe): $(objs:$(objdir)/%=%)
 #!!	@echo LINK $?
 #!!	$(LINK) $(LINKFLAGS) /libpath:$(objdir) $(objs) $(EXT_LIBS) /out:$@
-$(exe): $(objs) $(EXT_LIB_SFW) $(EXT_LIB_ZSTD)
-	$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) -o $@
+$(exe): $(objs) $(EXT_LIB_DEPS)
+	@echo "Linking $@..."
+	$(MUTE)$(LINK) $(LINKFLAGS) $(objs) $(EXT_LIBS) -o $@
 
 
 smoke_test:
-	if [ -z "${GITHUB_ACTION}" ]; then $(testdir)/regression/tc-smoke `basename $(exe)`; fi
+	$(MUTE)if [ -z "${GITHUB_ACTION}" ]; then $(testdir)/regression/tc-smoke `basename $(exe)`; fi
 
 
 #-----------------------------------------------------------------------------

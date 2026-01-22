@@ -5,7 +5,10 @@ call %~dp0tooling\_setenv.cmd
 ::
 :: * Override any option on the cmdline, as needed! (Repeating overrides.)
 
-set "pattern=%SZ_TEST_DIR%\*main*exe"
+setlocal
+if _%SZ_APP_NAME%_==__ set SZ_APP_NAME=main
+
+set "pattern=%SZ_TEST_DIR%\*%SZ_APP_NAME%*exe"
 :: Just run the latest test/oon*.exe, whatever flavor it is...
 for /f %%f in ('dir /b /o-d /t:w "%pattern%"') do (
 	set "latest_exe=%%f"
