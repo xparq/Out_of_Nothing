@@ -973,7 +973,8 @@ void OONApp::time_step(int steps)
 
 //----------------------------------------------------------------------------
 void OONApp::updates_for_next_frame()
-// Should be idempotent -- which doesn't matter normally, but testing could reveal bugs if it isn't!
+//!!?? Should be made idempotent? (It's inceremental by dT now.) Could be useful for testing:
+//!!?? calling it twice should only affect the FPS (except in real-time-dependent time modes)!
 {
 	using namespace Szim;
 

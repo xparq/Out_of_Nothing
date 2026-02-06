@@ -64,10 +64,10 @@ public:
 	//! fine to just store this directly in the objects.
 
 	constexpr     static Mass mass_from_radius_and_density(Length r, Density d)
-	                               { return Mass(2 * Math::TWO_THIRD_PI<NumType>) * r*r*r * d; }
+	                               { return Mass(2 * Math::TWO_THIRDS_PI<NumType>) * r*r*r * d; }
 	/*constexpr*/ static Length radius_from_mass_and_density(Mass m, Density d)
-	                               { return Length(Math::power( m / d / (2 * NumType(Math::TWO_THIRD_PI<NumType>)), NumType(1)/NumType(3)) ); } //!! cmath's pow() is not constepxr! :-o
-//!!Should be this, but test:          { return Length(Math::power( m / d / (2 *         Math::TWO_THIRD_PI<NumType>), NumType(1)/NumType(3)) ); } //!! cmath's pow() is not constepxr! :-o
+	                               { return Length(Math::power( m / d / (2 * NumType(Math::TWO_THIRDS_PI<NumType>)), NumType(1)/NumType(3)) ); } //!! cmath's pow() is not constepxr! :-o
+//!!Should be this, but test:          { return Length(Math::power( m / d / (2 *         Math::TWO_THIRDS_PI<NumType>), NumType(1)/NumType(3)) ); } //!! cmath's pow() is not constepxr! :-o
 
 	// Temp. -> color conversion
 	// OK, but now just this quick-and-dirty impromptu hack, instead of all the above... ;)
