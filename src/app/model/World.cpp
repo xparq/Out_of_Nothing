@@ -72,7 +72,7 @@ void World::remove_body(EntityID ndx)
 {
 ZoneScoped;
 	assert(bodies.size() > 0);
-	assert(ndx != Entity::NONE);
+	assert(ndx != Entity::None);
 	bodies.erase(bodies.begin() + ndx);
 }
 

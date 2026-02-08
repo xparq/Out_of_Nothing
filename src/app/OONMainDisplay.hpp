@@ -1,4 +1,9 @@
-﻿#ifndef _S89U4589YU7845037845DN68945Y68756VM87HY56TRIJ_
+﻿/*
+  A rendered camera view
+*/
+
+
+#ifndef _S89U4589YU7845037845DN68945Y68756VM87HY56TRIJ_
 #define _S89U4589YU7845037845DN68945Y68756VM87HY56TRIJ_
 
 #include "Szim/View/ScreenView.hpp"
@@ -43,8 +48,8 @@ public:
 
 	OONMainDisplay(OONViewConfig/*& to avoid slicing; but disallow temp.? No. Slicing's OK here.*/ cfg, OONApp& app);
 
-//!!	Szim::SimApp&   app() const /*!!??override??!!*/ { return _app; } //!! See the comment at the includes why this doesn't work (compile)!...
-	const auto&     app() const { return static_cast<const  OON::OONApp&>(_app); }
+//!!	Szim::SimApp&   app() const /*!!??override??!!*/ { return app_; } //!! See the comment at the includes why this doesn't work (compile)!...
+	const auto&     app() const { return static_cast<const  OON::OONApp&>(app_); }
 	const auto& oon_app() const { return static_cast<const  OON::OONApp&>(app()); }
 
 	// -------------------------------------------------------------------
@@ -71,8 +76,8 @@ public:
 	// Data...
 	// -------------------------------------------------------------------
 protected:
-	OONApp& _app;
-	MainCameraType _oon_default_camera;
+	OONApp& app_;
+	MainCameraType oon_default_camera_;
 
 	// Rendering params etc.:
 	uint8_t p_alpha = ALPHA_ACTIVE;

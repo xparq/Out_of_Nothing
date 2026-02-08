@@ -32,17 +32,12 @@ using namespace std;
 
 //----------------------------------------------------------------------------
 OONApp::OONApp(const Szim::RuntimeContext& rt, int argc, char** argv, OONMainDisplay& main_view)
-	: App(rt, argc, argv, main_view)
+	: App(rt, argc, argv)
 	, appcfg(SimApp::runtime.syscfg, args)
+	, main_view_(main_view)
 	, controls(this)
 {
-//!! This shouldn't be needed, the engine should take care of it: #462!
-//!! And the view resize should also implicitly take care of any camera adjustments, too, so
-//!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
-//!!	oon_main_view().resize((float)backend.hci.window().width,
-//!!	                         (float)backend.hci.window().height);
-	oon_main_camera().resize_view((float)main_window_width(),
-	                              (float)main_window_height());
+	//!! Do not touch the view here: it's not initialized yet! Do that in init() instead!
 }
 
 
@@ -82,11 +77,20 @@ LOGD << __FUNCTION__ <<" started...";
 	avatars.emplace_back(Avatar{ .image_path = "image/KittyGod.jpg"});
 	tx_kittygod = avatars.size() - 1;
 
+
 	//!! OMG, also the cringefest!... The view.reset() below is needed to sync the view._avatars list with the "real" avatars,
 	//!! which is -- alas, counterintuitively! -- expected by (something in) add_entity(), I guess! :-o :-/
 	//!! -> WHICH SHOULD BE FIXED, MOST LIKELY!
 LOGD << "Display.reset right after loading the avatar images:";
 	oon_main_view().reset(); //!!REPLACE THIS WITH A SANER WAY TO SYNC THE VIEW TO THE APP STATE (i.e. the avatars)!
+
+	//!! This shouldn't be needed, the engine should take care of it: #462!
+	//!! And the view resize should also implicitly take care of any camera adjustments, too, so
+	//!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
+	//!!	oon_main_view().resize((float)backend.hci.window().width,
+	//!!	                         (float)backend.hci.window().height);
+	oon_main_camera().resize_view((float)main_window_width(),
+	                              (float)main_window_height());
 
 	//!!
 	//!! MOVE THIS TO SimApp! But can't yet be, as the stupid avatar loading must happen first! :-o
@@ -260,7 +264,7 @@ LOGI << "Creating two small moons by default...";
 
 
 //----------------------------------------------------------------------------
-// (Unrelated to onResize(), but... where else would it be better to put these?!...)
+// (Unrelated to on_window_resize(), but... where else would it be better to put these?!...)
 void OONApp::resize_shapes(float factor) //override
 {
 	oon_main_view().resize_objects(factor);
@@ -413,7 +417,7 @@ void OONApp::pan_view_reset()
 	//!!?? What is the rule for Scroll Lock in this case?
 	//!!The key should be turned off!...
 	//!!
-	focused_entity_ndx = Entity::NONE; //!!... Whoa! :-o See updates_for_next_frame()!
+	focused_entity_ndx = Entity::None; //!!... Whoa! :-o See updates_for_next_frame()!
 }
 
 void OONApp::pan_view(float delta_x, float delta_y)
@@ -672,17 +676,17 @@ void OONApp::remove_entity(EntityID ndx) //override
 	//--------------
 
 	// Focus obj.:
-	if (focused_entity_ndx != Entity::NONE) {
+	if (focused_entity_ndx != Entity::None) {
 		if (focused_entity_ndx > ndx) {
 LOGD << "The index of the followed object has changed due to object removal(s).\n";
 			--focused_entity_ndx;
 		} else if (focused_entity_ndx == ndx) {
 Warning("The tracked object has ceased to exist!...");
-			focused_entity_ndx = Entity::NONE; //!! Don't just fall back to the player!
+			focused_entity_ndx = Entity::None; //!! Don't just fall back to the player!
 		}                                 //!! That'd be too subtle/unexpected/unwanted.
 	}
 
-	assert(focused_entity_ndx == Entity::NONE || focused_entity_ndx < entity_count());
+	assert(focused_entity_ndx == Entity::None || focused_entity_ndx < entity_count());
 
 	// Remove from the view cache, too:
 	oon_main_view().delete_cached_shape(ndx);
@@ -1089,12 +1093,12 @@ void OONApp::updates_for_next_frame()
 	if (scroll_locked()) {
 		// Panning follows focused obj. with locked focus point:
 		_focus_locked_ = true;
-		if (focused_entity_ndx != Entity::NONE)
+		if (focused_entity_ndx != Entity::None)
 			pan_to_focus(focused_entity_ndx);
 	} else {
 		// Focus point follows focused obj., with panning only if drifting off-screen:
 		//!! Should be possible to switch this off!
-		if (focused_entity_ndx != Entity::NONE) {
+		if (focused_entity_ndx != Entity::None) {
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);

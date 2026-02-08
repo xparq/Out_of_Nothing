@@ -26,7 +26,6 @@ class OONMainDisplay;
 	struct AppConfig
 	{
 		using WorldT    = OON::Model::World;
-		using EntityT   = OON::Model::Entity; //!!?? Move it back to the World? C++ will sabotage that sooner or later...
 //!!		using MainViewT = //!!... :-/ OON::OONMainDisplay_sfml;
 	};
 
@@ -146,7 +145,7 @@ public:
 
 	//------------------------------------------------------------------------
 	// Op. implementations/overrides...
-	void updates_for_next_frame() override;
+	void updates_for_next_frame();
 	EntityID add_entity(Entity&& temp) override;
 	void remove_entity(EntityID ndx) override;
 //	void transform_entity(EntityTransform f) override;
@@ -165,7 +164,7 @@ protected:
 	// Callback impl...
 	void init_world_hook() override;
 	void pause_hook(bool newstate) override;
-	void onResize(unsigned width, unsigned height) override;
+	void on_window_resize(unsigned width, unsigned height) override;
 	void on_snapshot_loaded() override; // Needs to reset the rendering cache!
 
 //----------------------------------------------------------------------------
@@ -179,8 +178,8 @@ public:
 // Internals...
 //----------------------------------------------------------------------------
 protected:
-	      auto& oon_main_view()         { return (      OONMainDisplay&) main_view(); }
-	const auto& oon_main_view()   const { return (const OONMainDisplay&) main_view(); }
+	      auto& oon_main_view()         { return                        main_view_; }
+	const auto& oon_main_view()   const { return (const OONMainDisplay&)main_view_; }
 	      auto& oon_main_camera()       { return (      OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 	const auto& oon_main_camera() const { return (const OONMainDisplay::MainCameraType&) oon_main_view().camera(); }
 
@@ -214,6 +213,8 @@ protected:
 protected:
 	OONConfig appcfg; // See also syscfg from this->SimApp
 
+	OONMainDisplay& main_view_;
+
 	OONController controls;
 
 	bool  chemtrail_releasing = false;
@@ -242,9 +243,9 @@ protected:
 	size_t snd_jingle_loop;
 	size_t snd_shield;
 
-public://!! Directly accessed by e.g. main_view() and the ObjMonitor HUD...:
+public://!! Directly accessed by e.g. the main view and the ObjMonitor HUD...:
 	EntityID focused_entity_ndx = 0; // Player #1 by default //!!CRYPTIC HARDCODING
-	EntityID hovered_entity_ndx = Entity::NONE;
+	EntityID hovered_entity_ndx = Entity::None;
 };
 
 } // namespace OON

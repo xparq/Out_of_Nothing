@@ -35,7 +35,7 @@ public:
 	// Setup...
 	// -------------------------------------------------------------------
 
-	OONMainDisplay_sfml(class OONApp& app); //! Nice, this isn't even required to be OONApp_sfml.
+	OONMainDisplay_sfml(class OONApp& app); // App isn't required to be OONApp_sfml.
 
 	void reset(const Config* recfg = nullptr) override; // Resets things to the last cfg if null.
 //	void reset(Config&& recfg) override;

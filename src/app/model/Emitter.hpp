@@ -47,7 +47,7 @@ public:
 protected:
 	Szim::SimApp& app;
 	//!!enum { UNLIMITED = Szim::Model::UNLIMITED }; //!! UNLIMITED is a float!... :-/
-	static constexpr auto UNLIMITED = Szim::Model::UNLIMITED;
+	static constexpr auto UNLIMITED = -1;
 
 public:
 	Config        cfg;

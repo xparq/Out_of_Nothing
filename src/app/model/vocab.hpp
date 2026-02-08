@@ -7,8 +7,8 @@
 
 namespace OON::Model
 {
-	using EntityID = Szim::Model::EntityID;
-	using PlayerID = Szim::Model::PlayerID;
+	using EntityID = Szim::Model::EntityID; // Or just Szim::EntityID, I guess.
+//	using PlayerID = Szim::PlayerID;
 
 //	using BasicNumberType = Szim::Model::BasicNumberType;
 	using DeltaT   = Szim::Model::TimeSpan;

@@ -28,6 +28,7 @@ namespace OON::Model {
 
 		//!!ObjConfig cfg; // basically the obj. type
 
+		static constexpr auto Unlimited = -1;  // For various quantities...
 
 		struct {
 			bool gravity_immunity = false;

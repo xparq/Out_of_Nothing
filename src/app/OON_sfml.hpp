@@ -10,27 +10,7 @@
 namespace OON {
 
 //============================================================================
-
-//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-//! Sigh... This is a sad C++ "base-from-member" hack to allow constructing
-//! the main view before the app base (OONApp), to pass it to its ctor (which
-//! in turns passes it along to the engine's app base (SimApp))... :-/
-//! (Note listing FUCpp_ViewHack before OONApp in the decl. of OONApp_sfml.
-//! And the nested double structs were used for explicit scoping/quarantining
-//! that hitchhiking member, and possibly making room for other similar ones.)
-class OONApp_sfml;
-namespace _internal {
-	struct  FUCpp_ViewHack {
-	        FUCpp_ViewHack(OONApp_sfml& app);
-		struct  _bfm_container_{
-		        _bfm_container_(OONApp_sfml& app);
-		        OONMainDisplay_sfml _oon_main_view;
-		} _bfm_;
-	};
-}
-//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
-class OONApp_sfml : private _internal::FUCpp_ViewHack, public OONApp
+class OONApp_sfml : public OONApp
 //!
 //! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
 //!	and "pure" code! :-/
@@ -58,6 +38,7 @@ public:
 // Internals...
 //------------------------------------------------------------------------
 protected:
+        OONMainDisplay_sfml oon_main_view_;
 
 }; // class OONApp_sfml
 

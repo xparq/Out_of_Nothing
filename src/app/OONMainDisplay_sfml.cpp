@@ -50,7 +50,7 @@ OONMainDisplay_sfml::OONMainDisplay_sfml(OONApp& app)
 //!! i.e. no Engine (SimApp) init has been done at all yet! :-o :-/
 //!!	reset(); // Calc. initial state
 
-	LOGD << "Camera pointer (_camera): " << _camera;
+	LOGD << "Camera pointer (camera_): " << camera_;
 }
 
 //----------------------------------------------------------------------------
@@ -58,9 +58,9 @@ void OONMainDisplay_sfml::reset(const Config* recfg)
 {
 LOGD << "------------------ DISPLAY RESET ---------------------";
 
-	if (recfg) _cfg = *recfg;
+	if (recfg) cfg_ = *recfg;
 
-	resize(_cfg.width, _cfg.height);
+	resize(cfg_.width, cfg_.height);
 
 	const auto& simapp = app();
 
@@ -134,7 +134,7 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, EntityI
 //----------------------------------------------------------------------------
 void OONMainDisplay_sfml::delete_cached_shape(EntityID entity_ndx) //override
 {
-	assert(entity_ndx != Model::Entity::NONE);
+	assert(entity_ndx != Model::Entity::None);
 
 	//!!FIX: OBSOLETE ASSUMPTION:
 	// Requires that the player entity has already been deleted from the world:
@@ -172,8 +172,8 @@ void OONMainDisplay_sfml::resize_object(EntityID ndx, float factor) //override
 void OONMainDisplay_sfml::render_scene() const //!!override
 // Should be idempotent -- doesn't matter normally, but testing could reveal bugs if it isn't!
 {
-	// Shape indexes must be the same as the corresponding entity indexes ("ID"s...)!
-	// - This can only check the number of them, but at least that:
+	// Shape indexes must be the same as the corresponding entity indexes (IDs)!
+	// - This can only check the number of them (but at least that):
 	assert(shape_count() == shapes_to_change.size());
 	assert(shape_count() <= app().entity_count());
 	//!! Also, static_assert size_t is_same EntityID, or implement proper iteration!...

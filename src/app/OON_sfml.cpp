@@ -60,25 +60,10 @@ namespace sync {
 //============================================================================
 namespace OON {
 
-//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-namespace _internal {
-	FUCpp_ViewHack::FUCpp_ViewHack(OONApp_sfml& app) : _bfm_(app) {}
-	FUCpp_ViewHack::_bfm_container_::_bfm_container_(OONApp_sfml& app)
-	//!!WAS:	: oon_main_camera({.width  = (float)backend.hci.window().width,  //!!WAS: Szim::SimAppConfig::VIEWPORT_WIDTH, //!! Would (should!) be reset later from "real data" from the backend anyway...
-	//!!WAS:	                   .height = (float)backend.hci.window().height, //!!WAS: Szim::SimAppConfig::VIEWPORT_HEIGHT,
-	//!!WAS:	, _oon_main_view({.width = Szim::SimAppConfig::VIEWPORT_WIDTH,
-	//!!WAS:	                  .height = Szim::SimAppConfig::VIEWPORT_HEIGHT},
-		: _oon_main_view(app)
-	{
-	//LOGD << "_oon_view_and_cam_container: _oon_main_view.camera ptr: "<<&_oon_main_view.camera();
-	}
-}
-//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
 //----------------------------------------------------------------------------
 OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime, int argc, char** argv)
-	: FUCpp_ViewHack(*this) // No Engine here to use for init. the View yet! :-/
-	, OONApp(runtime, argc, argv, _bfm_._oon_main_view) //!! Ugh...
+	: OONApp(runtime, argc, argv, oon_main_view_)
+	, oon_main_view_(*this) //!! Initialized later than the app itself! :-/
 {
 //std::cerr << "--- OONApp_sfml ctor" << std::endl;
 }
@@ -370,10 +355,10 @@ try {
 						//!! off view confinement, but it can't be done yet. :-/
 					} else {
  						// Select the player obj. by default (or with a dedicated modifier); same as with MouseButton!
-						if (/*keystate(ALT) || */focused_entity_ndx == Entity::NONE)
+						if (/*keystate(ALT) || */focused_entity_ndx == Entity::None)
 							focused_entity_ndx = player_entity_ndx();
 
-						assert(focused_entity_ndx != Entity::NONE);
+						assert(focused_entity_ndx != Entity::None);
 						center(focused_entity_ndx);
 					}
 					break;
@@ -469,12 +454,12 @@ try {
 
 				auto vpos = oon_main_camera().screen_to_view_coord(mousepress->position.x, mousepress->position.y);
 				oon_main_camera().focus_offset = vpos;
-				EntityID clicked_entity_id = Entity::NONE;
-				if (entity_at_viewpos(vpos.x, vpos.y, &clicked_entity_id)) {
+				EntityID clicked_entity_id = Entity::None;
+				if (entity_at_viewpos(oon_main_view(), vpos.x, vpos.y, &clicked_entity_id)) {
 LOGI << "Click: following object #"<<clicked_entity_id<<" now...";
 				} else {
 LOGD << "Click: no obj.";
-					assert(clicked_entity_id == Entity::NONE);
+					assert(clicked_entity_id == Entity::None);
 				}
 
 			//!! PROCESSING SHIFT MAKES NO SENSE WHILE ALSO HAVING SHIFT+MOVE, AS THAT WOULD ALWAYS JUST KEEP
@@ -483,10 +468,10 @@ LOGD << "Click: no obj.";
 
 				// Select the clicked object, if any (unless holding CTRL!)
 				/*if (!keystate(CTRL))*/ //!! Really should be ALT, but... that's the stupid shield. :)
-					focused_entity_ndx = clicked_entity_id == Entity::NONE
+					focused_entity_ndx = clicked_entity_id == Entity::None
 					                     ? (/*keystate(ALT) ? player_entity_ndx() // Select the player with a dedicated modifier; same as with Home!
-				                                                : */(keystate(SHIFT) ? focused_entity_ndx : Entity::NONE))
-				                             : clicked_entity_id; // Entity::NONE if none... //!!... Whoa! :-o See updates_for_next_frame()!
+				                                                : */(keystate(SHIFT) ? focused_entity_ndx : Entity::None))
+				                             : clicked_entity_id; // Entity::None if none... //!!... Whoa! :-o See updates_for_next_frame()!
 /*!!
 				// Pan the selected object to focus, if holding SHIFT
 				//!!?? -- WHAT? There should be no panning whatsoever on a simple click!
@@ -494,13 +479,13 @@ LOGD << "Click: no obj.";
  					// Select the player by default; same as with Home!
  					// (Unless, as above, holding CTRL!)
 					if (//!keystate(CTRL) &&
-					    focused_entity_ndx == Entity::NONE)
+					    focused_entity_ndx == Entity::None)
 						focused_entity_ndx = player_entity_ndx();
 //!!?? -- SHIFT should just have the usual effect of locking the scroll!
-					pan_to_focus(focused_entity_ndx); //! Tolerates Entity::NONE!
+					pan_to_focus(focused_entity_ndx); //! Tolerates Entity::None!
 				}
 !!*/
-				if (focused_entity_ndx == Entity::NONE)
+				if (focused_entity_ndx == Entity::None)
 					Note("- Nothing there. Focusing on the deep void..."); //!! Do something better than this... :)
 				break;
 			}
@@ -519,13 +504,13 @@ LOGD << "Click: no obj.";
 					oon_main_camera().focus_offset = vpos;
 				}
 
-				auto entity = Entity::NONE;
-				if (entity_at_viewpos(vpos.x, vpos.y, &entity)) {
+				auto entity = Entity::None;
+				if (entity_at_viewpos(oon_main_view(), vpos.x, vpos.y, &entity)) {
 					hovered_entity_ndx = entity;
 //LOGD << "Hover: pointing to #"<<hovered_entity_ndx;
 				} else {
 //LOGD << "Hover: no obj.";
-					hovered_entity_ndx = Entity::NONE;
+					hovered_entity_ndx = Entity::None;
 				}
 				break;
 			}

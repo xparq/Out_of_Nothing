@@ -408,14 +408,14 @@ void OONApp::ui_setup_HUD_ObjMonitor(/*!!, mode/config...!!*/)
   	}
 
 	static auto id = [this]() -> EntityID {
-		return        hovered_entity_ndx != Entity::NONE ? hovered_entity_ndx : focused_entity_ndx;
+		return        hovered_entity_ndx != Entity::None ? hovered_entity_ndx : focused_entity_ndx;
 	};
 	static auto obj = [this]() -> const Entity& {
-		return entity(hovered_entity_ndx != Entity::NONE ? hovered_entity_ndx : focused_entity_ndx);
+		return entity(hovered_entity_ndx != Entity::None ? hovered_entity_ndx : focused_entity_ndx);
 	};
 	static auto no_obj = [this]() { //! Either static, or [no_obj, obj] for the callers (instead of just [&])!...
 //cerr << "no_obj - hovered_entity_ndx: " << this->hovered_entity_ndx << "\n";
-//		return hovered_entity_ndx != Entity::NONE ? hovered_entity_ndx >= entity_count()
+//		return hovered_entity_ndx != Entity::None ? hovered_entity_ndx >= entity_count()
 //		                                 : focused_entity_ndx >= entity_count();
 		return !( hovered_entity_ndx < entity_count() ||
 		          focused_entity_ndx < entity_count() );
@@ -508,13 +508,16 @@ void OONApp::ui_setup_HUD_Help(/*!!, mode/config...!!*/)
 
 
 //----------------------------------------------------------------------------
-void OONApp::onResize(unsigned width, unsigned height) //override
+void OONApp::on_window_resize(unsigned width, unsigned height) //override
 // This is called on fullscreen/windowd transition, too.
 //!!
 //!!Sink this into the UI! (Currently it belongs to Szim/App/Base.)
 //!!
 {
 //cerr << "onResize...\n"; //!!TBD: Not called on init; questionable
+
+	// Refresh the main model view:
+	oon_main_view().resize(width, height);
 
 	//!!
 	//!! gui.onResized(width, height);
@@ -524,7 +527,7 @@ void OONApp::onResize(unsigned width, unsigned height) //override
 	//!! just resize its wallpaper.)
 	//
 	// So, this is just for repositioning the control panel to keep it snapped to the bottom edge:
-	gui.set_position(4, main_window_height() - gui.extent().y() - 4);
+	gui.set_position(4, height - gui.extent().y() - 4);
 		//!! Make is a feature of the UI to take care of this, e.g. in response to a
 		//!! WindowResized event (sent from SimApp::toggle_fullscreen() in Base.cpp)!
 }
