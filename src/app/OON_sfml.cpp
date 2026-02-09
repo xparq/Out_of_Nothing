@@ -16,7 +16,7 @@
 //!! This is so sad, still...:
 #include "Szim/Backend/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
-#define SFML_WINDOW() (((SFML_Backend&)backend).SFML_window())
+#define SFML_WINDOW() (((Szim::SFML_Backend&)backend).SFML_window())
 #define SFML_KEY(KeyName) unsigned(sf::Keyboard::Key::KeyName) //!!XLAT
 
 
@@ -61,8 +61,8 @@ namespace sync {
 namespace OON {
 
 //----------------------------------------------------------------------------
-OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime, int argc, char** argv)
-	: OONApp(runtime, argc, argv, oon_main_view_)
+OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime)
+	: OONApp(runtime, oon_main_view_) //!! The OONApp ctor MUST only set a ref to the view, not use it!!!
 	, oon_main_view_(*this) //!! Initialized later than the app itself! :-/
 {
 //std::cerr << "--- OONApp_sfml ctor" << std::endl;

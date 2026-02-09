@@ -31,8 +31,8 @@ using namespace std;
 
 
 //----------------------------------------------------------------------------
-OONApp::OONApp(const Szim::RuntimeContext& rt, int argc, char** argv, OONMainDisplay& main_view)
-	: App(rt, argc, argv)
+OONApp::OONApp(const Szim::RuntimeContext& rt, OONMainDisplay& main_view)
+	: App(rt)
 	, appcfg(SimApp::runtime.syscfg, args)
 	, main_view_(main_view)
 	, controls(this)

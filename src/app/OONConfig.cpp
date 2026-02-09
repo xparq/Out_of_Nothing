@@ -1,6 +1,5 @@
 #include "OONConfig.hpp"
-
-#include "Szim/SimAppConfig.hpp"
+#include "Szim/App/Config.hpp"
 
 #include "extern/Args.hpp" //!! See also in SimApp.hpp!
 #include "sz/sys/fs.hh"

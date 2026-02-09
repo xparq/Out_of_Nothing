@@ -85,11 +85,11 @@ int main(int argc, char* argv[])
 		if (log_level) { log::LogMan::set_level(log_level); }
 */
 		using namespace OON;
-		Szim::Engine engine(argc, argv); // args for the engine
+		Szim::Engine engine(argc, argv, "default.cfg");
 			LOGD << "Size of the engine obj.: sizeof(engine) == " << sizeof(engine);
 			LOGD << "Size of the app obj.: sizeof(OONApp_sfml) == " << sizeof(OONApp_sfml);
-			Main.exit_code = engine.run<OONApp_sfml>(argc, argv); // args for app — !!BUT: Should be available from the engine already!
-			//! Remember: Main.exit_code won't be set on exceptions.
+			Main.exit_code = engine.run<OONApp_sfml>();
+			//! Remember: Main.exit_code won't be set on exceptions!
 
 		// Alternatively, if the (SimApp-derived) app is created outside the engine (e.g. here):
 		// MyApp app(engine.context());
