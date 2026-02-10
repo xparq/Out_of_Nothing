@@ -13,25 +13,16 @@
 //!! (most of?) the *sources* from direct backend dependencies ("write once"),
 //!! not the entire compilation process.
 //!!
-//!! This is so sad, still...:
+//!! So sad, still...:
 #include "Szim/Backend/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((Szim::SFML_Backend&)backend).SFML_window())
 #define SFML_KEY(KeyName) unsigned(sf::Keyboard::Key::KeyName) //!!XLAT
 
-
-//!!GCC still doesn't like modules:
-//!!import Storage; //!! Just a dummy (reminder, smoke test etc.) for now!
-
 #include "Szim/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 
-#include <SFML/Window/VideoMode.hpp>
-#include <SFML/Window/Context.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/System/Sleep.hpp>
 
-#include <thread>
-#include <mutex>
 #include <memory>
 	using std::make_shared;
 #include <cstdlib>
@@ -52,12 +43,6 @@ using namespace std;
 
 
 //============================================================================
-namespace sync {
-	std::mutex Updating; //!!?? Updating what, when, by whom?
-};
-
-
-//============================================================================
 namespace OON {
 
 //----------------------------------------------------------------------------
@@ -70,239 +55,8 @@ OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime)
 
 
 //----------------------------------------------------------------------------
-void OONApp_sfml::update_thread_main_loop()
+void OONApp_sfml::process(const SAL::event::Input& event) //override
 {
-//	sf::Context context; //!! Seems redundant, as it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
-	                     //!! The only change I can see is a different getActiveContext ID here, if this is enabled.
-
-#ifndef DISABLE_THREADS
-	std::unique_lock proc_lock{sync::Updating, std::defer_lock};
-
-	while (!terminated()) {
-#endif
-		switch (ui_event_state) {
-		case UIEventState::BUSY:
-//LOGI << " [[[...BUSY...]]]";
-			break;
-		case UIEventState::IDLE:
-/*!! THIS HELPED NOTHING HERE:
-			if (paused())
-				sf::sleep(sf::milliseconds(100)); // Sleep even more, if *really* idle! :)
-			[[fallthrough]]
-!!*/
-		case UIEventState::EVENT_READY:
-#ifndef DISABLE_THREADS
-			try { proc_lock.lock(); } // Blocks
-			catch (...) {
-LOGE << "- Oops! proc_lock.lock() failed! (already locked? " << proc_lock.owns_lock() << ")";
-			}
-#endif
-
-			get_control_inputs(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
-			updates_for_next_frame();
-
-			if (!cfg.headless) {
-				//!!?? Why is this redundant?!
-				if (!SFML_WINDOW().setActive(true)) { //https://stackoverflow.com/a/23921645/1479945
-					LOGE << "\n- [update_thread_main_loop] sf::setActive(true) failed!";
-	//?				request_exit(-1);
-	//?				return;
-				}
-				//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(true));
-
-				//!! This is problematic, as it currently relies on sf::setFrameRateLImit()
-				//!! which would make the thread sleep -- but with still holding the lock! :-/
-				//!! So... Either control the framerate ourselves (the upside of which is one
-				//!! less external API dependency), or further separate rendering from actual
-				//!! displaying (so we can release the update lock right after renedring)
-				//!! -- AND THEN ALSO IMPLEMENTING SYNCING BETWEEN THOSE TWO!...
-				draw();
-				//!! Occasionally test idempotency by drawing again:
-				//!!draw();
-
-				if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-					LOGE << "\n- [update_thread_main_loop] sf::setActive(false) failed!";
-	//?				request_exit(-1);
-	//?				return;
-				}
-				//!! This could indeed deadlock the entire process: while (!SFML_WINDOW().setActive(false));
-			}
-
-#ifndef DISABLE_THREADS
-			try { proc_lock.unlock(); } // This can throw, too!
-			catch (...) {
-LOGE << "- WTF: proc_lock.unlock() failed?! (already unlocked? " << !proc_lock.owns_lock() << ")";
-			}
-#endif
-			break;
-		default:
-			assert(("[[[...!!UNKNOWN EVENT STATE!!...]]]" ?0:0));
-		}
-
-		// Drop the frame rate and/or sleep more if paused
-		if (paused()) {
-			sf::sleep(sf::milliseconds(
-				cfg.get("sim/timing/paused_sleep_time_per_cycle", 40) // #330
-			)); //!! or 100 for 10 FPS... But see #217! :-o
-		}
-
-
-//LOGD << "- releasing Events...";
-		//sync::EventsFreeToGo.release();
-
-//!!IPROF_SYNC_THREAD;
-
-/* Doing it with setFramerateLimit() now!
-	//! If there's still time left from the frame slice:
-	sf::sleep(sf::milliseconds(30)); //!! (remaining_time_ms)
-		//! This won't stop the other (e.g. event loop) thread(s) from churning, though!
-		//! -> use blocking/sleeping event query there!
-		//! Nor does it ruin the smooth rendering! :-o WTF?!
-		//! -> Because SFML double-buffers implicitly, AFAIK...
-*/
-//LOGD << "sf::Context [update loop]: " << sf::Context::getActiveContextId();
-#ifndef DISABLE_THREADS
-	}
-#endif
-}
-
-
-//----------------------------------------------------------------------------
-void OONApp_sfml::event_loop()
-{
-	sf::Context context; //!! Seems redundant; it can draw all right, but https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1Context.php#details
-
-	std::unique_lock noproc_lock{sync::Updating, std::defer_lock};
-
-try {
-
-	// Start the control panel unfocused:
-	gui.unfocus();
-
-	while (!terminated() && SFML_WINDOW().isOpen()) {
-
-		// We could set up our own input poller directly using SAL::event::Source,
-		// but since we already have a UI handy, doing the same, we can just get
-		// the inputs from that. It will also already filter out the useless
-		// MouseMovedRaw spam messages for us.
-		//
-		// Just make sure not to disable the control panel (a.k.a. `gui`)! :)
-		// (Hiding (e.g. not drawing) it is fine.)
-		//
-		for (myco::event::Input event; !terminated() && (event = gui.poll(false));) {
-		// This inner loop is here to prevent event "jamming" (delays in
-		// event processing -- or even loss?) due to accumulating events
-		// coming faster than 1/frame for a long enough period to cause
-		// noticable jam/stutter.
-		//
-		// In non-threaded mode, very high event stream density can also
-		// cause problems on its own, starving the rest of the main loop
-		// from frequent-enough updates. So, there should be some sort of
-		// triaging in those cases of overload, a balance between losing
-		// some events and losing some updates.
-		// (-- BUT THAT'S NOT IMPLEMENTED FOR NOW. JUST USE THREADING!
-		// Overloads will happen there, too, obviously, but at least
-		// the input and output processing will share the suffering. :) )
-		//!!
-		//!! BUT... I'm afraid, with the current crude thread-locking
-		//!! model updates/reactions can still get locked out unfairly!
-		//!!
-			ui_event_state = UIEventState::BUSY;
-#ifndef DISABLE_THREADS
-//!! waitEvent was kinda elegant, but not very practical... Among other things,
-//!! it can't be interrupted by our own internal "events", like request_exit()...
-//!! Also, in both SFML and SDL, they already have to do pollEvents internally anyway:
-//!! -> https://en.sfml-dev.org/forums/index.php?topic=18264.0
-//!!		if (!SFML_WINDOW().waitEvent(event)) {
-//!!			cerr << "- Event processing failed. WTF?! Terminating.\n";
-//!!			exit(-1);
-//!!		}
-
-//LOGD << "- acquiring lock for events...";
-			noproc_lock.lock();
-#endif
-			if (!SFML_WINDOW().setActive(false)) { //https://stackoverflow.com/a/23921645/1479945
-				LOGE << "\n- [event_loop] sf::setActive(false) failed!";
-//?				request_exit(-1);
-//?				return;
-			}
-
-			//!! The update thread may still be busy calculating, so we can't just go ahead and change things!
-			//!! But... then again, how come this thing still works at all?! :-o
-			//!! Clearly there must be cases when processing the new event here overlaps with an ongoing update
-			//!! cycle before they notice our "BUSY" state change here, and stop! :-o
-			//!! So... a semaphore from their end must be provided to this point of this thread, too!
-			//!! And it may not be just as easy as sg. like:
-			//!!while (game.busy_updating())
-			//!!	;
-			//!! A much cleaner way would be pushing the events received here
-			//!! into a queue in the update/processing thread, like:
-			//!! game.inputs.push(event);
-			//!! (And then the push here and the pop there must be synchronized -- hopefully just <atomic> would do.)
-
-			UI::update_keys_from_Myco(event); //! Using the SFML adapter (via UI/adapter/SFML/...)
-				//!! This should be generalized beyond keys, and should also make it possible
-				//!! to use abstracted event types/codes for dispatching (below)!
-
-//!! It felt more uneven if done here (due to the too coarse thread granularity of Windows -- and/or my own botched threading logic)! :-o
-//!!			get_control_inputs(); // Should follow update_keys_from_SFML() (or else they'd get out of sync by some thread-switching delay!), until that's ensured implicitly!
-
-#ifndef _MSC_VER
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wparentheses" // F*, I'm not willing to litter the already noisy conditions below with even more parens...
-#endif
-
-			// Close req.?
-			if (event.type == myco::event::WindowClosed ||
-			    event.type == myco::event::KeyDown && event.get_if<myco::event::KeyDown>()->code == SFML_KEY(Escape)) { //!!XLAT
-
-				if (gui.focused()) {
-					gui.unfocus();
-					//!! FTR:
-					//!! A `break;` here would crash with a runtime_error caught at line 654 with the
-					//!! mysterious message "resource deadlock would occur", *AND* THEN ALSO A CRASH!... :-o
-					//!! (But that "extra" crash might be due to the shitty WinDbg failing to start a debug session.
-					//!! Not that it would be normal for it to be triggered at all to begin with, if the exception
-					//!! was already caught!... :-o )
-					//!! -> #sfw2/486
-				} else {
-					request_exit();
-					// [fix-setactive-fail] -> DON'T: window.close();
-					//!!?? I forgot: how exactly is the window being closed on Esc?
-					//!!?? I *guess* by the sf::Window dtor, but why do I vaguely
-					//!!?? recall endless annoying problems with that from earlier?!
-					break;
-				}
-			}
-
-			// If the GUI has the input focus, let it process the event
-			// -- except for some that really don't belong there:
-			if (gui.focused() &&
-			    (
-				event.type != myco::event::WindowFocused && // Yeah, so this is an entirely different "focus"! :-o
-				event.type != myco::event::WindowUnfocused &&
-				event.type != myco::event::MouseButtonDown
-				||
-				event.type == myco::event::MouseButtonDown && gui.hovered()
-				||
-				event.type == myco::event::KeyDown
-			    )
-			)
-			{
-				goto process_ui_event;
-			}
-			// Else:
-			gui.unfocus(); // A bit hamfisted, but: the event is ours, let the UI know!...
-
-			//!! There's no sane way currently (for tha lack of a command/action queue)
-			//!! to distinguish between player and non-player actions yet... Also, there's
-			//!! even less about *which* player it is!... :)
-			player_mark_active(/*!!Also no support for multiple players...!!*/);
-
-#ifndef _MSC_VER
-#pragma GCC diagnostic pop
-#endif
-
 			switch (event.type) //!! See above: morph into using abstracted events!
 			{
 			case myco::event::KeyDown:
@@ -534,57 +288,7 @@ process_ui_event:		// The GUI should be given a chance *before* this entire `swi
 
 				break;
 			} // switch
-
-//LOGD << "sf::Context [event loop]: " << sf::Context::getActiveContextId();
-
-			ui_event_state = UIEventState::EVENT_READY;
-
-#ifdef DISABLE_THREADS
-		} // for - events in the queue
-
-		update_thread_main_loop(); // <- Doesn't actually loop, when threads are disabled, so crank it from here!
-#else
-//LOGD << "- freeing the proc. lock...";
-			noproc_lock.unlock();
-
-			//! Sleep some here, too (not just outside this inner loop, while
-			//! idling), counterintuitively *especially* while jamming, in order to
-			//! give the actual processing parts some unlocked time!...
-			sf::sleep(sf::milliseconds(5)); //!! Should be adaptive! //!! DIRECT SFML USE
-		} // for - events in the queue
-
-		// The event queue has been emptied, so in this thread (of input processing)
-		// we're idling now (while updates are happening elsewhere), so:
-		//!! Should be adaptive!!
-		sf::sleep(sf::milliseconds( //!! DIRECT SFML USE
-			paused() ? cfg.get("sim/timing/paused_sleep_time_per_cycle", 50) // #330
-			         : 10)); // SFML does (used to?) sleep the same amount for waitEvent
-			// NOTE: This is only relevant when threading!
-			// The non-threaded main loop sleeps via backend.hci.fps_throttling.
-			//!!?? How about fps throttling *with* threading then?! -> #217
-
-		if (paused() && ui_event_state == UIEventState::IDLE)
-		{
-			sf::sleep(sf::milliseconds(100)); // Sleep even more, if *really* idle! :) //!! DIRECT SFML USE
-		}
-
-#endif			
-
-//!!IPROF_SYNC_THREAD;
-
-	} // while - still running
-
-} catch (runtime_error& x) {
-	Error(x.what());
-	return;
-} catch (exception& x) {
-	Error("EXCEPTION: "s + x.what());
-	return;
-} catch (...) {
-	Error("UNKNOWN EXCEPTION!");
-	return;
-}
-} // event_loop()
+} // process()
 
 //----------------------------------------------------------------------------
 void OONApp_sfml::draw() const // override
@@ -629,7 +333,7 @@ void OONApp_sfml::draw() const // override
 
 	// Commit...
 	SFML_WINDOW().display();
-}
+} // draw()
 
 
 } // namespace OON

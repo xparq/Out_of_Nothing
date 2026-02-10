@@ -963,7 +963,7 @@ void OONApp::pause_hook(bool)
 //!! Note that resetting the iter. counter and the model time should pro'ly be associated
 //!! with run(), which should then be non-empty in SimApp, and should also somehow
 //!! bring with it some main-loop logic to handle basic chores like time control & stepping!
-//!! Perhaps most of that ugly & brittle `update_thread_main_loop()` could be moved there,
+//!! Perhaps most of that ugly & brittle `update_loop()` could be moved there,
 //!! and then updates_for_next_frame() could be an app callback (plus some new ones, handling
 //!! that Window Context bullshit etc.), and its wrapping in SimApp could hopefully handle the timing stuff.
 void OONApp::time_step(int steps)
