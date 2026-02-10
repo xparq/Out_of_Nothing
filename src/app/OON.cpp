@@ -959,23 +959,6 @@ void OONApp::pause_hook(bool)
 
 
 //----------------------------------------------------------------------------
-//!! Move this to SimApp, but only together with its counterpart in the update loop!
-//!! Note that resetting the iter. counter and the model time should pro'ly be associated
-//!! with run(), which should then be non-empty in SimApp, and should also somehow
-//!! bring with it some main-loop logic to handle basic chores like time control & stepping!
-//!! Perhaps most of that ugly & brittle `update_loop()` could be moved there,
-//!! and then updates_for_next_frame() could be an app callback (plus some new ones, handling
-//!! that Window Context bullshit etc.), and its wrapping in SimApp could hopefully handle the timing stuff.
-void OONApp::time_step(int steps)
-{
-	// Override the loop count limit, if reached (this may not always be applicable tho!); -> #216
-	if (iterations.maxed())
-		++iterations.limit;
-
-	timestepping = steps; //! See resetting it in updates_for_next_frame()!
-}
-
-//----------------------------------------------------------------------------
 void OONApp::updates_for_next_frame()
 //!!?? Should be made idempotent? (It's inceremental by dT now.) Could be useful for testing:
 //!!?? calling it twice should only affect the FPS (except in real-time-dependent time modes)!
@@ -1008,7 +991,7 @@ void OONApp::updates_for_next_frame()
 	//
 	// - Disabled when paused, unless explicitly single-stepping...
 	//
-	if (!paused() || timestepping) {
+	if (!paused() || paused() && timestepping) {
 
 		//----------------------------
 		//!!? Get some fresh immediate (continuous) input control state updates,
@@ -1039,7 +1022,7 @@ void OONApp::updates_for_next_frame()
 		//----------------------------
 		// Update...
 		//
-		//!! Move to a SimApp virtual, I guess (so at least the counter capping can be implicitly done there; see also time_step()!):
+		//!! Move to a SimApp virtual, I guess (so at least the counter capping can be implicitly done there; see also timestep_...()!):
 		if (!iterations.maxed()) {
 
 			update_world(Δt);
@@ -1069,7 +1052,7 @@ void OONApp::updates_for_next_frame()
 
 		// One less time-step to make next time (if any):
 		if (timestepping) {
-			if (timestepping < 0 ) ++timestepping; else --timestepping;
+			timestep_proceed();
 		}
 	}
 

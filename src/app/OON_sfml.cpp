@@ -65,10 +65,10 @@ void OONApp_sfml::process(const SAL::event::Input& event) //override
 #ifdef DEBUG
 	if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started making things harder every day... :-/
 #endif
-				switch (keycode) {
-				case SFML_KEY(Pause): toggle_pause(); break;
-				case SFML_KEY(Enter): time_step(1); break;
-				case SFML_KEY(Backspace): time_step(-1); break;
+				switch (keycode)
+				{
+				case SFML_KEY(Enter):     timestep_start(keystate(SHIFT) ?  10 :  1); break;
+				case SFML_KEY(Backspace): timestep_start(keystate(SHIFT) ? -10 : -1); break;
 
 				case SFML_KEY(Tab): toggle_interact_n2n(); break;
 

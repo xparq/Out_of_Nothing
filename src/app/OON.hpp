@@ -154,10 +154,8 @@ public:
 	void resize_shape(size_t /*ndx*/, float /*factor*/) override;
 	void resize_shapes(float /*factor*/) override;
 
-	void time_step(int steps) override;
-
 protected:
-	bool _ctrl_update_thrusters(); // true if any engine is firing
+	bool _ctrl_update_thrusters(); // true if any engine has fired
 
 	//------------------------------------------------------------------------
 protected:
