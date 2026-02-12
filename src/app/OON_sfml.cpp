@@ -14,12 +14,12 @@
 //!! not the entire compilation process.
 //!!
 //!! So sad, still...:
-#include "Szim/Backend/_adapter_switcher.hpp"
+#include "Szim/Core/Device/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((Szim::SFML_Backend&)backend).SFML_window())
 #define SFML_KEY(KeyName) unsigned(sf::Keyboard::Key::KeyName) //!!XLAT
-
-#include "Szim/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
+//!! :-(((
+#include "Szim/Core/Device/HCI/Keyboard/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -37,7 +37,6 @@
 using namespace Szim;
 using namespace Model;
 using namespace View;
-using namespace UI;
 using namespace sz;
 using namespace std;
 
@@ -57,6 +56,8 @@ OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime)
 //----------------------------------------------------------------------------
 void OONApp_sfml::process(const SAL::event::Input& event) //override
 {
+	using namespace Szim::HCI;
+
 			switch (event.type) //!! See above: morph into using abstracted events!
 			{
 			case myco::event::KeyDown:
@@ -271,12 +272,10 @@ LOGD << "Click: no obj.";
 
 			case myco::event::WindowUnfocused:
 				oon_main_view().dim();
-				reset_keys(); //!! Should be an engine-internal chore...
 				break;
 
 			case myco::event::WindowFocused:
 				oon_main_view().undim();
-				reset_keys(); //!! Should be an engine-internal chore...
 				break;
 
 			default:

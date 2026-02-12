@@ -9,7 +9,7 @@
 #endif
 
 
-#include "Szim/Core.hpp"
+#include "Szim/Engine.hpp"
 #include "OON_sfml.hpp"
 
 #include <iostream> // For normal user-facing output

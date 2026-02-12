@@ -3,10 +3,6 @@
 
 #include "app/Model/World.hpp"
 
-//!! Shrink even this dependency: don't include the entire fucking SimApp,
-//!! only its modelling-related services that are actually used:
-#include "Szim/SimApp.hpp"
-
 #include "Szim/diag/Log.hpp"
 //!!??#include <iostream> //!!?? Why does Log.hpp not get it (even the fake one with SZ_LOG_REPLACE_IOSTREAM)?! :-o
 //!!??	using std::cerr;

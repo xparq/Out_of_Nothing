@@ -1,7 +1,7 @@
 #include "OONConfig.hpp"
 #include "Szim/App/Config.hpp"
 
-#include "extern/Args.hpp" //!! See also in SimApp.hpp!
+#include "extern/Args.hpp" //!! See also in Szim/App/Base.hpp!
 #include "sz/sys/fs.hh"
 	using sz::fs::dirname, sz::fs::endslash_fixup, sz::fs::prefix_by_intent;
 #include "sz/str.hh"
@@ -26,7 +26,7 @@ using namespace std;
 
 //----------------------------------------------------------------------------
 OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& args) :
-	Config(sz::fs::prefix_by_intent(syscfg.base_path(), "OON.cfg"), &syscfg), // Also chain to syscfg!
+	config(sz::fs::prefix_by_intent(syscfg.base_path(), "OON.cfg"), &syscfg), // Also chain to syscfg!
 	syscfg(syscfg) //!! Config has just chained to it, but its '_base' ptr is private! :-/
 {
 	// 1. Preset hardcoded baseline defaults...

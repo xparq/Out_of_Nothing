@@ -3,10 +3,6 @@
 
 #include "app/Model/World.hpp"
 
-//!! Shrink even this dependency: don't include the entire fucking SimApp,
-//!! only its modelling-related services that are actually used:
-//#include "Szim/SimApp.hpp"
-
 #include "Szim/diag/Error.hpp"
 #include "Szim/diag/Log.hpp"
 

@@ -146,8 +146,8 @@ public:
 	//------------------------------------------------------------------------
 	// Op. implementations/overrides...
 	void updates_for_next_frame() override;
-	EntityID add_entity(Entity&& temp) override;
-	void remove_entity(EntityID ndx) override;
+	EntityID add_entity(Entity&& temp);
+	void remove_entity(EntityID ndx);
 //	void transform_entity(EntityTransform f) override;
 //	void transform_entity(EntityTransform_ByIndex f) override;
 	//--------------------------------------------------------------------

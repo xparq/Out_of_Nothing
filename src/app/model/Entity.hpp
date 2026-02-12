@@ -1,12 +1,13 @@
 #ifndef _DM04785YTB0872ND45076Y20745Y68CN74_
 #define _DM04785YTB0872ND45076Y20745Y68CN74_
 
-
 #include "app/model/vocab.hpp"
+
+#include "Szim/Model/Entity.hpp" // Szim::Entity<Cfg>
+
 #include "Physics.hpp"
 #include "Thruster.hpp"
 
-#include "Szim/Entity.hpp" // Szim::Entity<Cfg>
 
 #include <iosfwd> // for save/load
 

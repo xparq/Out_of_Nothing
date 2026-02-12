@@ -7,9 +7,12 @@
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "app/Model/Emitter/SkyPrint.hpp"
 
-#include "Szim/Backend/HCI.hpp"
+#include "Szim/Core/HCI.hpp"
  
 #include "sz/math/sign.hh"
+
+#include <thread> // this_thread
+#include <chrono> // for the big bang delay
 
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
@@ -101,6 +104,27 @@ LOGD << "Display.reset right after loading the avatar images:";
 	//!! (E.G. IN ACCORDANCE WITH SESSION LOADING!), BUT FOR NOW, AS THAT POINT DOESN'T EXIST YET...:
 	//!!
 	init_world(); //!! Also, it can only be done after getting rid of the RAII app init (#483) to regain virtual dispatch...
+
+
+	//---------------------------------------------
+	// Create a default big-bang, via an artificially prolonged initial deltaT...
+	//!!?? How come loaded sessions are not affected?!?! Or they are, with dynamic timing?!
+		// Avoid the accidental Big Bang (#500):
+		backend.clock.restart(); //! The clock auto-starts at construction(!), causing a huge initial delay, so reset it!
+
+		// ...but do a controlled Big Bang instead (#504):
+		float default_BigBang_InflationInterval_s = 0.3f;
+		try { default_BigBang_InflationInterval_s = std::stof(args("initial-dynamic-dt")); } catch(...){}
+		float BigBang_InflationInterval_s =
+			cfg.get("sim/timing/initial_dynamic_dt", default_BigBang_InflationInterval_s);
+DBG_(BigBang_InflationInterval_s);
+		std::this_thread::sleep_for(std::chrono::duration<float>(BigBang_InflationInterval_s)); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
+			//!! This does (should do) nothing for deterministic (fixed-dt) time drive!
+			//!! More work is needed to make the Big Bang orthogonal to the timing method!
+	//!! }
+	//!!---------------------------------------------
+
+
 
 	// Note also that init_world() is eventually wasted if we're also loading a session,
 	// but that's a price paid for *some* level of simplicity in the init sequence.
@@ -656,7 +680,7 @@ void OONApp::toggle_sound_fx() { backend.audio.toggle_sounds(); }
 
 
 //----------------------------------------------------------------------------
-EntityID OONApp::add_entity(Entity&& temp) //override
+EntityID OONApp::add_entity(Entity&& temp)
 // Add new entity (moved) from a temporary template obj.
 {
 	auto ndx = App::add_entity(temp);
@@ -667,7 +691,7 @@ EntityID OONApp::add_entity(Entity&& temp) //override
 
 
 //----------------------------------------------------------------------------
-void OONApp::remove_entity(EntityID ndx) //override
+void OONApp::remove_entity(EntityID ndx)
 {
 	App::remove_entity(ndx);
 

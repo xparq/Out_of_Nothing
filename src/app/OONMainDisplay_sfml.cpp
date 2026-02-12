@@ -3,7 +3,7 @@
 #include "OON.hpp" // focused_entity_ndx, OONApp casts (Later, maybe: app.appcfg)
 
 //!! This "backend tunneling" is so sad this way"... See notes in OON_sfml.cpp!
-#include "Szim/Backend/_adapter_switcher.hpp"
+#include "Szim/Core/Device/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW(app) (((Szim::SFML_Backend&)((app).backend)).SFML_window())
 

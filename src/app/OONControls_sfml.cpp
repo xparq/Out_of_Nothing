@@ -3,7 +3,8 @@
 #include "OON.hpp" // OONApp.gui (App/Base would be enough, if it was declared as SimApp*, but OONApp is more future-proof.)
 #include "Szim/UI.hpp"
 
-#include "Szim/UI/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
+//!! :-(((
+#include "Szim/Core/Device/HCI/Keyboard/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
 
 
 /*!!
@@ -19,7 +20,7 @@ namespace OON {
 
 void OONController::update() //!! Check the cost of keystate(), calling the Win32 API several times!!!
 {
-	using namespace UI;
+	using namespace Szim::HCI;
 
 	if (app_->gui.focused()) {
 		return;

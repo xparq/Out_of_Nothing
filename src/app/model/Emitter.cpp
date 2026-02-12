@@ -1,6 +1,5 @@
 #include "Emitter.hpp"
 
-//!!#include "Szim/SimApp.hpp"
 #include "app/OON.hpp" //!! :-(
 
 namespace OON::Model {

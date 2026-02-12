@@ -1,7 +1,7 @@
 #ifndef _8PA37GTB7NX73945Y6B2V6C7X245Y45_
 #define _8PA37GTB7NX73945Y6B2V6C7X245Y45_
 
-#include "Szim/Config.hpp"
+#include "Szim/gen/config.hpp"
 
 //#include "extern/Args.hpp"
 class Args; // Enough to #include it in the .cpp
@@ -15,7 +15,7 @@ namespace Szim { class SimAppConfig; }
 
 namespace OON {
 
-struct OONConfig : Szim::Config
+struct OONConfig : Szim::gen::config
 {
 	const Szim::SimAppConfig& syscfg;
 /*!!

@@ -2,10 +2,11 @@
 #define _795460BVY2TNGHM02458NV7B6Y0WNCM2456Y_
 
 #include "app/model/vocab.hpp"
+
+#include "Szim/Model/World.hpp" // Szim::World<Cfg>
+
 #include "Physics.hpp"
 #include "app/model/Entity.hpp"
-
-#include "Szim/World.hpp" // Szim::World<Cfg>
 
 #include <memory>     // shared_ptr
 #include <vector>
