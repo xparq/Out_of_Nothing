@@ -8,8 +8,8 @@
 
 #include "Szim/View/ScreenView.hpp"
 #include "Szim/View/OrthoZoomCamera.hpp"
+#include "Szim/Model/vocab.hpp"
 
-#include "Szim/Model/Meta.hpp"
 namespace OON::Model { struct Entity; } // #include "app/Model/Entity.hpp"
 
 #include <cstdint>

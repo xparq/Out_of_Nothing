@@ -29,7 +29,8 @@ namespace OON::Model {
 
 		//!!ObjConfig cfg; // basically the obj. type
 
-		static constexpr auto Unlimited = -1;  // For various quantities...
+		static constexpr auto Unlimited = -1.f;  // For various quantities (usually float; having
+		                                         // this also float mutes some MSVC conv. warnings).
 
 		struct {
 			bool gravity_immunity = false;
@@ -57,11 +58,12 @@ namespace OON::Model {
 		//!! Should be handled later indirectly (and uniformly) via object configurations
 		//!! (which would basically be a flexible type system).
 		//!!
-		//!!BTW, thrust should be axial anyway, so these 4 should be just 2:
-		Thruster thrust_up    { Math::unset<NumType>() }; // Will get repalced by "real" numbers for objects with actually functioning thrusters.
-		Thruster thrust_down  { Math::unset<NumType>() };
-		Thruster thrust_left  { Math::unset<NumType>() };
-		Thruster thrust_right { Math::unset<NumType>() };
+		// For entities with actually functioning thrusters, these will be changed
+		// from `unset` (to real numbers, i.e. 0).
+		Thruster thrust_up    { Math::unset<Thruster::NumType>() };
+		Thruster thrust_down  { Math::unset<Thruster::NumType>() };
+		Thruster thrust_left  { Math::unset<Thruster::NumType>() };
+		Thruster thrust_right { Math::unset<Thruster::NumType>() };
 		//!!ALSO: REPLACE THIS HARDCODED COMPONENT WITH A GENERIC (dynamically built)
 		//!! `Structure` COMPONENT + ("OPTONAL") TYPE INFO!
 		//!! ("OPTIONAL" 'coz the structure itself *IS* the type info, it's just cumbersome to work with.)

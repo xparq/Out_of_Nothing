@@ -31,12 +31,13 @@ static auto ftos = [](auto* ptr_x) { return [ptr_x]() { static constexpr size_t 
 };
 
 
+//!! This is still stupid... Redesign! (At least don't take an Args!)
 //----------------------------------------------------------------------------
-bool OONApp::show_cmdline_help(const Args& args, const char* banner)
+bool OONApp::show_cmdline_help(const char* banner) //override
 {
 	banner = "\"Out of Nothing\" - Experimental N-body simulation toy\n";
 
-	SimApp::show_cmdline_help(args, banner);
+	SimApp::show_cmdline_help(banner);
 
 	//!! Even this "custom options" part should be automated some day:
 	cout << R"(
@@ -336,7 +337,7 @@ void OONApp::ui_setup_HUD_Time(/*!!, mode/config...!!*/)
 {
 	// Timing
 	ui_gebi(TimingStats)
-		<< "FPS: " << [this](){ return to_string(1 / (float)avg_frame_delay); }
+		<< "FPS: " << [this](){ return to_string(1 / avg_frame_delay); }
 		           << [this](){ return fps_throttling() ? " (fixed)" : ""; }
 		<< "\nlast frame Δt: " << [this](){ return to_string(time.last_frame_delay * 1000.0f) + " ms"; }
 		<< "\nmodel Δt: " << [this](){ return to_string(time.last_model_Δt * 1000.0f) + " ms"; }

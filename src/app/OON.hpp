@@ -14,7 +14,7 @@
 
 #include "Szim/App.hpp"
 
-namespace UI { class HUDStream; }
+namespace Szim::UI { class HUDStream; } // ui_gebi() is (still) defined here, in OON.hpp!
 
 #include <cassert>
 
@@ -44,7 +44,7 @@ friend class OON::Model::World;
 // Config/Setup...
 //----------------------------------------------------------------------------
 public:
-	bool show_cmdline_help(const Args& args, const char* banner = nullptr) override; // false: request exit
+	bool show_cmdline_help(const char* banner = nullptr) override; // false: request exit
 
 protected:
 	bool init() override;
@@ -151,7 +151,7 @@ public:
 //	void transform_entity(EntityTransform f) override;
 //	void transform_entity(EntityTransform_ByIndex f) override;
 	//--------------------------------------------------------------------
-	void resize_shape(size_t /*ndx*/, float /*factor*/) override;
+	void resize_shape(EntityID /*ndx*/, float /*factor*/) override;
 	void resize_shapes(float /*factor*/) override;
 
 protected:
@@ -199,8 +199,7 @@ protected:
 		void ui_setup_HUD_ObjMonitor();
 	//!!} ui;
 	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
-	UI::HUDStream& ui_gebi(HUD_ID which) const; // get_element_by_id(...)
-	//!!OLD: virtual UI::HUDStream& ui_gebi(HUD_ID which) const = 0;
+	Szim::UI::HUDStream& ui_gebi(HUD_ID which) const; // get_element_by_id
 
 	// Chores after loading a new model world:
 	void _on_snapshot_loaded(); // Updates the UI etc.
@@ -220,7 +219,7 @@ protected:
 
 	short shield_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;
 	int   shield_active = 0; // 1: active; <0: depleted, recovering
-	float shield_depletion_timestamp; // session time in s
+	Szim::Seconds shield_depletion_timestamp; // session time
 
 	// See view_control() for these:
 	float _pan_step_x = 0, _pan_step_y = 0;

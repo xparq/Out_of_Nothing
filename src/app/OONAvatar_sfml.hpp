@@ -1,7 +1,7 @@
 #ifndef _028793NX27V98760C845B7638C45Y6I8BYTHCN8O56_
 #define _028793NX27V98760C845B7638C45Y6I8BYTHCN8O56_
 
-#include "Szim/Avatar.hpp"
+#include "Szim/Core/Session/Player/Avatar.hpp" //!!... :-/
 #include <SFML/Graphics/Texture.hpp>
 
 namespace OON {

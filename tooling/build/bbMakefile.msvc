@@ -244,7 +244,7 @@ CPPFLAGS  += /utf-8 /Zc:preprocessor
 CPPFLAGS  += $(cflags_sfml_linkmode)
 CPPFLAGS  += $(CPPFLAGS_)
 LINKFLAGS   = $(linkflags_debug) $(LINKFLAGS_EXT_LIBS)
-LINKFLAGS  += $(linkflags_debug) $(LINKFLAGS_)
+LINKFLAGS  += $(linkflags_debug) $(LINKFLAGS_) /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup
 
 
 #-----------------------------------------------------------------------------

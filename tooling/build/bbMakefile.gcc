@@ -268,7 +268,7 @@ CPPFLAGS  += $(cflags_sfml_linkmode)
 CPPFLAGS  += $(CPPFLAGS_)
 LINKFLAGS   = $(linkflags_debug) $(LINKFLAGS_EXT_LIBS)
 LINKFLAGS  += $(linkflags_debug) $(LINKFLAGS_)
-LINKFLAGS_ := -static -L$(SFML_ROOT)/lib
+LINKFLAGS_ := -static -L$(SFML_ROOT)/lib -mwindows
 
 
 #-----------------------------------------------------------------------------

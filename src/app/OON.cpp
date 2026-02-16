@@ -29,7 +29,7 @@ namespace OON {
 
 using VirtualController = Szim::VirtualController;
 using namespace Model;
-using namespace /*!!Szim::!!*/UI;
+using namespace Szim::UI;
 using namespace std;
 
 
@@ -294,7 +294,7 @@ void OONApp::resize_shapes(float factor) //override
 	oon_main_view().resize_objects(factor);
 }
 
-void OONApp::resize_shape(size_t ndx, float factor) //override
+void OONApp::resize_shape(EntityID ndx, float factor) //override
 {
 	oon_main_view().resize_object(ndx, factor);
 }
@@ -386,7 +386,7 @@ bool OONApp::react_to_control_inputs()
 			// Depleted?
 			if (time.real_session_time > shield_depletion_timestamp) {
 
-				shield_active = -int(appcfg.shield_recharge_time / float(avg_frame_delay));
+				shield_active = -int(appcfg.shield_recharge_time / avg_frame_delay);
 LOGI << "- Shield depleted! Recharging for " << -shield_active << " frames...";
 
 				//!! Not killing the sound, as its length is supposed to be the same
@@ -596,7 +596,8 @@ bool OONApp::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 	//AUTO_CONST CFG_PAN_INITIAL_STEP = 5; // pixel
 	AUTO_CONST CFG_PAN_EASEOUT_STEP = 1; // +/- pixel
 
-	auto fps_factor = (float)avg_frame_delay * 30.f; // Adjust relative to the 30 FPS calibration reference
+	using NumT = decltype(_pan_step_x);
+	auto fps_factor = (NumT)(avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
 		//! Note: this weird cast is required to avoid an "operator ambiguous" error!
 
 	//auto CFG_PAN_INITIAL_STEP_fps = CFG_PAN_INITIAL_STEP * fps_factor;
@@ -641,7 +642,8 @@ bool OONApp::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewhee
 	static const float CFG_ZOOM_EASEOUT_STEP        = appcfg.get("controls/zoom_inertia", 0.1f)           // change / Δt
 	                                                  * CFG_ZOOM_BUTTONS_CHANGE_RATE;                     // ...normalized to chg. rate
 
-	auto fps_factor = (float)avg_frame_delay * 30.f; // Adjust relative to the 30 FPS calibration reference
+	using NumT = decltype(_pan_step_x);
+	auto fps_factor = (NumT)(avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
 		//! Note: this weird cast is required to avoid an "operator ambiguous" error (on avg_frame_delay)!
 
 	auto CFG_ZOOM_BUTTONS_CHANGE_RATE_fps = CFG_ZOOM_BUTTONS_CHANGE_RATE * fps_factor;
@@ -691,29 +693,40 @@ EntityID OONApp::add_entity(Entity&& temp)
 
 
 //----------------------------------------------------------------------------
-void OONApp::remove_entity(EntityID ndx)
+void OONApp::remove_entity(EntityID id)
 {
-	App::remove_entity(ndx);
+	App::remove_entity(id);
 
 	//-------------------------
 	// Adjust references...
 	//--------------
 
 	// Focus obj.:
-	if (focused_entity_ndx != Entity::None) {
-		if (focused_entity_ndx > ndx) {
-LOGD << "The index of the followed object has changed due to object removal(s).\n";
-			--focused_entity_ndx;
-		} else if (focused_entity_ndx == ndx) {
-Warning("The tracked object has ceased to exist!...");
+	if (focused_entity_ndx) { //!! OLD: != Entity::None) {
+
+		if (focused_entity_ndx == id) {
+
 			focused_entity_ndx = Entity::None; //!! Don't just fall back to the player!
-		}                                 //!! That'd be too subtle/unexpected/unwanted.
+		                                           //!! That'd be too subtle/unexpected/unwanted.
+Warning("The tracked object has ceased to exist!...");
+
+		} else if (auto focused_ndx = entity_index(focused_entity_ndx) > entity_index(id)) { // Shift down...
+
+			//!! OLD (the ID was a direct integral type):
+			//!!--focused_entity_ndx;
+			//!! This is still bad tho... Changing an "ID" directly! :) See all the other such "ECS-less" cases!...
+			focused_entity_ndx = EntityID(focused_ndx - 1);
+
+LOGD << "The index of the followed object has changed (to "<< focused_ndx <<") due to object removal(s).\n";
+		}
 	}
 
-	assert(focused_entity_ndx == Entity::None || focused_entity_ndx < entity_count());
+	assert(!focused_entity_ndx || focused_entity_ndx < entity_count());
 
-	// Remove from the view cache, too:
-	oon_main_view().delete_cached_shape(ndx);
+	//-------------------------
+	// Remove from the rendering cache!
+	//--------------
+	oon_main_view().delete_cached_shape(id);
 }
 
 
@@ -1027,7 +1040,7 @@ void OONApp::updates_for_next_frame()
 		//----------------------------
 		// Determine the size of the next model iteration time slice...
 		//
-		Time::Seconds Δt;
+		Seconds Δt;
 		if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
 			//!! Fixed Δt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
 			Δt = cfg.fixed_model_dt;
@@ -1123,7 +1136,7 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 	myco::set<myco::CheckBox>("Pan follows object", _focus_locked_);
 
 	// Update the FPS indicator bar:
-	myco::set<myco::ProgressBar>("FPS", 1/(float)avg_frame_delay);
+	myco::set<myco::ProgressBar>("FPS", float(1 / avg_frame_delay)); //! If avg_frame_delay is double, truncating to ProgBar's float -> MSVC warning!
 
 
 	view_control(); // Manual view adjustments

@@ -87,8 +87,8 @@ DBG_(shapes_to_draw.size());
 DBG_(shape_count());
 */
 	//!! Assert size_t is_same EntityID, or implement proper iteration!...:
-	for (EntityID n = 0; n < simapp.entity_count(); ++n) {
-		create_cached_shape(oon_app().entity(n), n);
+	for (EntityID::underlying_type n = 0; n < simapp.entity_count(); ++n) {
+		create_cached_shape(oon_app().entity(EntityID(n)), n);
 	}
 /*
 DBG "----- Counts AFTER creating the set of shapes:";
@@ -260,13 +260,14 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 
 	auto rb = player_body.r * oon_camera().scale();
 //	auto rb = ((sf::CircleShape&)player_shape).getRadius();
-	static float A = 1.f; // pixel
-	static float f = 2.0f; // Hz
-	float phase = app().session_time() * f * 2*3.141f;
-	float sin_phase = sin(phase);
+	static auto A = 1.0; // pixel
+	static auto f = 2.0; // Hz
+	auto phase = app().session_time() * f * 2*3.141;
+	auto sin_phase = sin(phase);
 	unsigned alpha = 0x60 + unsigned(sin_phase * 20);
 	if (rb < 16) {
-		float r = 20 + sin_phase * A/2; // r -= sin_phase * A/2; // Compensate when only pulsating the outline thickness.
+		// SFML needs a float r:
+		float r = 20 + float(sin_phase * A/2); // r -= sin_phase * A/2; // Compensate when only pulsating the outline thickness.
 		auto halo = sf::CircleShape(r);
 		halo.setOutlineThickness(2); // (sin_phase * 2)
 		halo.setOutlineColor(sf::Color(unsigned((oon_app().entity(player_ndx).color << 8)
@@ -279,12 +280,12 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	}
 
 	// Idle-rotate the player avatar...
-	static float idle_rot_threshold = 2;
-	static float idle_rot_rate_inv = 5;
+	static auto idle_rot_threshold = 2.0f; // SFML needs float!
+	static auto idle_rot_rate_inv = 5.0f;  // SFML needs float!
 	if (app().player_idle_time() > idle_rot_threshold)
 	{
 		player_shape.setRotation(
-			sf::radians((app().player_idle_time() - idle_rot_threshold) / idle_rot_rate_inv)
+			sf::radians(float(app().player_idle_time() - idle_rot_threshold) / idle_rot_rate_inv)
 		);
 	} else {
 		player_shape.setRotation(sf::radians(0));

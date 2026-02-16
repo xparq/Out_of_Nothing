@@ -1,7 +1,7 @@
 #ifndef _Y8GVVY7TC880X820KS272475BTBT7V_
 #define _Y8GVVY7TC880X820KS272475BTBT7V_
 
-#include "Cfg.hpp" // Model::BasicNumberType
+#include "app/model/vocab.hpp" // BasicNumberType
 
 #include "Szim/Math.hpp"
 #include "Szim/Math/Vector2.hpp"

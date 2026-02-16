@@ -2,13 +2,13 @@
 #define _VVSDFGMYGMY6874E08GJMICT79BMVJCV795UH_
 
 #include "app/Model/vocab.hpp"
-#include "Szim/Player.hpp"
+#include "Szim/vocab.hpp" // PlayerID is defined there, for now!
 
 //!!#include "app/OONMainDisplay_sfml.hpp"
 
 namespace OON
 {
-	using EntityID = Model::EntityID;
+	using EntityID = Szim::EntityID;
 	using PlayerID = Szim::PlayerID;
 
 	using Entity   = Model::Entity;
