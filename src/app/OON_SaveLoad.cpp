@@ -1,5 +1,9 @@
 #include "OON.hpp"
 #include "OON_UI.hpp" // GravityModeSelector
+//!! Still too much:
+//!!#include "OON_UI-impl.hpp" // GravityModeSelector, Slider, ...
+	//!! Include this via at least a Szim/UI header proxy/dispatcher!
+	#include "myco/Widget/Slider.hpp" // Slider
 
 //#include "Szim/diag/Error.hpp"
 //#include "Szim/diag/Log.hpp"

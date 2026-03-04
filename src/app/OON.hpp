@@ -14,7 +14,11 @@
 
 #include "Szim/App.hpp"
 
-namespace Szim::UI { class HUDStream; } // ui_gebi() is (still) defined here, in OON.hpp!
+// UI Customizations... (Not including [...FUTURE ME: Great. ADD hit in the middle of a sentence again.])
+//namespace Szim::UI { class HUDStream; } // ui_gebi() is (still) defined here, in OON.hpp!
+//#include "Szim/UI/Banner.hpp"
+// Just bite he bullet instead:
+#include "OON_UI.hpp"
 
 #include <cassert>
 
@@ -26,7 +30,7 @@ class OONMainDisplay;
 	struct AppConfig
 	{
 		using WorldT    = OON::Model::World;
-//!!		using MainViewT = //!!... :-/ OON::OONMainDisplay_sfml;
+//!!#17:	using MainViewT = //!!... :-/ OON::OONMainDisplay_sfml;
 	};
 
 //----------------------------------------------------------------------------
@@ -213,6 +217,8 @@ protected:
 	OONMainDisplay& main_view_;
 
 	OONController controls;
+
+	PauseBanner paused_banner{"PAUSED", 80};
 
 	bool  chemtrail_releasing = false;
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;

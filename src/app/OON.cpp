@@ -2,7 +2,11 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON.hpp"
-#include "OON_UI-impl.hpp" // Note: scroll_locked() reads the control mode directly from the UI!
+#include "OON_UI.hpp" // Includes Szim/UI.hpp
+	#include "Szim/UI/HudStream.hpp"
+	//!! Include these via at least a Szim/UI header proxy/dispatcher!
+	#include "myco/Widget/CheckBox.hpp" // E.g. scroll_locked() reads the control mode directly from the UI!
+	#include "myco/Widget/ProgressBar.hpp"
 
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "app/Model/Emitter/SkyPrint.hpp"
@@ -565,6 +569,7 @@ cerr << "R-viewsize: " << oon_main_camera().zoom * plm->r
 
 bool OONApp::scroll_locked()
 {
+	//!! Do this via an OON_UI wrapper, not accessing the CheckBox directly!
 	return controls.PanLock || controls.PanFollow
 		|| myco::get<myco::CheckBox>("  - forced follow", false);
 		//!!?? Should this GUI poll actually be in controller.update()?!...
@@ -988,6 +993,8 @@ void OONApp::chemtrail_burst(EntityID emitter_id/* = 0*/, unsigned n/* = ...*/)
 //----------------------------------------------------------------------------
 void OONApp::pause_hook(bool)
 {
+	paused_banner.show(paused());
+
 	//!! As a quick hack, time must restart from 0 when unpausing...
 	//!! (The other restart() on pausing is redundant; just keeping it simple...)
 	LOGD << "Main clock restarted on Pause On/Off (in the pause-hook)!\n";
@@ -1016,13 +1023,6 @@ void OONApp::updates_for_next_frame()
 		return capture;
 	});
 !!*/
-	//!! Most of this should be done by Time itself!
-	time.last_frame_delay = backend.clock.get();
-	time.real_session_time += time.last_frame_delay;
-	backend.clock.restart(); //! Must also be restarted on unpausing, because Pause stops it!
-	// Update the FPS gauge
-	avg_frame_delay.update(time.last_frame_delay);
-
 	//----------------------------
 	// Model updates...
 	//
@@ -1104,6 +1104,7 @@ void OONApp::updates_for_next_frame()
 	// - Obj Monitor on/off
 	// - ...
 
+	//!! Do this via an OON_UI wrapper, not accessing HUDStream directly!
 	ui_gebi(ObjMonitor).active(
 		hovered_entity_ndx < entity_count() ||
 		focused_entity_ndx < entity_count()
@@ -1133,9 +1134,11 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 		}
 	}
 	// Update the focus lock indicator:
+	//!! Do this via an OON_UI wrapper, not accessing CheckBox directly!
 	myco::set<myco::CheckBox>("Pan follows object", _focus_locked_);
 
 	// Update the FPS indicator bar:
+	//!! Do this via an OON_UI wrapper, not accessing ProgressBar directly!
 	myco::set<myco::ProgressBar>("FPS", float(1 / avg_frame_delay)); //! If avg_frame_delay is double, truncating to ProgBar's float -> MSVC warning!
 
 

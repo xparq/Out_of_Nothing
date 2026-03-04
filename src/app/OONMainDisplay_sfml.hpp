@@ -61,9 +61,6 @@ public:
 	void resize_objects(float factor) override;
 	void resize_object(Szim::Model::EntityID ndx, float factor) override;
 
-	//!! Move it to the UI, FFS:
-	void draw_banner(const char* text) const override;
-
 
 	// -------------------------------------------------------------------
 	// Internals...

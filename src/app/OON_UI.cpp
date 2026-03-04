@@ -1,4 +1,16 @@
-﻿#include "OON_UI-impl.hpp"
+﻿#include "OON_UI.hpp"
+	#include "Szim/UI/HudStream.hpp"
+	//!! Include these via at least a Szim/UI header proxy/dispatcher!
+	#include "myco/Widget/Label.hpp"
+	#include "myco/Widget/Button.hpp"
+	#include "myco/Widget/Checkbox.hpp"
+	#include "myco/Widget/TextField.hpp"
+	#include "myco/Widget/Slider.hpp"
+	#include "myco/Widget/ProgressBar.hpp"
+	#include "myco/layout/VBox.hpp"
+	#include "myco/layout/HBox.hpp"
+	#include "myco/layout/Form.hpp"
+
 #include "OON.hpp"
 
 #include "Szim/Core/HCI.hpp"
@@ -61,43 +73,43 @@ UI::HUDStream& OONApp::ui_gebi(HUD_ID which) const
 
 	static auto* timing_hud = gui.overlay.add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/timing_left", -250), .panel_top = appcfg.get("appearance/HUD/timing_top", 10),
+		.line_height = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
+		.panel_left = (float)appcfg.get("appearance/HUD/timing_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/timing_top", 10),
 		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUDStream::DEFAULT_TEXT_COLOR),
 		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUDStream::DEFAULT_BACKGROUND_COLOR)
 	}));
 	static auto* world_hud = gui.overlay.add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = appcfg.get("appearance/HUD/world_state_top", 290),
+		.line_height = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
+		.panel_left = (float)appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/world_state_top", 290),
 		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)
 	}));
 	static auto* view_hud = gui.overlay.add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = appcfg.get("appearance/HUD/view_state_top", 420),
+		.line_height  = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
+		.panel_left = (float)appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/view_state_top", 420),
 		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)
 	}));
 	static auto* object_hud = gui.overlay.add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = appcfg.get("appearance/HUD/object_monitor_top", 526),
+		.line_height = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
+		.panel_left = (float)appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/object_monitor_top", 526),
 		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
 		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)
 	}));
 	static auto* help_hud = gui.overlay.add(new UI::HUDStream(
 	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/help_left", 10), .panel_top = appcfg.get("appearance/HUD/help_top", 10),
+		.line_height  = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
+		.panel_left = (float)appcfg.get("appearance/HUD/help_left", 10), .panel_top = (float)appcfg.get("appearance/HUD/help_top", 10),
 		.fgcolor = appcfg.get("appearance/HUD/help_fg", 0x40d040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)
 	}));
 	static auto* debug_hud = gui.overlay.add(new UI::HUDStream(
 	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
-		.line_height  = appcfg.hud_line_height, .line_spacing = appcfg.hud_line_spacing,
-		.panel_left = appcfg.get("appearance/HUD/debug_left", -350), .panel_top = appcfg.get("appearance/HUD/debug_top", -350),
+		.line_height  = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
+		.panel_left = (float)appcfg.get("appearance/HUD/debug_left", -350), .panel_top = (float)appcfg.get("appearance/HUD/debug_top", -350),
 		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)
 	}));
@@ -246,6 +258,9 @@ void OONApp::ui_setup()
 		//!! Also, negative coords. aren't special in myco, so this just goes off-screen: gui.setPosition({100, -200});
 
 	ui_setup_HUDs();
+
+	//!! No default ctor yet, so it's actually set in OON.hpp, not here:
+	//!!paused_banner.set("PAUSED", 80);
 }
 
 void OONApp::ui_setup_HUDs()

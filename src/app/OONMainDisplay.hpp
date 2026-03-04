@@ -69,9 +69,6 @@ public:
 	virtual void resize_objects(float factor) = 0;
 	virtual void resize_object(Szim::Model::EntityID ndx, float factor) = 0;
 
-	//!! Sigh... Move this to the UI already:
-	virtual void draw_banner(const char* text) const = 0;
-
 	// -------------------------------------------------------------------
 	// Data...
 	// -------------------------------------------------------------------

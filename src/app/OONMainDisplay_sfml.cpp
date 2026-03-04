@@ -7,7 +7,7 @@
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW(app) (((Szim::SFML_Backend&)((app).backend)).SFML_window())
 
-#include "Szim/UI.hpp"
+#include "Szim/UI/Banner.hpp" //!! See also #including other specific UI parts in OON_UI-impl.hpp!
 
 #include "Szim/diag/Log.hpp"
 #include "sz/diag/DBG.hh"
@@ -290,36 +290,6 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	} else {
 		player_shape.setRotation(sf::radians(0));
 	}
-
-	//!!MOVE THIS TO THE UI:
-	if (app().paused()) {
-		draw_banner("PAUSED");
-	}
 } // draw
-
-
-//----------------------------------------------------------------------------
-//!!MOVE TO UI::Widget::Notice!
-void OONMainDisplay_sfml::draw_banner(const char* text) const // override
-{
-	const auto& game = app();
-
-	if (!myco::Theme::loadFont(game.cfg.asset_dir + game.cfg.default_font_file)) {
-		//! SFML does print errors to the console.
-		return;
-	}
-
-	auto TXT_WIDTH = 300u;
-	auto TXT_HEIGHT = 80u;
-	myco::gfx::Text banner(text, TXT_HEIGHT); //!! Not UTF-8! :-/
-	banner.setPosition({
-		(float)SFML_WINDOW(game).getSize().x/2 - TXT_WIDTH/2,
-		(float)SFML_WINDOW(game).getSize().y/2 - TXT_HEIGHT/2 - 16 //!!fuckup offset
-	});
-	banner.setStyle(sf::Text::Bold | sf::Text::Bold);
-	banner.setFillColor(sf::Color(sf::Color(0xc0b0a08f))); //!!... Sigh... Get that color from somewhere! :)
-
-	SFML_WINDOW(game).draw(banner);
-}
 
 } // namespace OON

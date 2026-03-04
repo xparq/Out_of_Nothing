@@ -2,6 +2,9 @@
  UI abstractions for the rest of the app, to help decoupling from low-level or
  "inconveniently specific" UI impl. dependencies
 
+ (This is just the internal interface "language", to be included in headers like
+ OON.hpp. See OON_UI-impl.hpp for defs used by TUs *implementing* UI features!)
+
  Well, easier said than done, though... The individual UI widgets often need
  to be accessed directly, like e.g. updating them after a load:
 
@@ -34,11 +37,19 @@ TODO:
 
 #pragma once
 
-#include "Szim/UI.hpp"   // Basically myco/GUI.hpp!
+#include "Szim/UI.hpp"  // Basically myco/GUI-main.hpp... Unfortunately, can't just
+                        // fw-declare it: myco::Options<...> below needs it!... :-/
+
+#include "myco/widget/Options.hpp" //!! Should come via a "Szm/UI/Options.hpp" proxy header!
+#include "Szim/UI/Banner.hpp"
+// This one doesn't seem to need the full def for OON.h...
+namespace Szim::UI { class HUDStream; }
 
 #include "app/Model/World.hpp" // This one is not so heavy.
 namespace OON
 {
-	using GravityModeSelector   = myco::Options<Model::GravityMode>;
-	using CollisionModeSelector = myco::Options<Model::CollisionMode>;
+	using GravityModeSelector   = myco::Options<Model::GravityMode>;   //!! -> Szim::UI...
+	using CollisionModeSelector = myco::Options<Model::CollisionMode>; //!! -> Szim::UI...
+
+	using PauseBanner = Szim::UI::Banner;
 }

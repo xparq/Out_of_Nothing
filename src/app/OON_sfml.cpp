@@ -2,7 +2,7 @@
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
 #include "OON_sfml.hpp"
-#include "OON_UI.hpp"
+#include "OON_UI-impl.hpp"
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
@@ -295,10 +295,12 @@ void OONApp_sfml::draw() const // override
 {
 	// Draw the model first...
 
+/*!! Moved to the engine's default main loop for now, tentatively:
 //#ifdef DEBUG
 	if (!controls.ShowOrbits) // -> #225
 //#endif
 		SFML_WINDOW().clear();
+!!*/
 
 	oon_main_view().draw(); //!! Change it to draw(surface)!
 
@@ -330,8 +332,10 @@ void OONApp_sfml::draw() const // override
 
 	gui.render();
 
+/*!! Moved to the engine's default main loop for now, tentatively:
 	// Commit...
 	SFML_WINDOW().display();
+!!*/
 } // draw()
 
 
