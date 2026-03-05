@@ -361,11 +361,11 @@ void OONApp::ui_setup_HUD_Time(/*!!, mode/config...!!*/)
 		<< "\nReal elapsed time: " << &time.real_session_time
 	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
 	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
-		<< "\nTime reversed: " << &time.reversed
+		<< "\nTime reversed: " << &time.control.reversed
 		<< "\nModel timing stats (s):"
 //		<< "\n    updates: " << &time.model_Δt_stats.samples
 		<< "\n    total t: " << &time.model_Δt_stats.total
-		<< "\n  Δt, as scaled x" << &time.scale << ":"
+		<< "\n  Δt, as scaled x" << &time.control.scale << ":"
 		<< "\n    last: " << &time.model_Δt_stats.last
 		<< "\n    |min|: " << &time.model_Δt_stats.umin
 		<< "\n    |max|: " << &time.model_Δt_stats.umax

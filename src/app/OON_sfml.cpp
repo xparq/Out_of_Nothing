@@ -149,9 +149,9 @@ void OONApp_sfml::process(const SAL::event::Input& event) //override
 					break;
 //				case 'f': world().props.friction -= 0.01f; break;
 //				case 'F': world().props.friction += 0.01f; break;
-				case 'r': time.reversed = !time.reversed; break;
-				case 't': time.scale *= 2.0f; break;
-				case 'T': time.scale /= 2.0f; break;
+				case 'r': time.control.reversed = !time.control.reversed; break;
+				case 't': time.control.scale *= 2.0f; break;
+				case 'T': time.control.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
 				case 'm': toggle_muting();
 					myco::set<myco::CheckBox>("Audio: ", backend.audio.enabled);

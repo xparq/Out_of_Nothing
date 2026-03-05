@@ -1028,7 +1028,7 @@ void OONApp::updates_for_next_frame()
 	//
 	// - Disabled when paused, unless explicitly single-stepping...
 	//
-	if (!paused() || paused() && timestepping) {
+	if (!paused() || paused() && time.control.timestepping) {
 
 		//----------------------------
 		//!!? Get some fresh immediate (continuous) input control state updates,
@@ -1051,8 +1051,8 @@ void OONApp::updates_for_next_frame()
 				// Just an estimate; the last frame time can't guarantee anything about the next one, obviously.
 		}
 
-		Δt *= time.scale;
-		if (time.reversed || timestepping < 0) Δt = -Δt;
+		Δt *= time.control.scale;
+		if (time.control.reversed || time.control.timestepping < 0) Δt = -Δt;
 
 		time.model_Δt_stats.update(Δt);
 
@@ -1088,7 +1088,7 @@ void OONApp::updates_for_next_frame()
 		//!! -- so, this reminder has been added for that case...
 
 		// One less time-step to make next time (if any):
-		if (timestepping) {
+		if (time.control.timestepping) {
 			timestep_proceed();
 		}
 	}
