@@ -11,8 +11,10 @@
 //!! Should be internal to the Lorem-Ipsum Drive thruster, but for now...:
 #include "app/Model/Emitter/SkyPrint.hpp"
 
+#include "Szim/Core/Time.hpp"
 #include "Szim/Core/HCI.hpp"
- 
+#include "Szim/Engine.hpp" // FPS()
+
 #include "sz/math/sign.hh"
 
 #include <thread> // this_thread
@@ -38,9 +40,9 @@ using namespace std;
 
 
 //----------------------------------------------------------------------------
-OONApp::OONApp(const Szim::RuntimeContext& rt, OONMainDisplay& main_view)
-	: App(rt)
-	, appcfg(SimApp::runtime.syscfg, args)
+OONApp::OONApp(Szim::RuntimeContext& runtime, OONMainDisplay& main_view)
+	: App(runtime)
+	, appcfg(rt.syscfg, args)
 	, main_view_(main_view)
 	, controls(this)
 {
@@ -114,7 +116,9 @@ LOGD << "Display.reset right after loading the avatar images:";
 	// Create a default big-bang, via an artificially prolonged initial deltaT...
 	//!!?? How come loaded sessions are not affected?!?! Or they are, with dynamic timing?!
 		// Avoid the accidental Big Bang (#500):
-		backend.clock.restart(); //! The clock auto-starts at construction(!), causing a huge initial delay, so reset it!
+		//!! OLD:	backend.clock.restart(); //! The clock auto-starts at construction(!), causing a huge initial delay, so reset it!
+		//!! Use the model time instead!... Which is... not separated yet...
+		rt.systime.update(time); //!!??
 
 		// ...but do a controlled Big Bang instead (#504):
 		float default_BigBang_InflationInterval_s = 0.3f;
@@ -196,17 +200,17 @@ LOGD << "Display.reset after UI setup:";
 	//!
 	// Note: muting by --snd=off has been taken care of by the engine already,
 	// so we can just go ahead and play things nonchalantly. ;)
-	snd_clack       = backend.audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
-	snd_plop1       = backend.audio.add_sound(string(cfg.asset_dir + "sound/plop1.wav").c_str());
-	snd_plop2       = backend.audio.add_sound(string(cfg.asset_dir + "sound/plop_low.flac").c_str());
-	snd_plop3       = backend.audio.add_sound(string(cfg.asset_dir + "sound/reverbed_plop.ogg").c_str());
-	snd_pwhiz       = backend.audio.add_sound(string(cfg.asset_dir + "sound/pwhiz.wav").c_str());
-	snd_jingle_loop = backend.audio.add_sound(string(cfg.asset_dir + "sound/jingle_discharge.ogg").c_str());
-	snd_shield	= backend.audio.add_sound(string(cfg.asset_dir + "sound/shield1.flac").c_str());
+	snd_clack       = audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
+	snd_plop1       = audio.add_sound(string(cfg.asset_dir + "sound/plop1.wav").c_str());
+	snd_plop2       = audio.add_sound(string(cfg.asset_dir + "sound/plop_low.flac").c_str());
+	snd_plop3       = audio.add_sound(string(cfg.asset_dir + "sound/reverbed_plop.ogg").c_str());
+	snd_pwhiz       = audio.add_sound(string(cfg.asset_dir + "sound/pwhiz.wav").c_str());
+	snd_jingle_loop = audio.add_sound(string(cfg.asset_dir + "sound/jingle_discharge.ogg").c_str());
+	snd_shield	= audio.add_sound(string(cfg.asset_dir + "sound/shield1.flac").c_str());
 
-	backend.audio.play_music(cfg.background_music.c_str());
-	//backend.audio.play_music(sz::fs::prefix_by_intent(asset_dir, "music/extra sonic layer.ogg"));
-	//backend.audio.play_sound(snd_plop_low, true); //!! just checking
+	audio.play_music(cfg.background_music.c_str());
+	//audio.play_music(sz::fs::prefix_by_intent(asset_dir, "music/extra sonic layer.ogg"));
+	//audio.play_sound(snd_plop_low, true); //!! just checking
 
 	// Apply custom config adjustments/fixup...
 	world().props.gravity_mode = appcfg.gravity_mode;
@@ -360,12 +364,12 @@ bool OONApp::react_to_control_inputs()
 		chemtrail_burst(player_entity_ndx(), appcfg.chemtrail_burst_particles);
 		if (!chemtrail_releasing) { // Just starting...
 			chemtrail_releasing = true;
-			chemtrail_fx_channel = backend.audio.play_sound(snd_jingle_loop, {.loop=true});
+			chemtrail_fx_channel = audio.play_sound(snd_jingle_loop, {.loop=true});
 				//! Can be INVALID_SOUND_CHANNEL, if not playing actually (disabled, muted etc.)
 		}
 	} else if (chemtrail_releasing) { // Stop it!
 		chemtrail_releasing = false;
-		backend.audio.kill_sound(chemtrail_fx_channel); // Tolerates INVALID_SOUND_CHANNEL.
+		audio.kill_sound(chemtrail_fx_channel); // Tolerates INVALID_SOUND_CHANNEL.
 		chemtrail_fx_channel = Audio::INVALID_SOUND_CHANNEL;
 	}
 
@@ -378,8 +382,8 @@ bool OONApp::react_to_control_inputs()
 			action = true;
 			if (shield_active == 0) { // Just starting?
 				shield_active = 1;
-				shield_depletion_timestamp = time.real_session_time + appcfg.shield_depletion_time;
-				shield_fx_channel = backend.audio.play_sound(snd_shield, {.priority=1});
+				shield_depletion_timestamp = session_time() + appcfg.shield_depletion_time;
+				shield_fx_channel = audio.play_sound(snd_shield, {.priority=1});
 					//! Can be INVALID_SOUND_CHANNEL, if not playing actually (disabled, muted etc.)
 			}
 			// Feed the shield:
@@ -388,20 +392,20 @@ bool OONApp::react_to_control_inputs()
 
 		if (shield_active > 0) {
 			// Depleted?
-			if (time.real_session_time > shield_depletion_timestamp) {
+			if (session_time() > shield_depletion_timestamp) {
 
-				shield_active = -int(appcfg.shield_recharge_time / avg_frame_delay);
+				shield_active = -int(appcfg.shield_recharge_time / rt.systime.avg_frame_delay);
 LOGI << "- Shield depleted! Recharging for " << -shield_active << " frames...";
 
 				//!! Not killing the sound, as its length is supposed to be the same
 				//!! as the shield depletion time, and an accidental miscalibration
 				//!! error could at least be noticed this way! :)
-				//!!backend.audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
+				//!!audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
 			}
 			// Stopped firing?
 			else if (!controls.Shield) {
 				shield_active = 0;
-				backend.audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
+				audio.kill_sound(shield_fx_channel); // Tolerates INVALID_SOUND_CHANNEL
 			}
 		}
 	}
@@ -602,7 +606,7 @@ bool OONApp::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 	AUTO_CONST CFG_PAN_EASEOUT_STEP = 1; // +/- pixel
 
 	using NumT = decltype(_pan_step_x);
-	auto fps_factor = (NumT)(avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
+	auto fps_factor = (NumT)(rt.systime.avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
 		//! Note: this weird cast is required to avoid an "operator ambiguous" error!
 
 	//auto CFG_PAN_INITIAL_STEP_fps = CFG_PAN_INITIAL_STEP * fps_factor;
@@ -648,7 +652,7 @@ bool OONApp::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewhee
 	                                                  * CFG_ZOOM_BUTTONS_CHANGE_RATE;                     // ...normalized to chg. rate
 
 	using NumT = decltype(_pan_step_x);
-	auto fps_factor = (NumT)(avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
+	auto fps_factor = (NumT)(rt.systime.avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
 		//! Note: this weird cast is required to avoid an "operator ambiguous" error (on avg_frame_delay)!
 
 	auto CFG_ZOOM_BUTTONS_CHANGE_RATE_fps = CFG_ZOOM_BUTTONS_CHANGE_RATE * fps_factor;
@@ -681,9 +685,42 @@ bool OONApp::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewhee
 
 //----------------------------------------------------------------------------
 //!!Move chores like this to the Szim API!
-void OONApp::toggle_muting() { backend.audio.toggle_audio(); }
-void OONApp::toggle_music() { backend.audio.toggle_music(); }
-void OONApp::toggle_sound_fx() { backend.audio.toggle_sounds(); }
+void OONApp::toggle_muting() { audio.toggle_audio(); }
+void OONApp::toggle_music() { audio.toggle_music(); }
+void OONApp::toggle_sound_fx() { audio.toggle_sounds(); }
+
+//----------------------------------------------------------------------------
+bool OONApp::toggle_fixed_model_dt()
+//!!??
+//!!?? Should this really only flip the config, or should it
+//!!?? change the control mode directly, now that it can?!...
+//!!??
+//!! Also: This can't just keep being a "toggle", with more than 2 modes later!
+{
+	//!!! THREADING !!!
+
+	cfg.fixed_model_dt_enabled = !cfg.fixed_model_dt_enabled;
+
+//!!OLD
+	if (cfg.fixed_model_dt_enabled) {
+		//!! This only to support the debug HUD
+		//!!time.last_model_Δt = cfg.fixed_model_dt;
+///*!! NEW:
+//!!*/
+	} else {
+		Warning("toggle_fixed_dt switched to LastFrame, ignoring any other non-fixed modes!");
+	}
+
+	// Set the actual time mode too:
+	time.control.Δt_mode = cfg.fixed_model_dt_enabled ? Szim::Time::Control::Fixed : Szim::Time::Control::LastFrame;
+	//!! Do this once in init() instead, PLUS whenever the fixed dt can be changed!...
+	time.control.fixed_Δt = cfg.fixed_model_dt;
+
+	return cfg.fixed_model_dt_enabled;
+}
+
+
+
 
 
 //----------------------------------------------------------------------------
@@ -792,7 +829,7 @@ void OONApp::remove_random_bodies(size_t n/* = -1*/)
 {
 	if (!n) return;
 
-	backend.audio.play_sound(snd_pwhiz);
+	audio.play_sound(snd_pwhiz);
 
 	if (n == (unsigned)-1) n = entity_count();
 	while (n--) remove_random_body();
@@ -810,7 +847,7 @@ if (parent_id != player_entity_ndx()) { LOGD << "Non-player object #"<<parent_id
 
 	const auto& parent = const_entity(parent_id); // #41: Support inheritance
 
-	backend.audio.play_sound(n == 1 ? snd_plop1 : n <= 10 ? snd_plop2 : snd_plop3 );
+	audio.play_sound(n == 1 ? snd_plop1 : n <= 10 ? snd_plop2 : snd_plop3 );
 
 	for (unsigned i = 0; i < n; ++i) {
 		auto ndx = add_random_body_near(player_entity_ndx());
@@ -993,12 +1030,15 @@ void OONApp::chemtrail_burst(EntityID emitter_id/* = 0*/, unsigned n/* = ...*/)
 //----------------------------------------------------------------------------
 void OONApp::pause_hook(bool)
 {
-	paused_banner.show(paused());
+//LOG << "Initial pause banner show state: " << paused_banner->shown();
+	paused_banner->show(paused());
 
 	//!! As a quick hack, time must restart from 0 when unpausing...
 	//!! (The other restart() on pausing is redundant; just keeping it simple...)
-	LOGD << "Main clock restarted on Pause On/Off (in the pause-hook)!\n";
-	backend.clock.restart();
+//!! OLD:	backend.clock.restart();
+//!!	LOGD << "Main clock restarted on Pause On/Off (in the pause-hook)!\n";
+//!!?? NEW:
+//!!??	rt.systime.update(time); //!!??
 }
 
 
@@ -1040,6 +1080,7 @@ void OONApp::updates_for_next_frame()
 		//----------------------------
 		// Determine the size of the next model iteration time slice...
 		//
+/*!! OLD
 		Seconds Δt;
 		if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
 			//!! Fixed Δt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
@@ -1052,9 +1093,12 @@ void OONApp::updates_for_next_frame()
 		}
 
 		Δt *= time.control.scale;
+
 		if (time.control.reversed || time.control.timestepping < 0) Δt = -Δt;
 
 		time.model_Δt_stats.update(Δt);
+!!*/
+		Seconds Δt = rt.systime.update(time);
 
 		//----------------------------
 		// Update...
@@ -1139,7 +1183,7 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 
 	// Update the FPS indicator bar:
 	//!! Do this via an OON_UI wrapper, not accessing ProgressBar directly!
-	myco::set<myco::ProgressBar>("FPS", float(1 / avg_frame_delay)); //! If avg_frame_delay is double, truncating to ProgBar's float -> MSVC warning!
+	myco::set<myco::ProgressBar>("FPS", float(rt.engine.FPS())); //! If FPS() is double -> ProgBar's float -> MSVC warning...
 
 
 	view_control(); // Manual view adjustments

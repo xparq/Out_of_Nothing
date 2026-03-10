@@ -13,6 +13,10 @@
 #include "model/World.hpp"
 
 #include "Szim/App.hpp"
+//!! Make this more convenient!... (Used to unconditionally come from App/Base.hpp,
+//!! but I've removed it for tighter control over header coupling in general.):
+//#include "Szim/Core/Devices.hpp"
+	#include "Szim/Core/Device/Audio.hpp" // Szim::Audio::INVALID_SOUND_CHANNEL
 
 // UI Customizations... (Not including [...FUTURE ME: Great. ADD hit in the middle of a sentence again.])
 //namespace Szim::UI { class HUDStream; } // ui_gebi() is (still) defined here, in OON.hpp!
@@ -123,6 +127,9 @@ public:
 	void set_interact_n2n(bool state = true)  { world().props.interact_n2n = state; }
 	void toggle_interact_n2n()  { set_interact_n2n(!const_world().props.interact_n2n); }
 
+	//!! Generalize to a multival switch:
+	bool toggle_fixed_model_dt(); // Returns the new state
+
 	void toggle_muting();
 	void toggle_music();
 	void toggle_sound_fx();
@@ -173,7 +180,7 @@ protected:
 // C++ mechanics...
 //----------------------------------------------------------------------------
 public:
-	OONApp(const Szim::RuntimeContext& runtime, OONMainDisplay& main_view);
+	OONApp(Szim::RuntimeContext& runtime, OONMainDisplay& main_view);
 	OONApp(const OONApp&) = delete;
 
 //----------------------------------------------------------------------------
@@ -218,7 +225,7 @@ protected:
 
 	OONController controls;
 
-	PauseBanner paused_banner{"PAUSED", 80};
+	PauseBanner* paused_banner = nullptr; // Storing it for toggling later.
 
 	bool  chemtrail_releasing = false;
 	short chemtrail_fx_channel = Szim::Audio::INVALID_SOUND_CHANNEL;

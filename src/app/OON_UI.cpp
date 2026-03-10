@@ -14,6 +14,7 @@
 #include "OON.hpp"
 
 #include "Szim/Core/HCI.hpp"
+#include "Szim/Engine.hpp" // uptime(), FPS()
 
 #include "Szim/diag/Error.hpp"
 //#include "Szim/diag/Log.hpp"
@@ -180,11 +181,11 @@ void OONApp::ui_setup()
 	auto left_vbox = gui_main_hbox->add(new VBox);
 		auto	volrect = left_vbox->add(new Form, "VolForm");
 			volrect->add("Volume", new Slider({.length=70/*, .orientation=Vertical*/, .preset=75})) // %
-			->setCallback([&app](auto* self){ app.backend.audio.volume(self->get()); });
+			->setCallback([&app](auto* self){ app.audio.volume(self->get()); });
 		auto	audio_onoff = left_vbox->add(new Form, "AudioOnOffForm");
-			audio_onoff->add("Audio: ",    new CheckBox([&app]{ app.backend.audio.toggle_audio();  }, app.backend.audio.enabled));
-			audio_onoff->add(" - Music: ", new CheckBox([&app]{ app.backend.audio.toggle_music();  }, app.backend.audio.music_enabled));
-			audio_onoff->add(" - FX: ",    new CheckBox([&app]{ app.backend.audio.toggle_sounds(); }, app.backend.audio.fx_enabled));
+			audio_onoff->add("Audio: ",    new CheckBox([&app]{ app.audio.toggle_audio();  }, app.audio.enabled));
+			audio_onoff->add(" - Music: ", new CheckBox([&app]{ app.audio.toggle_music();  }, app.audio.music_enabled));
+			audio_onoff->add(" - FX: ",    new CheckBox([&app]{ app.audio.toggle_sounds(); }, app.audio.fx_enabled));
 
 	gui_main_hbox->add(new Label(" ")); // Just a vert. spacer
 
@@ -259,8 +260,8 @@ void OONApp::ui_setup()
 
 	ui_setup_HUDs();
 
-	//!! No default ctor yet, so it's actually set in OON.hpp, not here:
-	//!!paused_banner.set("PAUSED", 80);
+	paused_banner = gui.overlay.add(Banner("PAUSED", 80));
+	assert(paused_banner); if (!paused_banner) { Bug("Failed to create/attach the Paused-banner! :-o "); }
 }
 
 void OONApp::ui_setup_HUDs()
@@ -337,9 +338,9 @@ void OONApp::ui_setup_HUDs()
 void OONApp::ui_setup_HUD_World(/*!!, mode/config...!!*/)
 {
 	ui_gebi(WorldData)
-		<< "# of objs.: " << [this](){ return to_string(entity_count()); }
+		<< "# of objs.: " << [this]{ return to_string(entity_count()); }
 		<< "\nEntity interactions: " << &const_world().props.interact_n2n
-		<< "\nGravity mode: " << [this](){ return to_string((unsigned)const_world().props.gravity_mode); }
+		<< "\nGravity mode: " << [this]{ return to_string((unsigned)const_world().props.gravity_mode); }
 		<< "\n  - strength: " << &const_world().props.gravity
 		<< "\n  - repulsion: " << &const_world().props.repulsion_stiffness
 		<< "\nDrag: " << ftos(&this->const_world().props.friction)
@@ -352,26 +353,27 @@ void OONApp::ui_setup_HUD_Time(/*!!, mode/config...!!*/)
 {
 	// Timing
 	ui_gebi(TimingStats)
-		<< "FPS: " << [this](){ return to_string(1 / avg_frame_delay); }
-		           << [this](){ return fps_throttling() ? " (fixed)" : ""; }
-		<< "\nlast frame Δt: " << [this](){ return to_string(time.last_frame_delay * 1000.0f) + " ms"; }
-		<< "\nmodel Δt: " << [this](){ return to_string(time.last_model_Δt * 1000.0f) + " ms"; }
-		<<            " " << [this](){ return cfg.fixed_model_dt_enabled ? "(fixed)" : ""; }
-		<< "\ncycle: " << [this](){ return to_string(iterations); }
-		<< "\nReal elapsed time: " << &time.real_session_time
+		<< "FPS: " << [this]{ return to_string(rt.engine.FPS()); }
+		           << [this]{ return fps_throttling() ? " (fixed)" : ""; }
+		<< "\nlast frame Δt: " << [this]{ return to_string(rt.systime.last_frame_delay * 1000.0f) + " ms"; }
+		<< "\nmodel Δt: " << [this]{ return to_string((cfg.fixed_model_dt_enabled ? time.control.fixed_Δt : time.last_Δt()) * 1000.0f) + " ms"; }
+		<<            [this]{ return  cfg.fixed_model_dt_enabled ? " (fixed)" : ""; }
+		<< "\ncycle: " << [this]{ return to_string(iterations); }
+		<< "\nApp session time: " << [this]{ return session_time(); }
+		<< "\nEngine uptime: " << [this]{ return rt.engine.uptime(); }
 	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
 	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
 		<< "\nTime reversed: " << &time.control.reversed
 		<< "\nModel timing stats (s):"
-//		<< "\n    updates: " << &time.model_Δt_stats.samples
-		<< "\n    total t: " << &time.model_Δt_stats.total
+//		<< "\n    updates: " << &time.t.samples
+		<< "\n    total t: " << &time.t.total
 		<< "\n  Δt, as scaled x" << &time.control.scale << ":"
-		<< "\n    last: " << &time.model_Δt_stats.last
-		<< "\n    |min|: " << &time.model_Δt_stats.umin
-		<< "\n    |max|: " << &time.model_Δt_stats.umax
-//		<< "\n    min: " << &time.model_Δt_stats.min
-//		<< "\n    max: " << &time.model_Δt_stats.max
-		<< "\n    avg.: " << [this]{ return to_string(time.model_Δt_stats.average());}
+		<< "\n    last: "  << &time.t.last_delta
+		<< "\n    |min|: " << &time.t.umin
+		<< "\n    |max|: " << &time.t.umax
+//		<< "\n    min: " << &time.t.min
+//		<< "\n    max: " << &time.t.max
+		<< "\n    avg.: " << [this]{ return to_string(time.t.average());}
 	;
 //cerr << timing_hud;
 }

@@ -101,6 +101,7 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	//!!?? [Future me:] WTF did I even mean by this above?!?!
 	if (loaded_version > runtime_version) {
 		Error("Unsupported snapshot version:" + new_props["MODEL_VERSION"]);
+		//!! Allow overriding though...
 		return false;
 	}
 	if (loaded_version != runtime_version) {
@@ -119,7 +120,8 @@ bool World::save(std::ostream& out, [[maybe_unused]] const char* version/* = nul
 	//!!Phew, done checking... :))
 
 	if (!result) {
-		return false; //!! VERIFY NOT IMPLEMENTED YET!
+		//!! `VERIFY` MODE NOT IMPLEMENTED YET!
+		return false;
 	}
 
 	World& w_new = *result;

@@ -45,7 +45,7 @@ using namespace std;
 namespace OON {
 
 //----------------------------------------------------------------------------
-OONApp_sfml::OONApp_sfml(const RuntimeContext& runtime)
+OONApp_sfml::OONApp_sfml(RuntimeContext& runtime)
 	: OONApp(runtime, oon_main_view_) //!! The OONApp ctor MUST only set a ref to the view, not use it!!!
 	, oon_main_view_(*this) //!! Initialized later than the app itself! :-/
 {
@@ -154,13 +154,13 @@ void OONApp_sfml::process(const SAL::event::Input& event) //override
 				case 'T': time.control.scale /= 2.0f; break;
 				case 'h': toggle_pause(); break;
 				case 'm': toggle_muting();
-					myco::set<myco::CheckBox>("Audio: ", backend.audio.enabled);
+					myco::set<myco::CheckBox>("Audio: ", audio.enabled);
 					break;
 				case 'M': toggle_music();
-					myco::set<myco::CheckBox>(" - Music: ", backend.audio.music_enabled);
+					myco::set<myco::CheckBox>(" - Music: ", audio.music_enabled);
 					break;
 				case 'N': toggle_sound_fx();
-					myco::set<myco::CheckBox>(" - FX: ", backend.audio.fx_enabled);
+					myco::set<myco::CheckBox>(" - FX: ", audio.fx_enabled);
 					break;
 //!! #543			case 'P': fps_throttling(!fps_throttling()); break;
 				case 'x': toggle_fixed_model_dt();

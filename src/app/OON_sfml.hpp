@@ -40,7 +40,7 @@ protected:
 // C++ mechanics...
 //------------------------------------------------------------------------
 public:
-	OONApp_sfml(const Szim::RuntimeContext& runtime);
+	OONApp_sfml(Szim::RuntimeContext& runtime);
 
 //------------------------------------------------------------------------
 // Data...

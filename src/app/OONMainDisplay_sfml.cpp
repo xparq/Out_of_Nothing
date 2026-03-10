@@ -5,7 +5,8 @@
 //!! This "backend tunneling" is so sad this way"... See notes in OON_sfml.cpp!
 #include "Szim/Core/Device/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
-#define SFML_WINDOW(app) (((Szim::SFML_Backend&)((app).backend)).SFML_window())
+#define SFML_WINDOW(app) ( ((Szim::HCI::SFML_HCI&)((app).rt.hci)).SFML_window() )
+
 
 #include "Szim/UI/Banner.hpp" //!! See also #including other specific UI parts in OON_UI-impl.hpp!
 

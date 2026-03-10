@@ -14,6 +14,11 @@
 
 #include <Szim/Math.hpp> // sqrt, pow, abs, distance2, mag2, ...
 
+//!! Make this more convenient!... (Used to unconditionally come from App/Base.hpp,
+//!! but I've removed it for tighter control over header coupling in general.):
+//#include "Szim/Core/Devices.hpp"
+	#include "Szim/Core/Device/Audio.hpp" // play_sound; accessed via app.rt.audio, or aliased to app.audio
+
 #include <cassert>
 //!!NOT YET! Too cumbersome for the trivial alternative.
 //!!#include <optional>
@@ -530,7 +535,7 @@ bool World::touch_hook(Szim::Model::Core::World* __w, Szim::Model::Core::Entity*
 	auto obj2 = static_cast<OON::Model::Entity*>(__obj2);
 
 	if (obj1->is_player() || obj2->is_player()) {
-		app.backend.audio.play_sound(static_cast<OONApp&>(app).snd_clack);
+		app.audio.play_sound(static_cast<OONApp&>(app).snd_clack);
 	}
 
 	obj1->T += 100;
