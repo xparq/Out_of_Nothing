@@ -353,20 +353,20 @@ void OONApp::ui_setup_HUD_Time(/*!!, mode/config...!!*/)
 {
 	// Timing
 	ui_gebi(TimingStats)
-		<< "FPS: " << [this]{ return to_string(rt.engine.FPS()); }
+		<< "FPS: " << [this]{ return to_string(sys.FPS()); }
 		           << [this]{ return fps_throttling() ? " (fixed)" : ""; }
-		<< "\nlast frame Δt: " << [this]{ return to_string(rt.systime.last_frame_delay * 1000.0f) + " ms"; }
+		<< "\nlast frame Δt: " << [this]{ return to_string(sys.last_frame_interval() * 1000.0f) + " ms"; }
 		<< "\nmodel Δt: " << [this]{ return to_string((cfg.fixed_model_dt_enabled ? time.control.fixed_Δt : time.last_Δt()) * 1000.0f) + " ms"; }
 		<<            [this]{ return  cfg.fixed_model_dt_enabled ? " (fixed)" : ""; }
 		<< "\ncycle: " << [this]{ return to_string(iterations); }
 		<< "\nApp session time: " << [this]{ return session_time(); }
-		<< "\nEngine uptime: " << [this]{ return rt.engine.uptime(); }
+		<< "\nEngine uptime: " << [this]{ return sys.uptime(); }
 	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
 	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
 		<< "\nTime reversed: " << &time.control.reversed
 		<< "\nModel timing stats (s):"
 //		<< "\n    updates: " << &time.t.samples
-		<< "\n    total t: " << &time.t.total
+		<< "\n    total t: " << &time.t.total // Canonically time.now(), but we can have a direct ptr here too!
 		<< "\n  Δt, as scaled x" << &time.control.scale << ":"
 		<< "\n    last: "  << &time.t.last_delta
 		<< "\n    |min|: " << &time.t.umin

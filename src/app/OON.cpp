@@ -394,7 +394,7 @@ bool OONApp::react_to_control_inputs()
 			// Depleted?
 			if (session_time() > shield_depletion_timestamp) {
 
-				shield_active = -int(appcfg.shield_recharge_time / rt.systime.avg_frame_delay);
+				shield_active = -int(appcfg.shield_recharge_time / sys.avg_frame_interval());
 LOGI << "- Shield depleted! Recharging for " << -shield_active << " frames...";
 
 				//!! Not killing the sound, as its length is supposed to be the same
@@ -606,7 +606,7 @@ bool OONApp::pan_control([[maybe_unused]] ViewControlMode mode) //!!override
 	AUTO_CONST CFG_PAN_EASEOUT_STEP = 1; // +/- pixel
 
 	using NumT = decltype(_pan_step_x);
-	auto fps_factor = (NumT)(rt.systime.avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
+	auto fps_factor = (NumT)(sys.avg_frame_interval() * 30); // Adjust relative to the 30 FPS calibration reference
 		//! Note: this weird cast is required to avoid an "operator ambiguous" error!
 
 	//auto CFG_PAN_INITIAL_STEP_fps = CFG_PAN_INITIAL_STEP * fps_factor;
@@ -652,8 +652,8 @@ bool OONApp::zoom_control([[maybe_unused]] ViewControlMode mode, float mousewhee
 	                                                  * CFG_ZOOM_BUTTONS_CHANGE_RATE;                     // ...normalized to chg. rate
 
 	using NumT = decltype(_pan_step_x);
-	auto fps_factor = (NumT)(rt.systime.avg_frame_delay * 30); // Adjust relative to the 30 FPS calibration reference
-		//! Note: this weird cast is required to avoid an "operator ambiguous" error (on avg_frame_delay)!
+	auto fps_factor = (NumT)(sys.avg_frame_interval() * 30); // Adjust relative to the 30 FPS calibration reference
+		//! Note: this weird cast is/was required to avoid an "operator ambiguous" error (on avg_frame_interval)!
 
 	auto CFG_ZOOM_BUTTONS_CHANGE_RATE_fps = CFG_ZOOM_BUTTONS_CHANGE_RATE * fps_factor;
 	auto CFG_ZOOM_EASEOUT_STEP_fps = CFG_ZOOM_EASEOUT_STEP * fps_factor;
@@ -696,23 +696,28 @@ bool OONApp::toggle_fixed_model_dt()
 //!!?? change the control mode directly, now that it can?!...
 //!!??
 //!! Also: This can't just keep being a "toggle", with more than 2 modes later!
+/*
+  Δt = cfg.fixed_model_dt: Artificial fixed Δt for reproducible results; not frame-synced!
+  	A synced AND fixed Δt would require a real-time engine (balancing/smoothening, pinning etc...) -> #215
+  Δt = time.last_frame_delay: Just an estimate; the last frame time can't
+  	guarantee anything about the next one, obviously.
+*/
 {
 	//!!! THREADING !!!
 
+	// Reconfig:
 	cfg.fixed_model_dt_enabled = !cfg.fixed_model_dt_enabled;
 
-//!!OLD
+	/*!! OLD, only to support the debug HUD updates:
 	if (cfg.fixed_model_dt_enabled) {
-		//!! This only to support the debug HUD
-		//!!time.last_model_Δt = cfg.fixed_model_dt;
-///*!! NEW:
-//!!*/
-	} else {
-		Warning("toggle_fixed_dt switched to LastFrame, ignoring any other non-fixed modes!");
+		time.last_model_Δt = cfg.fixed_model_dt;
 	}
+	!!*/
 
-	// Set the actual time mode too:
-	time.control.Δt_mode = cfg.fixed_model_dt_enabled ? Szim::Time::Control::Fixed : Szim::Time::Control::LastFrame;
+	// Apply the new config:
+	time.control.update_mode = cfg.fixed_model_dt_enabled
+		? Szim::Time::Control::Fixed : Szim::Time::Control::LastFrame;
+
 	//!! Do this once in init() instead, PLUS whenever the fixed dt can be changed!...
 	time.control.fixed_Δt = cfg.fixed_model_dt;
 
@@ -1054,15 +1059,7 @@ void OONApp::updates_for_next_frame()
 	//!! time frames -- but I'm not sure if that's actually important!...
 	//!! (Note: they're still in the same "rendering frame" tho, that's
 	//!! why I'm not sure if this matters at all.)
-	//!!
-	//!! Also, the frame times should still be tracked (and, as a side-effect, the FPS gauge updated)
-	//!! even when paused (e.g. to support [dynamically accurate?] time-stepping etc.)!
-/*!!	time.last_frame_delay = time.Δt_since_last_query([](*this){
-		auto capture = clock.getElapsedTime().asSeconds();
-		clock.restart(); //! Must also be duly restarted on unpausing!
-		return capture;
-	});
-!!*/
+
 	//----------------------------
 	// Model updates...
 	//
@@ -1080,25 +1077,7 @@ void OONApp::updates_for_next_frame()
 		//----------------------------
 		// Determine the size of the next model iteration time slice...
 		//
-/*!! OLD
-		Seconds Δt;
-		if (cfg.fixed_model_dt_enabled) { // "Artificial" fixed Δt for reproducible results, but not frame-synced!
-			//!! Fixed Δt would require syncing the upates to a real-time clock (balancing/smoothening, pinning etc...) -> #215
-			Δt = cfg.fixed_model_dt;
-			//!!Don't check: won't be true if changing cfg.fixed_model_dt_enabled at run-time!
-			//!!assert(Δt == time.last_model_Δt); // Should be initialized by the SimApp init!
-		} else {
-			Δt = time.last_model_Δt = time.last_frame_delay;
-				// Just an estimate; the last frame time can't guarantee anything about the next one, obviously.
-		}
-
-		Δt *= time.control.scale;
-
-		if (time.control.reversed || time.control.timestepping < 0) Δt = -Δt;
-
-		time.model_Δt_stats.update(Δt);
-!!*/
-		Seconds Δt = rt.systime.update(time);
+		Seconds Δt = rt.systime.update(time); // The frame interval by default...
 
 		//----------------------------
 		// Update...
@@ -1125,16 +1104,11 @@ void OONApp::updates_for_next_frame()
 			}
 		}
 
-		//!! Time-stepping should take precedence and prevent immediate exit
+		//!! Time-stepping should take precedence, and prevent immediate exit
 		//!! in the "plain finished" case above! Since request_exit() doesn't
 		//!! abort/return on its own, it's *implicitly* doing the right thing,
 		//!! but that might change to actually aborting later (e.g. via an excpt.)
 		//!! -- so, this reminder has been added for that case...
-
-		// One less time-step to make next time (if any):
-		if (time.control.timestepping) {
-			timestep_proceed();
-		}
 	}
 
 	//----------------------------
@@ -1183,7 +1157,7 @@ static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0
 
 	// Update the FPS indicator bar:
 	//!! Do this via an OON_UI wrapper, not accessing ProgressBar directly!
-	myco::set<myco::ProgressBar>("FPS", float(rt.engine.FPS())); //! If FPS() is double -> ProgBar's float -> MSVC warning...
+	myco::set<myco::ProgressBar>("FPS", float(sys.FPS())); //! If FPS() is double -> ProgBar's float -> MSVC warning...
 
 
 	view_control(); // Manual view adjustments
