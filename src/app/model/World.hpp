@@ -71,8 +71,9 @@ static constexpr char const* VERSION = "0.1.5";
 	//--------------------------------------------------------------------
 	struct WorldConfig
 	{
-		using        PropsT  = Properties;
-		using        EntityT = Entity;
+		using CoordT  = NumType;
+		using PropsT  = Properties;
+		using EntityT = Entity;
 	};
 	//--------------------------------------------------------------------
 
