@@ -1033,7 +1033,7 @@ void OONApp::chemtrail_burst(EntityID emitter_id/* = 0*/, unsigned n/* = ...*/)
 
 
 //----------------------------------------------------------------------------
-void OONApp::pause_hook(bool)
+void OONApp::on_pause_toggled(bool)
 {
 //LOG << "Initial pause banner show state: " << paused_banner->shown();
 	paused_banner->show(paused());

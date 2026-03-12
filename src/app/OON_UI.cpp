@@ -364,9 +364,9 @@ void OONApp::ui_setup_HUD_Time(/*!!, mode/config...!!*/)
 	//!!??WTF does this not compile? (It makes no sense as the gauge won't update, but regardless!):
 	//!!??  << vformat("frame dt: {} ms", time.last_frame_delay)
 		<< "\nTime reversed: " << &time.control.reversed
-		<< "\nModel timing stats (s):"
-//		<< "\n    updates: " << &time.t.samples
-		<< "\n    total t: " << &time.t.total // Canonically time.now(), but we can have a direct ptr here too!
+		<< "\nModel time stats (s):"
+		<< "\n  absolute t: " << &time.t.total // Canonically time.now(), but we can have a direct ptr here too!
+//		<< "\n  t increments: " << &time.t.samples
 		<< "\n  Δt, as scaled x" << &time.control.scale << ":"
 		<< "\n    last: "  << &time.t.last_delta
 		<< "\n    |min|: " << &time.t.umin

@@ -172,7 +172,7 @@ protected:
 protected:
 	// Callback impl...
 	void init_world_hook() override;
-	void pause_hook(bool newstate) override;
+	void on_pause_toggled(bool newstate) override;
 	void on_window_resize(unsigned width, unsigned height) override;
 	void on_snapshot_loaded() override; // Needs to reset the rendering cache!
 
