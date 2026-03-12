@@ -1,56 +1,42 @@
-#ifndef _WILIRTHG029828Y9VCY37829045YGCM4EDF_
-#define _WILIRTHG029828Y9VCY37829045YGCM4EDF_
+#ifndef WILIRTHG029828Y9VCY37829045YGCM4EDF
+#define WILIRTHG029828Y9VCY37829045YGCM4EDF
 
 #include "OON.hpp"
 #include "OONMainDisplay_sfml.hpp"
-#include "Szim/UI/HUDStream.hpp"
 #include "SAL/event/Input.hpp"
-
-#include <utility> // std::unreachable
 
 namespace OON {
 
 //============================================================================
 class OONApp_sfml : public OONApp
 //!
-//! NOTE: A CRTP impl. would break the compilation barrier between backend-specific
-//!	and "pure" code! :-/
+//! NOTE: A CRTP(-like) setup would break the compilation barrier between
+//!	backend-specific and -agnostic code! :-/
 //!
-//!	template< class AppSysImpl > // CRTP for backend-specifics
-//!	class OONApp_sfml : private _internal::FUCpp_ViewHack, public OONApp
+//!	template< class OONApp_sfml >
+//!	class OONApp ...
 //!
 {
 //--------------------------------------------------------------------
 // Overrides with SFML-specific impl...
-//--------------------------------------------------------------------
 protected:
 	//!! "DeSFMLize & move to OONApp:
-	void draw() const override; // Uses sf::Window
-	//!! Moved to O2N, finally:
-	//!!void event_loop() override; // Uses the SFML Event stuff + sf::Window
-	//!!void update_loop() override; // Uses sf::Window, sf::sleep
-
-//------------------------------------------------------------------------
-// Internals...
-//------------------------------------------------------------------------
-protected:
 	void process(const SAL::event::Input& event) override;
-
-//------------------------------------------------------------------------
-// C++ mechanics...
-//------------------------------------------------------------------------
-public:
-	OONApp_sfml(Szim::RuntimeContext& runtime);
+	void draw() const override; // Uses sf::Window
 
 //------------------------------------------------------------------------
 // Data...
-//------------------------------------------------------------------------
 protected:
 
         OONMainDisplay_sfml oon_main_view_;
+
+//------------------------------------------------------------------------
+// C++ mechanics... (Only to init oon_main_view_!)
+public:
+	OONApp_sfml(Szim::RuntimeContext& runtime);
 
 }; // class OONApp_sfml
 
 } // namespace OON
 
-#endif // _WILIRTHG029828Y9VCY37829045YGCM4EDF_
+#endif // WILIRTHG029828Y9VCY37829045YGCM4EDF

@@ -17,9 +17,6 @@
 
 #include "sz/math/sign.hh"
 
-#include <thread> // this_thread
-#include <chrono> // for the big bang delay
-
 #include <cstdlib>
 	using std::rand; // and the RAND_MAX macro!
 #include <cmath>
@@ -126,7 +123,7 @@ LOGD << "Display.reset right after loading the avatar images:";
 		float BigBang_InflationInterval_s =
 			cfg.get("sim/timing/initial_dynamic_dt", default_BigBang_InflationInterval_s);
 DBG_(BigBang_InflationInterval_s);
-		std::this_thread::sleep_for(std::chrono::duration<float>(BigBang_InflationInterval_s)); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
+		sys.sleep(BigBang_InflationInterval_s); //!! #504: Prelim. (mock/placeholder) "support" for a controlled Big Bang
 			//!! This does (should do) nothing for deterministic (fixed-dt) time drive!
 			//!! More work is needed to make the Big Bang orthogonal to the timing method!
 	//!! }

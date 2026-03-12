@@ -13,15 +13,15 @@
 //!! (most of?) the *sources* from direct backend dependencies ("write once"),
 //!! not the entire compilation process.
 //!!
-//!! So sad, still...:
+//!! So sad, still... :-(((
 #include "Szim/Core/Device/_adapter_switcher.hpp"
 #include SWITCHED(BACKEND, _Backend.hpp)
 #define SFML_WINDOW() (((Szim::SFML_Backend&)backend).SFML_window())
 #define SFML_KEY(KeyName) unsigned(sf::Keyboard::Key::KeyName) //!!XLAT
+#include <SFML/Graphics/RenderWindow.hpp>
+
 //!! :-(((
 #include "Szim/Core/Device/HCI/Keyboard/adapter/SFML/keycodes.hpp" // SFML -> SimApp keycode translation
-
-#include <SFML/Graphics/RenderWindow.hpp>
 
 #include <memory>
 	using std::make_shared;
