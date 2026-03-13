@@ -54,13 +54,7 @@ cache/
 #*.sav*
 *.autosav*
 
-extern/*
-!extern/myco/asset/
-!extern/myco/include/
-!extern/myco/lib/
-extern/myco/lib/*-d.lib
-
-!extern/sz/
+#extern/*
 
 study
 	# Can't really decide what to do about this...
