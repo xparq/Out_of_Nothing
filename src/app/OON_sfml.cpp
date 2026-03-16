@@ -5,6 +5,7 @@
 #include "OON_UI-impl.hpp"
 
 #include "Szim/Core/Device/HCI/Keyboard.hpp" //!! Make this less cumbersome!
+#include "SAL/event/Input.hpp"
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
@@ -289,55 +290,5 @@ process_ui_event: // The GUI should be given a chance *before* this entire `swit
 		break;
 	} // switch (event.type)
 } // process()
-
-//----------------------------------------------------------------------------
-void OONApp_sfml::draw() const // override
-//!!?? Is there a nice, exact criteria by which UI rendering can be distinguished from model rendering?
-{
-	// Draw the model first...
-
-/*!! Moved to the engine's default main loop for now, tentatively:
-//#ifdef DEBUG
-	if (!controls.ShowOrbits) // -> #225
-//#endif
-		SFML_WINDOW().clear();
-!!*/
-
-	oon_main_view().draw(); //!! Change it to draw(surface)!
-
-/*LOGD	<< std::boolalpha
-	<< "wallpapr? "<<gui.hasWallpaper() << ", "
-	<< "clear bg? "<<myco::Theme::clearBackground << ", "
-	<< hex << myco::Theme::bgColor.toInteger();
-*/
-
-	// Draw the UI last, as an overlay...
-
-	// Embarrassing way to turn all (but the Help) HUDs on/off, after #644:
-	ui_gebi(TimingStats).active(_ui_show_huds);
-	ui_gebi(WorldData).active(_ui_show_huds);
-	ui_gebi(ViewData).active(_ui_show_huds);
-	ui_gebi(ObjMonitor).active(_ui_show_huds);
-#ifdef DEBUG
-	ui_gebi(Debug).active(_ui_show_huds);
-#else
-	ui_gebi(Debug).active(false);
-#endif
-/*!! OLD:
-	if (ui_gebi(HelpPanel).active())  //!!?? This active()-chk is redundant: HUD::draw() does the same. TBD: who's boss?
-	    ui_gebi(HelpPanel).draw(ctx); //!!?? "Activity" means more than just drawing, so... (Or actually both should control it?)
-!!*/
-	//!! A "meh, good enough" approximation of the old "help on/off" logic (which
-	//!! remembered its `active` state regardless of the global _ui_show_huds flag):
-	ui_gebi(HelpPanel).active(_ui_show_huds && ui_gebi(HelpPanel).active());
-
-	gui.render();
-
-/*!! Moved to the engine's default main loop for now, tentatively:
-	// Commit...
-	SFML_WINDOW().display();
-!!*/
-} // draw()
-
 
 } // namespace OON
