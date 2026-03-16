@@ -27,17 +27,6 @@ namespace OON {
 
 	using EntityID = Szim::Model::EntityID; //!! Or: #include "vocab.hpp"
 
-const Avatar_sfml& OONMainDisplay_sfml::avatar(size_t ndx) const
-{
-//!!	assert(avatars_.size());
-if (!avatars_.size()) { static Avatar_sfml dummy({});
-LOGN <<"- Hey, avatar loading must happen before other View ops.!";
-return dummy; }
-
-	return *avatars_[ndx > avatars_.size() - 1
-	                     ? avatars_.size() - 1 : ndx];
-}
-
 
 //----------------------------------------------------------------------------
 OONMainDisplay_sfml::OONMainDisplay_sfml(OONApp& app)
@@ -66,12 +55,12 @@ LOGD << "------------------ DISPLAY RESET ---------------------";
 	const auto& simapp = app();
 
 	// Load avatars -- !!TESTING ONLY!!
-	Avatar_sfml::prefix_path = simapp.cfg.asset_dir.c_str(); // Can be set per instance, too.
+	OONAvatar::prefix_path = simapp.cfg.asset_dir.c_str(); // Can be set per instance, too.
 	for (const auto& a : simapp.avatars) {
-		avatars_.emplace_back(std::make_unique<Avatar_sfml>(a));
+		avatars_.emplace_back(std::make_unique<OONAvatar>(a));
 // OR:
-//		avatars_.emplace_back(std::make_unique<Avatar_sfml>(
-//			a, Avatar_sfml::PRELOAD, simapp.cfg.asset_dir.c_str()
+//		avatars_.emplace_back(std::make_unique<OONAvatar>(
+//			a, OONAvatar::PRELOAD, simapp.cfg.asset_dir.c_str()
 //		));
 	}
 

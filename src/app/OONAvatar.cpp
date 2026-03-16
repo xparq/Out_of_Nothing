@@ -1,4 +1,4 @@
-#include "OONAvatar_sfml.hpp"
+#include "OONAvatar.hpp"
 #include <sz/sys/fs.hh>
 #include <string_view>
 	using std::string_view;
@@ -8,10 +8,10 @@
 
 namespace OON {
 
-/*static*/ const char* Avatar_sfml::prefix_path = "";
+/*static*/ const char* OONAvatar::prefix_path = "";
 
 
-Avatar_sfml::Avatar_sfml(const Szim::Avatar& a, _LoadFlags load_mode, const char* prefix_path_arg)
+OONAvatar::OONAvatar(const Szim::Avatar& a, _LoadFlags load_mode, const char* prefix_path_arg)
 	: Avatar{.image_path = a.image_path, .tint_RGBA = a.tint_RGBA}
 {
 	if (load_mode == PRELOAD) {
@@ -21,13 +21,13 @@ Avatar_sfml::Avatar_sfml(const Szim::Avatar& a, _LoadFlags load_mode, const char
 	}
 }
 
-bool Avatar_sfml::load(const char* prefix_path_arg) /*!!override!!*/
+bool OONAvatar::load(const char* prefix_path_arg) /*!!override!!*/
 {
 	auto prefix = prefix_path_arg && *prefix_path_arg
 	            ? prefix_path_arg : prefix_path;
 
 	auto path = sz::fs::prefix_by_intent(prefix, image_path);
-	if (!image.loadFromFile(path)) {
+	if (!image.load(path)) {
 		Error("Failed to load image \"" + path + "\"!");
 		return false;
 	}

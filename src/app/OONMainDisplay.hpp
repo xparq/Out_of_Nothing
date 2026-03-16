@@ -11,7 +11,10 @@
 #include "Szim/Model/vocab.hpp"
 
 namespace OON::Model { struct Entity; } // #include "app/Model/Entity.hpp"
+//!!namespace OON::Model { class OONAvatar; } // Alas, not enough to fw-decl for unique_ptr (unlike shared_ptr)! :-/
+#include "OONAvatar.hpp"
 
+#include <memory> // shared_ptr, unique_ptr
 #include <cstdint>
 
 //!! Would only be needed for app() nicely not returning OONApp, just SzimApp,
@@ -62,6 +65,8 @@ public:
 	void dim()   { p_alpha = ALPHA_INACTIVE; }
 	void undim() { p_alpha = ALPHA_ACTIVE; }
 
+	const OONAvatar& avatar(size_t ndx = 0) const;
+
 	// -------------------------------------------------------------------
 	// Pure virtuals for the actual drawing impl...
 	virtual void create_cached_shape(const Model::Entity& body, Szim::Model::EntityID entity_ndx) = 0;
@@ -78,6 +83,8 @@ protected:
 
 	// Rendering params etc.:
 	uint8_t p_alpha = ALPHA_ACTIVE;
+
+	std::vector< std::unique_ptr<OONAvatar> > avatars_;
 
 }; // class OONMainDisplay
 

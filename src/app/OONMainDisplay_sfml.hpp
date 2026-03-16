@@ -3,8 +3,6 @@
 
 #include "OONMainDisplay.hpp"
 
-#include "OONAvatar_sfml.hpp"
-
 // For the cached SFML shapes:
 //#include <SFML/Graphics/Transformable.hpp>
 //#include <SFML/Graphics/Drawable.hpp>
@@ -14,8 +12,6 @@ namespace sf { class Transformable; class Drawable; }
 
 
 namespace OON {
-
-//!!class Avatar_sfml; // Alas, not enough to fw-decl for unique_ptr (unlike shared_ptr)! :-/
 
 class OONMainDisplay_sfml : public OONMainDisplay
 //!
@@ -83,14 +79,11 @@ protected:
 		}
 	}
 
-	const Avatar_sfml& avatar(size_t ndx = 0) const;
-
 	// -------------------------------------------------------------------
 	// Data...
 	// -------------------------------------------------------------------
-//!! JUST FOR DEBUG:
-public:
-//!!private:
+//public: //!! JUST FOR DEBUG
+private:
 	// Two lists ("views") for the same set of shapes, typed differently for
 	// convenience, in order to:
 	// - iterate for updates, and
@@ -99,8 +92,6 @@ public:
 	// the two lists may also diverge in the future.)
 	mutable std::vector< std::shared_ptr<sf::Drawable> >      shapes_to_draw;
 	mutable std::vector< std::shared_ptr<sf::Transformable> > shapes_to_change;
-
-	std::vector< std::unique_ptr<Avatar_sfml> > avatars_;
 
 }; // class OONMainDisplay_sfml
 
