@@ -118,7 +118,7 @@ UI::HUDStream& OONApp::ui_gebi(HUD_ID which) const
 		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)
 	}));
 #ifndef DEBUG
-	ui_gebi(Debug).hide();
+	debug_hud->hide();
 #endif
 
 	switch (which) {
