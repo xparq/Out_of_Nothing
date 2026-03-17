@@ -227,6 +227,9 @@ protected:
 
 	OONController controls;
 
+	myco::WidgetController* huds = nullptr; // Grouping them for turning on/off together.
+	                                            // (Will be created by the UI, we just point to it.)
+
 	PauseBanner* paused_banner = nullptr; // Storing it for toggling later.
 
 	bool  chemtrail_releasing = false;

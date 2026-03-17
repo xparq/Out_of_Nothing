@@ -1,6 +1,7 @@
 ﻿#include "OON_UI.hpp"
 	#include "Szim/UI/HudStream.hpp"
 	//!! Include these via at least a Szim/UI header proxy/dispatcher!
+	#include "myco/Widget/Group.hpp"
 	#include "myco/Widget/Label.hpp"
 	#include "myco/Widget/Button.hpp"
 	#include "myco/Widget/Checkbox.hpp"
@@ -72,48 +73,53 @@ UI::HUDStream& OONApp::ui_gebi(HUD_ID which) const
 //#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
 
-	static auto* timing_hud = gui.overlay.add(new UI::HUDStream(
+	assert(huds);
+
+	static auto* timing_hud = huds->add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
 		.panel_left = (float)appcfg.get("appearance/HUD/timing_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/timing_top", 10),
 		.fgcolor = appcfg.get("appearance/HUD/timing_fg", HUDStream::DEFAULT_TEXT_COLOR),
 		.bgcolor = appcfg.get("appearance/HUD/timing_bg", HUDStream::DEFAULT_BACKGROUND_COLOR)
 	}));
-	static auto* world_hud = gui.overlay.add(new UI::HUDStream(
+	static auto* world_hud = huds->add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
 		.panel_left = (float)appcfg.get("appearance/HUD/world_state_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/world_state_top", 290),
 		.fgcolor = appcfg.get("appearance/HUD/world_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/world_state_bg", 0x90e040ffu/4)
 	}));
-	static auto* view_hud = gui.overlay.add(new UI::HUDStream(
+	static auto* view_hud = huds->add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
 		.panel_left = (float)appcfg.get("appearance/HUD/view_state_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/view_state_top", 420),
 		.fgcolor = appcfg.get("appearance/HUD/view_state_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/view_state_bg", 0x90e040ffu/4)
 	}));
-	static auto* object_hud = gui.overlay.add(new UI::HUDStream(
+	static auto* object_hud = huds->add(new UI::HUDStream(
 	{	.font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
 		.panel_left = (float)appcfg.get("appearance/HUD/object_monitor_left", -250), .panel_top = (float)appcfg.get("appearance/HUD/object_monitor_top", 526),
 		.fgcolor = appcfg.get("appearance/HUD/object_monitor_fg", 0xaaaaaaffu),
 		.bgcolor = appcfg.get("appearance/HUD/object_monitor_bg", 0x33333340u)
 	}));
-	static auto* help_hud = gui.overlay.add(new UI::HUDStream(
+	static auto* help_hud = huds->add(new UI::HUDStream(
 	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
 		.panel_left = (float)appcfg.get("appearance/HUD/help_left", 10), .panel_top = (float)appcfg.get("appearance/HUD/help_top", 10),
 		.fgcolor = appcfg.get("appearance/HUD/help_fg", 0x40d040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/help_bg", 0x40f040ffu/4)
 	}));
-	static auto* debug_hud = gui.overlay.add(new UI::HUDStream(
+	static auto* debug_hud = huds->add(new UI::HUDStream(
 	{ .font_file = cfg.asset_dir + appcfg.hud_font_file,
 		.line_height  = (float)appcfg.hud_line_height, .line_spacing = (float)appcfg.hud_line_spacing,
 		.panel_left = (float)appcfg.get("appearance/HUD/debug_left", -350), .panel_top = (float)appcfg.get("appearance/HUD/debug_top", -350),
 		.fgcolor = appcfg.get("appearance/HUD/debug_fg", 0x90e040ffu),
 		.bgcolor = appcfg.get("appearance/HUD/debug_bg", 0x90e040ffu/4)
 	}));
+#ifndef DEBUG
+	ui_gebi(Debug).hide();
+#endif
 
 	switch (which) {
 	case TimingStats: return *timing_hud;
@@ -129,15 +135,17 @@ UI::HUDStream& OONApp::ui_gebi(HUD_ID which) const
 
 
 //----------------------------------------------------------------------------
-void OONApp::toggle_huds()  { _ui_show_huds = !_ui_show_huds; }
-bool OONApp::huds_active()  { return _ui_show_huds; }
-void OONApp::toggle_help()  { ui_gebi(HelpPanel).active(!ui_gebi(HelpPanel).active()); }
+void OONApp::toggle_huds()  { huds->show(!huds->shown()); }
+bool OONApp::huds_active()  { return huds->shown(); }
+void OONApp::toggle_help()  { ui_gebi(HelpPanel).show(!ui_gebi(HelpPanel).shown()); }
 
 //----------------------------------------------------------------------------
 void OONApp::ui_setup()
 {
 	auto& app = *this; //!! Remnant from an aborted attempt to make this _UI_::setup(SimApp& app)...
 	using namespace myco;
+
+	huds = gui.overlay.add(new Group);
 
 	// If the GUI is used as a translucent overlay, an alpha-enabled bgColor
 	// must be applied. The clearBackground option must be left at its default (true):
@@ -248,8 +256,6 @@ void OONApp::ui_setup()
 	gui_main_hbox->add(new Label(" ")); // just a vert. spacer
 
 	// Only position after setup, so it has a size...
-	//!! Also, deferred reflow mode (which is the default) needs an explicit reflow to get the `extent` below!... :-/
-	gui.reflow();
 	//!!gui.cfg.render_cache_enabled = true; //!!?? Does this even work here?! :)
 		//!! Not for the HUDs: they're not shown (cached overlays are not yet supported!),
 		//!! only the control panel is (being inside the "managed" area of the UI)...
@@ -260,7 +266,7 @@ void OONApp::ui_setup()
 
 	ui_setup_HUDs();
 
-	paused_banner = gui.overlay.add(Banner("PAUSED", 80));
+	paused_banner = huds->add(Banner("PAUSED", 80));
 	assert(paused_banner); if (!paused_banner) { Bug("Failed to create/attach the Paused-banner! :-o "); }
 }
 
@@ -288,7 +294,7 @@ void OONApp::ui_setup_HUDs()
 	// Help...
 	ui_setup_HUD_Help();
 	auto& help_hud = ui_gebi(HelpPanel);
-	help_hud.active(cfg.get("show_help_on_start", true));
+	help_hud.show(cfg.get("show_help_on_start", true));
 
 	//------------------------------------------------------------------------
 	// Debug

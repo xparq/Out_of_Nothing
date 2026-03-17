@@ -1120,7 +1120,7 @@ void OONApp::updates_for_next_frame()
 	// - ...
 
 	//!! Do this via an OON_UI wrapper, not accessing HUDStream directly!
-	ui_gebi(ObjMonitor).active(
+	ui_gebi(ObjMonitor).show(
 		hovered_entity_ndx < entity_count() ||
 		focused_entity_ndx < entity_count()
 	);
@@ -1184,27 +1184,6 @@ void OONApp::draw() const //override
 	<< "clear bg? "<<myco::Theme::clearBackground << ", "
 	<< hex << myco::Theme::bgColor.toInteger();
 */
-
-	// Draw the UI last, as an overlay...
-
-	// Embarrassing way to turn all (but the Help) HUDs on/off, after #644:
-	ui_gebi(TimingStats).active(_ui_show_huds);
-	ui_gebi(WorldData).active(_ui_show_huds);
-	ui_gebi(ViewData).active(_ui_show_huds);
-	ui_gebi(ObjMonitor).active(_ui_show_huds);
-#ifdef DEBUG
-	ui_gebi(Debug).active(_ui_show_huds);
-#else
-	ui_gebi(Debug).active(false);
-#endif
-/*!! OLD:
-	if (ui_gebi(HelpPanel).active())  //!!?? This active()-chk is redundant: HUD::draw() does the same. TBD: who's boss?
-	    ui_gebi(HelpPanel).draw(ctx); //!!?? "Activity" means more than just drawing, so... (Or actually both should control it?)
-!!*/
-	//!! A "meh, good enough" approximation of the old "help on/off" logic (which
-	//!! remembered its `active` state regardless of the global _ui_show_huds flag):
-	ui_gebi(HelpPanel).active(_ui_show_huds && ui_gebi(HelpPanel).active());
-
 	gui.render();
 
 	/*!! Moved to the engine's (default) main loop for now, tentatively:

@@ -42,8 +42,7 @@ TODO:
 
 #include "myco/widget/Options.hpp" //!! Should come via a "Szm/UI/Options.hpp" proxy header!
 #include "Szim/UI/Banner.hpp"
-// This one doesn't seem to need the full def for OON.h...
-namespace Szim::UI { class HUDStream; }
+#include "Szim/UI/HUDStream.hpp"
 
 #include "app/Model/World.hpp" // This one is not so heavy.
 namespace OON
