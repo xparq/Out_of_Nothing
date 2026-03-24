@@ -4,7 +4,7 @@
 
 namespace OON::Model {
 
-Emitter::Emitter(const Config& emitter_cfg, Szim::SimApp& app)
+Emitter::Emitter(const Config& emitter_cfg, Szim::Core::SimApp& app)
 	:
 	app(app), //!! Sigh... Eliminate!
 	cfg(emitter_cfg)

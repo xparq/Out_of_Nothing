@@ -1,5 +1,5 @@
-#ifndef _OSE8975BQ7C785C639406C824X782C6YNB5_
-#define _OSE8975BQ7C785C639406C824X782C6YNB5_
+#ifndef OOSE8975BQ7C785C639406C824X782C6YNB5
+#define OOSE8975BQ7C785C639406C824X782C6YNB5
 
 #include "vocab.hpp"
 //!!#include "OONAppTraits.hpp"
@@ -49,7 +49,7 @@ class OONApp : public Szim::App<OON::AppConfig>
 //!	and "pure" code! :-/
 //!
 //!	template< class AppSysImpl > // CRTP for backend-specifics
-//!	class OONApp : public Szim::SimApp
+//!	class OONApp : public Szim::Core::SimApp
 {
 friend class OON::Model::World;
 
@@ -178,8 +178,8 @@ protected:
 	//------------------------------------------------------------------------
 protected:
 	// Callback impl...
-	void on_world_initializing(Szim::Model::Core::World*) override;
-	//void on_world_initialized(Szim::Model::Core::World*) override;
+	void on_world_initializing(Szim::Core::Model::World*) override;
+	//void on_world_initialized(Szim::Core::Model::World*) override;
 	void on_world_activated() override;
 	void on_pause_toggled(bool newstate) override;
 	void on_window_resize(unsigned width, unsigned height) override;
@@ -272,4 +272,4 @@ public://!! Directly accessed by e.g. the main view and the ObjMonitor HUD...:
 
 } // namespace OON
 
-#endif // _OSE8975BQ7C785C639406C824X782C6YNB5_
+#endif // OOSE8975BQ7C785C639406C824X782C6YNB5

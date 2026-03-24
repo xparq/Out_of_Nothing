@@ -154,7 +154,7 @@ bool OONApp::done() //override
 }
 
 //----------------------------------------------------------------------------
-void OONApp::on_world_initializing(Szim::Model::Core::World* new_world) //override
+void OONApp::on_world_initializing(Szim::Core::Model::World* new_world) //override
 {
 /*!! Everything's still so entangled with `world()` that basically nothing can
      be done here before that, on a standalone world alone! :-/

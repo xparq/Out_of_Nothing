@@ -1,5 +1,5 @@
-#ifndef _MSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG_
-#define _MSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG_
+#ifndef EMSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG
+#define EMSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG
 
 #include "app/model/vocab.hpp"
 //#include "app/Model/Entity.hpp" //!! Not really needed yet (also includes loads of crap.)
@@ -9,7 +9,7 @@
 //!!	using Phys = Szim::Model::Phys;
 
 
-namespace Szim { class SimApp; }
+namespace Szim { namespace Core { class SimApp; } }
 
 namespace OON::Model {
 
@@ -37,7 +37,7 @@ public:
 	};
 
 	//----------------------------------------------------------------------------
-	Emitter(const Config& cfg, Szim::SimApp& app);
+	Emitter(const Config& cfg, Szim::Core::SimApp& app);
 	virtual ~Emitter() = default;
 
 	void emit_particles(EntityID emitter, unsigned n = 10, Phys::Pos2 nozzles[] = nullptr);
@@ -45,7 +45,7 @@ public:
 		// origin of the emitter, and normalized to a [-1, 1] bounding range!
 
 protected:
-	Szim::SimApp& app;
+	Szim::Core::SimApp& app;
 	//!!enum { UNLIMITED = Szim::Model::UNLIMITED }; //!! UNLIMITED is a float!... :-/
 	static constexpr auto UNLIMITED = -1;
 
@@ -55,4 +55,4 @@ public:
 
 } // namespace OON::Model
 
-#endif // _MSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG_
+#endif // EMSD0F8743567836U7KRINUC87N3OE6B5UOYRFIUEG

@@ -460,14 +460,14 @@ if(((OONApp&)app).controls.ShowDebug) {
 
 //----------------------------------------------------------------------------
 //!! Seen a 147 -> 131 FPS drop by moving these to the .cpp! :-o
-bool World::is_colliding([[maybe_unused]] const Szim::Model::Core::Entity* obj1, [[maybe_unused]] const Szim::Model::Core::Entity* obj2) const
+bool World::is_colliding([[maybe_unused]] const Szim::Core::Model::Entity* obj1, [[maybe_unused]] const Szim::Core::Model::Entity* obj2) const
 //!! Should take the body shape into account.
 {
 	//auto distance = sqrt(pow(globe->p.x - body->p.x, 2) + pow(globe->p.y - body->p.y, 2));
 	return false;
 }
 
-bool World::is_colliding(const Szim::Model::Core::Entity* obj1, const Szim::Model::Core::Entity* obj2, Phys::Length distance) const
+bool World::is_colliding(const Szim::Core::Model::Entity* obj1, const Szim::Core::Model::Entity* obj2, Phys::Length distance) const
 // Only for circles yet!
 {
 	return props.collision_mode == CollisionMode::Off
@@ -494,11 +494,11 @@ void World::_copy(World const& source)
 !!*/
 
 //----------------------------------------------------------------------------
-void World::undirected_interaction_hook(Szim::Model::Core::World* w, Szim::Model::Core::Entity* obj1, Szim::Model::Core::Entity* obj2, float dt, double distance, ...) //override
+void World::undirected_interaction_hook(Szim::Core::Model::World* w, Szim::Core::Model::Entity* obj1, Szim::Core::Model::Entity* obj2, float dt, double distance, ...) //override
 {w, obj1, obj2, dt, distance;
 }
 
-void World::directed_interaction_hook(Szim::Model::Core::World* w, Szim::Model::Core::Entity* source, Szim::Model::Core::Entity* target, float dt, double distance, ...) //override
+void World::directed_interaction_hook(Szim::Core::Model::World* w, Szim::Core::Model::Entity* source, Szim::Core::Model::Entity* target, float dt, double distance, ...) //override
 {w, source, target, dt, distance;
 //	if (!obj1->is_player())
 //		obj1->color += 0x3363c3;
@@ -524,7 +524,7 @@ void World::directed_interaction_hook(Szim::Model::Core::World* w, Szim::Model::
 }
 
 //----------------------------------------------------------------------------
-bool World::touch_hook(Szim::Model::Core::World* __w, Szim::Model::Core::Entity* __obj1, Szim::Model::Core::Entity* __obj2)
+bool World::touch_hook(Szim::Core::Model::World* __w, Szim::Core::Model::Entity* __obj1, Szim::Core::Model::Entity* __obj2)
 {IGNORE __w;
 	auto obj1 = static_cast<OON::Model::Entity*>(__obj1);
 	auto obj2 = static_cast<OON::Model::Entity*>(__obj2);

@@ -27,9 +27,9 @@ SFML_ROOT := extern/sfml/$(TOOLCHAIN)
 EXT_O2N_ROOT := extern/O2N
 
 EXT_LIBROOT_SFML := $(SFML_ROOT)/lib
-EXT_LIBROOT_O2N  := $(EXT_O2N_ROOT)/lib/msvc
-EXT_LIBROOT_SFW  := $(EXT_O2N_ROOT)/extern/mycoui/lib/msvc
-EXT_LIBROOT_ZSTD := $(EXT_O2N_ROOT)/extern/zstd/msvc
+EXT_LIBROOT_O2N  := $(EXT_O2N_ROOT)/lib/$(TOOLCHAIN)
+EXT_LIBROOT_SFW  := $(EXT_O2N_ROOT)/extern/mycoui/lib/$(TOOLCHAIN)
+EXT_LIBROOT_ZSTD := $(EXT_O2N_ROOT)/extern/zstd/$(TOOLCHAIN)
 
 CFLAGS_EXT_INCLUDES += -I$(EXT_O2N_ROOT)/include -I$(EXT_O2N_ROOT)/extern -I$(EXT_O2N_ROOT)\
 	-I$(EXT_O2N_ROOT)/extern/mycoui/include

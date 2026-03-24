@@ -8,14 +8,10 @@
 #include "Physics.hpp"
 #include "app/model/Entity.hpp"
 
-#include <memory>     // shared_ptr
+#include <memory> // shared_ptr
 #include <vector>
-//!!No, not yet; just too cumbersome for too little gain:
-//!!#include <optional> // for load()
 #include <iosfwd> // for save/load
 
-
-namespace Szim { class SimApp; } //! Sigh, must predeclare it here, outside the namespace...
 
 namespace OON::Model {
 
@@ -95,7 +91,7 @@ public:
 //----------------------------------------------------------------------------
 public:
 
-/*!! Moved to Szim::Model::Core::World
+/*!! Moved to Szim::Core::Model::World
 	enum class LoopMode : unsigned {
 		Half_Matrix, // Better for Directionless/Undirected/Unordered interactions
 		Full_Matrix, // Better for Directional/Ordered interactions
@@ -127,8 +123,8 @@ public:
 	void update_pairwise (DeltaT dt) override;
 	void update_global   (DeltaT dt) override;
 
-	bool is_colliding(const Szim::Model::Core::Entity* obj1, const Szim::Model::Core::Entity* obj2) const;
-	bool is_colliding(const Szim::Model::Core::Entity* obj1, const Szim::Model::Core::Entity* obj2, Phys::Length distance) const;
+	bool is_colliding(const Szim::Core::Model::Entity* obj1, const Szim::Core::Model::Entity* obj2) const;
+	bool is_colliding(const Szim::Core::Model::Entity* obj1, const Szim::Core::Model::Entity* obj2, Phys::Length distance) const;
 
 
 	//------------------------------------------------------------------------
@@ -136,9 +132,9 @@ public:
 	//!! Move these out of the direct app code to an app-level custom model class set!
 	//!! And then the model callback mechanism could be simplified to not doing it in
 	//!! the core abstract Model at all, but in the custom layer, only when needed.
-	void undirected_interaction_hook(Szim::Model::Core::World* w, Szim::Model::Core::Entity* obj1, Szim::Model::Core::Entity* obj2, float dt, double distance, ...) override;
-	void directed_interaction_hook(Szim::Model::Core::World* w, Szim::Model::Core::Entity* source, Szim::Model::Core::Entity* target, float dt, double distance, ...) override;
-	bool touch_hook(Szim::Model::Core::World* w, Szim::Model::Core::Entity* obj1, Szim::Model::Core::Entity* obj2) override;
+	void undirected_interaction_hook(Szim::Core::Model::World* w, Szim::Core::Model::Entity* obj1, Szim::Core::Model::Entity* obj2, float dt, double distance, ...) override;
+	void directed_interaction_hook(Szim::Core::Model::World* w, Szim::Core::Model::Entity* source, Szim::Core::Model::Entity* target, float dt, double distance, ...) override;
+	bool touch_hook(Szim::Core::Model::World* w, Szim::Core::Model::Entity* obj1, Szim::Core::Model::Entity* obj2) override;
 
 //----------------------------------------------------------------------------
 // Internals (C++ mechanics, persistence etc.)...
