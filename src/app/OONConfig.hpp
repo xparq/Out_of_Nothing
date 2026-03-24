@@ -1,7 +1,7 @@
-#ifndef _8PA37GTB7NX73945Y6B2V6C7X245Y45_
-#define _8PA37GTB7NX73945Y6B2V6C7X245Y45_
+#ifndef OAC8PA37GTB7NX73945Y6B2V6C7X245Y45
+#define OAC8PA37GTB7NX73945Y6B2V6C7X245Y45
 
-#include "Szim/gen/config.hpp"
+#include "Szim/generic/config.hpp"
 
 //#include "extern/Args.hpp"
 class Args; // Enough to #include it in the .cpp
@@ -81,4 +81,4 @@ struct OONConfig : Szim::gen::config
 
 } // namespace OON
 
-#endif // _8PA37GTB7NX73945Y6B2V6C7X245Y45_
+#endif // OAC8PA37GTB7NX73945Y6B2V6C7X245Y45

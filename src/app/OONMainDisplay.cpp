@@ -30,8 +30,9 @@ OONMainDisplay::OONMainDisplay(OONViewConfig cfg, OONApp& app)
 const OONAvatar& OONMainDisplay::avatar(size_t ndx) const
 {
 //!!	assert(avatars_.size());
-if (!avatars_.size()) { static OONAvatar dummy({});
+if (!avatars_.size()) { static OONAvatar dummy({"dummy"});
 LOGN <<"- Hey, avatar loading must happen before other View ops.!";
+//! Note: This is a per-frame getter, so this message would flood the log, if triggered!
 return dummy; }
 
 	return *avatars_[ndx > avatars_.size() - 1

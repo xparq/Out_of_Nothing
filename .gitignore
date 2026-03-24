@@ -4,6 +4,7 @@ tmp/
 *.old
 *.wip
 *.WIP
+out
 
 # Build artifacts
 out.*/

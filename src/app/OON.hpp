@@ -12,6 +12,11 @@
 //!! (Alas, this also forces including the entire math+physics API too... :-/ )
 #include "model/World.hpp"
 
+//!! ...And still can't see Szim::Model?! WTF?!?!
+
+#include "Szim/Core/Model.hpp" // The non-templated parts
+
+
 #include "Szim/App.hpp"
 //!! Make this more convenient!... (Used to unconditionally come from App/Base.hpp,
 //!! but I've removed it for tighter control over header coupling in general.):
@@ -173,7 +178,9 @@ protected:
 	//------------------------------------------------------------------------
 protected:
 	// Callback impl...
-	void init_world_hook() override;
+	void on_world_initializing(Szim::Model::Core::World*) override;
+	//void on_world_initialized(Szim::Model::Core::World*) override;
+	void on_world_activated() override;
 	void on_pause_toggled(bool newstate) override;
 	void on_window_resize(unsigned width, unsigned height) override;
 	void on_snapshot_loaded() override; // Needs to reset the rendering cache!

@@ -84,30 +84,34 @@ LOGD << __FUNCTION__ <<" started...";
 	tx_kittygod = avatars.size() - 1;
 
 
-	//!! OMG, also the cringefest!... The view.reset() below is needed to sync the view._avatars list with the "real" avatars,
-	//!! which is -- alas, counterintuitively! -- expected by (something in) add_entity(), I guess! :-o :-/
-	//!! -> WHICH SHOULD BE FIXED, MOST LIKELY!
-LOGD << "Display.reset right after loading the avatar images:";
-	oon_main_view().reset(); //!!REPLACE THIS WITH A SANER WAY TO SYNC THE VIEW TO THE APP STATE (i.e. the avatars)!
-
-	//!! This shouldn't be needed, the engine should take care of it: #462!
-	//!! And the view resize should also implicitly take care of any camera adjustments, too, so
-	//!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
-	//!!	oon_main_view().resize((float)backend.hci.window().width,
-	//!!	                         (float)backend.hci.window().height);
-	oon_main_camera().resize_view((float)main_window_width(),
-	                              (float)main_window_height());
-
-	//!!
-	//!! MOVE THIS TO SimApp! But can't yet be, as the stupid avatar loading must happen first! :-o
+	//!!---------------------------------------------
+	//!! BEWARE: In this stupid proto/legacy the avatar loading must happen before the model init!
 	//!! (Which should be either fully decoupled from the model (so the order shouldn't matter),
 	//!! of integrated right into it (so it could stop being a mere gimmick)!)
 	//!!
-	//!! SHOULD BE CALLED BY the default impl. of SimApp::init(), AT THE APPROPRIATE TIME
-	//!! (E.G. IN ACCORDANCE WITH SESSION LOADING!), BUT FOR NOW, AS THAT POINT DOESN'T EXIST YET...:
+	//!! SHOULD BE CALLED BY by the internal app init(), or "SOME OTHER APPROPRIATE TIME"
+	//!! (E.G. IN ACCORDANCE WITH SESSION LOADING, BUT THAT POINT DOESN'T EXIST YET)!...
 	//!!
-	init_world(); //!! Also, it can only be done after getting rid of the RAII app init (#483) to regain virtual dispatch...
+	//!! The current engine version (0.112) calls this at post-init time now!
+	//!! That would've been to late for this old init sequence, as things used to depend on it here, in init()!
+	//!!create_default_world();
+	//!!---------------------------------------------
 
+
+	// Audio...
+	//!
+	//!! Later, with more mature session mgmt., music loading etc. should NOT
+	//!! happen here, ignoring non-app-level user preferences etc...
+	//!
+	// Note: muting by --snd=off has been taken care of by the engine already,
+	// so we can just go ahead and play things nonchalantly. ;)
+	snd_clack       = audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
+	snd_plop1       = audio.add_sound(string(cfg.asset_dir + "sound/plop1.wav").c_str());
+	snd_plop2       = audio.add_sound(string(cfg.asset_dir + "sound/plop_low.flac").c_str());
+	snd_plop3       = audio.add_sound(string(cfg.asset_dir + "sound/reverbed_plop.ogg").c_str());
+	snd_pwhiz       = audio.add_sound(string(cfg.asset_dir + "sound/pwhiz.wav").c_str());
+	snd_jingle_loop = audio.add_sound(string(cfg.asset_dir + "sound/jingle_discharge.ogg").c_str());
+	snd_shield	= audio.add_sound(string(cfg.asset_dir + "sound/shield1.flac").c_str());
 
 	//---------------------------------------------
 	// Create a default big-bang, via an artificially prolonged initial deltaT...
@@ -129,7 +133,106 @@ DBG_(BigBang_InflationInterval_s);
 	//!! }
 	//!!---------------------------------------------
 
+LOGD << __FUNCTION__ <<" finished.";
+//!!IPROF_SYNC_THREAD;
+	return true;
+} // init
 
+
+//----------------------------------------------------------------------------
+bool OONApp::done() //override
+{
+	LOGD << __FUNCTION__ <<": Put any custom 'onExit' tasks (like saving the last state) here!...\n";
+
+	//!! MOVE THE SESSION LOGIC TO SimApp:
+	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
+	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
+		session_manager.close();
+	}
+
+	return true;
+}
+
+//----------------------------------------------------------------------------
+void OONApp::on_world_initializing(Szim::Model::Core::World* new_world) //override
+{
+/*!! Everything's still so entangled with `world()` that basically nothing can
+     be done here before that, on a standalone world alone! :-/
+
+	auto& w = *static_cast<World*>(new_world);
+!!*/
+}
+
+
+//----------------------------------------------------------------------------
+void OONApp::on_world_activated() //override
+{
+	auto& w = world();
+		//!! Default-constr'd (so uninitialized) OON world
+		//!! implicitly created by the engine, but not yet
+		//!! mounted, so... "must remember" that world()
+		//!! is UNDEFINED yet! :-ooo
+
+
+	//!! OMG, also the cringefest!... The view.reset() below is needed to sync the view._avatars list with the "real" avatars,
+	//!! which is -- alas, counterintuitively! -- expected by (something in) add_entity(), I guess! :-o :-/
+	//!! -> WHICH SHOULD BE FIXED, MOST LIKELY!
+LOGD << "Display.reset right after loading the avatar images:";
+	oon_main_view().reset(); //!!REPLACE THIS WITH A SANER WAY TO SYNC THE VIEW TO THE APP STATE (i.e. the avatars)!
+
+
+	// Add the "Player Superglobe" first
+	//!!
+	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
+	//!!
+	//!! Note: Player is not a world-local concept; must be handled in the app!
+	//!! Unfortunately though, it also already assumes a live (default) world!... :-/
+	//!! (i.e. `world()` being valid already)!
+	//!!
+LOGI << "Adding player #1...";
+	auto player_id [[maybe_unused]] = //! Only for assertions in a DEBUG build!
+	add_player(
+		{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
+		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
+		 .p = {0,0}, .v = {0,0},
+		 .color = 0xffff20,
+		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
+		avatars[tx_jesus],
+		controls
+	);
+	assert(players.size() == 1);
+	assert(entity_count() > player(player_id).entity_ndx);
+	assert(player_entity_ndx() == player(player_id).entity_ndx);
+
+	//!!
+	//!! THIS STILL MUST FOLLOW ADDING THE PLAYERS!...
+	//!!
+	try { // <- Absolutely required, as sto...() are very throw-happy.
+		// Doing the ones that can't fail first, so an excpt. won't skip them:
+		if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
+			set_interact_n2n();
+		}; if (args["bodies"]) {
+			auto n = stoi(args("bodies"));
+			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
+		   } else if (!args["session"]) { //! Only if no session being loaded...
+		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
+LOGI << "Creating two small moons by default...";
+			// Add 2 "moons" with fixed parameters (mainly for testing):
+			add_entity({//.r = w.CFG_GLOBE_RADIUS/10, // Redundant: will be calculated!
+				    .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+			            .color = 0xff2020, .mass = 3e24f});
+			add_entity({//.r = w.CFG_GLOBE_RADIUS/7, // Redundant: will be calculated!
+			            .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS * 1.8f, -w.CFG_GLOBE_RADIUS * 1.5f},
+			            .color = 0x3060ff, .mass = 3e24f});
+		}; if (args["friction"]) {
+			float f = stof(args("friction"));
+			w.props.friction = f;
+		};
+	} catch(...) {
+		Error("Failed to process/apply some cmdline args!");
+		request_exit(-1);
+		return;
+	}
 
 	// Note also that init_world() is eventually wasted if we're also loading a session,
 	// but that's a price paid for *some* level of simplicity in the init sequence.
@@ -138,6 +241,9 @@ DBG_(BigBang_InflationInterval_s);
 	//!! (Unless it would be made reasonable to reload a "multiplayer session" -- whatever that (and saving it) should even mean...)
 	//!!
 
+	//!!
+	//!! MUST COME AFTER A WORLD HAS BEEN MOUNTED (so world() is available!)!...
+	//!! (It's used on on_snapshot_loaded, for one!)
 	//!!
 	//!! MOVE THE SESSION LOGIC TO SimApp!
 	//!! (NOTE: Can't move it to init_world_hook() either, and that may not even exist!...)
@@ -158,6 +264,15 @@ DBG_(BigBang_InflationInterval_s);
 		//!!
 	}
 
+	//!! This shouldn't be needed, the engine should take care of it: #462!
+	//!! And the view resize should also implicitly take care of any camera adjustments, too, so
+	//!! this commented part would be the one that's actually needed, and the cam. stuff deleted below!
+	//!!	oon_main_view().resize((float)backend.hci.window().width,
+	//!!	                         (float)backend.hci.window().height);
+	oon_main_camera().resize_view((float)main_window_width(),
+	                              (float)main_window_height());
+
+
 	// App-level cmdline options (overrides)...
 	// Note: the (!!actually: "some"...!!) system-/engine-level options have been processed/applied already!
 	//!! RECONCILE THIS WITH THE WORLD STATE ATTRIBUTES IN world_init_hook()!
@@ -172,13 +287,13 @@ DBG_(BigBang_InflationInterval_s);
 	} catch(...) {
 		Error("Failed to process/apply some cmdline args!");
 		request_exit(-1);
-		return false;
+		return; //!! OLD: return false;
 	}
 
 	// Focus on Player #1:
-	focused_entity_ndx = player_entity_ndx(1); //!!... See init_world_hook()!
+	focused_entity_ndx = player_entity_ndx(1); //!!... See on_world_initializing()!
 
-	//!! Absolutlely MUST come after the world init (i.e. session loading!)
+	//!! Absolutlely MUST come after a world has been mounted (not just init'ed)!
 	//!! Also: the widgets are only (or mostly) initialized from prior app state, and not updated by (most)
 	//!! app-level ops, so with an early UI setup some widgets may get out of sync by later app changes!
 	ui_setup(); //!!?? Should this come even after the main_view init? (Or will the main view eventually need to depend on the UI??)
@@ -190,25 +305,6 @@ DBG_(BigBang_InflationInterval_s);
 LOGD << "Display.reset after UI setup:";
 	oon_main_view().reset();
 
-	// Audio...
-	//!
-	//!! Later, with more mature session mgmt., music loading etc. should NOT
-	//!! happen here, ignoring non-app-level user preferences etc...
-	//!
-	// Note: muting by --snd=off has been taken care of by the engine already,
-	// so we can just go ahead and play things nonchalantly. ;)
-	snd_clack       = audio.add_sound(string(cfg.asset_dir + "sound/clack.wav").c_str());
-	snd_plop1       = audio.add_sound(string(cfg.asset_dir + "sound/plop1.wav").c_str());
-	snd_plop2       = audio.add_sound(string(cfg.asset_dir + "sound/plop_low.flac").c_str());
-	snd_plop3       = audio.add_sound(string(cfg.asset_dir + "sound/reverbed_plop.ogg").c_str());
-	snd_pwhiz       = audio.add_sound(string(cfg.asset_dir + "sound/pwhiz.wav").c_str());
-	snd_jingle_loop = audio.add_sound(string(cfg.asset_dir + "sound/jingle_discharge.ogg").c_str());
-	snd_shield	= audio.add_sound(string(cfg.asset_dir + "sound/shield1.flac").c_str());
-
-	audio.play_music(cfg.background_music.c_str());
-	//audio.play_music(sz::fs::prefix_by_intent(asset_dir, "music/extra sonic layer.ogg"));
-	//audio.play_sound(snd_plop_low, true); //!! just checking
-
 	// Apply custom config adjustments/fixup...
 	world().props.gravity_mode = appcfg.gravity_mode;
 	//!! Move to OON_UI.cpp:
@@ -216,79 +312,12 @@ LOGD << "Display.reset after UI setup:";
 		[[maybe_unused]] auto readback = myco::get<GravityModeSelector>("Gravity mode", OON::GravityMode::Default);
 		assert(readback == world().props.gravity_mode);
 
-LOGD << __FUNCTION__ <<" finished.";
-
-//!!IPROF_SYNC_THREAD;
-
-	return true;
-} // init
-
-
-//----------------------------------------------------------------------------
-bool OONApp::done() //override
-{
-	LOGD << __FUNCTION__ <<": Put any custom 'onExit' tasks (like saving the last state) here!...\n";
-
-	//!! MOVE THE SESSION LOGIC TO SimApp:
-	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
-	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
-		session_manager.close();
-	}
-
-	return true;
-}
-
-void OONApp::init_world_hook() //override
-{
-	auto& w = world(); //!! Using the default-constr'd (so basically undefined!)
-	                   //!! model world implicitly created by SimApp!... :-o
-
-	// Add the "Player Superglobe" first
-	//!!
-	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
-	//!!
-LOGI << "Adding player #1...";
-	auto player_id [[maybe_unused]] = //! Only for assertions in a DEBUG build!
-	add_player(
-		{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
-		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
-		 .p = {0,0}, .v = {0,0},
-		 .color = 0xffff20,
-		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
-		avatars[tx_jesus],
-		controls
-	);
-	assert(players.size() == 1);
-	assert(entity_count() > player(player_id).entity_ndx);
-	assert(player_entity_ndx() == player(player_id).entity_ndx);
-
-
-	try { // <- Absolutely required, as sto...() are very throw-happy.
-		// Doing the ones that can't fail first, so an excpt. won't skip them:
-		if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
-			set_interact_n2n();
-		}; if (args["bodies"]) {
-			auto n = stoi(args("bodies"));
-			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
-		   } else if (!args["session"]) { //! Only if no session being loaded...
-		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
-LOGI << "Creating two small moons by default...";
-			// Add 2 "moons" with fixed parameters (mainly for testing):
-			add_entity({//.r = w.CFG_GLOBE_RADIUS/10, // Redundant: will be calculated!
-				    .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-			            .color = 0xff2020, .mass = 3e24f});
-			add_entity({//.r = w.CFG_GLOBE_RADIUS/7, // Redundant: will be calculated!
-			            .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS * 1.8f, -w.CFG_GLOBE_RADIUS * 1.5f},
-			            .color = 0x3060ff, .mass = 3e24f});
-		}; if (args["friction"]) {
-			float f = stof(args("friction"));
-			world().props.friction = f;
-		};
-	} catch(...) {
-		Error("Failed to process/apply some cmdline args!");
-		request_exit(-1);
-		return;
-	}
+	//!! See loading the sound effects in init()!
+	//!! This is only moved here to start playing as lat as possible on settup up the world,
+	//!! and there's no proper playing start/stop API yet!...
+	audio.play_music(cfg.background_music.c_str());
+	//audio.play_music(sz::fs::prefix_by_intent(asset_dir, "music/extra sonic layer.ogg"));
+	//audio.play_sound(snd_plop_low, true); //!! just checking
 }
 
 

@@ -8,8 +8,8 @@
 # include "extern/raddbg_markup.h"
 #endif
 
-
 #include "Szim/Engine.hpp"
+#include "Szim/generic/stdtap.hpp"
 #include "OON_sfml.hpp"
 
 #include <iostream> // For normal user-facing output
@@ -70,7 +70,8 @@ int main(int argc, char* argv[])
 	} Main;
 
 
-	//using namespace Szim;
+	// Redir. stdout/err:
+	static sz::stdtap stdlog;
 
 	//
 	// Go...

@@ -81,12 +81,7 @@ ZoneScoped;
 //============================================================================
 void World::init()
 {
-	app.init_world_hook();
-	//!! See e.g. OONApp::init() in OON.cpp, and init_world() in SimApp.hpp why this
-	//!! convoluted inverted control, instead of the engine just calling the app's
-	//!! init_world()!... (E.g. no virtual dispatch in the legacy init, etc...)
-
-	LOGN << "Custom world initialized.";
+	LOGN << "OON world init() called (but is empty for now).";
 }
 
 //----------------------------------------------------------------------------
