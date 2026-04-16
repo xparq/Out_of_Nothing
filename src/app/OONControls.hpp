@@ -1,8 +1,5 @@
-#ifndef _X789N65B78CXM45VB60N45I8UBTYWHBIOUSGHB7C476V_
-#define _X789N65B78CXM45VB60N45I8UBTYWHBIOUSGHB7C476V_
-
-#include "sz/toggle.hh"
-#include <cstdint>
+#ifndef X789N65B78CXM45VB60N45I8UBTYWHBIOUSGHB7C476V
+#define X789N65B78CXM45VB60N45I8UBTYWHBIOUSGHB7C476V
 
 #include "Szim/Core/Device/HCI/VirtualController.hpp"
 
@@ -10,9 +7,9 @@ namespace OON {
 
 class OONApp;
 
-struct OONController : public Szim::VirtualController
+struct OONController : public Szim::Core::VirtualController
 //!! All for polling only, no async triggers yet!
-//!! This also means that Toggle values make no sense
+//!! This also means that Toggle values make no sense...
 {
 	// View control
 	PushButton ZoomIn{};
@@ -23,7 +20,7 @@ struct OONController : public Szim::VirtualController
 	PushButton PanDown{};
 
 	PushButton PanFollow{};
-	HardToggle PanLock{};
+	Toggle PanLock{};
 
 	PushButton ShowOrbits{};
 	PushButton ShowDebug{};
@@ -46,13 +43,9 @@ struct OONController : public Szim::VirtualController
 	// Meta/Admin actions
 //!!...	LatchedToggle Pause;
 
-	void update() override; // Implemented in the backend-specific part of the app!
-
-	OONController(OONApp* app) : app_(app) {}
-private:
-	OONApp* app_;
+	void update(Szim::Core::SimApp& app) override; // Implemented in the backend- (currently SAL-) specific part of the app
 };
 
 } // namespace OON
 
-#endif // _X789N65B78CXM45VB60N45I8UBTYWHBIOUSGHB7C476V_
+#endif // X789N65B78CXM45VB60N45I8UBTYWHBIOUSGHB7C476V

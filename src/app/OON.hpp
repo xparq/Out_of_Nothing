@@ -70,10 +70,10 @@ protected:
 //----------------------------------------------------------------------------
 public:
 	//--------------------------------------------------------------------
-	void  get_control_inputs() override; // Callback from SimApp
+	void  poll_controls() override; // Callback from SimApp
 
 	//!! This might become a std. part of the interface
-	bool  react_to_control_inputs() override; //!! NOT ACTUALLY CALLED BY THE ENGINE YET! We just call it ourselves for now...
+	bool  update_intents() override; //!! NOT ACTUALLY CALLED BY THE ENGINE YET! Just called manually from update...() :-/
 		// true: actions taken, follow-up needed
 	        // false: inputs ignored, follow-up not needed
 
@@ -154,8 +154,8 @@ public:
 
 	unsigned add_player(
 		Entity&& model,
-		Szim::Avatar& avatar,
-		Szim::VirtualController& controls
+		Szim::Core::VirtualController& controls,
+		Szim::Avatar& avatar
 	) override;
 	void     remove_player(PlayerID ndx) override;
 
@@ -179,11 +179,14 @@ protected:
 protected:
 	// Callback impl...
 	void on_world_initializing(Szim::Core::Model::World*) override;
-	//void on_world_initialized(Szim::Core::Model::World*) override;
+	void on_initialized() override;
 	void on_world_activated() override;
 	void on_pause_toggled(bool newstate) override;
 	void on_window_resize(unsigned width, unsigned height) override;
-	void on_snapshot_loaded() override; // Needs to reset the rendering cache!
+	void on_snapshot_loaded() override;
+		// Chores after loading a new model world (UI updates,
+		// resetting the rendering cache, etc.)
+
 
 //----------------------------------------------------------------------------
 // C++ mechanics...
@@ -220,9 +223,6 @@ protected:
 	//!!} ui;
 	//!!using HUD_ID = _UI_::HUD_ID; using enum _UI_::HUD_ID; // Also import all the values!
 	Szim::UI::HUDStream& ui_gebi(HUD_ID which) const; // get_element_by_id
-
-	// Chores after loading a new model world:
-	void _on_snapshot_loaded(); // Updates the UI etc.
 
 //----------------------------------------------------------------------------
 // Internals - Data...

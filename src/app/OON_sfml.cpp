@@ -61,9 +61,9 @@ void OONApp_sfml::process(const SAL::event::Input& event) //override
 	{
 	using enum SAL::event::VKey;
 
-	case myco::event::KeyDown:
+	case SAL::event::KeyDown:
 	{
-		auto keycode = event.as<myco::event::KeyDown>().code;
+		auto keycode = event.as<SAL::event::KeyDown>().code;
 #ifdef DEBUG
 if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started making things harder every day... :-/
 #endif
@@ -139,9 +139,9 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		}
 		break;
 	}
-	case myco::event::TextInput:
+	case SAL::event::TextInput:
 	{
-		auto codepoint = event.as<myco::event::TextInput>().codepoint;
+		auto codepoint = event.as<SAL::event::TextInput>().codepoint;
 		if (codepoint > 127) break; // non-ASCII!
 		switch (static_cast<char>(codepoint)) {
 		case 'g':
@@ -171,14 +171,14 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		}
 		break;
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
-	case myco::event::MouseButtonPressed:
+	case SAL::event::MouseButtonPressed:
 		if (event.mouseButton.button == sf::Mouse::Button::Left) {
 			spawn(player_entity_ndx(), 100);
 		}
 		break;
 !!*/
 	}
-	case myco::event::MouseWheel:
+	case SAL::event::MouseWheel:
 	{
 		//!! As a quick workaround for #334, we just check the GUI rect here
 		//!! directly and pass the event if it belongs there...
@@ -187,16 +187,16 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		if (gui.focused() || gui.hovered())
 			goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-		const auto& mousewheel = event.as<myco::event::MouseWheel>();
+		const auto& mousewheel = event.as<SAL::event::MouseWheel>();
 		view_control(mousewheel.delta); //! Apparently always 1 or -1...
 //LOGD << "MouseWheel: pos: "<< mousewheel.position.x <<", "<< mousewheel.position.y <<", delta: "<< mousewheel.delta;
 //oon_main_view().p_alpha += (uint8_t)event.mouseWheelScroll.delta * 4;
 		break;
 	}
 
-	case myco::event::MouseButtonDown:
+	case SAL::event::MouseButtonDown:
 	{
-		const auto& mousepress = event.as<myco::event::MouseButtonDown>();
+		const auto& mousepress = event.as<SAL::event::MouseButtonDown>();
 //sf::Vector2f mouse = gui.mouse_position() + gui.getPosition();
 //LOGD << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y;
 
@@ -209,7 +209,7 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		if (gui.hovered())
 			goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-		auto vpos = oon_main_camera().screen_to_view_coord(mousepress.position.x, mousepress.position.y);
+		auto vpos = oon_main_view().draw_to_view(mousepress.position);
 		oon_main_camera().focus_offset = vpos;
 		EntityID clicked_entity_id = Entity::None;
 		if (entity_at_viewpos(oon_main_view(), vpos.x, vpos.y, &clicked_entity_id)) {
@@ -247,13 +247,13 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		break;
 	}
 
-	case myco::event::MouseMoved:
+	case SAL::event::MouseMoved:
 	{
-		const auto& mousemove = event.as<myco::event::MouseMoved>();
+		const auto& mousemove = event.as<SAL::event::MouseMoved>();
 
 		if (gui.focused() || gui.hovered()) goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-		auto vpos = oon_main_camera().screen_to_view_coord(mousemove.position.x, mousemove.position.y);
+		auto vpos = oon_main_view().draw_to_view(mousemove.position);
 
 		if (keystate(Shift) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { //!! Direct SFML use!
 			// pan_to_focus(anything), essentially:
@@ -272,11 +272,11 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		break;
 	}
 
-	case myco::event::WindowUnfocused:
+	case SAL::event::WindowUnfocused:
 		oon_main_view().dim();
 		break;
 
-	case myco::event::WindowFocused:
+	case SAL::event::WindowFocused:
 		oon_main_view().undim();
 		break;
 

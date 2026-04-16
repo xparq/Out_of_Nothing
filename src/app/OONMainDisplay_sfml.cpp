@@ -20,6 +20,8 @@
 #include <memory>
 	using std::make_shared;
 #include <cmath> // sin //!! Seriously, replace with a fast table lookup!
+#include <string>
+	using std::to_string; // Just for a debug log in reset()! :-/
 #include <cassert>
 
 
@@ -46,7 +48,8 @@ OONMainDisplay_sfml::OONMainDisplay_sfml(OONApp& app)
 //----------------------------------------------------------------------------
 void OONMainDisplay_sfml::reset(const Config* recfg)
 {
-LOGD << "------------------ DISPLAY RESET ---------------------";
+LOGD << "------------------ DISPLAY RESET (to size: "
+	+ to_string(cfg_.width) + "x" + to_string(cfg_.height) + ") ---------------------";
 
 	if (recfg) cfg_ = *recfg;
 
@@ -111,6 +114,9 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, EntityI
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
 
+//DBG_(shapes_to_draw.size());
+//DBG_(shapes_to_change.size());
+//DBG_(entity_ndx);
 	assert(shapes_to_draw.size()   == entity_ndx + 1);
 	assert(shapes_to_change.size() == entity_ndx + 1);
 
@@ -187,11 +193,11 @@ void OONMainDisplay_sfml::render_scene() const //!!override
 		//!! related to the camera view, but would obviously be best if they were identical!...
 
 	// a)
-		auto vpos = oon_camera().world_to_view_coord(body.p); //!!?? No longer needed: ... - V2f(body.r, -body.r)); //!! Rely on the objects' own origin offset!
+		auto vpos = oon_camera().world_to_view(body.p); //!!?? No longer needed: ... - V2f(body.r, -body.r)); //!! Rely on the objects' own origin offset!
 		                                                      //!! Mind the inverted camera & model y, too!
 	// b)
 	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
-	//	auto vpos = oon_camera.world_to_view_coord(body.p); //!!?? No longer needed: ... - Math::Vector2f(body.r, -body.r)); //!! Rely on the objects' own origin offset instead!
+	//	auto vpos = oon_camera.world_to_view(body.p); //!!?? No longer needed: ... - Math::Vector2f(body.r, -body.r)); //!! Rely on the objects' own origin offset instead!
 	//	                                                    //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.

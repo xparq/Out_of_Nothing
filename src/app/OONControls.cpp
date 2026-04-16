@@ -16,11 +16,13 @@ OONController::OONController()
 
 namespace OON {
 
-void OONController::update() //override //!! Check the cost of keystate(), calling the Win32 API several times!!!
+void OONController::update(Szim::Core::SimApp& app) //!override //!! Check the cost of keystate(), calling the Win32 API several times!!!
 {
-	if (app_->gui.focused()) {
-		return;
-	}
+	if (app.gui.focused()) return; //!! Should be done by the caller (which should be app.poll_controls(), called by the engine)!
+
+	//!!
+	//!! The cringy static keystate() should be accessed via app.rt.hci instead!
+	//!!
 
 	//!! Merge these, finally!...:
 	using namespace Szim::HCI;

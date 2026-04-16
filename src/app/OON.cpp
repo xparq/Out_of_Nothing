@@ -41,7 +41,6 @@ OONApp::OONApp(Szim::RuntimeContext& runtime, OONMainDisplay& main_view)
 	: App(runtime)
 	, appcfg(rt.syscfg, args)
 	, main_view_(main_view)
-	, controls(this)
 {
 	//!! Do not touch the view here: it's not initialized yet! Do that in init() instead!
 }
@@ -72,18 +71,38 @@ LOGD << __FUNCTION__ <<" started...";
 
 	using namespace Szim;
 
-	// Images...
+	//!! The UI setup absolutlely MUST come after a world has been mounted (not just init'ed)!
+	//!! In fact, let's just mount a default dummy world to allow an early UI init...:
+	//!!---------------------------------------------
+	//!! NOTE: The current engine version (0.112) calls this at post-init now,
+	//!!       which would be too late for this init sequence!
+	create_default_world();
+	//!!---------------------------------------------
+
+	//!! ...Not only that, it (at least one of the HUDs) also needs the default player added! :-(
+
+LOGI << "Adding player #1...";
+
+	//!!------------------------------------------------------------------
+	//!! CRITICALLY, THE FACT THAT THE PLAYER IS NOT RECREATED ON WORLD SWITCHES
+	//!! IS ONLY SURVIVED BECAUSE a) THERE'S ONLY 1 PLAYER, b) IN EACH SAVED MODEL
+	//!! THAT PLAYER INVARIABLY HAS THE SAME ENTITY #0 AS THE ITS MODEL!... :-o
+	//!! (Actually, having at least 1 entity in the mounted (loaded) models is
+	//!! probably enough, though. But mounting another empty default would cash!)
+	//!!------------------------------------------------------------------
+
+	// Add the "Player Superglobe" first
+	//!!
+	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
+	//!!
+	//!! Note: Player is not a world-local concept; must be handled in the app!
+	//!! Unfortunately though, it also already assumes a live (default) world!... :-/
+	//!! (i.e. `world()` being valid already)!
+	//!!
+	// Avatar images...
 	//!!
 	//!! MUST COME BEFORE CALLING add_entity() or its friends! :-o
 	//!!
-	avatars.emplace_back(Avatar{ .image_path = "image/HoryJesus.jpg", .tint_RGBA = 0xffff99ff });
-	tx_jesus = avatars.size() - 1;
-	avatars.emplace_back(Avatar{ .image_path = "image/SantaMatt.jpg", .tint_RGBA = 0xccccffff });
-	tx_santa = avatars.size() - 1;
-	avatars.emplace_back(Avatar{ .image_path = "image/KittyGod.jpg"});
-	tx_kittygod = avatars.size() - 1;
-
-
 	//!!---------------------------------------------
 	//!! BEWARE: In this stupid proto/legacy the avatar loading must happen before the model init!
 	//!! (Which should be either fully decoupled from the model (so the order shouldn't matter),
@@ -91,12 +110,37 @@ LOGD << __FUNCTION__ <<" started...";
 	//!!
 	//!! SHOULD BE CALLED BY by the internal app init(), or "SOME OTHER APPROPRIATE TIME"
 	//!! (E.G. IN ACCORDANCE WITH SESSION LOADING, BUT THAT POINT DOESN'T EXIST YET)!...
-	//!!
-	//!! The current engine version (0.112) calls this at post-init time now!
-	//!! That would've been to late for this old init sequence, as things used to depend on it here, in init()!
-	//!!create_default_world();
 	//!!---------------------------------------------
+	avatars.emplace_back(Avatar{ .image_path = "image/HoryJesus.jpg", .tint_RGBA = 0xffff99ff });
+	tx_jesus = avatars.size() - 1;
+	avatars.emplace_back(Avatar{ .image_path = "image/SantaMatt.jpg", .tint_RGBA = 0xccccffff });
+	tx_santa = avatars.size() - 1;
+	avatars.emplace_back(Avatar{ .image_path = "image/KittyGod.jpg"});
+	tx_kittygod = avatars.size() - 1;
 
+	auto player_id [[maybe_unused]] = //! Only for assertions in a DEBUG build!
+	add_player(
+		{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
+		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
+		 .p = {0,0}, .v = {0,0},
+		 .color = 0xffff20,
+		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
+		controls,
+		avatars[tx_jesus]
+	);
+	assert(players.size() == 1);
+	assert(entity_count() > player(player_id).entity_ndx);
+	assert(player_entity_ndx() == player(player_id).entity_ndx);
+
+	// Focus on Player #1:
+	focused_entity_ndx = player_entity_ndx(1); //!!... See on_world_initializing()!
+
+
+	//!! Some widgets are STILL not properly updated by later app/world changes!
+	ui_setup(); //!!?? Should this come even after the main_view init? (Or will the main view eventually need to depend on the UI??)
+
+LOGD << "Calling OONMainView.reset after default world, player & UI setup.";
+	oon_main_view().reset();
 
 	// Audio...
 	//!
@@ -140,100 +184,8 @@ LOGD << __FUNCTION__ <<" finished.";
 
 
 //----------------------------------------------------------------------------
-bool OONApp::done() //override
+void OONApp::on_initialized() //override
 {
-	LOGD << __FUNCTION__ <<": Put any custom 'onExit' tasks (like saving the last state) here!...\n";
-
-	//!! MOVE THE SESSION LOGIC TO SimApp:
-	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
-	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
-		session_manager.close();
-	}
-
-	return true;
-}
-
-//----------------------------------------------------------------------------
-void OONApp::on_world_initializing(Szim::Core::Model::World* new_world) //override
-{
-/*!! Everything's still so entangled with `world()` that basically nothing can
-     be done here before that, on a standalone world alone! :-/
-
-	auto& w = *static_cast<World*>(new_world);
-!!*/
-}
-
-
-//----------------------------------------------------------------------------
-void OONApp::on_world_activated() //override
-{
-	auto& w = world();
-		//!! Default-constr'd (so uninitialized) OON world
-		//!! implicitly created by the engine, but not yet
-		//!! mounted, so... "must remember" that world()
-		//!! is UNDEFINED yet! :-ooo
-
-
-	//!! OMG, also the cringefest!... The view.reset() below is needed to sync the view._avatars list with the "real" avatars,
-	//!! which is -- alas, counterintuitively! -- expected by (something in) add_entity(), I guess! :-o :-/
-	//!! -> WHICH SHOULD BE FIXED, MOST LIKELY!
-LOGD << "Display.reset right after loading the avatar images:";
-	oon_main_view().reset(); //!!REPLACE THIS WITH A SANER WAY TO SYNC THE VIEW TO THE APP STATE (i.e. the avatars)!
-
-
-	// Add the "Player Superglobe" first
-	//!!
-	//!! THIS MUST COME BEFORE CALLING add_random_bodies_near(player)! :-o
-	//!!
-	//!! Note: Player is not a world-local concept; must be handled in the app!
-	//!! Unfortunately though, it also already assumes a live (default) world!... :-/
-	//!! (i.e. `world()` being valid already)!
-	//!!
-LOGI << "Adding player #1...";
-	auto player_id [[maybe_unused]] = //! Only for assertions in a DEBUG build!
-	add_player(
-		{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
-		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
-		 .p = {0,0}, .v = {0,0},
-		 .color = 0xffff20,
-		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
-		avatars[tx_jesus],
-		controls
-	);
-	assert(players.size() == 1);
-	assert(entity_count() > player(player_id).entity_ndx);
-	assert(player_entity_ndx() == player(player_id).entity_ndx);
-
-	//!!
-	//!! THIS STILL MUST FOLLOW ADDING THE PLAYERS!...
-	//!!
-	try { // <- Absolutely required, as sto...() are very throw-happy.
-		// Doing the ones that can't fail first, so an excpt. won't skip them:
-		if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
-			set_interact_n2n();
-		}; if (args["bodies"]) {
-			auto n = stoi(args("bodies"));
-			add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
-		   } else if (!args["session"]) { //! Only if no session being loaded...
-		                                //!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
-LOGI << "Creating two small moons by default...";
-			// Add 2 "moons" with fixed parameters (mainly for testing):
-			add_entity({//.r = w.CFG_GLOBE_RADIUS/10, // Redundant: will be calculated!
-				    .p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
-			            .color = 0xff2020, .mass = 3e24f});
-			add_entity({//.r = w.CFG_GLOBE_RADIUS/7, // Redundant: will be calculated!
-			            .p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS * 1.8f, -w.CFG_GLOBE_RADIUS * 1.5f},
-			            .color = 0x3060ff, .mass = 3e24f});
-		}; if (args["friction"]) {
-			float f = stof(args("friction"));
-			w.props.friction = f;
-		};
-	} catch(...) {
-		Error("Failed to process/apply some cmdline args!");
-		request_exit(-1);
-		return;
-	}
-
 	// Note also that init_world() is eventually wasted if we're also loading a session,
 	// but that's a price paid for *some* level of simplicity in the init sequence.
 	//!!
@@ -262,7 +214,74 @@ LOGI << "Creating two small moons by default...";
 		//!! - But preferably also being able to load from some text format
 		//!!   (TOML etc.), to finally replace this sad little hardcoding here:
 		//!!
+		//!! But, for now...:
+
+		//!!
+		//!! NOTE: THIS MUST FOLLOW ADDING THE PLAYERS!...
+		//!!
+		try { // <- Absolutely required, as sto...() are very throw-happy.
+			auto& w = world();
+			// Doing the ones that can't fail first, so an excpt. won't skip them:
+			if (appcfg.get("sim/global_interactions", cfg.global_interactions)) { //!! :-/ EHH, RESOLVE THIS compulsory defult misery!
+				set_interact_n2n();
+			}; if (args["bodies"]) {
+				auto n = stoi(args("bodies"));
+				add_random_bodies_near(player_entity_ndx(), n < 0 ? 0 : n); //! Dodge a possible overflow of n
+			} else if (!args["session"]) { //! Only if no session being loaded...
+							//!! MAKE THIS CHECK (FOR A SESSION) MUCH MORE ROBUST!!!
+LOGI << "Creating two small moons by default...";
+				// Add 2 "moons" with fixed parameters (mainly for testing):
+				add_entity({//.r = w.CFG_GLOBE_RADIUS/10, // Redundant: will be calculated!
+					.p = {w.CFG_GLOBE_RADIUS * 2, 0}, .v = {0, -w.CFG_GLOBE_RADIUS * 2},
+					.color = 0xff2020, .mass = 3e24f});
+				add_entity({//.r = w.CFG_GLOBE_RADIUS/7, // Redundant: will be calculated!
+					.p = {-w.CFG_GLOBE_RADIUS * 1.6f, +w.CFG_GLOBE_RADIUS * 1.2f}, .v = {-w.CFG_GLOBE_RADIUS * 1.8f, -w.CFG_GLOBE_RADIUS * 1.5f},
+					.color = 0x3060ff, .mass = 3e24f});
+			}; if (args["friction"]) {
+				float f = stof(args("friction"));
+				w.props.friction = f;
+			};
+		} catch(...) {
+			Error("Failed to process/apply some cmdline args!");
+			request_exit(-1);
+			return;
+		}
 	}
+}
+
+//----------------------------------------------------------------------------
+bool OONApp::done() //override
+{
+	LOGD << __FUNCTION__ <<": Put any custom 'onExit' tasks (like saving the last state) here!...\n";
+
+	//!! MOVE THE SESSION LOGIC TO SimApp:
+	// Let the session-manager auto-save the current session (unless disabled with --session-no-autosave; see SimApp::init()!)
+	if (args["session"]) { // If empty and no --session-save-as, it will be saved as "UNNAMED.autosave" or sg. like that.
+		session_manager.close();
+	}
+
+	return true;
+}
+
+//----------------------------------------------------------------------------
+void OONApp::on_world_initializing(Szim::Core::Model::World* new_world) //override
+{
+/*!! Everything's still so entangled with `world()` that basically nothing can
+     be done here before that, on a standalone world alone! :-/
+
+	auto& w = *static_cast<World*>(new_world);
+!!*/
+}
+
+
+//----------------------------------------------------------------------------
+void OONApp::on_world_activated() //override
+{_
+	auto& w = world();
+		//!! Default-constr'd (so uninitialized) OON world
+		//!! implicitly created by the engine, but not yet
+		//!! mounted, so... "must remember" that world()
+		//!! is UNDEFINED yet! :-ooo
 
 	//!! This shouldn't be needed, the engine should take care of it: #462!
 	//!! And the view resize should also implicitly take care of any camera adjustments, too, so
@@ -289,21 +308,6 @@ LOGI << "Creating two small moons by default...";
 		request_exit(-1);
 		return; //!! OLD: return false;
 	}
-
-	// Focus on Player #1:
-	focused_entity_ndx = player_entity_ndx(1); //!!... See on_world_initializing()!
-
-	//!! Absolutlely MUST come after a world has been mounted (not just init'ed)!
-	//!! Also: the widgets are only (or mostly) initialized from prior app state, and not updated by (most)
-	//!! app-level ops, so with an early UI setup some widgets may get out of sync by later app changes!
-	ui_setup(); //!!?? Should this come even after the main_view init? (Or will the main view eventually need to depend on the UI??)
-
-	//!! Also this, called manually... Sigh... A temp. workaround for #472:
-	//!! (And this is a pretty arbitrary place for that, too! :-o :-/ )
-	//!! ALSO: if there was a session load, it has already called it, so there
-	//!! are double debug outputs for it...
-LOGD << "Display.reset after UI setup:";
-	oon_main_view().reset();
 
 	// Apply custom config adjustments/fixup...
 	world().props.gravity_mode = appcfg.gravity_mode;
@@ -335,7 +339,7 @@ void OONApp::resize_shape(EntityID ndx, float factor) //override
 
 
 //----------------------------------------------------------------------------
-unsigned OONApp::add_player(Entity&& obj, Szim::Avatar& avatar, VirtualController& ctrlr) //override
+unsigned OONApp::add_player(Entity&& obj, Szim::Core::VirtualController& ctrlr, Szim::Avatar& avatar) //!override
 {
 	// These are the player modelling differences from other objects:
 	obj.add_thrusters();
@@ -343,28 +347,23 @@ unsigned OONApp::add_player(Entity&& obj, Szim::Avatar& avatar, VirtualControlle
 	obj.superpower.free_color = true;
 	obj/*.superpower*/.lifetime = Entity::Unlimited; //!!?? Should be a superpower instead?
 
-	auto p_ent = (unsigned) //!! Blatant narrowing conv., hoping entity_count() will never overflow `unsigned`...
-		add_entity(std::forward<Entity>(obj));
-
-	players.emplace_back(p_ent, avatar, ctrlr);
-	assert(players.size());
-	return (unsigned)players.size(); //!!?? Should it return the player ID instead?
+	return App::add_player(std::move(obj), ctrlr, avatar);
 }
 
 void OONApp::remove_player(unsigned)
 //!! Just deleting it would shift the array and invalidate all the subsequent indexes! :-/
 //!! A simple (not std!) player index map is needed! Or is this just the right job for sz::lockers?! :-o
-//!! However, that's a fixed number of players.
-//!! Must distinguish between a local game with *very few* local players,
-//!! and servers with a huge number of them!
+//!! However, that's for a fixed number of players only.
+//!! May need to distinguish anyway between a non-networked standalone game with *very few*
+//!! local players, and servers with potentially a huge number of them!
 {
 }
 
 
 //----------------------------------------------------------------------------
-void OONApp::get_control_inputs() //override
+void OONApp::poll_controls() //override
 {
-	controls.update(); // Refreshing polled states now, nothing else
+	controls.update(*this); // Refreshing polled states now, nothing else
 		//!! Should be moved to the event loop, but only after the
 		//!! current hamfisted threading is resolved; there could be
 		//!! much delay between polling and actually reacting now!
@@ -372,7 +371,7 @@ void OONApp::get_control_inputs() //override
 
 
 //----------------------------------------------------------------------------
-bool OONApp::react_to_control_inputs()
+bool OONApp::update_intents()
 {
 	using namespace Szim;
 
@@ -436,7 +435,7 @@ LOGI << "- Shield depleted! Recharging for " << -shield_active << " frames...";
 		}
 	}
 
-	//!! No concept of multiple players whatsoever yet:
+	//!! Should be done by the engine! (For each player.)
 	if (action) player_mark_active();
 
 	return action;
@@ -484,9 +483,9 @@ void OONApp::pan_view(float delta_x, float delta_y)
 
 //!!	Phys::Pos2 w_delta = oon_main_camera().view_to_world_pos({delta.x(), delta.y()});
 //!! Pretty sure it can't correctly convert a displacement, only an abs. pos:
-//!!??	auto       v_delta = oon_main_camera().world_to_view_coord(w_delta);
+//!!??	auto       v_delta = oon_main_camera().world_to_view(w_delta);
 //!! But they still should, in fact, work the same here, right?!
-//!!??	auto       v_delta = oon_main_camera().world_to_view_coord(w_delta);
+//!!??	auto       v_delta = oon_main_camera().world_to_view(w_delta);
 //!!??	oon_main_camera().pan_x(v_delta.x);
 //!!??	oon_main_camera().pan_y(v_delta.y);
 }
@@ -499,7 +498,7 @@ void OONApp::center(EntityID entity_id)
 {
 	oon_main_camera().look_at(entity(entity_id).p);
 /*	auto w_pos = entity(entity_id).p;
-	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+	auto v_pos = oon_main_camera().world_to_view(w_pos);
 cerr << "center(" << entity_id <<"):\n"
      << " -> world-pos: " << w_pos.x <<", "<< w_pos.y
      << " -> view-pos: "  << v_pos.x <<", "<< v_pos.y
@@ -516,7 +515,7 @@ void OONApp::center_player(PlayerID player_id)
 void OONApp::pan_to_focus(EntityID entity_id)
 {
 	auto w_pos = entity(entity_id).p;
-	auto v_pos = oon_main_camera().world_to_view_coord(w_pos);
+	auto v_pos = oon_main_camera().world_to_view(w_pos);
 
 	oon_main_camera().pan_view(v_pos - oon_main_camera().focus_offset);
 }
@@ -557,17 +556,17 @@ void OONApp::zoom_out(float amount) { zoom(1.f / (1.f + amount)); }
 /*!!
 void OONApp::zoom(float factor)
 {
-//auto viewpos = oon_main_camera().world_to_view_coord(player_entity().p);
+//auto viewpos = oon_main_camera().world_to_view(player_entity().p);
 //cerr << "- focus vs player diff: " << (viewpos - oon_main_camera().focus_offset).x << ", " << (viewpos - oon_main_camera().focus_offset).y << '\n';
 
 //!!pre_zoom_hook(factor);
 	// Compensate for zoom displacement when the player object is not centered
-	auto v = oon_main_camera().world_to_view_coord(oon_main_camera().offset);
+	auto v = oon_main_camera().world_to_view(oon_main_camera().offset);
 	pan((oon_main_camera().focus_offset - v) * oon_main_camera().zoom/factor);
 //	auto viewpos = oon_main_camera().focus_offset + oon_main_camera().offset;
 //	pan(viewpos - viewpos/factor);
 
-//	auto vpos = oon_main_camera().world_to_view_coord(oon_main_camera().offset);
+//	auto vpos = oon_main_camera().world_to_view(oon_main_camera().offset);
 //	pan(oon_main_camera().focus_offset/factor);
 
 	oon_main_camera().zoom *= factor;
@@ -1098,7 +1097,7 @@ void OONApp::updates_for_next_frame()
 		//!!? in addition to the async. event_loop()!...
 		//!! This doesn't just do low-level controls, but "fires" gameplay-level actions!
 		//!! (Not any actual processing, just input translation... HOPEFULLY! :) )
-		react_to_control_inputs();
+		update_intents();
 
 		//----------------------------
 		// Determine the size of the next model iteration time slice...
@@ -1167,7 +1166,7 @@ void OONApp::updates_for_next_frame()
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
-			oon_main_camera().focus_offset = oon_main_camera().world_to_view_coord(
+			oon_main_camera().focus_offset = oon_main_camera().world_to_view(
 				entity(focused_entity_ndx).p);
 			if (oon_main_camera().track(entity(focused_entity_ndx).p,
 			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/OONConfig::DEFAULT_ZOOM,
