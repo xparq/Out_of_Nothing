@@ -11,13 +11,13 @@ class Args; // Enough to #include it in the .cpp
 #include "app/Model/World.hpp"
 
 // Fw.-declare the System config (the app cfg. will have a reference to it):
-namespace Szim { class SimAppConfig; }
+namespace Szim::Core { class AppConfig; }
 
 namespace OON {
 
 struct OONConfig : Szim::gen::config
 {
-	const Szim::SimAppConfig& syscfg;
+	const Szim::Core::AppConfig& syscfg;
 /*!!
 	struct UI
 	{
@@ -75,7 +75,7 @@ struct OONConfig : Szim::gen::config
 	unsigned shield_burst_particles; // new particles/frame (normalized to 30FPS)
 
 	//----------------------------------------------------------------------------
-	OONConfig(const Szim::SimAppConfig& syscfg, const Args& args);
+	OONConfig(const Szim::Core::AppConfig& syscfg, const Args& args);
 	OONConfig(const OONConfig&) = delete; // Could actually be copied _now_, but I'll forget, and make mistakes...
 };
 

@@ -2,9 +2,8 @@
 
 #include "OON.hpp" // focused_entity_ndx, OONApp casts (Later, maybe: app.appcfg)
 
-//!! This "backend tunneling" is so sad this way"... See notes in OON_sfml.cpp!
-#include "Szim/Core/Device/_adapter_switcher.hpp"
-#include SWITCHED(BACKEND, _Backend.hpp)
+//!! This "backend tunneling" is so sad!... :-((( See notes in OON_sfml.cpp!
+#include "Szim/Core/Device/manager.hpp"
 #define SFML_WINDOW(app) ( ((Szim::HCI::SFML_HCI&)((app).rt.hci)).SFML_window() )
 
 
@@ -109,7 +108,7 @@ void OONMainDisplay_sfml::create_cached_shape(const Model::Entity& body, EntityI
 
 	//! Not all Drawables are also Transformables! (See e.g. vertex arrays etc.)
 	// (But our little ugly circles are, for now; see the assert below!)
-	auto shape = make_shared<sf::CircleShape>(float(body.r) * oon_camera().scale()); //!! float hardcoded!
+	auto shape = make_shared<sf::CircleShape>(float(body.r) * oon_camera().zoom()); //!! float hardcoded!
 	shape->setOrigin({shape->getRadius(), shape->getRadius()});
 	shapes_to_draw.push_back(shape);
 	shapes_to_change.push_back(shape); // "... to transform"
@@ -193,11 +192,11 @@ void OONMainDisplay_sfml::render_scene() const //!!override
 		//!! related to the camera view, but would obviously be best if they were identical!...
 
 	// a)
-		auto vpos = oon_camera().world_to_view(body.p); //!!?? No longer needed: ... - V2f(body.r, -body.r)); //!! Rely on the objects' own origin offset!
+		auto vpos = oon_camera().world2cam(body.p); //!!?? No longer needed: ... - V2f(body.r, -body.r)); //!! Rely on the objects' own origin offset!
 		                                                      //!! Mind the inverted camera & model y, too!
 	// b)
 	//	Szim::View::OrthoZoomCamera& oon_camera = (Szim::View::OrthoZoomCamera&) game.main_view().camera();
-	//	auto vpos = oon_camera.world_to_view(body.p); //!!?? No longer needed: ... - Math::Vector2f(body.r, -body.r)); //!! Rely on the objects' own origin offset instead!
+	//	auto vpos = oon_camera.world2cam(body.p); //!!?? No longer needed: ... - Math::Vector2f(body.r, -body.r)); //!! Rely on the objects' own origin offset instead!
 	//	                                                    //!! Mind the inverted camera & model y, too!
 		//!! Which they currently are NOT... The vertical axis (y) of the camera view is
 		//!! a) inverted wrt. SFML (draw) coords., b) its origin is the center of the camera view.
@@ -205,8 +204,8 @@ void OONMainDisplay_sfml::render_scene() const //!!override
 		trshape.setPosition(sf::Vector2f{ vpos.x + float(app().main_window_width()/2),
 			                         -vpos.y + float(app().main_window_height()/2)}); //!! "Standardize" on the view's centered origin instead!
 
-//LOGD << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body.p.x) * oon_camera.scale() + oon_camera.offset.x
-//			       << ", y = " << oon_camera.cfg.height/2 + (body.p.y) * oon_camera.scale() + oon_camera.offset.y;
+//LOGD << "render(): shape.setPos -> x = " << oon_camera.cfg.width /2 + (body.p.x) * oon_camera.zoom() + oon_camera.offset.x
+//                             << ", y = " << oon_camera.cfg.height/2 + (body.p.y) * oon_camera.zoom() + oon_camera.offset.y;
 	}
 } // render_scene
 
@@ -254,7 +253,7 @@ SFML_WINDOW(game).draw(hcenterline, 2, sf::PrimitiveType::Lines);
 	//!! May not remain a circle forever:
 	auto& player_shape = (sf::CircleShape&) *(shapes_to_change[player_ndx]);
 
-	auto rb = player_body.r * oon_camera().scale();
+	auto rb = player_body.r * oon_camera().zoom();
 //	auto rb = ((sf::CircleShape&)player_shape).getRadius();
 	static auto A = 1.0; // pixel
 	static auto f = 2.0; // Hz

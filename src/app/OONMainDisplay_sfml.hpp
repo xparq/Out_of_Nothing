@@ -19,7 +19,7 @@ class OONMainDisplay_sfml : public OONMainDisplay
 //!	and "pure" code! :-/
 //!
 //!	template< class AppSysImpl > // CRTP for backend-specifics
-//!	class OONMainDisplay_sfml : public OONMainDisplay<OONApp_sfml>
+//!	class OONMainDisplay_sfml : public OONMainDisplay<OONMain>
 //!
 {
 public:
@@ -31,7 +31,7 @@ public:
 	// Setup...
 	// -------------------------------------------------------------------
 
-	OONMainDisplay_sfml(class OONApp& app); // App isn't required to be OONApp_sfml.
+	OONMainDisplay_sfml(class OONApp& app); // App isn't required to be OONMain.
 
 	void reset(const Config* recfg = nullptr) override; // Resets things to the last cfg if null.
 //	void reset(Config&& recfg) override;

@@ -1,11 +1,14 @@
 ﻿// Must do this first for Tracy's winsock2.h has to precede any windows.h! :-/
 #include "extern/Tracy/public/tracy/Tracy.hpp"
 
-#include "OON_sfml.hpp"
+#include "OONMain.hpp"
 #include "OON_UI-impl.hpp"
 
 #include "Szim/Core/Device/HCI/Keyboard.hpp" //!! Make this less cumbersome!
 #include "SAL/event/Input.hpp"
+//!! Stuff still not abstracted in Myco/SAL...: :-/
+#include "sys/adapter/SFML.hpp" // mouse_button_down
+	using namespace sys::adapter::UI::Input;
 
 //!! This "backend tunneling" should be "allowed" (even properly facilitated,
 //!! in a more civilized way) later, after the backend selection becomes more
@@ -13,14 +16,12 @@
 //!! MycoGUI).
 //!!
 //!! A side-note/reminder: the goal here (on the app level) is only separating
-//!! (most of?) the *sources* from direct backend dependencies ("write once"),
-//!! not the entire compilation process.
+//!! (most of) the (-> write-once) sources from direct backend dependencies,
+//!! not the entire compilation process!
 //!!
-//!! So sad, still... :-(((
-#include "Szim/Core/Device/_adapter_switcher.hpp"
-#include SWITCHED(BACKEND, _Backend.hpp)
-#define SFML_WINDOW() (((Szim::SFML_Backend&)backend).SFML_window())
-#include <SFML/Graphics/RenderWindow.hpp>
+//!! This is so sad, still...: :-(((
+//!!#include "Szim/Core/Device/Manager.hpp" //!! Or sg. narrower!
+//!!#define SFML_WINDOW() (((Szim::SFML_Backend&)backend).SFML_window())
 
 #include <memory>
 	using std::make_shared;
@@ -31,7 +32,6 @@
 #include <cassert>
 
 #include "Szim/diag/Error.hpp"
-#include "Szim/diag/Log.hpp"
 
 using namespace Szim;
 using namespace Model;
@@ -44,16 +44,16 @@ using namespace std;
 namespace OON {
 
 //----------------------------------------------------------------------------
-OONApp_sfml::OONApp_sfml(RuntimeContext& runtime)
+OONMain::OONMain(RuntimeContext& runtime)
 	: OONApp(runtime, oon_main_view_) //!! The OONApp ctor MUST only set a ref to the view, not use it!!!
 	, oon_main_view_(*this) //!! Initialized later than the app itself! :-/
 {
-//std::cerr << "--- OONApp_sfml ctor" << std::endl;
+//std::cerr << "--- OONMain ctor" << std::endl;
 }
 
 
 //----------------------------------------------------------------------------
-void OONApp_sfml::process(const SAL::event::Input& event) //override
+void OONMain::process(const SAL::event::Input& event) //override
 {
 	using namespace Szim::HCI;
 
@@ -172,7 +172,7 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		break;
 /*!!NOT YET, AND NOT FOR SPAWN (#83):
 	case SAL::event::MouseButtonPressed:
-		if (event.mouseButton.button == sf::Mouse::Button::Left) {
+		if (event.button == SAL::Mouse::Button::Primary) { //!!...or what its name is... See also sys/adapter/SFML!!!
 			spawn(player_entity_ndx(), 100);
 		}
 		break;
@@ -182,7 +182,7 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 	{
 		//!! As a quick workaround for #334, we just check the GUI rect here
 		//!! directly and pass the event if it belongs there...
-//sf::Vector2f mouse = gui.mouse_position() + gui.getPosition();
+//auto mouse = gui.mouse_position() + gui.getPosition();
 //LOGD << "MouseWheel!";
 		if (gui.focused() || gui.hovered())
 			goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
@@ -197,7 +197,7 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 	case SAL::event::MouseButtonDown:
 	{
 		const auto& mousepress = event.as<SAL::event::MouseButtonDown>();
-//sf::Vector2f mouse = gui.mouse_position() + gui.getPosition();
+//auto mouse = gui.mouse_position() + gui.getPosition();
 //LOGD << "-- mouse: " << event.mouseButton.x <<", "<< event.mouseButton.y;
 
 //!!??auto vpos = oon_main_camera().screen_to_view_coord(x, y); //!!?? How the FUCK did this compile?!?!? :-o
@@ -209,8 +209,12 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 		if (gui.hovered())
 			goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-		auto vpos = oon_main_view().draw_to_view(mousepress.position);
-		oon_main_camera().focus_offset = vpos;
+//!!OLD:	auto vpos = oon_main_view().draw_to_view(mousepress.position);
+		auto cam_pos = oon_main_view().draw2cam(mousepress.position);
+	//!!	wpos = oon_main_camera().cam2world(cam_pos);
+	//!!??	
+		auto vpos = cam_pos;
+		oon_main_camera().set_focus_offset(vpos);
 		EntityID clicked_entity_id = Entity::None;
 		if (entity_at_viewpos(oon_main_view(), vpos.x, vpos.y, &clicked_entity_id)) {
 //LOGI << "Click: following object #"<<clicked_entity_id<<" now...";
@@ -253,9 +257,13 @@ if (cfg.DEBUG_show_keycode) Note("key code: " + keycode); //!! SFML3 has started
 
 		if (gui.focused() || gui.hovered()) goto process_ui_event; //!! Let the GUI also have some fun with the mouse! :) (-> #334)
 
-		auto vpos = oon_main_view().draw_to_view(mousemove.position);
+//!!OLD:	auto vpos = oon_main_view().draw_to_view(mousemove.position);
+		auto cam_pos = oon_main_view().draw2cam(mousemove.position);
+	//!!	wpos = oon_main_camera().cam2world(cam_pos);
+	//!!??	
+		auto vpos = cam_pos;
 
-		if (keystate(Shift) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { //!! Direct SFML use!
+		if (keystate(Shift) || mouse_button_down(MouseButton::Main)) { //!! Direct SFML use!
 			// pan_to_focus(anything), essentially:
 			oon_main_camera().pan_view(oon_main_camera().focus_offset - vpos);
 			oon_main_camera().focus_offset = vpos;

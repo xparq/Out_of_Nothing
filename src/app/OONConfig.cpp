@@ -25,7 +25,7 @@ using namespace Szim;
 using namespace std;
 
 //----------------------------------------------------------------------------
-OONConfig::OONConfig(const Szim::SimAppConfig& syscfg, [[maybe_unused]] const Args& args) :
+OONConfig::OONConfig(const Szim::Core::AppConfig& syscfg, [[maybe_unused]] const Args& args) :
 	config(sz::fs::prefix_by_intent(syscfg.base_path(), "OON.cfg"), &syscfg), // Also chain to syscfg!
 	syscfg(syscfg) //!! Config has just chained to it, but its '_base' ptr is private! :-/
 {

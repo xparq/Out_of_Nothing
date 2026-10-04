@@ -110,11 +110,11 @@ public:
 
 	void init() override;
 
-	// add_body() will do an initial recalc() on the newly added entity,
+	// add_entity() will do an initial recalc() on the newly added entity,
 	// mainly to allow partially initialized template objects as inputs:
-	EntityID add_body(Entity const& obj);
-	EntityID add_body(Entity&& obj);
-	void remove_body(EntityID ndx);
+	EntityID add_entity(Entity const& obj);
+	EntityID add_entity(Entity&& obj);
+	void remove_entity(EntityID ndx);
 
 //----------------------------------------------------------------------------
 // Modeling...

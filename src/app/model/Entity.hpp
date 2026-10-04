@@ -55,7 +55,7 @@ namespace OON::Model {
 		// Preset/recomputed:
 		uint32_t color = 0; // if left 0, it'll be recalculated from T (if not 0)
 			// RGB (Not containing an alpha byte (at LSB), so NOT compatible with the SFML Color ctors!
-			// The reason is easier add_body() calls here.)
+			// The reason is easier add_entity() calls here.)
 
 		Phys::Mass mass;
 
@@ -76,7 +76,7 @@ namespace OON::Model {
 		//!! ("OPTIONAL" 'coz the structure itself *IS* the type info, it's just cumbersome to work with.)
 
 		//! Alas, can't do this with designated inits: Entity() : mass(powf(r, 3) * density) {} :-(
-		//! So... (see e.g. add_body()):
+		//! So... (see e.g. add_entity()):
 		void recalc();
 		bool can_expire() const noexcept { return lifetime > 0; }
 		void terminate()        noexcept { lifetime = 0; } // Currently the best fit...

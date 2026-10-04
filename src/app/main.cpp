@@ -10,7 +10,7 @@
 
 #include "Szim/Engine.hpp"
 #include "Szim/generic/stdtap.hpp"
-#include "OON_sfml.hpp"
+#include "OONMain.hpp"
 
 #include <iostream> // For normal user-facing output
 	using std::cout, std::endl;
@@ -88,13 +88,13 @@ int main(int argc, char* argv[])
 		using namespace OON;
 		Szim::Engine engine(argc, argv, "default.cfg");
 			LOGD << "Size of the engine obj.: sizeof(engine) == " << sizeof(engine);
-			LOGD << "Size of the app obj.: sizeof(OONApp_sfml) == " << sizeof(OONApp_sfml);
-			Main.exit_code = engine.run<OONApp_sfml>();
+			LOGD << "Size of the app obj.: sizeof(OONMain) == " << sizeof(OONMain);
+			Main.exit_code = engine.run<OONMain>();
 			//! Remember: Main.exit_code won't be set on exceptions!
 
 		// Alternatively, if the (SimApp-derived) app is created outside the engine (e.g. here):
 		// MyApp app(engine.context());
-		// Main.exit_code = engine.run<OONApp_sfml>(app, argc, argv);
+		// Main.exit_code = engine.run<OONMain>(app, argc, argv);
 
 		LOGI	<< "Profiling stats:\n"
 			<< "------------------------------------------------------\n"

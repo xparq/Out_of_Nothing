@@ -158,7 +158,7 @@ LOGD << "World::load: gravity_mode = " << (unsigned)w_new.props.gravity_mode;
 			Error("Loading entity #" + to_string(n) + " failed!");
 			return false;
 		}
-		w_new.add_body(std::move(template_obj));
+		w_new.add_entity(std::move(template_obj));
 	}
 
 	return true;

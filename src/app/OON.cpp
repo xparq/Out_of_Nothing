@@ -118,16 +118,17 @@ LOGI << "Adding player #1...";
 	avatars.emplace_back(Avatar{ .image_path = "image/KittyGod.jpg"});
 	tx_kittygod = avatars.size() - 1;
 
-	auto player_id [[maybe_unused]] = //! Only for assertions in a DEBUG build!
-	add_player(
-		{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
-		 .density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
-		 .p = {0,0}, .v = {0,0},
-		 .color = 0xffff20,
-		 .mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
-		controls,
-		avatars[tx_jesus]
-	);
+	auto player_id [[maybe_unused]] = //! Only for a DEBUG assertion!
+		add_player(
+			{//.r = w.CFG_GLOBE_RADIUS, // Redundant: will be calculated!
+			.density = appcfg.get("sim/player_globe_density", Phys::DENSITY_OF_EARTH / 10.f),
+			.p = {0,0}, .v = {0,0},
+			.color = 0xffff20,
+			.mass = appcfg.get("sim/player_globe_mass", 50 * Phys::MASS_OF_EARTH)},
+			controls,
+			avatars[tx_jesus]
+		);
+//DBG_(player_id);
 	assert(players.size() == 1);
 	assert(entity_count() > player(player_id).entity_ndx);
 	assert(player_entity_ndx() == player(player_id).entity_ndx);
@@ -299,7 +300,7 @@ void OONApp::on_world_activated() //override
 		if (!args("zoom-adjust").empty()) {
 			// Trim the original base scale level:
 			if (float trim = stof(args("zoom-adjust")); trim) {
-				oon_main_camera().cfg.base_scale *= trim;
+				oon_main_view().camera().cfg.base_scale *= trim;
 				zoom_reset();
 			}
 		}
@@ -483,9 +484,9 @@ void OONApp::pan_view(float delta_x, float delta_y)
 
 //!!	Phys::Pos2 w_delta = oon_main_camera().view_to_world_pos({delta.x(), delta.y()});
 //!! Pretty sure it can't correctly convert a displacement, only an abs. pos:
-//!!??	auto       v_delta = oon_main_camera().world_to_view(w_delta);
+//!!??	auto       v_delta = oon_main_camera().world2cam(w_delta);
 //!! But they still should, in fact, work the same here, right?!
-//!!??	auto       v_delta = oon_main_camera().world_to_view(w_delta);
+//!!??	auto       v_delta = oon_main_camera().world2cam(w_delta);
 //!!??	oon_main_camera().pan_x(v_delta.x);
 //!!??	oon_main_camera().pan_y(v_delta.y);
 }
@@ -498,7 +499,7 @@ void OONApp::center(EntityID entity_id)
 {
 	oon_main_camera().look_at(entity(entity_id).p);
 /*	auto w_pos = entity(entity_id).p;
-	auto v_pos = oon_main_camera().world_to_view(w_pos);
+	auto v_pos = oon_main_camera().world2cam(w_pos);
 cerr << "center(" << entity_id <<"):\n"
      << " -> world-pos: " << w_pos.x <<", "<< w_pos.y
      << " -> view-pos: "  << v_pos.x <<", "<< v_pos.y
@@ -515,7 +516,7 @@ void OONApp::center_player(PlayerID player_id)
 void OONApp::pan_to_focus(EntityID entity_id)
 {
 	auto w_pos = entity(entity_id).p;
-	auto v_pos = oon_main_camera().world_to_view(w_pos);
+	auto v_pos = oon_main_camera().world2cam(w_pos);
 
 	oon_main_camera().pan_view(v_pos - oon_main_camera().focus_offset);
 }
@@ -531,22 +532,31 @@ void OONApp::follow_player(unsigned player_id)
 void OONApp::zoom_reset()
 {
 	//! Can't just call oon_main_camera().reset_zoom(): we need to adjust the cached shapes, too!
-
-	auto old_scale = oon_main_camera().scale(); // See below why this is needed...
+	//!!?? Also can't just trivially call zoom(cam.cfg.base_scale / cam.zoom()) either,
+	//!!?? as the two zoom levels would go out of sync!... :-o [FUTURE ME: HUH?!]
+	//!!?? Or... can I?
+	zoom(oon_main_view().camera().cfg.base_scale / oon_main_camera().zoom());
+/*!!??
+	auto old_zoom = oon_main_camera().zoom(); // See below why this is needed...
 
 	oon_main_camera().reset_zoom();
 
 	//!! Alas, no direct (abs.) (re)set_scale method for this:
-	resize_shapes(oon_main_camera().scale()/old_scale); // Adjust scaling (relative to current level)
-	//!! (Also can't just trivially call zoom(...) here either, as the two zoom levels would go out of sync.)
+	//!!scale_shapes(level); // Set scaling (abs. scaling level rel. to the backend's default 1)
+	resize_shapes(oon_main_camera().zoom() / old_zoom);
+??!!*/
 }
 
 void OONApp::zoom(float factor)
 {
-	//!!?? if (!factor) factor = 1.0f; //! 0 makes 0 sense, so...
+	//!!??
+	if (!factor) factor = 1.0f; //! 0 makes 0 sense, so...
+
 	oon_main_camera().zoom(factor);
+
+	//!! Alas, no direct (abs.) (re)set_scale method for this:
+	//!!scale_shapes(level); // Set scaling (abs. scaling level rel. to the backend's default 1)
 	resize_shapes(factor); // Adjust scaling (relative to current level)
-	//!!scale_shapes(level); // Set scaling (abs. level)
 }
 // These can't call oon_main_camera().zoom_in/out directly either, because we need to trigger our zoom_hook!...
 void OONApp::zoom_in (float amount) { zoom(1.f + amount); }
@@ -556,17 +566,17 @@ void OONApp::zoom_out(float amount) { zoom(1.f / (1.f + amount)); }
 /*!!
 void OONApp::zoom(float factor)
 {
-//auto viewpos = oon_main_camera().world_to_view(player_entity().p);
+//auto viewpos = oon_main_camera().world2cam(player_entity().p);
 //cerr << "- focus vs player diff: " << (viewpos - oon_main_camera().focus_offset).x << ", " << (viewpos - oon_main_camera().focus_offset).y << '\n';
 
 //!!pre_zoom_hook(factor);
 	// Compensate for zoom displacement when the player object is not centered
-	auto v = oon_main_camera().world_to_view(oon_main_camera().offset);
+	auto v = oon_main_camera().world2cam(oon_main_camera().offset);
 	pan((oon_main_camera().focus_offset - v) * oon_main_camera().zoom/factor);
 //	auto viewpos = oon_main_camera().focus_offset + oon_main_camera().offset;
 //	pan(viewpos - viewpos/factor);
 
-//	auto vpos = oon_main_camera().world_to_view(oon_main_camera().offset);
+//	auto vpos = oon_main_camera().world2cam(oon_main_camera().offset);
 //	pan(oon_main_camera().focus_offset/factor);
 
 	oon_main_camera().zoom *= factor;
@@ -1166,13 +1176,13 @@ void OONApp::updates_for_next_frame()
 static const float autofollow_margin    = appcfg.get("controls/autofollow_margin", 100.f);
 static const float autofollow_throwback = appcfg.get("controls/autofollow_throwback", 2.f);
 static const float autozoom_delta       = appcfg.get("controls/autozoom_rate", 0.1f);
-			oon_main_camera().focus_offset = oon_main_camera().world_to_view(
+			oon_main_camera().focus_offset = oon_main_camera().world2cam(
 				entity(focused_entity_ndx).p);
 			if (oon_main_camera().track(entity(focused_entity_ndx).p,
-			    autofollow_margin + autofollow_margin/2 * oon_main_camera().scale()/OONConfig::DEFAULT_ZOOM,
+			    autofollow_margin + autofollow_margin/2 * oon_main_camera().zoom()/OONConfig::DEFAULT_ZOOM,
 			    autofollow_throwback)) { // true = drifted off
 				zoom_control(AutoFollow, -autozoom_delta); // Emulate the mouse wheel...
-//cerr << "oon_main_camera().scale(): "<<oon_main_camera().scale()<<", DEFAULT_ZOOM: "<<oon_main_camera().scale()<<", ratio: "<<oon_main_camera().scale() / OONConfig::DEFAULT_ZOOM<<'\n';
+//cerr << "oon_main_camera().zoom(): "<<oon_main_camera().zoom()<<", base_scale: "<<oon_main_camera().zoom()<<", ratio: "<<oon_main_camera().zoon() / OONConfig::DEFAULT_ZOOM<<'\n';
 			}
 		}
 	}

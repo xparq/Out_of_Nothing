@@ -20,7 +20,7 @@ OONMainDisplay::OONMainDisplay(Config cfg) : cfg_(cfg)
 OONMainDisplay::OONMainDisplay(OONViewConfig cfg, OONApp& app)
 	: ScreenView(cfg, oon_default_camera_)
 	, app_(app)
-	, oon_default_camera_({.base_scale = OONConfig::DEFAULT_ZOOM})
+	, oon_default_camera_({{.base_scale = OONConfig::DEFAULT_ZOOM}}) //!!C++ bullshit: {{}} for base member access
 {
 //	reset(); // Calc. initial state
 	LOGD <<	"Camera pointer (_camera): " << camera_;

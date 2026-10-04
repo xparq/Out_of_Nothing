@@ -19,7 +19,9 @@
 //#include "Szim/Core/Devices.hpp"
 	#include "Szim/Core/Device/Audio.hpp" // play_sound; accessed via app.rt.audio, or aliased to app.audio
 
-#include <cassert>
+#include "sz/lang/IGNORE.hh" //! Reinclude to defeat winbase.h... ;)
+
+#include <assert.h>
 //!!NOT YET! Too cumbersome for the trivial alternative.
 //!!#include <optional>
 //!!	using std::optional, std::nullopt;
@@ -52,24 +54,24 @@ using namespace Math;
 
 //============================================================================
 //----------------------------------------------------------------------------
-EntityID World::add_body(Entity const& obj)
+EntityID World::add_entity(Entity const& obj)
 {
-ZoneScoped; //!!IPROF("add_body-copy");
+ZoneScoped; //!!IPROF("add_entity-copy");
 	bodies.push_back(std::make_shared<Entity>(obj));
 	auto ndx = bodies.size() - 1;
 	bodies[ndx]->recalc();
 	return ndx;
 }
 
-EntityID World::add_body(Entity&& obj)
+EntityID World::add_entity(Entity&& obj)
 {
-ZoneScoped; //!!IPROF("add_body-move");
+ZoneScoped; //!!IPROF("add_entity-move");
 	obj.recalc(); // just recalc the original throw-away obj
 	bodies.emplace_back(std::make_shared<Entity>(obj));
 	return bodies.size() - 1;
 }
 
-void World::remove_body(EntityID ndx)
+void World::remove_entity(EntityID ndx)
 {
 ZoneScoped;
 	assert(bodies.size() > 0);
@@ -486,7 +488,7 @@ void World::_copy(World const& source)
 		props = source.props;
 
 		bodies.clear();
-		for (const auto& b : source.bodies) { add_body(*b); }
+		for (const auto& b : source.bodies) { add_entity(*b); }
 
 		loop_mode_ = source.loop_mode_;
 	}

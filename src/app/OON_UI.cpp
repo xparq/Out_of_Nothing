@@ -70,7 +70,7 @@ bool OONApp::show_cmdline_help(const char* banner) //override
 //----------------------------------------------------------------------------
 UI::HUDStream& OONApp::ui_gebi(HUD_ID which) const
 {
-//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(myco::Color(appcfg.get(cfgprop, def)).toInteger()))
+//#define CFG_HUD_COLOR(cfgprop, def) (uint32_t(Color(appcfg.get(cfgprop, def)).toInteger()))
 	// NOTE: .cfg is ready to use now!
 
 	assert(huds);
@@ -151,7 +151,7 @@ void OONApp::ui_setup()
 	// must be applied. The clearBackground option must be left at its default (true):
 	//Theme::clearBackground = false;
 	// Button label and caption color:
-	Theme::styling_profile_ref(myco::style::Tactile).textColor = myco::Color("#ee9"); //!!YUCK!!
+	Theme::styling_profile_ref(myco::style::Tactile).textColor = Color("#ee9"); //!!YUCK!!
 	auto gui_main_hbox = gui.add(new HBox);
 
 	// General/performance controls...
@@ -231,7 +231,7 @@ void OONApp::ui_setup()
 		saveload_form->add("File", new TextField);
 		auto	saveload_buttons = saveload_form->add("", new HBox);
 			saveload_buttons->add(new Button("Save"))
-				->set_text_color(sf::Color::Black)->set_color(myco::Color("#f002"))
+				->set_text_color(Color::Black)->set_color(Color("#f002"))
 				->setCallback([&]{
 					if (auto* fname_widget = (TextField*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
@@ -243,7 +243,7 @@ void OONApp::ui_setup()
 					}
 				});
 			saveload_buttons->add(new Button("Load"))
-				->set_text_color(sf::Color::Black)->set_color(myco::Color("#0f02"))
+				->set_text_color(Color::Black)->set_color(Color("#0f02"))
 				->setCallback([&]{
 					if (auto* fname_widget = (TextField*)gui.recall("File"); fname_widget) {
 						auto fname = fname_widget->get();
@@ -392,8 +392,9 @@ void OONApp::ui_setup_HUD_View(/*!!, mode/config...!!*/)
 		<< "\n  X: " << &oon_main_camera().view_offset.x << ", Y: " << &oon_main_camera().view_offset.y
 		//!! to_string() fucked it up and returned "0.000000" for e.g. 0.00000005f! :-o (#509)
 		//!! << "\n  Scale: " << [this](){ return to_string(oon_main_camera().scale() * 1e6f); } << " x 1e-6"
-		<< "\n  Base scale: " << &oon_main_camera().cfg.base_scale
-		<< "\n  Zoom adj.: "<< [this](){ return to_string(oon_main_camera().scale() / oon_main_camera().cfg.base_scale); }
+		<< "\n  Base scale: " << &oon_main_view().camera().cfg.base_scale  //!! must use the gen. Canera for base_scale... :-/
+		<< "\n  Zoom adj.: "<< [this](){ return to_string(oon_main_camera().zoom()
+		                                                / oon_main_view().camera().cfg.base_scale); } //!! must use the gen. Canera  for base_scale... :-/
 		<< "\n  Focus: "<< &oon_main_camera().focus_offset.x << ", " << &oon_main_camera().focus_offset.y
 /*
 		<< "\nVIEWPORT:"

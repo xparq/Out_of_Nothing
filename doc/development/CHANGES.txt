@@ -37,9 +37,9 @@
     it (by removing Esc -> window.close() from the event loop) the error changed to:
     	"Failed to activate OpenGL context: Error 3221688541"
     which is just a generic Win32 INVALID OPERATION error... :-/
-  ! Also, Esc doesn't trigger the sf::Close event, so why exactly is the Window still 
+  ? Also, Esc doesn't trigger the sf::Close event, so why exactly is the Window still
     closing after all?
-  ! Also: if closing the window with its close button, the original error is
+  ! And: if closing the window with its close button, the original error is
     showing yet again.
 
 ! [fix-setactive-fail] SFML window.setActive errors on termination.
@@ -79,10 +79,6 @@
 - Switch the debug console log on/off, and check (on the HUD) how it affects the fps!
 - Measure FPS with partial (vs. the "mandatory" full) screen clear & redraw.
 - Test on T400 + Win7!
-- Better (de)coupling between SFML and the World!
-  The generic World should also be able to use vectors, and time, without
-  sf::Vector2 and sf::Clock.
-  - Some light adapter ("native generic" <-> SFML) classes could do.
 ? If performance doesn't mind, move to a less cumbersome design where shapes
   aren't kept persistently all the time, but recreated for each frame anew,
   as needed, and *the way they are needed* (rather than modifying them, e.g.
@@ -94,6 +90,11 @@
 ------------------------------------------------------------------------------
   DONE            (See the Git log + GH issues! These are old manual records.)
 ------------------------------------------------------------------------------
+
++ Better (de)coupling between SFML and the World!
+  The generic World should also be able to use vectors, and time, without
+  sf::Vector2 and sf::Clock.
+  - Some light adapter ("native generic" <-> SFML) classes could do.
 
 + Pause - time itself, too (because the sim time only shares scale with real time,
   not any long-term alignment).

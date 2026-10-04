@@ -12,12 +12,12 @@
 namespace OON {
 
 //============================================================================
-class OONApp_sfml : public OONApp
+class OONMain : public OONApp
 //!
 //! NOTE: A CRTP(-like) setup would break the compilation barrier between
 //!	backend-specific and -agnostic code! :-/
 //!
-//!	template< class OONApp_sfml >
+//!	template< class OONMain >
 //!	class OONApp ...
 {
 protected:
@@ -27,8 +27,8 @@ protected:
 
 // C++ mechanics... (Only to init the SFML-specific oon_main_view_!)
 public:
-	OONApp_sfml(Szim::RuntimeContext& runtime);
-}; // class OONApp_sfml
+	OONMain(Szim::RuntimeContext& runtime);
+}; // class OONMain
 
 } // namespace OON
 

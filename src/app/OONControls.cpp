@@ -18,15 +18,15 @@ namespace OON {
 
 void OONController::update(Szim::Core::SimApp& app) //!override //!! Check the cost of keystate(), calling the Win32 API several times!!!
 {
-	if (app.gui.focused()) return; //!! Should be done by the caller (which should be app.poll_controls(), called by the engine)!
+	if (app.gui.focused()) return; //!! Should be done by the caller (which should be the engine, calling app.poll_controls())!
+	                               //!! And it should ALSO not be called when the entire app (window) is unfocused!...
 
 	//!!
 	//!! The cringy static keystate() should be accessed via app.rt.hci instead!
 	//!!
 
 	//!! Merge these, finally!...:
-	using namespace Szim::HCI;
-	using enum SAL::event::VKey;
+	using namespace Szim::HCI; using enum SAL::event::VKey;
 
 //	PanUp    = keystate(W);
 //	PanDown  = keystate(S);

@@ -31,10 +31,6 @@ void Emitter::emit_particles(EntityID emitter_id, unsigned n, Phys::Pos2 nozzles
 	auto p_range = cfg.position_divergence * emitter.r;
 	auto p_offset = cfg.eject_offset;
 	p_offset += // Also add a portion proportional to the emitter's velocity:
-//!! OLD, with sf::Vector2:
-//!!		(emitter.v == Math::Vector2<NumT>()) ? //! SFML-DEBUG asserts this, so must be prevented... :-/
-//!!			  Math::Vector2<NumT>()
-//!!			: emitter.v.normalized() * emitter.r * cfg.offset_velo_factor;
 		emitter.v.normalized() * cfg.offset_velo_factor * emitter.r; //!! Dimension-correctness not enforced!
 			//! The null-vector behavior depends on whether pocketvec's VEC_NO_CHECK_DIV0 has been defined.
 			//! (Not by default, so always checked implicitly.)
@@ -60,7 +56,7 @@ void Emitter::emit_particles(EntityID emitter_id, unsigned n, Phys::Pos2 nozzles
 		                          //!!...Jesus, these "hamfixted" pseudo Δt "factors"...
 		if (nozzles) p += nozzles[i] * emitter.r; // Scale to its "bounding sphere"...
 
-		[[maybe_unused]] auto pndx = oon_app.add_entity({ //!! Refact. to only use World::add_body directly!
+		[[maybe_unused]] auto pndx = oon_app.add_entity({ //!! Refact. to only use World::add_entity directly!
 			.lifetime = cfg.particle_lifetime,
 			.density = cfg.particle_density,
 			.p = p,
